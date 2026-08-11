@@ -387,6 +387,21 @@ body::after {
 }
 
 /**
+ * A fila que anda ao contrário.
+ *
+ * `animation-direction: reverse` e não uma segunda animação: é a mesma regra
+ * lida de trás para a frente, e assim as duas filas nunca podem divergir se
+ * alguém mexer no `@keyframes`.
+ *
+ * Duas filas a andar no mesmo sentido leem-se como uma só coisa a deslizar; em
+ * sentidos opostos, cada uma dá profundidade à outra — e é o que impede o herói
+ * de parecer um banner.
+ */
+.fita-inversa .fita-conteudo {
+  animation-direction: reverse;
+}
+
+/**
  * Texto em movimento contínuo é dos piores gatilhos para quem tem sensibilidade
  * a movimento — aqui pára de vez, e a fita passa a ser uma lista normal cortada
  * pela margem.
@@ -576,6 +591,21 @@ body::after {
   to {
     transform: translateX(-50%);
   }
+}
+
+/**
+ * A fila que anda ao contrário.
+ *
+ * `animation-direction: reverse` e não uma segunda animação: é a mesma regra
+ * lida de trás para a frente, e assim as duas filas nunca podem divergir se
+ * alguém mexer no `@keyframes`.
+ *
+ * Duas filas a andar no mesmo sentido leem-se como uma só coisa a deslizar; em
+ * sentidos opostos, cada uma dá profundidade à outra — e é o que impede o herói
+ * de parecer um banner.
+ */
+.fita-inversa .fita-conteudo {
+  animation-direction: reverse;
 }
 
 /**
