@@ -30,6 +30,18 @@
       "olho": "From our kitchen",
       "titulo": "Made by hand, in front of whoever's eating",
       "credito": "Photography by Santo Burga."
+    },
+    "corajosos": {
+      "olho": "For the brave",
+      "titulo": "320, 480 and 640 grams",
+      "texto": "A normal burger is 160 grams. These three are double, triple and quadruple that — and some people finish them."
+    },
+    "paes": {
+      "olho": "Pink bun, blue bun",
+      "titulo": "Not every saint comes in a plain bun",
+      "texto": "Sixteen of them come coloured. One comes both ways — it carries a star on both sides.",
+      "rosa": "Pink bun",
+      "azul": "Blue bun"
     }
   },
   "casas": {
@@ -99,7 +111,13 @@
       "iva": "VAT included at the applicable rate.",
       "alergenios": "Allergen information is available at the restaurant — just ask.",
       "precos": "Prices from the 2024 menu, pending confirmation."
-    }
+    },
+    "ilustrativa": "Illustrative image",
+    "acompanhamento": "Comes with",
+    "abrir": "See details",
+    "fechar": "Close",
+    "acompanhamentoTexto": "Sliced or straight-cut potatoes, included.",
+    "batataDoce": "Sweet potato fries instead"
   },
   "metadata": {
     "inicio": {

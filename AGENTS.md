@@ -47,6 +47,19 @@ marca. Só os artigos de nome comum — extras, bebidas, aperitivos — levam
 `nomeEn`, e o `superRefine` em `src/data/ementa.ts` rebenta se alguém trocar as
 voltas nos dois sentidos.
 
+### Fotografia: `foto` é a real, o resto é andaime
+
+`artigo.foto` significa **a fotografia daquele prato** e está a `null` nos 122.
+As imagens que se veem hoje vêm de `src/lib/fotos-ilustrativas.ts`, que só
+responde quando `foto` é `null` e marca o que devolve como ilustrativo — é isso
+que faz aparecer o aviso na interface.
+
+⚠️ **Não escrever imagens de marca no `ementa.json` para "adiantar".** É o que
+faz o aviso passar a mentir: daí a três meses ninguém distingue uma fotografia
+provisória de uma real. O caminho tem de começar por `/ementa/`, e o `build`
+recusa qualquer outro — a validação já apanhou esse erro uma vez, com o nome do
+artigo à frente.
+
 ### Alergénios não se inventam
 
 O campo `alergenios` está vazio em todos os 122 artigos e **fica assim** até a
@@ -106,6 +119,12 @@ tipo que **falha em silêncio** e ninguém repara até alguém olhar para o site
    No carrossel, pôr a pista numa coluna de grelha fez o "centro" saltar
    centenas de pixéis e o primeiro cartão nascia desfocado. Usar
    `getBoundingClientRect`.
+4. **Somar frações de píxel ao `scrollLeft`** não anda. O browser arredonda-o a
+   inteiro: a 60 quadros por segundo cada passo do carrossel vale menos de meio
+   píxel, escrever `0.4` lê-se de volta como `0`, e a pista fica parada para
+   sempre — mas só quando parte do zero, o que a fazia parecer funcionar em
+   qualquer teste que a empurrasse primeiro. Manter a posição num acumulador em
+   vírgula flutuante, à parte do DOM.
 
 O que as três têm em comum: `npm run build` passa, o `lint` passa, e só se
 apanham a olhar. **Depois de mexer em desenho, tirar capturas** — há Playwright

@@ -94,11 +94,38 @@ Redimensiona a 1600 px, converte para WebP e numera por ordem. Depois é listar
 os caminhos em `src/data/restaurantes.json`. **A primeira é a capa** — escolher
 a que diz num relance qual das duas casas é.
 
-### Fotografia por prato
+### Fotografia por prato — o que está lá hoje é provisório
 
-Os cartões dos mais pedidos são tipográficos porque não há foto por prato. O
-campo já existe: pôr `"foto": "/ementa/sao-joao.webp"` num artigo de
-`src/data/ementa.json` faz o cartão passar a fotográfico **sem tocar em código**.
+Os cartões dos mais pedidos e o painel de detalhe **têm fotografia**, e em todos
+aparece o aviso *"imagem ilustrativa"*. É deliberado: são as fotografias de marca
+distribuídas por família (uma sobremesa leva foto de sobremesa), porque
+fotografia por prato não existe em lado nenhum a que se chegue.
+
+**Para pôr a verdadeira:**
+
+```bash
+npm run fotos -- ~/fotos-dos-santos public/ementa
+```
+
+e depois, no artigo em `src/data/ementa.json`:
+
+```jsonc
+"foto": "/ementa/sao-joao.webp"
+```
+
+O aviso desaparece **só nesse artigo**, sem tocar em código. O caminho tem de
+começar por `/ementa/` — o `npm run build` recusa outro, a dizer o nome do santo.
+
+### Uma pergunta para a casa
+
+Os hambúrgueres vegetarianos — *Santo do Pau Oco*, *Santa Greta*, *Santo
+Agapito* — **também vêm com batata?**
+
+A nota do impresso diz "todos os hambúrgueres", mas esses três estão na secção
+"Vegetariano & Saladas", que também tem três saladas. Como não há forma de os
+distinguir nos dados, o painel de detalhe **não mostra acompanhamento nenhum**
+nessa secção — nem nos hambúrgueres nem nas saladas. Com a resposta, resolve-se
+numa linha (`CATEGORIAS_COM_BATATA`, em `src/components/ementa/PainelArtigo.tsx`).
 
 ## Correr localmente
 

@@ -17,11 +17,11 @@ export function NavegacaoEmenta({ categorias }: { categorias: Categoria[] }) {
   return (
     <nav
       aria-label={t("navegar")}
-      className="sticky top-16 z-40 border-b border-tinta/10 bg-papel/85 backdrop-blur-md"
+      className="sticky top-16 z-40 border-y-2 border-tinta bg-papel"
     >
       {/* Rola na horizontal em vez de partir para duas linhas: doze etiquetas
           empilhadas comiam metade do primeiro ecrã de um telemóvel. */}
-      <ul className="envolvente flex gap-2 overflow-x-auto py-3 text-xs font-semibold uppercase tracking-widest [scrollbar-width:none]">
+      <ul className="envolvente flex gap-2 overflow-x-auto py-3 text-xs uppercase tracking-[0.15em] [scrollbar-width:none]">
         {categorias.map((categoria) => (
           <li key={categoria}>
             <a
@@ -29,7 +29,7 @@ export function NavegacaoEmenta({ categorias }: { categorias: Categoria[] }) {
               /* Utilitários e não a classe `.bloco-magenta-texto`: o Tailwind v4
                  não aplica variantes (`hover:`) a classes de `@layer components`,
                  e um `hover:bloco-...` compila-se em silêncio para nada. */
-              className="block whitespace-nowrap rounded-full border border-tinta/20 px-4 py-2 transition-colors hover:bg-magenta-forte hover:text-papel"
+              className="titulo-display block whitespace-nowrap border border-tinta px-3.5 py-1.5 transition-colors hover:bg-tinta hover:text-papel"
             >
               {t(`categorias.${categoria}`)}
             </a>

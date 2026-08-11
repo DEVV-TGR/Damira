@@ -30,6 +30,18 @@
       "olho": "Da nossa cozinha",
       "titulo": "Feito à mão, à frente de quem come",
       "credito": "Fotografia do Santo Burga."
+    },
+    "corajosos": {
+      "olho": "Para os corajosos",
+      "titulo": "320, 480 e 640 gramas",
+      "texto": "Um hambúrguer normal tem 160 gramas. Estes três são o dobro, o triplo e o quádruplo — e há quem os acabe."
+    },
+    "paes": {
+      "olho": "Pão rosa e pão azul",
+      "titulo": "Nem todos os santos vêm em pão normal",
+      "texto": "Há dezasseis que vêm de cor. Um deles vem dos dois — está assinalado com uma estrela nos dois lados.",
+      "rosa": "Pão rosa",
+      "azul": "Pão azul"
     }
   },
   "casas": {
@@ -99,7 +111,13 @@
       "iva": "I.V.A. incluído à taxa em vigor.",
       "alergenios": "Informação sobre alergénios disponível no restaurante — é só perguntar.",
       "precos": "Preços da carta de 2024, por confirmar."
-    }
+    },
+    "ilustrativa": "Imagem ilustrativa",
+    "acompanhamento": "Acompanhamento",
+    "abrir": "Ver em detalhe",
+    "fechar": "Fechar",
+    "acompanhamentoTexto": "Batata à rodela ou ao palito, incluída.",
+    "batataDoce": "Batata doce em alternativa"
   },
   "metadata": {
     "inicio": {

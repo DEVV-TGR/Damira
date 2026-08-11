@@ -1,30 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import type { Artigo } from "@/data/ementa";
 import type { Locale } from "@/i18n/routing";
 import { formatarPreco } from "@/lib/preco";
+import { fotoDoArtigo } from "@/lib/fotos-ilustrativas";
 import { EtiquetaPao, SeloBestSeller } from "@/components/ementa/Etiquetas";
 
-/**
- * As quatro faces de cartão, a rodar pela posição.
- *
- * Nenhuma é o magenta chapado: um cartão magenta com uma descrição de duas
- * linhas por cima dá 4,25:1 e não passa (ver a tabela em `globals.css`). O
- * magenta entra na mesma, no selo — que é onde o tom escuro o deixa passar.
- *
- * A face escura no meio da rotação não é enfeite: quatro cartões claros
- * seguidos achatam a fila toda, e é o contraste entre eles que dá a sensação de
- * profundidade que o desfoque sozinho não dá.
- */
-const FACES = [
-  "bg-turquesa text-tinta",
-  "bg-papel text-tinta ring-1 ring-tinta/15",
-  "bg-coral text-tinta",
-  "bg-tinta text-papel",
-] as const;
+/** Píxeis por segundo. Devagar: é para ser notado de canto de olho, não seguido. */
+const VELOCIDADE = 24;
 
 export function CarrosselMaisPedidos({
   artigos,
@@ -35,41 +21,40 @@ export function CarrosselMaisPedidos({
 }) {
   const t = useTranslations("inicio.bestSellers");
   const pista = useRef<HTMLUListElement>(null);
-  const [ativo, setAtivo] = useState(0);
+  const pausado = useRef(false);
+  /**
+   * A posição em vírgula flutuante, mantida à parte do DOM.
+   *
+   * ⚠️ **Não somar ao `lista.scrollLeft` e voltar a escrevê-lo.** A 60 quadros
+   * por segundo cada passo vale menos de meio píxel, e o browser arredonda o
+   * `scrollLeft` a inteiro: escrever `0.4` lê-se de volta como `0`, o passo
+   * seguinte volta a somar a zero e **a pista fica parada para sempre**. Só
+   * arrancava se alguém a empurrasse primeiro — que foi exactamente como o bug
+   * quase passou despercebido.
+   */
+  const posicao = useRef(0);
 
   /**
    * Escreve em cada cartão a sua distância ao centro da pista, de 0 (ao centro)
-   * a 1 (na borda), numa variável CSS.
+   * a 1, numa variável CSS. **Uma variável só a alimentar o desfoque, a escala e
+   * a opacidade** — o CSS deriva as três do mesmo número e não há como ficarem a
+   * discordar.
    *
-   * **É uma variável só a alimentar o desfoque, a escala e a opacidade.** Fazer
-   * as três em JavaScript era garantir que um dia se dessincronizavam; assim o
-   * CSS deriva as três do mesmo número e não há como ficarem a discordar.
+   * Medido por `getBoundingClientRect` e não por `offsetLeft`: aquele conta a
+   * partir do ancestral posicionado e, quando a pista passou a viver numa coluna
+   * de grelha, arrastou consigo a largura do título — o "centro" saltava
+   * centenas de píxeis e o primeiro cartão nascia desfocado.
    */
   const medir = useCallback(() => {
     const lista = pista.current;
     if (!lista) return;
 
-    /*
-      Medido por `getBoundingClientRect` e não por `offsetLeft`.
-      `offsetLeft` conta a partir do ancestral posicionado, e no dia em que a
-      pista passou a viver numa coluna de grelha passou a arrastar consigo a
-      largura do título — o "centro" saltava várias centenas de pixéis e o
-      primeiro cartão aparecia desfocado em repouso. O retângulo do próprio
-      elemento não depende de onde ele está na árvore.
-
-      A `scale` dos cartões não estraga a conta: o `transform-origin` é o centro,
-      portanto encolhe a caixa e deixa o centro onde estava.
-    */
     const caixa = lista.getBoundingClientRect();
     const meio = caixa.left + caixa.width / 2;
 
-    /*
-      A queda do desfoque mede-se em **cartões**, não em fração da pista.
-      Normalizar por meia largura fazia o vizinho imediato saltar logo para o
-      máximo — o cartão ao lado do foco ficava tão ilegível como o da ponta, e
-      perdia-se a profundidade que é o ponto do efeito. Com o passo entre
-      cartões, o vizinho fica a meio caminho e só o segundo é que chega ao fim.
-    */
+    /* A queda mede-se em cartões, não em fração da pista: normalizar por meia
+       largura fazia o vizinho imediato saltar logo para o desfoque máximo e
+       perdia-se a profundidade, que é o ponto do efeito. */
     const primeiro = lista.children[0] as HTMLElement | undefined;
     const segundo = lista.children[1] as HTMLElement | undefined;
     const passo =
@@ -81,76 +66,133 @@ export function CarrosselMaisPedidos({
         : caixa.width / 2;
     const alcance = Math.max(1, passo * 1.9);
 
-    let maisPerto = 0;
-    let menorDistancia = Infinity;
-
-    for (const [indice, filho] of [...lista.children].entries()) {
+    for (const filho of lista.children) {
       const cartao = filho as HTMLElement;
-      const retangulo = cartao.getBoundingClientRect();
-      const centro = retangulo.left + retangulo.width / 2;
-      const bruta = Math.abs(centro - meio);
-      const distancia = Math.min(1, bruta / alcance);
+      const r = cartao.getBoundingClientRect();
+      const distancia = Math.min(
+        1,
+        Math.abs(r.left + r.width / 2 - meio) / alcance,
+      );
       cartao.style.setProperty("--d", distancia.toFixed(3));
-
-      if (bruta < menorDistancia) {
-        menorDistancia = bruta;
-        maisPerto = indice;
-      }
     }
-
-    setAtivo(maisPerto);
   }, []);
 
+  /* Medir sempre que a pista se mexe, por qualquer motivo — dedo, roda, teclado
+     ou o avanço automático. */
   useEffect(() => {
     const lista = pista.current;
     if (!lista) return;
 
-    let pedido = 0;
+    let quadro = 0;
     const aoRolar = () => {
-      /* Um `scroll` dispara dezenas de vezes por segundo; sem isto media-se o
-         mesmo estado várias vezes no mesmo quadro, para nada. */
-      if (pedido) return;
-      pedido = requestAnimationFrame(() => {
-        pedido = 0;
+      if (quadro) return;
+      quadro = requestAnimationFrame(() => {
+        quadro = 0;
         medir();
       });
     };
 
     medir();
     lista.addEventListener("scroll", aoRolar, { passive: true });
-    /* A largura da pista entra no cálculo — rodar o telemóvel tem de remedir. */
     const observador = new ResizeObserver(aoRolar);
     observador.observe(lista);
 
     return () => {
       lista.removeEventListener("scroll", aoRolar);
       observador.disconnect();
-      cancelAnimationFrame(pedido);
+      cancelAnimationFrame(quadro);
     };
   }, [medir]);
+
+  /**
+   * O avanço automático, e sem fim.
+   *
+   * ## Porque não é a técnica da faixa "Da nossa cozinha"
+   *
+   * Aquela é um `transform` em CSS. É perfeito para uma tira decorativa e
+   * péssimo para esta: com um `transform` a mexer o conteúdo, **deixava de se
+   * poder arrastar com o dedo** — e num telemóvel arrastar é a única forma de ver
+   * os doze.
+   *
+   * Aqui o avanço é feito a somar ao `scrollLeft`. A pista continua a ser um
+   * contentor com scroll de verdade: dedo, roda do rato e setas do teclado
+   * funcionam como sempre, e o efeito é o mesmo.
+   *
+   * O ciclo fecha porque os cartões estão **duplicados**: quando o scroll passa
+   * a distância de uma série, subtrai-se essa distância. O salto cai exactamente
+   * sobre um cartão igual ao que estava no lugar, e não se vê.
+   *
+   * ⚠️ **A distância mede-se entre o primeiro cartão e o primeiro da cópia**, e
+   * não por `scrollWidth / 2`: o `scrollWidth` inclui o preenchimento lateral
+   * que centra o primeiro cartão, e metade dele não é uma série.
+   */
+  useEffect(() => {
+    const lista = pista.current;
+    if (!lista) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let quadro = 0;
+    let anterior = 0;
+
+    const passo = (agora: number) => {
+      const delta = anterior ? (agora - anterior) / 1000 : 0;
+      anterior = agora;
+
+      /* Se alguém mexeu na pista por fora — dedo, roda, setas, âncora — o DOM
+         é a verdade e o acumulador vai atrás dele. */
+      if (Math.abs(lista.scrollLeft - posicao.current) > 2) {
+        posicao.current = lista.scrollLeft;
+      }
+
+      if (!pausado.current && delta > 0) {
+        const a = lista.children[0] as HTMLElement | undefined;
+        const b = lista.children[artigos.length] as HTMLElement | undefined;
+        const ciclo =
+          a && b
+            ? b.getBoundingClientRect().left - a.getBoundingClientRect().left
+            : 0;
+
+        posicao.current += VELOCIDADE * delta;
+        if (ciclo > 0 && posicao.current >= ciclo) posicao.current -= ciclo;
+        lista.scrollLeft = posicao.current;
+      }
+
+      quadro = requestAnimationFrame(passo);
+    };
+
+    quadro = requestAnimationFrame(passo);
+
+    /* Não gastar bateria a animar o que ninguém está a ver. */
+    const aoMudarVisibilidade = () => {
+      pausado.current = document.hidden;
+      anterior = 0;
+    };
+    document.addEventListener("visibilitychange", aoMudarVisibilidade);
+
+    return () => {
+      cancelAnimationFrame(quadro);
+      document.removeEventListener("visibilitychange", aoMudarVisibilidade);
+    };
+  }, [artigos.length]);
+
+  const parar = () => {
+    pausado.current = true;
+  };
+  const seguir = () => {
+    pausado.current = false;
+  };
 
   const deslizar = (sentido: 1 | -1) => {
     const lista = pista.current;
     if (!lista) return;
     const cartao = lista.children[0] as HTMLElement | undefined;
     if (!cartao) return;
-    /* Um cartão de cada vez, mais a goteira. O `scroll-snap` acerta o resto. */
-    const passo = cartao.offsetWidth + 24;
-    lista.scrollBy({ left: sentido * passo, behavior: "smooth" });
+    lista.scrollBy({ left: sentido * (cartao.offsetWidth + 24), behavior: "smooth" });
   };
 
   return (
-    /*
-      Duas colunas em ecrã largo, e não título por cima da pista.
-      **É a correção de um vazio, não um capricho de composição.** Para o
-      primeiro cartão poder chegar ao centro, a pista precisa de meia largura de
-      espaço à esquerda — e com o título por cima isso deixava um retângulo
-      branco de meio ecrã ao lado do primeiro cartão, que lia como página
-      partida. Com o título nesse espaço, o mesmo vão passa a ser respiração
-      entre dois blocos de conteúdo.
-    */
-    <div className="envolvente lg:grid lg:grid-cols-[26rem_1fr] lg:items-center lg:gap-12">
-      <div>
+    <div className="envolvente relative lg:grid lg:grid-cols-[26rem_1fr] lg:items-center lg:gap-12">
+      <div className="relative">
         <p className="olho">{t("olho")}</p>
         <h2 className="titulo-display mt-4 text-[clamp(2.5rem,6vw,4.5rem)]">
           {t("titulo")}
@@ -165,32 +207,37 @@ export function CarrosselMaisPedidos({
 
       {/*
         `tabIndex` e `role="group"` porque uma pista com scroll tem de ser
-        alcançável por teclado — com foco, as setas do teclado rolam-na de
-        origem, sem uma linha de JavaScript.
+        alcançável por teclado — com foco, as setas rolam-na de origem.
+
+        Sem `aria-live`: com a pista a andar sozinha, anunciar o cartão ao centro
+        punha o leitor de ecrã a falar sem parar. Os doze estão na lista para quem
+        lê; o movimento é decoração.
       */}
       <ul
         ref={pista}
         role="group"
         aria-label={t("titulo")}
         tabIndex={0}
-        className="carrossel mt-12 flex snap-x snap-mandatory gap-6 overflow-x-auto py-10 [scrollbar-width:none] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-magenta-forte lg:mt-0"
+        onMouseEnter={parar}
+        onMouseLeave={seguir}
+        onFocusCapture={parar}
+        onBlurCapture={seguir}
+        onPointerDown={parar}
+        onPointerUp={seguir}
+        onPointerCancel={seguir}
+        className="carrossel mt-12 flex gap-6 overflow-x-auto py-10 [scrollbar-width:none] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-magenta-forte lg:mt-0"
       >
-        {artigos.map((artigo, indice) => (
+        {/* Duas séries: a segunda é o que faz o ciclo fechar sem costura. */}
+        {[...artigos, ...artigos].map((artigo, indice) => (
           <Cartao
-            key={artigo.id}
+            key={`${artigo.id}-${indice}`}
             artigo={artigo}
-            indice={indice}
-            face={FACES[indice % FACES.length]}
+            numero={(indice % artigos.length) + 1}
+            duplicado={indice >= artigos.length}
             locale={locale}
           />
         ))}
       </ul>
-
-      {/* Sem isto, quem navega por teclado ou com leitor de ecrã desliza a pista
-          e nada lhe diz onde ficou. */}
-      <p aria-live="polite" className="sr-only">
-        {artigos[ativo]?.nome}
-      </p>
     </div>
   );
 }
@@ -224,67 +271,69 @@ function BotaoDeslizar({
 
 function Cartao({
   artigo,
-  indice,
-  face,
+  numero,
+  duplicado,
   locale,
 }: {
   artigo: Artigo;
-  indice: number;
-  face: string;
+  numero: number;
+  duplicado: boolean;
   locale: Locale;
 }) {
+  const t = useTranslations("ementa");
+  const foto = fotoDoArtigo(artigo);
+
   return (
     <li
-      className={`cartao-carrossel relative flex snap-center flex-col justify-between overflow-hidden rounded-2xl p-7 ${face}`}
+      className="cartao-carrossel relative flex flex-col justify-end overflow-hidden rounded-2xl bg-tinta text-papel"
+      /* A cópia existe só para o ciclo fechar; quem usa leitor de ecrã ouve a
+         lista uma vez. */
+      aria-hidden={duplicado || undefined}
     >
-      {/*
-        O hambúrguer desenhado do impresso, quase apagado. É o mesmo PNG de alfa
-        usado como máscara, tingido pela cor do texto do cartão — ver `.traco`
-        em `globals.css`.
-      */}
-      <span
-        aria-hidden
-        className="traco pointer-events-none absolute -right-10 -top-8 size-48 opacity-[0.07]"
-        style={{
-          maskImage: "url(/tracos/hamburguer.png)",
-          WebkitMaskImage: "url(/tracos/hamburguer.png)",
-        }}
-      />
-
-      {artigo.foto && (
-        /* Hoje nenhum artigo tem `foto` e todos os cartões saem tipográficos.
-           No dia em que o cliente mandar fotografia por prato, basta preencher o
-           campo em `ementa.json` — o cartão passa a fotográfico sem tocar aqui. */
+      {foto && (
         <Image
-          src={artigo.foto}
+          src={foto.src}
+          /* Decorativa: **não descreve o prato**. Descrevê-la seria afirmar que a
+             fotografia é daquele hambúrguer, que é exactamente o que não se sabe. */
           alt=""
           fill
-          className="absolute inset-0 -z-10 object-cover"
-          sizes="(max-width: 640px) 80vw, 22rem"
+          className="object-cover"
+          sizes="(max-width: 640px) 80vw, 25rem"
+          loading={duplicado ? "lazy" : undefined}
         />
       )}
 
-      <div className="relative">
-        <span className="titulo-display text-sm opacity-50">
-          {String(indice + 1).padStart(2, "0")}
+      {/* Véu de baixo para cima: é o que dá contraste ao texto sobre fotografia. */}
+      <div aria-hidden className="veu-cartao absolute inset-0" />
+
+      {foto?.ilustrativa && (
+        <p className="absolute right-3 top-3 rounded-full bg-tinta/70 px-2.5 py-1 text-[0.6rem] font-semibold uppercase tracking-wider">
+          {t("ilustrativa")}
+        </p>
+      )}
+
+      <div className="relative p-7">
+        <span className="titulo-display text-sm opacity-60">
+          {String(numero).padStart(2, "0")}
         </span>
-        <h3 className="titulo-display mt-3 text-[clamp(1.75rem,3.5vw,2.35rem)]">
+
+        <h3 className="titulo-display mt-2 text-[clamp(1.75rem,3.5vw,2.35rem)]">
           {artigo.nome}
         </h3>
+
         {artigo.descricao && (
-          <p className="mt-3 line-clamp-3 text-sm leading-relaxed opacity-80">
+          <p className="mt-2.5 line-clamp-2 text-sm leading-relaxed text-papel/80">
             {artigo.descricao[locale]}
           </p>
         )}
-      </div>
 
-      <div className="relative mt-8">
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="mt-5 flex flex-wrap items-center gap-1.5">
           <SeloBestSeller />
           {artigo.paes.map((pao) => (
             <EtiquetaPao key={pao} pao={pao} />
           ))}
         </div>
+
         <p className="titulo-display mt-4 text-3xl tabular-nums">
           {formatarPreco(artigo.preco, locale)}
         </p>

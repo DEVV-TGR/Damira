@@ -1,7 +1,10 @@
 import { setRequestLocale } from "next-intl/server";
 import { useTranslations } from "next-intl";
 import { Hero } from "@/components/inicio/Hero";
+import { FitaSantos } from "@/components/inicio/FitaSantos";
 import { CarrosselMaisPedidos } from "@/components/inicio/CarrosselMaisPedidos";
+import { Escalada } from "@/components/inicio/Escalada";
+import { Paes } from "@/components/inicio/Paes";
 import { FaixaFotografias } from "@/components/inicio/FaixaFotografias";
 import { Casa } from "@/components/casas/Casa";
 import { bestSellers } from "@/data/ementa";
@@ -22,12 +25,19 @@ export default async function PaginaInicial({
   return <Inicio locale={locale as Locale} />;
 }
 
+/**
+ * A ordem da página é uma sequência, não uma lista de secções disponíveis:
+ * apetite (o herói), a marca (a fita de santos), o que se pede (os mais
+ * pedidos), a bravata (a escalada), a peculiaridade (os pães), o sítio (as
+ * fotografias e as casas). Acaba onde tem de acabar — na morada.
+ */
 function Inicio({ locale }: { locale: Locale }) {
   const t = useTranslations("inicio");
 
   return (
     <>
       <Hero />
+      <FitaSantos />
 
       <section className="seccao">
         {/* Os doze do selo, tirados do JSON — marcar um artigo novo como
@@ -35,6 +45,8 @@ function Inicio({ locale }: { locale: Locale }) {
         <CarrosselMaisPedidos artigos={bestSellers()} locale={locale} />
       </section>
 
+      <Escalada locale={locale} />
+      <Paes />
       <FaixaFotografias />
 
       <section aria-labelledby="casas" className="seccao">

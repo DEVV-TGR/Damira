@@ -99,6 +99,20 @@ const EsquemaArtigo = z
     subcategoria: z.enum(SUBCATEGORIAS).nullable().default(null),
     /** Em euros. O impresso escreve "7€"; aqui é `7` e a formatação é do site. */
     preco: z.number().positive(),
+    /**
+     * O peso da carne, em gramas.
+     *
+     * Existe como campo próprio porque a secção da escalada — 320 → 480 → 640 —
+     * mostra o número em grande e desenha uma barra proporcional. Até aqui a
+     * grama vivia **dentro do texto da descrição** ("320g de novilho (double
+     * burga)…"), e ir buscá-la por expressão regular a prosa parte no primeiro
+     * dia em que alguém reescrever a frase.
+     *
+     * Opcional em quase tudo — uma sangria não tem gramas — e **obrigatório em
+     * `para-os-corajosos`**, que é a secção que depende dele. Ver o
+     * `superRefine`.
+     */
+    gramas: z.number().int().positive().nullable().default(null),
     variantes: z.array(Variante).min(1).nullable().default(null),
     descricao: Texto.nullable().default(null),
     /**
@@ -148,6 +162,13 @@ const EsquemaArtigo = z
         code: "custom",
         path: ["nomeEn"],
         message: `"${artigo.nome}" é texto comum e precisa de \`nomeEn\``,
+      });
+    }
+    if (artigo.categoria === "para-os-corajosos" && artigo.gramas === null) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["gramas"],
+        message: "a escalada dos corajosos desenha-se a partir das gramas",
       });
     }
     /* A subcategoria só existe dentro das bebidas, que são 47 artigos e sem ela
@@ -201,6 +222,31 @@ export const porId = (id: string) => ementa.find((artigo) => artigo.id === id);
 
 /** Os doze com selo. É o que a homepage mostra em destaque. */
 export const bestSellers = () => ementa.filter((artigo) => artigo.bestSeller);
+
+/**
+ * Os corajosos, do mais leve para o mais pesado — é a ordem em que a secção os
+ * desenha, e sai das gramas em vez da ordem do ficheiro para não depender de
+ * ninguém se lembrar de os manter arrumados.
+ */
+export const escalada = () =>
+  porCategoria("para-os-corajosos")
+    .slice()
+    .sort((a, b) => (a.gramas ?? 0) - (b.gramas ?? 0));
+
+/**
+ * Só os que têm nome de santo.
+ *
+ * O critério é `nomeEn === null`, que não é um truque: **o esquema garante que
+ * só os artigos de nome comum — extras, bebidas, aperitivos — têm `nomeEn`**
+ * (ver o `superRefine`). Filtrar por aí é filtrar pela mesma regra que o `build`
+ * já obriga, em vez de manter uma segunda lista de categorias que um dia
+ * discorda desta.
+ */
+export const santos = () => ementa.filter((artigo) => artigo.nomeEn === null);
+
+/** Os santos que levam um pão de cor. Alimenta a secção dos pães. */
+export const porPao = (pao: "rosa" | "azul") =>
+  ementa.filter((artigo) => artigo.paes.includes(pao));
 
 /**
  * As categorias que têm mesmo artigos, pela ordem do enum.
