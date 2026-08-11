@@ -397,59 +397,196 @@ body::after {
   }
 }
 
-/* ── Herói ────────────────────────────────────────────────────────────── */
+/* ── Movimento ────────────────────────────────────────────────────────── */
 
 /**
- * O véu por cima da fotografia do herói.
+ * Revelação ao entrar no ecrã, com *scroll-driven animations*.
  *
- * Faz duas coisas ao mesmo tempo, e a segunda é a que interessa: dá contraste ao
- * título branco **e** come o detalhe de uma fotografia que não tem resolução
- * para este tamanho (919 × 1059 px, de retrato, esticada num ecrã largo).
- * Fotografia mole debaixo de véu e grão lê como película; fotografia mole
- * sozinha lê como erro.
+ * O elemento está **visível por defeito** e a animação só se aplica onde o
+ * browser a suporta. É deliberado e é a diferença entre um enfeite e um site em
+ * branco: se isto dependesse de JavaScript ou de um `opacity: 0` inicial, um
+ * browser sem suporte deixava o conteúdo invisível para sempre.
  *
- * **Os valores foram medidos, não estimados.** A primeira versão parecia bem e
- * dava 2,87:1 no pixel mais claro por trás do título — abaixo dos 3:1 que o
- * texto grande exige. A forma de o confirmar é esconder o `<h1>`, capturar o
- * retângulo que ele ocupava e calcular a luminância máxima do que lá está por
- * baixo; ao mexer no gradiente, repetir a medição.
+ * ⚠️ **O intervalo tem de fechar dentro do `entry`.** Com `cover 22%` — que aqui
+ * esteve — a revelação só completava quando o elemento atravessasse um quinto do
+ * ecrã, e o **último bloco antes do rodapé nunca lá chegava**: a página acabava
+ * e ele ficava a 0,79 de opacidade para sempre. Fechar em `entry 60%` garante
+ * que qualquer elemento acaba visível assim que entra, esteja onde estiver.
  */
-.veu-heroi {
-  /**
-   * Dois gradientes cruzados, e não um só de baixo para cima.
-   *
-   * Com um véu vertical forte o suficiente para o texto, a fotografia inteira
-   * ficava cinzenta — pagava-se o primeiro ecrã todo para dar contraste a um
-   * canto. Cruzando um horizontal (escuro à esquerda, onde o texto vive) com um
-   * vertical mais leve, o canto superior direito fica limpo e vê-se mesmo a
-   * fotografia, que é o ponto de ter um herói fotográfico.
-   *
-   * ⚠️ **Os valores são medidos e já regrediram uma vez.** Ao aliviar o véu para
-   * a fotografia se ver, o `<h1>` caiu para 2,63:1 — abaixo dos 3:1 do texto
-   * grande — e a página continuou a parecer bem. Depois de mexer aqui, medir:
-   * esconder o elemento, capturar o retângulo que ocupava e calcular a
-   * luminância máxima do que lá está por baixo.
-   */
-  background:
-    linear-gradient(
-      to right,
-      rgb(35 31 32 / 0.93) 0%,
-      rgb(35 31 32 / 0.87) 44%,
-      rgb(35 31 32 / 0.55) 72%,
-      rgb(35 31 32 / 0.08) 100%
-    ),
-    linear-gradient(
-      to top,
-      rgb(35 31 32 / 0.8) 0%,
-      rgb(35 31 32 / 0.5) 50%,
-      rgb(35 31 32 / 0.06) 90%
-    );
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .surgir {
+      animation: surgir linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 60%;
+    }
+  }
 }
 
-/* O grão global está a 3,5%; sobre a fotografia sobe, que é onde faz falta. */
-.grao-heroi {
-  opacity: 0.09;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='r'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23r)'/%3E%3C/svg%3E");
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(1.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Quem pediu menos movimento leva menos movimento — incluindo o scroll suave,
+   que é dos que mais enjoa. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Carrossel dos mais pedidos ───────────────────────────────────────── */
+
+/**
+ * O efeito que dá o carácter à secção: **o cartão ao centro nítido, os dos lados
+ * desfocados**, como uma objectiva aberta.
+ *
+ * A mecânica está toda em `--d`, que o componente escreve em cada cartão — 0 ao
+ * centro da pista, 1 na borda. Daqui saem as três propriedades. Não há
+ * JavaScript a mexer em estilos: há JavaScript a medir uma distância, e CSS a
+ * decidir o que fazer com ela.
+ *
+ * O `scroll-snap` é nativo de propósito. Dedo, roda do rato, trackpad e setas do
+ * teclado já funcionam bem no browser; reescrever isso em JavaScript é a via
+ * rápida para um carrossel que não se deixa arrastar como deve ser.
+ */
+.carrossel {
+  --largura-cartao: clamp(15rem, 70vw, 25rem);
+  /* Sai o `scroll-snap`: luta contra o avanço programático contínuo, e com a
+     pista sempre em movimento o encaixe deixou de fazer sentido — o foco é
+     contínuo, não por posições. */
+  scroll-snap-type: none;
+  /**
+   * Sem este espaço nas pontas, o primeiro e o último cartão nunca chegam ao
+   * centro da pista — ficam encostados à borda, permanentemente desfocados, e o
+   * primeiro dos mais pedidos era o único que ninguém via bem.
+   */
+  padding-inline: calc(50% - var(--largura-cartao) / 2);
+  /* O `overflow` corta a escala e o desfoque dos cartões nas bordas; a margem
+     negativa e o preenchimento devolvem-lhes o espaço que o efeito precisa. */
+  scroll-padding-inline: calc(50% - var(--largura-cartao) / 2);
+}
+
+.carrossel::-webkit-scrollbar {
+  display: none;
+}
+
+/**
+ * O véu dos cartões, agora que levam fotografia. Mesmo princípio do herói: dá
+ * contraste ao texto e esconde o que a fotografia não tem para mostrar.
+ */
+.veu-cartao {
+  background: linear-gradient(
+    to top,
+    rgb(35 31 32 / 0.94) 0%,
+    rgb(35 31 32 / 0.82) 45%,
+    rgb(35 31 32 / 0.45) 75%,
+    rgb(35 31 32 / 0.2) 100%
+  );
+}
+
+.cartao-carrossel {
+  /* Sem JavaScript `--d` fica em 0 e sai tudo nítido e legível. O desfoque é o
+     enfeite; a lista de doze hambúrgueres é que é a funcionalidade. */
+  --d: 0;
+  flex: none;
+  width: var(--largura-cartao);
+  min-height: clamp(21rem, 46vw, 26rem);
+  filter: blur(calc(var(--d) * 5px));
+  transform: scale(calc(1 - var(--d) * 0.16));
+  opacity: calc(1 - var(--d) * 0.45);
+  will-change: transform, filter;
+}
+
+/**
+ * Desfoque a mexer é dos efeitos que mais enjoa quem tem sensibilidade a
+ * movimento — aqui desaparece por completo, e a distância ao centro passa a
+ * notar-se só pela opacidade, que é inofensiva.
+ */
+@media (prefers-reduced-motion: reduce) {
+  /**
+ * O véu dos cartões, agora que levam fotografia. Mesmo princípio do herói: dá
+ * contraste ao texto e esconde o que a fotografia não tem para mostrar.
+ */
+.veu-cartao {
+  background: linear-gradient(
+    to top,
+    rgb(35 31 32 / 0.94) 0%,
+    rgb(35 31 32 / 0.82) 45%,
+    rgb(35 31 32 / 0.45) 75%,
+    rgb(35 31 32 / 0.2) 100%
+  );
+}
+
+.cartao-carrossel {
+    filter: none;
+    transform: none;
+    opacity: calc(1 - var(--d) * 0.3);
+  }
+}
+
+/* ── Fitas a correr ───────────────────────────────────────────────────── */
+
+/**
+ * O motor das duas fitas — a dos nomes dos santos e a das fotografias.
+ *
+ * O conteúdo é **duplicado** e a animação desloca metade da largura. É o que faz
+ * o ciclo não ter costura: quando a primeira cópia sai de cena, a segunda está
+ * exactamente onde a primeira começou, e o `translateX` volta a zero sem que se
+ * veja o salto. A cópia é `aria-hidden` — quem usa leitor de ecrã ouve a lista
+ * uma vez, não duas.
+ *
+ * `width: max-content` porque a fita tem de ser tão larga quanto o conteúdo
+ * pedir; com a largura do pai, o `flex` encolhia os itens e a conta do 50%
+ * deixava de fechar.
+ */
+.fita {
+  overflow: hidden;
+  /* Sem isto, a fita empurra a largura do documento e o telemóvel ganha scroll
+     horizontal — que é o defeito clássico de um marquee mal contido. */
+  max-width: 100%;
+}
+
+.fita-conteudo {
+  display: flex;
+  width: max-content;
+  animation: correr var(--duracao, 45s) linear infinite;
+}
+
+/* Pausa ao passar o rato: quem quiser ler um nome consegue parar para o ler. */
+.fita:hover .fita-conteudo {
+  animation-play-state: paused;
+}
+
+@keyframes correr {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/**
+ * Texto em movimento contínuo é dos piores gatilhos para quem tem sensibilidade
+ * a movimento — aqui pára de vez, e a fita passa a ser uma lista normal cortada
+ * pela margem.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .fita-conteudo {
+    animation: none;
+  }
 }
 
 /* ── Painel do artigo ─────────────────────────────────────────────────── */

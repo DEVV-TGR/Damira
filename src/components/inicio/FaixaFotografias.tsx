@@ -8,19 +8,19 @@ import { useTranslations } from "next-intl";
  * não tem legendas. São as mesmas imagens que o negócio publica nas duas casas —
  * pôr-lhes o nome de um santo por baixo era afirmar o que não se sabe.
  *
- * Estar em movimento e pequenas também lhes assenta melhor do que estar paradas
- * e grandes: são fotografias medianas, e uma fila estática convidava a olhar
- * para cada uma o tempo suficiente para lhes ver os defeitos.
+ * São as do Instagram, que têm 356 px de largura. Em ladrilhos desta dimensão
+ * chegam — e é aqui que a gente a comer com as mãos funciona melhor do que um
+ * prato fotografado em estúdio. Ver `scripts/importar-instagram.mjs`.
  */
 const FOTOS = [
-  "/comida/02.webp",
-  "/comida/03.webp",
-  "/comida/05.webp",
-  "/comida/06.webp",
-  "/comida/07.webp",
-  "/comida/08.webp",
-  "/comida/09.webp",
-  "/comida/01.webp",
+  "/instagram/06.webp",
+  "/instagram/02.webp",
+  "/instagram/08.webp",
+  "/instagram/11.webp",
+  "/instagram/07.webp",
+  "/instagram/03.webp",
+  "/instagram/12.webp",
+  "/instagram/09.webp",
 ];
 
 export function FaixaFotografias() {
@@ -58,8 +58,8 @@ function Serie({ duplicada = false }: { duplicada?: boolean }) {
              sem ver nada. */
           className={`relative mx-2 shrink-0 overflow-hidden rounded-2xl ${
             indice % 2 === 0
-              ? "h-[clamp(11rem,22vw,15rem)] w-[clamp(14rem,28vw,19rem)]"
-              : "mt-[clamp(1rem,3vw,2.5rem)] h-[clamp(13rem,26vw,17rem)] w-[clamp(11rem,21vw,14rem)]"
+              ? "h-[clamp(9rem,18vw,12rem)] w-[clamp(11rem,22vw,15rem)]"
+              : "mt-[clamp(1rem,3vw,2.5rem)] h-[clamp(10.5rem,21vw,14rem)] w-[clamp(9rem,17vw,11.5rem)]"
           }`}
         >
           <Image
@@ -67,7 +67,9 @@ function Serie({ duplicada = false }: { duplicada?: boolean }) {
             alt=""
             fill
             className="object-cover"
-            sizes="(max-width: 640px) 60vw, 20rem"
+            /* Nunca acima da origem: estas imagens têm 356 px e pedir mais era
+               servir uma ampliação a fingir de nitidez. */
+            sizes="(max-width: 640px) 45vw, 15rem"
             loading={duplicada || indice > 2 ? "lazy" : undefined}
           />
         </li>

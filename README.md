@@ -116,6 +116,33 @@ e depois, no artigo em `src/data/ementa.json`:
 O aviso desaparece **só nesse artigo**, sem tocar em código. O caminho tem de
 começar por `/ementa/` — o `npm run build` recusa outro, a dizer o nome do santo.
 
+### As fotografias do Instagram
+
+O herói e a faixa "Da nossa cozinha" usam **doze fotografias do Instagram da
+casa**, recortadas da grelha do perfil a partir de capturas de ecrã
+(`npm run instagram -- <pasta>`). São a vibe certa: sol, mãos, o pão cor-de-rosa,
+a esplanada.
+
+⚠️ **Têm 356 px de largura** — é o tamanho a que o Instagram serve as miniaturas
+da grelha, e o perfil está atrás de login, portanto não há originais a que se
+chegue por programa. Isso decide o desenho, não o contrário: o herói é um mosaico
+de ladrilhos pequenos porque **é a composição que esta resolução aguenta**. Está
+medido — a ampliação máxima é 1,35× em ecrã de 2× e 1,48× num telemóvel de 3×.
+
+**Com os originais**, o herói pode passar a uma fotografia a sangrar sem truques
+e os cartões deixam de ter dois registos fotográficos. É a peça que mais melhora
+o site por menos trabalho: uma exportação do Instagram ou a pasta do fotógrafo.
+
+### Porque a casa de Leça não mudou de fotografia
+
+Há no Instagram uma fotografia de interior com a decoração actual, e a que está
+no site é de uma remodelação anterior. **Não foi trocada de propósito.**
+
+A que lá está sabe-se que é de Leça, porque só aparecia na página dessa casa. A
+do Instagram *parece* o sítio certo e não há como o provar. Numa secção cuja
+função é dizer qual casa é qual, trocar uma prova por uma parecença é o erro
+errado — a foto ficaria mais actual e podia estar a mostrar a casa errada.
+
 ### Uma pergunta para a casa
 
 Os hambúrgueres vegetarianos — *Santo do Pau Oco*, *Santa Greta*, *Santo

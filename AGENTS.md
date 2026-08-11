@@ -119,7 +119,14 @@ tipo que **falha em silêncio** e ninguém repara até alguém olhar para o site
    No carrossel, pôr a pista numa coluna de grelha fez o "centro" saltar
    centenas de pixéis e o primeiro cartão nascia desfocado. Usar
    `getBoundingClientRect`.
-4. **Somar frações de píxel ao `scrollLeft`** não anda. O browser arredonda-o a
+4. **`sharp().extract().stats()` mede a imagem de entrada, não o recorte.** O
+   `stats()` ignora o pipeline: encadeá-lo depois de um `extract` devolve as
+   estatísticas da imagem inteira, iguais para todos os recortes. Foi assim que
+   um filtro de variância no importador do Instagram passou a decorativo sem
+   ninguém dar por isso. Materializar com `toBuffer()` antes de medir. (E, em
+   PNG, cortar o canal alfa: numa captura opaca tem média 255 e envenena
+   qualquer conta de claridade.)
+5. **Somar frações de píxel ao `scrollLeft`** não anda. O browser arredonda-o a
    inteiro: a 60 quadros por segundo cada passo do carrossel vale menos de meio
    píxel, escrever `0.4` lê-se de volta como `0`, e a pista fica parada para
    sempre — mas só quando parte do zero, o que a fazia parecer funcionar em
