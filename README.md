@@ -21,8 +21,11 @@ Por ordem de gravidade:
 - [ ] **Alergénios.** `alergenios: []` nos 122 artigos. Preencher com a cozinha —
       **não deduzir das descrições**. Até lá o site mostra o aviso de que a
       informação está disponível no restaurante, que é o que a lei exige.
-- [ ] **Fotografias das duas casas.** Ver *"As fotografias"*, abaixo.
-- [ ] **Logótipo em vetor.** Só existe rasterizado no PDF. Quando chegar, trocar
+- [ ] **Fotografias actuais.** As que estão no site são da galeria antiga do
+      próprio negócio e mostram uma decoração que já não existe. Ver
+      *"As fotografias"*, abaixo.
+- [ ] **Logótipo em vetor.** O desenho já é o verdadeiro, extraído do PDF, mas é
+      rasterizado a 300 dpi. Quando chegar o vetor, trocar
       `src/components/Marca.tsx` **e** correr `npm run icons`, ao mesmo tempo.
 - [ ] **`NEXT_PUBLIC_SITE_URL`** e *redeploy*, para o `sitemap.xml`, o
       `robots.txt` e as imagens de partilha saírem com o domínio certo.
@@ -59,22 +62,43 @@ nenhuma.
 
 ### As fotografias
 
-`fotos: []` nas duas casas, e o bloco mostra "Fotografias por publicar".
+Estão no site, e são do próprio negócio: saíram das páginas
+`santoburgaporto.eatbu.com` e `santoburgaleca.eatbu.com`, que são geridas por
+ele. A atribuição foi feita **cruzando que imagens aparecem em que página** —
+as do espaço só aparecem na página da respectiva casa, e é por isso que se pode
+dizer qual é o Porto e qual é Leça.
 
-Foram tentadas as páginas `santoburgaporto.eatbu.com` e
-`santoburgaleca.eatbu.com`, que são geridas pelo próprio negócio. **Não servem**,
-por três razões: a maior parte das imagens é a mesma nas duas páginas (são fotos
-de marca, não da casa), mostram uma decoração e uma carta que já não existem — a
-ardósia tem *Santa Serra* e *Dois Santos*, que não estão no menu de 2024 — e
-trazem as setas do carrossel queimadas na imagem.
+⚠️ **Mostram uma decoração anterior à actual.** A ardósia de Leça ainda tem
+*Santa Serra* e *Dois Santos*, que não estão na carta de 2024. Entraram por
+serem as melhores que havia; o Instagram tem as actuais e são do cliente.
+**Pedir os originais.**
 
-O Instagram tem fotografias actuais das duas casas, e são do cliente. **Pedir os
-originais.** Depois é largá-los em `public/casas/porto/` e `public/casas/leca/`
-e listá-los em `src/data/restaurantes.json`; a primeira é a capa do bloco.
+Duas notas sobre o que ficou de fora:
 
-Escolher pelo menos uma por casa que **diga qual é qual** num relance — Leça tem
-a esplanada à beira-mar com o mobiliário turquesa, o Porto é sala interior. É
-para isso que a secção existe.
+- **Uma fotografia por casa.** Leça só tinha uma imagem do espaço, repetida em
+  quatro recortes e com as setas do carrossel queimadas nas bordas (recortadas).
+  Dar quatro ao Porto e uma a Leça ficava desequilibrado e dizia a coisa errada
+  sobre as duas casas.
+- **As dez fotos de comida não são de pratos identificados.** Aparecem nas duas
+  páginas, o que prova que são fotografia de marca. Por isso vão para o herói e
+  para a faixa editorial, onde não afirmam nada, e **não** para os cartões dos
+  mais pedidos.
+
+Para trocar por fotografias novas:
+
+```bash
+npm run fotos -- ~/fotos-novas-leca public/casas/leca
+```
+
+Redimensiona a 1600 px, converte para WebP e numera por ordem. Depois é listar
+os caminhos em `src/data/restaurantes.json`. **A primeira é a capa** — escolher
+a que diz num relance qual das duas casas é.
+
+### Fotografia por prato
+
+Os cartões dos mais pedidos são tipográficos porque não há foto por prato. O
+campo já existe: pôr `"foto": "/ementa/sao-joao.webp"` num artigo de
+`src/data/ementa.json` faz o cartão passar a fotográfico **sem tocar em código**.
 
 ## Correr localmente
 

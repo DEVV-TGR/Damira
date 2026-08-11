@@ -1,14 +1,25 @@
 @import "tailwindcss";
 
 /**
- * As cores não foram escolhidas — foram **medidas**. Saíram por amostragem dos
- * pixéis do menu impresso de 2024 (`referencias/`), que é o único sítio onde a
- * identidade existe escrita. O magenta é o Process Magenta puro e o preto é o
- * rich black de CMYK, os dois sinais de que isto veio de artes finais e não do
+ * # Esplanada
+ *
+ * A direção do site é a do Instagram e não a do impresso: luz de fim de tarde,
+ * mesas na rua, gente a comer com as mãos. Base clara com muito ar, conduzida
+ * pela fotografia, **cor como acento e não chapada**.
+ *
+ * O impresso continua a mandar nas cores — só não manda na quantidade. Uma
+ * página inteira a magenta funciona em A3 na mão de alguém e cansa num ecrã que
+ * se percorre durante um minuto à procura do preço de um hambúrguer.
+ */
+
+/**
+ * As cores não foram escolhidas — foram **medidas** por amostragem dos pixéis do
+ * menu impresso (`referencias/`). O magenta é o Process Magenta puro e a tinta é
+ * o rich black de CMYK, os dois sinais de que isto veio de artes finais e não do
  * seletor de cor de alguém.
  *
- * ⚠️ **Não trocar por valores "parecidos".** No dia em que aparecer um manual
- * de marca, trocam-se aqui e mudam em todo o lado.
+ * ⚠️ **Não trocar por valores "parecidos".** No dia em que aparecer um manual de
+ * marca, trocam-se aqui e mudam em todo o lado.
  */
 @theme {
   --color-magenta: #ec008c;
@@ -16,36 +27,55 @@
      contraste abaixo. Não usar como cor decorativa — decorativo é o de cima. */
   --color-magenta-forte: #db0084;
   --color-turquesa: #91dadc;
+  /* O turquesa da marca é claro de mais para texto ou para um filete fino sobre
+     papel. Este é o mesmo tom levado até onde se lê. */
+  --color-turquesa-forte: #1c757b;
   --color-coral: #f79881;
-  /* O preto da marca. Nunca `#000`: no impresso é este e é mais quente. */
   --color-tinta: #231f20;
-  --color-papel: #ffffff;
+  /* Texto secundário. Um `opacity` sobre a tinta dava o mesmo cinzento mas
+     também apagava o que estivesse por baixo em blocos de cor. */
+  --color-tinta-suave: #6d6668;
 
-  --font-display: var(--fonte-display), "Arial Narrow", sans-serif;
+  /**
+   * O papel não é branco. Debaixo de fotografia com madeira, luz quente e pratos
+   * azuis, o `#FFFFFF` lê frio e faz as fotos parecerem desbotadas — este é o
+   * branco com um grão de amarelo que as devolve ao sítio.
+   */
+  --color-papel: #fcf8f2;
+  --color-papel-fundo: #f5eee4;
+
+  --font-display: var(--fonte-display), "Trebuchet MS", sans-serif;
   --font-sans: var(--fonte-corpo), system-ui, sans-serif;
+
+  /* Ritmo vertical. É o "muito ar" desta direção reduzido a um número: uma
+     secção respira entre 4 e 8 rem consoante o ecrã, e todas respiram igual. */
+  --espaco-seccao: clamp(4rem, 9vw, 8rem);
 }
 
 /**
  * ## Contraste — o que o impresso pode fazer e o ecrã não
  *
- * As três cores da marca são claras, e no papel isso não custa nada. No ecrã
- * custa, e há uma combinação do impresso que **não se pode copiar**:
+ * As cores da marca são claras, e no papel isso não custa nada. No ecrã custa, e
+ * há combinações do impresso que **não se podem copiar**:
  *
- * | Combinação            | Rácio  | Veredito                                  |
- * |-----------------------|--------|-------------------------------------------|
- * | branco sobre magenta  | 4,25:1 | só títulos grandes (≥ 24 px, ou 19 px bold) |
+ * | Combinação                 | Rácio  | Veredito                                  |
+ * |----------------------------|--------|-------------------------------------------|
+ * | branco sobre magenta       | 4,25:1 | só títulos grandes (≥ 24 px, ou 19 px bold) |
  * | branco sobre magenta-forte | 4,83:1 | qualquer tamanho — é para isso que existe |
- * | branco sobre coral    | 2,17:1 | **nunca** — é o que o impresso faz e não passa |
- * | tinta sobre coral     | 7,5:1  | sempre                                     |
- * | tinta sobre turquesa  | 8,9:1  | sempre                                     |
+ * | branco sobre coral         | 2,17:1 | **nunca** — é o que o impresso faz e não passa |
+ * | tinta sobre coral          | 7,5:1  | sempre                                     |
+ * | tinta sobre turquesa       | 8,9:1  | sempre                                     |
+ * | magenta sobre papel        | 4,01:1 | só texto grande                            |
+ * | magenta-forte sobre papel  | 4,57:1 | qualquer tamanho                           |
  *
- * O magenta da marca falha o texto pequeno por muito pouco: 4,25 contra os 4,5
- * exigidos. Em vez de o abandonar, há um segundo tom sete por cento mais escuro
- * — `--color-magenta-forte` — que passa e que, lado a lado, ninguém distingue.
- * Selos e etiquetas usam esse; os blocos grandes usam o da marca.
+ * O magenta da marca falha o texto pequeno por muito pouco. Em vez de o
+ * abandonar, há um segundo tom sete por cento mais escuro que passa e que, lado
+ * a lado, ninguém distingue. Superfícies grandes usam o da marca; texto e
+ * filetes finos usam o forte.
  *
- * Daí as classes abaixo: cada fundo de marca traz a cor de texto que lhe
- * serve, e assim ninguém tem de se lembrar da tabela a meio de um componente.
+ * ⚠️ **O Tailwind v4 não aplica variantes a classes de `@layer components`.** Um
+ * `hover:bloco-magenta` compila-se em silêncio para nada. Em estados, usar
+ * utilitários (`hover:bg-magenta-forte hover:text-papel`).
  */
 @layer components {
   .bloco-magenta {
@@ -67,9 +97,7 @@
   }
 }
 
-:root {
-  --largura-texto: 68ch;
-}
+/* ── Base ─────────────────────────────────────────────────────────────── */
 
 html {
   scroll-behavior: smooth;
@@ -83,18 +111,135 @@ body {
   color: var(--color-tinta);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 /**
- * Títulos no registo do impresso: caixa alta, condensado e apertado. O `-0.01em`
- * existe porque a Anton já é estreita e, em caixa alta e corpo grande, o
- * espacejamento normal abre demais.
+ * Grão por cima de tudo, a 3,5%.
+ *
+ * Um chapado digital perfeito é a coisa que mais denuncia que isto não veio de
+ * uma máquina de impressão. O grão devolve-lhe a textura do papel sem que
+ * ninguém consiga apontar para ele e dizer o que é — que é o sinal de que está
+ * na dose certa.
+ *
+ * `pointer-events: none` porque isto cobre o ecrã inteiro e não pode roubar um
+ * único clique.
+ */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='r'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23r)'/%3E%3C/svg%3E");
+}
+
+/* ── Tipografia ───────────────────────────────────────────────────────── */
+
+/**
+ * A Bricolage Grotesque tem eixo de largura e de tamanho ótico. É o que permite
+ * um título enorme e aberto e uma etiqueta minúscula e apertada **na mesma
+ * fonte** — em vez de duas famílias a fingir que combinam.
+ *
+ * O impresso é caixa alta condensada; aqui a caixa alta fica para as etiquetas e
+ * os títulos ficam em caixa normal. Cento e vinte e dois artigos com títulos de
+ * secção aos berros é o que separa um menu de um cartaz.
  */
 .titulo-display {
   font-family: var(--font-display);
-  text-transform: uppercase;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  font-variation-settings: "wdth" 85, "opsz" 40;
+  letter-spacing: -0.025em;
   line-height: 0.95;
+  text-wrap: balance;
+}
+
+/** Etiqueta de secção: pequena, em caixa alta, precedida de um filete magenta. */
+.olho {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 75, "opsz" 12;
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-magenta-forte);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.olho::before {
+  content: "";
+  width: 2rem;
+  height: 2px;
+  background-color: currentColor;
+  flex: none;
+}
+
+/* ── Composição ───────────────────────────────────────────────────────── */
+
+.envolvente {
+  max-width: 78rem;
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 4vw, 2.5rem);
+}
+
+.seccao {
+  padding-block: var(--espaco-seccao);
+}
+
+/**
+ * Os traços do impresso — o logótipo, o hambúrguer, a taça — são PNG de alfa e
+ * usam-se como máscara. O ficheiro guarda só a forma; a cor vem daqui, o que
+ * deixa desenhar o mesmo traço a magenta ou a tinta sem gerar duas imagens.
+ * Ver `scripts/extrair-tracos.mjs`.
+ */
+.traco {
+  background-color: currentColor;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+}
+
+/* ── Movimento ────────────────────────────────────────────────────────── */
+
+/**
+ * Revelação ao entrar no ecrã, com *scroll-driven animations*.
+ *
+ * O elemento está **visível por defeito** e a animação só se aplica onde o
+ * browser a suporta. É deliberado e é a diferença entre um enfeite e um site em
+ * branco: se isto dependesse de JavaScript ou de um `opacity: 0` inicial, um
+ * browser sem suporte deixava o conteúdo invisível para sempre.
+ *
+ * ⚠️ **O intervalo tem de fechar dentro do `entry`.** Com `cover 22%` — que aqui
+ * esteve — a revelação só completava quando o elemento atravessasse um quinto do
+ * ecrã, e o **último bloco antes do rodapé nunca lá chegava**: a página acabava
+ * e ele ficava a 0,79 de opacidade para sempre. Fechar em `entry 60%` garante
+ * que qualquer elemento acaba visível assim que entra, esteja onde estiver.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .surgir {
+      animation: surgir linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 60%;
+    }
+  }
+}
+
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(1.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* Quem pediu menos movimento leva menos movimento — incluindo o scroll suave,
@@ -109,5 +254,63 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Carrossel dos mais pedidos ───────────────────────────────────────── */
+
+/**
+ * O efeito que dá o carácter à secção: **o cartão ao centro nítido, os dos lados
+ * desfocados**, como uma objectiva aberta.
+ *
+ * A mecânica está toda em `--d`, que o componente escreve em cada cartão — 0 ao
+ * centro da pista, 1 na borda. Daqui saem as três propriedades. Não há
+ * JavaScript a mexer em estilos: há JavaScript a medir uma distância, e CSS a
+ * decidir o que fazer com ela.
+ *
+ * O `scroll-snap` é nativo de propósito. Dedo, roda do rato, trackpad e setas do
+ * teclado já funcionam bem no browser; reescrever isso em JavaScript é a via
+ * rápida para um carrossel que não se deixa arrastar como deve ser.
+ */
+.carrossel {
+  --largura-cartao: clamp(15rem, 70vw, 25rem);
+  /**
+   * Sem este espaço nas pontas, o primeiro e o último cartão nunca chegam ao
+   * centro da pista — ficam encostados à borda, permanentemente desfocados, e o
+   * primeiro dos mais pedidos era o único que ninguém via bem.
+   */
+  padding-inline: calc(50% - var(--largura-cartao) / 2);
+  /* O `overflow` corta a escala e o desfoque dos cartões nas bordas; a margem
+     negativa e o preenchimento devolvem-lhes o espaço que o efeito precisa. */
+  scroll-padding-inline: calc(50% - var(--largura-cartao) / 2);
+}
+
+.carrossel::-webkit-scrollbar {
+  display: none;
+}
+
+.cartao-carrossel {
+  /* Sem JavaScript `--d` fica em 0 e sai tudo nítido e legível. O desfoque é o
+     enfeite; a lista de doze hambúrgueres é que é a funcionalidade. */
+  --d: 0;
+  flex: none;
+  width: var(--largura-cartao);
+  min-height: clamp(21rem, 46vw, 26rem);
+  filter: blur(calc(var(--d) * 5px));
+  transform: scale(calc(1 - var(--d) * 0.16));
+  opacity: calc(1 - var(--d) * 0.45);
+  will-change: transform, filter;
+}
+
+/**
+ * Desfoque a mexer é dos efeitos que mais enjoa quem tem sensibilidade a
+ * movimento — aqui desaparece por completo, e a distância ao centro passa a
+ * notar-se só pela opacidade, que é inofensiva.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .cartao-carrossel {
+    filter: none;
+    transform: none;
+    opacity: calc(1 - var(--d) * 0.3);
   }
 }

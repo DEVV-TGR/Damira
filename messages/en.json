@@ -16,11 +16,20 @@
     "verEmenta": "See the menu",
     "bestSellers": {
       "titulo": "Best sellers",
-      "texto": "The ones the kitchen makes over and over. They carry the stamp on the menu."
+      "texto": "The ones the kitchen makes over and over. They carry the stamp on the menu.",
+      "olho": "The usual suspects",
+      "anterior": "Previous",
+      "seguinte": "Next"
     },
     "casas": {
       "titulo": "Our places",
-      "texto": "Two addresses, one menu. Take whichever is closer."
+      "texto": "Two addresses, one menu. Take whichever is closer.",
+      "olho": "Where we are"
+    },
+    "cozinha": {
+      "olho": "From our kitchen",
+      "titulo": "Made by hand, in front of whoever's eating",
+      "credito": "Photography by Santo Burga."
     }
   },
   "casas": {

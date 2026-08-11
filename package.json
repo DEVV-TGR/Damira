@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "icons": "node scripts/generate-icons.mjs",
-    "skills:lock": "node scripts/skills-lock.mjs"
+    "skills:lock": "node scripts/skills-lock.mjs",
+    "fotos": "node scripts/importar-fotos.mjs",
+    "tracos": "node scripts/extrair-tracos.mjs"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

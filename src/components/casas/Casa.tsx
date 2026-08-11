@@ -22,49 +22,51 @@ export function Casa({ casa }: { casa: Restaurante }) {
     { chave: "boltFood", href: casa.entregas.boltFood },
   ].filter((e): e is { chave: string; href: string } => e.href !== null);
 
-  return (
-    <article className="flex flex-col">
-      <h3 className="titulo-display text-3xl sm:text-4xl">{casa.nome}</h3>
+  const capa = casa.fotos[0];
 
-      <div className="mt-4 overflow-hidden rounded-lg border-2 border-tinta">
-        {casa.fotos.length > 0 ? (
-          <div className="grid grid-cols-2 gap-0.5 bg-tinta">
-            {casa.fotos.slice(0, 4).map((foto, indice) => (
-              <div
-                key={foto}
-                /* A primeira ocupa a largura toda: é a capa da casa e é a que
-                   tem de dizer, num relance, se é a sala ou a esplanada. */
-                className={`relative aspect-[4/3] ${indice === 0 ? "col-span-2" : ""}`}
-              >
-                <Image
-                  src={foto}
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 640px) 100vw, 50vw"
-                />
-              </div>
-            ))}
-          </div>
+  return (
+    <article className="surgir">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-3xl">
+        {capa ? (
+          <Image
+            src={capa}
+            alt=""
+            fill
+            className="object-cover"
+            sizes="(max-width: 1024px) 100vw, 50vw"
+          />
         ) : (
-          /* Sem fotografias, um bloco assumido em vez de uma imagem cinzenta de
+          /* Sem fotografia, um bloco assumido em vez de uma imagem cinzenta de
              marcador: assim vê-se que falta uma peça, em vez de parecer que a
              casa não tem nada para mostrar. */
-          <div className="bloco-turquesa flex aspect-[16/10] items-center justify-center p-6 text-center text-sm font-bold uppercase tracking-widest">
+          <div className="bloco-turquesa grid h-full place-items-center p-6 text-center text-sm font-bold uppercase tracking-widest">
             {t("semFotos")}
           </div>
         )}
+
+        {/* A etiqueta assenta sobre a fotografia, num canto escuro e opaco — não
+            translúcida. Uma etiqueta em vidro sobre uma foto clara é ilegível, e
+            esta é a única coisa da secção que tem mesmo de se ler. */}
+        <p className="absolute left-4 top-4 rounded-full bg-tinta px-4 py-2 text-xs font-bold uppercase tracking-widest text-papel">
+          {casa.cidade}
+        </p>
       </div>
 
-      <dl className="mt-5 space-y-3 text-sm">
+      <h3 className="titulo-display mt-7 text-[clamp(1.75rem,3.5vw,2.5rem)]">
+        {casa.nome}
+      </h3>
+
+      <dl className="mt-6 space-y-5 text-sm">
         <div>
-          <dt className="font-bold uppercase tracking-wide">{t("direcoes")}</dt>
-          <dd>
+          <dt className="text-xs font-semibold uppercase tracking-widest text-tinta-suave">
+            {t("direcoes")}
+          </dt>
+          <dd className="mt-1">
             <a
               href={urlDirecoes(casa)}
               target="_blank"
               rel="noreferrer"
-              className="underline underline-offset-4 hover:text-magenta-forte"
+              className="underline decoration-magenta decoration-2 underline-offset-4 hover:text-magenta-forte"
             >
               {moradaCompleta(casa)}
             </a>
@@ -73,8 +75,10 @@ export function Casa({ casa }: { casa: Restaurante }) {
 
         {casa.telefone && (
           <div>
-            <dt className="font-bold uppercase tracking-wide">{t("telefone")}</dt>
-            <dd>
+            <dt className="text-xs font-semibold uppercase tracking-widest text-tinta-suave">
+              {t("telefone")}
+            </dt>
+            <dd className="mt-1">
               <a
                 href={`tel:${casa.telefone.replace(/\s/g, "")}`}
                 className="underline underline-offset-4"
@@ -86,21 +90,21 @@ export function Casa({ casa }: { casa: Restaurante }) {
         )}
 
         <div>
-          <dt className="font-bold uppercase tracking-wide">{t("horario")}</dt>
-          <dd>
+          <dt className="text-xs font-semibold uppercase tracking-widest text-tinta-suave">
+            {t("horario")}
+          </dt>
+          <dd className="mt-1">
             {casa.horarios === null ? (
-              <p className="opacity-80">{t("semHorario")}</p>
+              <p className="text-tinta-suave">{t("semHorario")}</p>
             ) : (
-              <ul className="tabular-nums">
+              <ul className="max-w-xs tabular-nums">
                 {DIAS_DA_SEMANA.map((dia) => {
                   const horario = casa.horarios![dia];
                   return (
-                    <li key={dia} className="flex justify-between gap-4">
+                    <li key={dia} className="flex justify-between gap-4 py-0.5">
                       <span>{t(`dias.${dia}`)}</span>
-                      <span>
-                        {horario
-                          ? `${horario.abre}–${horario.fecha}`
-                          : t("encerrado")}
+                      <span className={horario ? "" : "text-tinta-suave"}>
+                        {horario ? `${horario.abre}–${horario.fecha}` : t("encerrado")}
                       </span>
                     </li>
                   );
@@ -112,18 +116,18 @@ export function Casa({ casa }: { casa: Restaurante }) {
       </dl>
 
       {entregas.length > 0 && (
-        <div className="mt-5">
-          <p className="text-sm font-bold uppercase tracking-wide">
+        <div className="mt-7">
+          <p className="text-xs font-semibold uppercase tracking-widest text-tinta-suave">
             {t("entregaTitulo")}
           </p>
-          <ul className="mt-2 flex flex-wrap gap-2">
+          <ul className="mt-3 flex flex-wrap gap-2">
             {entregas.map((entrega) => (
               <li key={entrega.chave}>
                 <a
                   href={entrega.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="bloco-magenta-texto inline-block rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wide"
+                  className="inline-block rounded-full border border-tinta/25 px-5 py-2.5 text-xs font-semibold uppercase tracking-widest transition-colors hover:bg-tinta hover:text-papel"
                 >
                   {t(entrega.chave)}
                 </a>

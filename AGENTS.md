@@ -80,15 +80,36 @@ isso. Em estados, usar utilitários (`hover:bg-magenta-forte hover:text-papel`).
 
 ## O que ainda é marcador de lugar
 
-- **O logótipo.** `src/components/Marca.tsx` escreve o nome em tipo de display;
-  o logótipo a sério (as mãos a segurar o hambúrguer) só existe rasterizado no
-  PDF. Quando aparecer em vetor: trocar o componente **e** correr `npm run icons`,
-  ao mesmo tempo — são dois sítios e esquecer um deixa o site com duas marcas.
-- **As duas fontes.** A Anton e a Figtree aproximam o impresso; as verdadeiras
-  não se identificam a partir de um PDF achatado. Trocam-se em
-  `src/app/[locale]/layout.tsx`.
-- **As fotografias das casas.** `fotos: []` nas duas, e o bloco mostra
-  "Fotografias por publicar" em vez de uma imagem cinzenta. Ver o README.
+- **O logótipo em vetor.** O desenho já é o verdadeiro — sai do PDF por
+  `npm run tracos` e vive em `public/tracos/logotipo.png` —, mas é **rasterizado
+  a 300 dpi**. Chega para cabeçalho, rodapé e ícones; não escala para lá disso.
+  Quando aparecer o vetor: trocar `src/components/Marca.tsx` **e** correr
+  `npm run icons`, ao mesmo tempo — são dois sítios e esquecer um deixa o site
+  com duas marcas.
+- **As duas fontes.** A Bricolage Grotesque e a Instrument Sans aproximam o
+  impresso; as verdadeiras não se identificam a partir de um PDF achatado.
+  Trocam-se em `src/app/[locale]/layout.tsx`.
+- **As fotografias.** São da galeria antiga do próprio negócio e mostram uma
+  decoração que já não existe. Ver o README.
+
+## Três armadilhas que já morderam aqui
+
+Estão as três documentadas no sítio onde vivem; ficam aqui em lista porque são do
+tipo que **falha em silêncio** e ninguém repara até alguém olhar para o site.
+
+1. **`hover:` sobre uma classe de `@layer components`** compila-se para nada
+   (Tailwind v4). Em estados, usar utilitários.
+2. **`animation-range` que fecha em `cover`** deixa o último bloco antes do
+   rodapé preso a meia opacidade — a página acaba antes de a animação completar.
+   Fechar em `entry`. Ver `.surgir` em `globals.css`.
+3. **`offsetLeft` para medir posições** conta a partir do ancestral posicionado.
+   No carrossel, pôr a pista numa coluna de grelha fez o "centro" saltar
+   centenas de pixéis e o primeiro cartão nascia desfocado. Usar
+   `getBoundingClientRect`.
+
+O que as três têm em comum: `npm run build` passa, o `lint` passa, e só se
+apanham a olhar. **Depois de mexer em desenho, tirar capturas** — há Playwright
+com Chromium em cache nesta máquina.
 
 ## Skills
 

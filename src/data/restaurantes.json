@@ -7,7 +7,9 @@
     "codigoPostal": null,
     "telefone": null,
     "horarios": null,
-    "fotos": [],
+    "fotos": [
+      "/casas/porto/01.webp"
+    ],
     "entregas": {
       "uberEats": "https://www.ubereats.com/pt/store/santo-burga-constituicao/0diTC_9IT427vLYyVySVjA",
       "glovo": null,
@@ -22,7 +24,9 @@
     "codigoPostal": "4450-590",
     "telefone": null,
     "horarios": null,
-    "fotos": [],
+    "fotos": [
+      "/casas/leca/01.webp"
+    ],
     "entregas": {
       "uberEats": "https://www.ubereats.com/pt/store/santo-burga-leca-da-palmeira/lL6LVYH7TAi9AivFLhLc1Q",
       "glovo": null,

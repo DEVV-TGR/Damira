@@ -1,15 +1,19 @@
 import { marca } from "@/data/marca";
 
+/** 358 × 760 — a proporção do desenho, para a largura sair da altura sozinha. */
+const PROPORCAO = 358 / 760;
+
 /**
- * O nome escrito em tipo de display, à falta do logótipo.
+ * O logótipo: as mãos a segurar o hambúrguer, dentro da moldura, mais o nome.
  *
- * ⚠️ **É um marcador de lugar.** O logótipo a sério — as mãos a segurar o
- * hambúrguer, dentro da moldura — existe no menu impresso mas só rasterizado;
- * quando aparecer em vetor, troca-se o interior deste componente e muda em todo
- * o site de uma vez. Ver o README.
+ * O desenho é o do menu impresso, extraído do PDF como máscara de alfa (ver
+ * `scripts/extrair-tracos.mjs`). Ser máscara e não imagem é o que permite ao
+ * traço tomar a cor do texto à volta — a magenta no papel, a papel sobre a
+ * tinta — sem gerar uma imagem por cor.
  *
- * `empilhado` põe uma palavra por linha, como no impresso. O cabeçalho usa a
- * versão em linha, que é a única que cabe numa barra de altura fixa.
+ * Deixou de ser marcador de lugar. O que continua a faltar é o **vetor**: isto
+ * é rasterizado a 300 dpi e não escala para lá de umas centenas de pixéis. Para
+ * cabeçalho, rodapé e ícones chega; para um outdoor não.
  */
 export function Marca({
   className = "",
@@ -18,17 +22,43 @@ export function Marca({
   className?: string;
   empilhado?: boolean;
 }) {
-  if (!empilhado) {
-    return <span className={`titulo-display ${className}`}>{marca.nome}</span>;
+  const desenho = (altura: string) => (
+    <span
+      aria-hidden
+      className="traco block shrink-0"
+      style={{
+        height: altura,
+        width: `calc(${altura} * ${PROPORCAO})`,
+        maskImage: "url(/tracos/logotipo.png)",
+        WebkitMaskImage: "url(/tracos/logotipo.png)",
+      }}
+    />
+  );
+
+  if (empilhado) {
+    return (
+      <span className={`flex flex-col gap-4 ${className}`}>
+        {desenho("4.5em")}
+        <span className="titulo-display leading-[0.85]">
+          {marca.nome.split(" ").map((palavra) => (
+            <span key={palavra} className="block">
+              {palavra}
+            </span>
+          ))}
+        </span>
+      </span>
+    );
   }
 
   return (
-    <span className={`titulo-display leading-[0.85] ${className}`}>
-      {marca.nome.split(" ").map((palavra) => (
-        <span key={palavra} className="block">
-          {palavra}
-        </span>
-      ))}
+    <span className={`flex items-center gap-2.5 ${className}`}>
+      {desenho("1.7em")}
+      <span
+        className="titulo-display"
+        style={{ fontVariationSettings: '"wdth" 80, "opsz" 20' }}
+      >
+        {marca.nome}
+      </span>
     </span>
   );
 }

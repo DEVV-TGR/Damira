@@ -16,11 +16,20 @@
     "verEmenta": "Ver a ementa",
     "bestSellers": {
       "titulo": "Os mais pedidos",
-      "texto": "Os que saem da cozinha vezes sem conta. Estão assinalados na ementa com o selo."
+      "texto": "Os que saem da cozinha vezes sem conta. Estão assinalados na ementa com o selo.",
+      "olho": "Os do costume",
+      "anterior": "Anterior",
+      "seguinte": "Seguinte"
     },
     "casas": {
       "titulo": "As nossas casas",
-      "texto": "Duas moradas, a mesma carta. Escolha a que lhe fica mais à mão."
+      "texto": "Duas moradas, a mesma carta. Escolha a que lhe fica mais à mão.",
+      "olho": "Onde estamos"
+    },
+    "cozinha": {
+      "olho": "Da nossa cozinha",
+      "titulo": "Feito à mão, à frente de quem come",
+      "credito": "Fotografia do Santo Burga."
     }
   },
   "casas": {

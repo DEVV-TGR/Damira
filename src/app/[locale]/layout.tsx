@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Anton, Figtree } from "next/font/google";
+import { Bricolage_Grotesque, Instrument_Sans } from "next/font/google";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Analytics } from "@vercel/analytics/next";
@@ -14,21 +14,26 @@ import "../globals.css";
 /**
  * ⚠️ **As duas fontes são aproximações.** O impresso usa um display condensado
  * com textura gasta e um sans humanista, e nenhum dos dois se identifica a
- * partir de um PDF achatado. A Anton apanha o peso e a estreiteza dos títulos;
- * a Figtree apanha o desenho aberto do corpo. Quando aparecer o manual de marca,
- * trocam-se as duas aqui e mudam em todo o lado.
+ * partir de um PDF achatado. Quando aparecer o manual de marca, trocam-se aqui e
+ * mudam em todo o lado.
+ *
+ * A **Bricolage Grotesque** entrou por ter eixos de largura e de tamanho ótico:
+ * dá para abrir um título gigante e apertar uma etiqueta de 12 px sem trocar de
+ * família, e é isso que mantém a página coerente. A Anton, que aqui esteve
+ * antes, é uma fonte de póster — puxava a página para o registo gritado do
+ * impresso, que é justamente o que esta direção não quer.
  *
  * `next/font` descarrega-as no `build` e serve-as do próprio domínio, que é o
  * que permite ao `font-src 'self'` da CSP ser tão fechado.
  */
-const display = Anton({
+const display = Bricolage_Grotesque({
   subsets: ["latin"],
-  weight: "400",
+  axes: ["opsz", "wdth"],
   variable: "--fonte-display",
   display: "swap",
 });
 
-const corpo = Figtree({
+const corpo = Instrument_Sans({
   subsets: ["latin"],
   variable: "--fonte-corpo",
   display: "swap",
