@@ -1,0 +1,116 @@
+{
+  "marca": {
+    "nome": "Santo Burga",
+    "assinatura": "Handmade burgers with a taste of the divine",
+    "quadrado": "The famous square burger"
+  },
+  "nav": {
+    "inicio": "Home",
+    "ementa": "Menu",
+    "casas": "Our places",
+    "saltarParaConteudo": "Skip to content",
+    "mudarIdioma": "Português"
+  },
+  "inicio": {
+    "heroTexto": "Two places: one in Porto, one by the sea in Leça da Palmeira. The same roll call of saints at both.",
+    "verEmenta": "See the menu",
+    "bestSellers": {
+      "titulo": "Best sellers",
+      "texto": "The ones the kitchen makes over and over. They carry the stamp on the menu."
+    },
+    "casas": {
+      "titulo": "Our places",
+      "texto": "Two addresses, one menu. Take whichever is closer."
+    }
+  },
+  "casas": {
+    "direcoes": "Get directions",
+    "telefone": "Phone",
+    "horario": "Opening hours",
+    "semHorario": "Opening hours yet to be confirmed. Best to call ahead.",
+    "encerrado": "Closed",
+    "entregaTitulo": "Delivery",
+    "uberEats": "Uber Eats",
+    "glovo": "Glovo",
+    "boltFood": "Bolt Food",
+    "semFotos": "Photographs coming soon",
+    "dias": {
+      "segunda": "Monday",
+      "terca": "Tuesday",
+      "quarta": "Wednesday",
+      "quinta": "Thursday",
+      "sexta": "Friday",
+      "sabado": "Saturday",
+      "domingo": "Sunday"
+    }
+  },
+  "ementa": {
+    "titulo": "Menu",
+    "intro": "The full menu, the same at both places.",
+    "navegar": "Sections",
+    "bestSeller": "Best seller",
+    "vegetariano": "Vegetarian",
+    "paes": {
+      "rosa": "Pink bun",
+      "azul": "Blue bun"
+    },
+    "variantes": {
+      "a-la-chef": "À la chef"
+    },
+    "categorias": {
+      "aperitivos": "Aperitifs",
+      "entradas": "Starters",
+      "santos-novilho": "Beef Saints",
+      "carnes-maturadas": "Dry-Aged Beef",
+      "para-os-corajosos": "For the Brave",
+      "santos-frango": "Chicken Saints",
+      "outros-santos": "Other Saints",
+      "vegetariano-saladas": "Vegetarian & Salads",
+      "menu-infantil": "Kids' Menu",
+      "sobremesas": "Holy Desserts",
+      "extras": "Extras",
+      "bebidas": "Holy Drinks"
+    },
+    "subcategorias": {
+      "sangrias": "Holy Sangrias",
+      "limonadas": "Lemonades",
+      "refrigerantes": "Soft drinks",
+      "aguas": "Water",
+      "cidras": "Ciders",
+      "cerveja": "Beer",
+      "vinhos": "Wines",
+      "licores": "Liqueurs",
+      "whiskeys": "Whiskeys",
+      "aguardentes": "Spirits",
+      "quentes": "Hot drinks"
+    },
+    "notas": {
+      "acompanhamento": "Every burger comes with sliced or straight-cut potatoes. Sweet potato fries are also available, under extras.",
+      "infantil": "Includes sliced or straight-cut potatoes and a drink of your choice (mini Coca-Cola, mini orange Fanta, Bongo or 0.25 L water). For children up to 12 only.",
+      "iva": "VAT included at the applicable rate.",
+      "alergenios": "Allergen information is available at the restaurant — just ask.",
+      "precos": "Prices from the 2024 menu, pending confirmation."
+    }
+  },
+  "metadata": {
+    "inicio": {
+      "titulo": "Santo Burga — handmade burgers in Porto and Leça",
+      "descricao": "Handmade burgers with a taste of the divine. Two places: Porto and Leça da Palmeira. Home of the famous square burger."
+    },
+    "ementa": {
+      "titulo": "Menu — Santo Burga",
+      "descricao": "The full Santo Burga menu: beef and chicken saints, dry-aged beef, vegetarian options, desserts and drinks."
+    }
+  },
+  "rodape": {
+    "seguirNos": "Follow",
+    "feitoPor": "Site by",
+    "estudio": "DevPlus",
+    "direitos": "All rights reserved."
+  },
+  "naoEncontrada": {
+    "titulo": "This one doesn't exist",
+    "texto": "The page you're after has moved, or was never here.",
+    "voltar": "Back to the start"
+  }
+}

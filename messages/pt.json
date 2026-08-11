@@ -1,0 +1,116 @@
+{
+  "marca": {
+    "nome": "Santo Burga",
+    "assinatura": "Hambúrgueres artesanais que sabem a Santo",
+    "quadrado": "O famoso hambúrguer quadrado"
+  },
+  "nav": {
+    "inicio": "Início",
+    "ementa": "Ementa",
+    "casas": "As casas",
+    "saltarParaConteudo": "Saltar para o conteúdo",
+    "mudarIdioma": "English"
+  },
+  "inicio": {
+    "heroTexto": "Duas casas: uma no Porto, outra à beira-mar em Leça da Palmeira. A mesma carta de santos nas duas.",
+    "verEmenta": "Ver a ementa",
+    "bestSellers": {
+      "titulo": "Os mais pedidos",
+      "texto": "Os que saem da cozinha vezes sem conta. Estão assinalados na ementa com o selo."
+    },
+    "casas": {
+      "titulo": "As nossas casas",
+      "texto": "Duas moradas, a mesma carta. Escolha a que lhe fica mais à mão."
+    }
+  },
+  "casas": {
+    "direcoes": "Como chegar",
+    "telefone": "Telefone",
+    "horario": "Horário",
+    "semHorario": "Horário por confirmar. Até lá, o mais seguro é telefonar.",
+    "encerrado": "Encerrado",
+    "entregaTitulo": "Entrega ao domicílio",
+    "uberEats": "Uber Eats",
+    "glovo": "Glovo",
+    "boltFood": "Bolt Food",
+    "semFotos": "Fotografias por publicar",
+    "dias": {
+      "segunda": "Segunda",
+      "terca": "Terça",
+      "quarta": "Quarta",
+      "quinta": "Quinta",
+      "sexta": "Sexta",
+      "sabado": "Sábado",
+      "domingo": "Domingo"
+    }
+  },
+  "ementa": {
+    "titulo": "Ementa",
+    "intro": "A carta completa das duas casas.",
+    "navegar": "Secções",
+    "bestSeller": "Best seller",
+    "vegetariano": "Vegetariano",
+    "paes": {
+      "rosa": "Pão rosa",
+      "azul": "Pão azul"
+    },
+    "variantes": {
+      "a-la-chef": "À la chef"
+    },
+    "categorias": {
+      "aperitivos": "Aperitivos",
+      "entradas": "Entradas",
+      "santos-novilho": "Santos de Novilho",
+      "carnes-maturadas": "Carnes Maturadas",
+      "para-os-corajosos": "Para os Corajosos",
+      "santos-frango": "Santos de Frango",
+      "outros-santos": "Outros Santos",
+      "vegetariano-saladas": "Vegetariano & Saladas",
+      "menu-infantil": "Menu Infantil",
+      "sobremesas": "Santas Sobremesas",
+      "extras": "Extras",
+      "bebidas": "Santas Bebidas"
+    },
+    "subcategorias": {
+      "sangrias": "Santas Sangrias",
+      "limonadas": "Limonadas",
+      "refrigerantes": "Refrigerantes",
+      "aguas": "Águas",
+      "cidras": "Cidras",
+      "cerveja": "Cerveja",
+      "vinhos": "Vinhos",
+      "licores": "Licores",
+      "whiskeys": "Whiskeys",
+      "aguardentes": "Aguardentes",
+      "quentes": "Bebidas quentes"
+    },
+    "notas": {
+      "acompanhamento": "Todos os hambúrgueres são acompanhados por batata à rodela ou batata ao palito. Batata doce também disponível, na secção de extras.",
+      "infantil": "Inclui batata à rodela ou ao palito e bebida à escolha (mini Coca-Cola, mini Fanta de laranja, Bongo ou água 0,25 L). Disponível apenas até aos 12 anos.",
+      "iva": "I.V.A. incluído à taxa em vigor.",
+      "alergenios": "Informação sobre alergénios disponível no restaurante — é só perguntar.",
+      "precos": "Preços da carta de 2024, por confirmar."
+    }
+  },
+  "metadata": {
+    "inicio": {
+      "titulo": "Santo Burga — hambúrgueres artesanais no Porto e em Leça",
+      "descricao": "Hambúrgueres artesanais que sabem a Santo. Duas casas: Porto e Leça da Palmeira. O famoso hambúrguer quadrado."
+    },
+    "ementa": {
+      "titulo": "Ementa — Santo Burga",
+      "descricao": "A carta completa do Santo Burga: santos de novilho e de frango, carnes maturadas, opções vegetarianas, sobremesas e bebidas."
+    }
+  },
+  "rodape": {
+    "seguirNos": "Seguir",
+    "feitoPor": "Site por",
+    "estudio": "DevPlus",
+    "direitos": "Todos os direitos reservados."
+  },
+  "naoEncontrada": {
+    "titulo": "Esta não existe",
+    "texto": "A página que procura mudou de sítio ou nunca cá esteve.",
+    "voltar": "Voltar ao início"
+  }
+}

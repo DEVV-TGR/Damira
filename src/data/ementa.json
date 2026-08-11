@@ -1,0 +1,621 @@
+[
+  {
+    "id": "caipirinha",
+    "nome": "Caipirinha",
+    "nomeEn": "Caipirinha",
+    "categoria": "aperitivos",
+    "preco": 6
+  },
+  {
+    "id": "caipirosca",
+    "nome": "Caipirosca",
+    "nomeEn": "Caipiroska",
+    "categoria": "aperitivos",
+    "preco": 6
+  },
+  {
+    "id": "mojito",
+    "nome": "Mojito",
+    "nomeEn": "Mojito",
+    "categoria": "aperitivos",
+    "preco": 6.5
+  },
+  {
+    "id": "gin",
+    "nome": "Gin",
+    "nomeEn": "Gin",
+    "categoria": "aperitivos",
+    "preco": 8.5
+  },
+
+  {
+    "id": "santinis",
+    "nome": "Santinis",
+    "categoria": "entradas",
+    "preco": 5,
+    "bestSeller": true,
+    "descricao": {
+      "pt": "Bolas de risotto panadas com presunto e queijo mozzarella",
+      "en": "Breaded risotto balls with ham and mozzarella"
+    }
+  },
+  {
+    "id": "santo-caramelo",
+    "nome": "Santo Caramelo",
+    "categoria": "entradas",
+    "preco": 3.65,
+    "descricao": {
+      "pt": "Pão de alho com cebola caramelizada e queijo mozzarella",
+      "en": "Garlic bread with caramelised onion and mozzarella"
+    }
+  },
+  {
+    "id": "rollinis",
+    "nome": "Rollinis",
+    "categoria": "entradas",
+    "preco": 4.75,
+    "bestSeller": true,
+    "variantes": [{ "chave": "a-la-chef", "preco": 5.4 }],
+    "descricao": {
+      "pt": "Enroladinhos de queijo cheddar em bacon (à la chef inclui mozzarella gratinada e molho BBQ)",
+      "en": "Cheddar rolls wrapped in bacon (à la chef adds grilled mozzarella and BBQ sauce)"
+    }
+  },
+  {
+    "id": "chourico-do-santo",
+    "nome": "Chouriço do Santo",
+    "categoria": "entradas",
+    "preco": 5.5,
+    "descricao": {
+      "pt": "Pão de alho com queijo da Serra amanteigado e chouriço picante",
+      "en": "Garlic bread with creamy Serra cheese and spicy chouriço"
+    }
+  },
+  {
+    "id": "folhadinis",
+    "nome": "Folhadinis",
+    "categoria": "entradas",
+    "preco": 5.1,
+    "descricao": {
+      "pt": "Duo de folhados de alheira e de novilho com queijo da Serra",
+      "en": "A pair of pastries — alheira sausage and beef — with Serra cheese"
+    }
+  },
+  {
+    "id": "santo-pancracio",
+    "nome": "Santo Pancrácio",
+    "categoria": "entradas",
+    "preco": 4.85,
+    "descricao": {
+      "pt": "Pão de alho com queijo cheddar e bacon",
+      "en": "Garlic bread with cheddar cheese and bacon"
+    }
+  },
+
+  {
+    "id": "sao-simplorio",
+    "nome": "São Simplório",
+    "categoria": "santos-novilho",
+    "preco": 7,
+    "descricao": {
+      "pt": "160g de novilho, queijo cheddar, alface, tomate e molho burga",
+      "en": "160g beef, cheddar cheese, lettuce, tomato and burga sauce"
+    }
+  },
+  {
+    "id": "santo-bacon",
+    "nome": "Santo Bacon",
+    "categoria": "santos-novilho",
+    "preco": 10.45,
+    "descricao": {
+      "pt": "160g de novilho, queijo cheddar, bacon grelhado, rúcula, tomate e molho burga",
+      "en": "160g beef, cheddar cheese, grilled bacon, rocket, tomato and burga sauce"
+    }
+  },
+  {
+    "id": "santo-cornelio",
+    "nome": "Santo Cornélio",
+    "categoria": "santos-novilho",
+    "preco": 10,
+    "descricao": {
+      "pt": "160g de novilho, queijo de cabra, cebola caramelizada, cogumelos Portobello, alface, tomate e mostarda do burga",
+      "en": "160g beef, goat's cheese, caramelised onion, Portobello mushrooms, lettuce, tomato and burga mustard"
+    }
+  },
+  {
+    "id": "santo-gema",
+    "nome": "Santo Gema",
+    "categoria": "santos-novilho",
+    "preco": 10,
+    "descricao": {
+      "pt": "160g de novilho, queijo cheddar, presunto serrano, ovo estrelado, alface, tomate e mostarda do burga",
+      "en": "160g beef, cheddar cheese, serrano ham, fried egg, lettuce, tomato and burga mustard"
+    }
+  },
+  {
+    "id": "santo-brasa",
+    "nome": "Santo Brasa",
+    "categoria": "santos-novilho",
+    "preco": 10.5,
+    "paes": ["azul"],
+    "descricao": {
+      "pt": "160g de novilho, queijo de cabra, chouriço picante grelhado, cebola roxa, alface, tomate e molho BBQ",
+      "en": "160g beef, goat's cheese, grilled spicy chouriço, red onion, lettuce, tomato and BBQ sauce"
+    }
+  },
+  {
+    "id": "santo-adelino",
+    "nome": "Santo Adelino",
+    "categoria": "santos-novilho",
+    "preco": 10.6,
+    "paes": ["rosa"],
+    "descricao": {
+      "pt": "160g de novilho, queijo brie, cogumelos Portobello, ovo estrelado, rúcula, tomate e molho burga",
+      "en": "160g beef, brie, Portobello mushrooms, fried egg, rocket, tomato and burga sauce"
+    }
+  },
+  {
+    "id": "sao-cunegundes",
+    "nome": "São Cunegundes",
+    "categoria": "santos-novilho",
+    "preco": 11,
+    "descricao": {
+      "pt": "160g de novilho, queijo cheddar, bacon grelhado, cogumelos Portobello, cebola roxa, alface e molho burga",
+      "en": "160g beef, cheddar cheese, grilled bacon, Portobello mushrooms, red onion, lettuce and burga sauce"
+    }
+  },
+  {
+    "id": "sao-juliao",
+    "nome": "São Julião",
+    "categoria": "santos-novilho",
+    "preco": 11.85,
+    "paes": ["rosa"],
+    "descricao": {
+      "pt": "180g de novilho, recheado com queijo mozzarella, queijo da Serra amanteigado, presunto, ovo estrelado, alface, tomate e ketchup",
+      "en": "180g beef stuffed with mozzarella, creamy Serra cheese, ham, fried egg, lettuce, tomato and ketchup"
+    }
+  },
+  {
+    "id": "santa-genoveva",
+    "nome": "Santa Genoveva",
+    "categoria": "santos-novilho",
+    "preco": 11.25,
+    "descricao": {
+      "pt": "180g de novilho recheado com queijo mozzarella, queijo de cabra e brie, cebola caramelizada, rúcula, tomate e molho burga",
+      "en": "180g beef stuffed with mozzarella, goat's cheese and brie, caramelised onion, rocket, tomato and burga sauce"
+    }
+  },
+  {
+    "id": "santo-assuncao",
+    "nome": "Santo Assunção",
+    "categoria": "santos-novilho",
+    "preco": 11.75,
+    "bestSeller": true,
+    "descricao": {
+      "pt": "160g de novilho, queijo da Serra amanteigado, bacon grelhado, cebola caramelizada, rúcula, tomate e molho burga",
+      "en": "160g beef, creamy Serra cheese, grilled bacon, caramelised onion, rocket, tomato and burga sauce"
+    }
+  },
+  {
+    "id": "sao-abel",
+    "nome": "São Abel",
+    "categoria": "santos-novilho",
+    "preco": 12,
+    "paes": ["azul"],
+    "bestSeller": true,
+    "descricao": {
+      "pt": "180g de novilho recheado com queijo Babybel, queijo limiano gratinado, bacon grelhado, cebola frita, rúcula e molho BBQ",
+      "en": "180g beef stuffed with Babybel, grilled Limiano cheese, grilled bacon, fried onion, rocket and BBQ sauce"
+    }
+  },
+  {
+    "id": "santo-chef",
+    "nome": "Santo Chef",
+    "categoria": "santos-novilho",
+    "preco": 14,
+    "paes": ["azul"],
+    "descricao": {
+      "pt": "160g de novilho, queijo da Serra amanteigado, queijo brie, bacon grelhado, ovo estrelado, cebola caramelizada, cogumelos Portobello, pickles, salteado de pimentos, rúcula, tomate e molho do chef",
+      "en": "160g beef, creamy Serra cheese, brie, grilled bacon, fried egg, caramelised onion, Portobello mushrooms, pickles, sautéed peppers, rocket, tomato and chef's sauce"
+    }
+  },
+  {
+    "id": "sao-joao",
+    "nome": "São João",
+    "categoria": "santos-novilho",
+    "preco": 11.9,
+    "paes": ["rosa"],
+    "bestSeller": true,
+    "descricao": {
+      "pt": "180g de novilho recheado com queijo Babybel, queijo cheddar, chouriço, cogumelos Portobello, cebola frita, alface, tomate, mostarda e BBQ",
+      "en": "180g beef stuffed with Babybel, cheddar cheese, chouriço, Portobello mushrooms, fried onion, lettuce, tomato, mustard and BBQ"
+    }
+  },
+
+  {
+    "id": "santo-deolindo",
+    "nome": "Santo Deolindo",
+    "categoria": "carnes-maturadas",
+    "preco": 15,
+    "descricao": {
+      "pt": "160g de novilho maturado, queijo limiano, chouriço, ovo estrelado, alface, pickles e molho burga",
+      "en": "160g dry-aged beef, Limiano cheese, chouriço, fried egg, lettuce, pickles and burga sauce"
+    }
+  },
+  {
+    "id": "santo-maximino",
+    "nome": "Santo Maximino",
+    "categoria": "carnes-maturadas",
+    "preco": 15,
+    "bestSeller": true,
+    "descricao": {
+      "pt": "160g de novilho maturado, queijo da Serra amanteigado, cebola frita, cogumelos Portobello, rúcula, tomate e mostarda",
+      "en": "160g dry-aged beef, creamy Serra cheese, fried onion, Portobello mushrooms, rocket, tomato and mustard"
+    }
+  },
+
+  {
+    "id": "santo-esfomeado",
+    "nome": "Santo Esfomeado",
+    "categoria": "para-os-corajosos",
+    "preco": 12.65,
+    "descricao": {
+      "pt": "320g de novilho (double burga), queijo cheddar, alface, tomate e molho burga",
+      "en": "320g of beef (double burga), cheddar cheese, lettuce, tomato and burga sauce"
+    }
+  },
+  {
+    "id": "sao-faminto",
+    "nome": "São Faminto",
+    "categoria": "para-os-corajosos",
+    "preco": 14.5,
+    "descricao": {
+      "pt": "480g de novilho (triple burga), queijo cheddar, alface, tomate e molho burga",
+      "en": "480g of beef (triple burga), cheddar cheese, lettuce, tomato and burga sauce"
+    }
+  },
+  {
+    "id": "mega-santo",
+    "nome": "Mega Santo",
+    "categoria": "para-os-corajosos",
+    "preco": 19,
+    "paes": ["rosa", "azul"],
+    "bestSeller": true,
+    "descricao": {
+      "pt": "640g de novilho (tetra burga), queijo cheddar, ovo estrelado, cebola frita, rúcula, tomate, molho burga e ketchup",
+      "en": "640g of beef (tetra burga), cheddar cheese, fried egg, fried onion, rocket, tomato, burga sauce and ketchup"
+    }
+  },
+
+  {
+    "id": "santo-galo",
+    "nome": "Santo Galo",
+    "categoria": "santos-frango",
+    "preco": 9.9,
+    "descricao": {
+      "pt": "130g de peito de frango grelhado e temperado com ervas e limão, queijo da Serra amanteigado, cebola caramelizada, alface, tomate e molho burga",
+      "en": "130g grilled chicken breast seasoned with herbs and lemon, creamy Serra cheese, caramelised onion, lettuce, tomato and burga sauce"
+    }
+  },
+  {
+    "id": "santo-isidoro",
+    "nome": "Santo Isidoro",
+    "categoria": "santos-frango",
+    "preco": 10,
+    "paes": ["azul"],
+    "descricao": {
+      "pt": "130g de peito de frango grelhado e temperado com ervas e limão, queijo brie, cebola frita, cebola caramelizada, rúcula e molho BBQ",
+      "en": "130g grilled chicken breast seasoned with herbs and lemon, brie, fried onion, caramelised onion, rocket and BBQ sauce"
+    }
+  },
+  {
+    "id": "santo-galineu",
+    "nome": "Santo Galinéu",
+    "categoria": "santos-frango",
+    "preco": 11,
+    "bestSeller": true,
+    "descricao": {
+      "pt": "130g de peito de frango grelhado e temperado com ervas e limão, queijo cheddar, bacon grelhado, ovo estrelado, rúcula, tomate e molho burga",
+      "en": "130g grilled chicken breast seasoned with herbs and lemon, cheddar cheese, grilled bacon, fried egg, rocket, tomato and burga sauce"
+    }
+  },
+  {
+    "id": "santa-cassilda",
+    "nome": "Santa Cassilda",
+    "categoria": "santos-frango",
+    "preco": 10.25,
+    "paes": ["azul"],
+    "descricao": {
+      "pt": "140g de burga de frango, queijo limiano, presunto, pickles, rúcula, tomate e ketchup",
+      "en": "140g chicken patty, Limiano cheese, ham, pickles, rocket, tomato and ketchup"
+    }
+  },
+  {
+    "id": "santa-gamelia",
+    "nome": "Santa Gamélia",
+    "categoria": "santos-frango",
+    "preco": 11,
+    "paes": ["rosa"],
+    "descricao": {
+      "pt": "140g de burga de frango, queijo limiano, cogumelos Portobello, cebola caramelizada, cebola roxa, alface e BBQ",
+      "en": "140g chicken patty, Limiano cheese, Portobello mushrooms, caramelised onion, red onion, lettuce and BBQ"
+    }
+  },
+  {
+    "id": "santo-depenado",
+    "nome": "Santo Depenado",
+    "categoria": "santos-frango",
+    "preco": 10.75,
+    "paes": ["rosa"],
+    "descricao": {
+      "pt": "140g de burga de frango, queijo cheddar, bacon grelhado, ovo estrelado, alface, tomate e mostarda do burga",
+      "en": "140g chicken patty, cheddar cheese, grilled bacon, fried egg, lettuce, tomato and burga mustard"
+    }
+  },
+
+  {
+    "id": "santa-alheira",
+    "nome": "Santa Alheira",
+    "categoria": "outros-santos",
+    "preco": 8.85,
+    "descricao": {
+      "pt": "120g de alheira, bacon grelhado, ovo estrelado, rúcula e maionese de alho",
+      "en": "120g alheira sausage, grilled bacon, fried egg, rocket and garlic mayonnaise"
+    }
+  },
+  {
+    "id": "santa-antonia",
+    "nome": "Santa Antónia",
+    "categoria": "outros-santos",
+    "preco": 9.5,
+    "paes": ["rosa"],
+    "descricao": {
+      "pt": "140g de burga de alheira, queijo limiano, chouriço picante, cogumelos Portobello, cebola roxa, alface e mostarda",
+      "en": "140g alheira sausage patty, Limiano cheese, spicy chouriço, Portobello mushrooms, red onion, lettuce and mustard"
+    }
+  },
+  {
+    "id": "sao-salmao",
+    "nome": "São Salmão",
+    "categoria": "outros-santos",
+    "preco": 10.5,
+    "paes": ["rosa"],
+    "descricao": {
+      "pt": "140g de burga de salmão, rúcula, tomate e maionese de alho",
+      "en": "140g salmon patty, rocket, tomato and garlic mayonnaise"
+    }
+  },
+  {
+    "id": "santo-leitao",
+    "nome": "Santo Leitão",
+    "categoria": "outros-santos",
+    "preco": 10,
+    "descricao": {
+      "pt": "Sande de leitão, rúcula e molho burga",
+      "en": "Suckling pig sandwich, rocket and burga sauce"
+    }
+  },
+
+  {
+    "id": "santo-do-pau-oco",
+    "nome": "Santo do Pau Oco",
+    "categoria": "vegetariano-saladas",
+    "preco": 9.8,
+    "vegetariano": true,
+    "descricao": {
+      "pt": "120g de burga de grão-de-bico, cogumelos Portobello, pimento, alface, tomate e mostarda",
+      "en": "120g chickpea patty, Portobello mushrooms, pepper, lettuce, tomato and mustard"
+    }
+  },
+  {
+    "id": "santa-greta",
+    "nome": "Santa Greta",
+    "categoria": "vegetariano-saladas",
+    "preco": 10.25,
+    "paes": ["rosa"],
+    "vegetariano": true,
+    "descricao": {
+      "pt": "120g de burga de feijão preto, tomate seco, cebola caramelizada, rúcula, tomate e mostarda",
+      "en": "120g black bean patty, sun-dried tomato, caramelised onion, rocket, tomato and mustard"
+    }
+  },
+  {
+    "id": "santo-agapito",
+    "nome": "Santo Agapito",
+    "categoria": "vegetariano-saladas",
+    "preco": 12,
+    "paes": ["rosa"],
+    "vegetariano": true,
+    "descricao": {
+      "pt": "140g de burga de \"parece mesmo carne\", queijo cheddar, ovo estrelado, cebola frita, pimentos salteados, rúcula, tomate e ketchup",
+      "en": "140g plant-based \"tastes just like meat\" patty, cheddar cheese, fried egg, fried onion, sautéed peppers, rocket, tomato and ketchup"
+    }
+  },
+  {
+    "id": "santa-jurema",
+    "nome": "Santa Jurema",
+    "categoria": "vegetariano-saladas",
+    "preco": 10.5,
+    "descricao": {
+      "pt": "Salada de peito de frango, alface, ovo mexido, tomate, queijo brie, cebola roxa e molho vinagrete",
+      "en": "Chicken breast salad, lettuce, scrambled egg, tomato, brie, red onion and vinaigrette"
+    }
+  },
+  {
+    "id": "santa-aparecida",
+    "nome": "Santa Aparecida",
+    "categoria": "vegetariano-saladas",
+    "preco": 12,
+    "descricao": {
+      "pt": "170g de frango ou novilho, alface, rúcula, tomate, cebola roxa, bacon grelhado, queijo feta, cebola caramelizada e molho vinagrete",
+      "en": "170g chicken or beef, lettuce, rocket, tomato, red onion, grilled bacon, feta, caramelised onion and vinaigrette"
+    }
+  },
+  {
+    "id": "salada-a-chef",
+    "nome": "Salada à Chef",
+    "categoria": "vegetariano-saladas",
+    "preco": 14.45,
+    "descricao": {
+      "pt": "Novilho maturado, rúcula, tomate, tomate seco, cogumelos Portobello, chouriço grelhado, cebola frita, queijo Babybel e vinagrete balsâmico",
+      "en": "Dry-aged beef, rocket, tomato, sun-dried tomato, Portobello mushrooms, grilled chouriço, fried onion, Babybel and balsamic vinaigrette"
+    }
+  },
+
+  {
+    "id": "santinho-1",
+    "nome": "Santinho 1",
+    "categoria": "menu-infantil",
+    "preco": 6.5,
+    "descricao": {
+      "pt": "90g de novilho, queijo cheddar, alface e tomate",
+      "en": "90g beef, cheddar cheese, lettuce and tomato"
+    }
+  },
+  {
+    "id": "santinho-2",
+    "nome": "Santinho 2",
+    "categoria": "menu-infantil",
+    "preco": 6.5,
+    "descricao": {
+      "pt": "90g de frango, queijo cheddar, alface e tomate",
+      "en": "90g chicken, cheddar cheese, lettuce and tomato"
+    }
+  },
+
+  {
+    "id": "santo-ambrosio",
+    "nome": "Santo Ambrósio",
+    "categoria": "sobremesas",
+    "preco": 5,
+    "descricao": {
+      "pt": "Mousse de chocolate em Filipinos brancos",
+      "en": "Chocolate mousse with white Filipinos biscuits"
+    }
+  },
+  {
+    "id": "delicia-da-casa",
+    "nome": "Delícia da Casa",
+    "categoria": "sobremesas",
+    "preco": 5.5,
+    "bestSeller": true,
+    "descricao": {
+      "pt": "Mousse de leite condensado com bolacha de brownie",
+      "en": "Condensed milk mousse with brownie crumb"
+    }
+  },
+  {
+    "id": "santa-lima",
+    "nome": "Santa Lima",
+    "categoria": "sobremesas",
+    "preco": 5,
+    "descricao": {
+      "pt": "Mousse de lima com cookie de chocolate e coulis de frutos silvestres",
+      "en": "Lime mousse with chocolate cookie and wild berry coulis"
+    }
+  },
+  {
+    "id": "santo-braulio",
+    "nome": "Santo Bráulio",
+    "categoria": "sobremesas",
+    "preco": 6,
+    "bestSeller": true,
+    "descricao": {
+      "pt": "Brownie artesanal de chocolate com gelado de stracciatella e dressing de chocolate e avelã",
+      "en": "Homemade chocolate brownie with stracciatella ice cream and a chocolate and hazelnut dressing"
+    }
+  },
+  {
+    "id": "sagrado-gateau",
+    "nome": "Sagrado Gâteau",
+    "categoria": "sobremesas",
+    "preco": 7,
+    "descricao": {
+      "pt": "Petit Gâteau artesanal com gelado de morango e coulis de frutos silvestres",
+      "en": "Homemade petit gâteau with strawberry ice cream and wild berry coulis"
+    }
+  },
+
+  { "id": "cebola-frita", "nome": "Cebola frita", "nomeEn": "Fried onion", "categoria": "extras", "preco": 0.8 },
+  { "id": "queijo-limiano", "nome": "Queijo limiano", "nomeEn": "Limiano cheese", "categoria": "extras", "preco": 0.8 },
+  { "id": "tomate", "nome": "Tomate", "nomeEn": "Tomato", "categoria": "extras", "preco": 0.8 },
+  { "id": "rucula", "nome": "Rúcula", "nomeEn": "Rocket", "categoria": "extras", "preco": 0.8 },
+  { "id": "pickles", "nome": "Pickles", "nomeEn": "Pickles", "categoria": "extras", "preco": 0.8 },
+  { "id": "cebola-roxa", "nome": "Cebola roxa", "nomeEn": "Red onion", "categoria": "extras", "preco": 0.8 },
+  { "id": "queijo-cheddar", "nome": "Queijo cheddar", "nomeEn": "Cheddar cheese", "categoria": "extras", "preco": 0.8 },
+  { "id": "ovo-estrelado", "nome": "Ovo estrelado", "nomeEn": "Fried egg", "categoria": "extras", "preco": 1 },
+  { "id": "tomate-seco", "nome": "Tomate seco", "nomeEn": "Sun-dried tomato", "categoria": "extras", "preco": 1.3 },
+  { "id": "cebola-caramelizada", "nome": "Cebola caramelizada", "nomeEn": "Caramelised onion", "categoria": "extras", "preco": 1.3 },
+  { "id": "cogumelos-portobello", "nome": "Cogumelos Portobello", "nomeEn": "Portobello mushrooms", "categoria": "extras", "preco": 1.3 },
+  { "id": "presunto-serrano", "nome": "Presunto serrano", "nomeEn": "Serrano ham", "categoria": "extras", "preco": 1.3 },
+  { "id": "chourico", "nome": "Chouriço", "nomeEn": "Chouriço", "categoria": "extras", "preco": 1.3 },
+  { "id": "bacon", "nome": "Bacon", "nomeEn": "Bacon", "categoria": "extras", "preco": 1.3 },
+  { "id": "queijo-da-serra", "nome": "Queijo da Serra", "nomeEn": "Serra cheese", "categoria": "extras", "preco": 1.55 },
+  { "id": "queijo-de-cabra", "nome": "Queijo de cabra", "nomeEn": "Goat's cheese", "categoria": "extras", "preco": 1.55 },
+  { "id": "queijo-feta", "nome": "Queijo feta", "nomeEn": "Feta", "categoria": "extras", "preco": 1.55 },
+  { "id": "queijo-brie", "nome": "Queijo brie", "nomeEn": "Brie", "categoria": "extras", "preco": 1.55 },
+  { "id": "hamburguer-extra-frango", "nome": "Hambúrguer extra de frango", "nomeEn": "Extra chicken patty", "categoria": "extras", "preco": 2.2 },
+  { "id": "hamburguer-extra-novilho", "nome": "Hambúrguer extra de novilho", "nomeEn": "Extra beef patty", "categoria": "extras", "preco": 2.6 },
+  { "id": "dose-batata-extra", "nome": "Dose de batata extra", "nomeEn": "Extra portion of chips", "categoria": "extras", "preco": 2.8 },
+  { "id": "batata-doce", "nome": "Batata doce", "nomeEn": "Sweet potato fries", "categoria": "extras", "preco": 1.6 },
+  { "id": "salada", "nome": "Salada", "nomeEn": "Side salad", "categoria": "extras", "preco": 1.5 },
+  { "id": "embalagem-take-away", "nome": "Embalagem take away", "nomeEn": "Takeaway packaging", "categoria": "extras", "preco": 0.5 },
+
+  { "id": "copo-sangria", "nome": "Copo de sangria (tinta/branca)", "nomeEn": "Glass of sangria (red/white)", "categoria": "bebidas", "subcategoria": "sangrias", "preco": 5.2 },
+  { "id": "copo-sangria-da-casa", "nome": "Copo de sangria da casa (espumante)", "nomeEn": "Glass of house sangria (sparkling)", "categoria": "bebidas", "subcategoria": "sangrias", "preco": 6, "bestSeller": true },
+  { "id": "sangria-1l", "nome": "1 L de sangria (tinta/branca)", "nomeEn": "1 L of sangria (red/white)", "categoria": "bebidas", "subcategoria": "sangrias", "preco": 16 },
+  { "id": "sangria-1l-da-casa", "nome": "1 L de sangria da casa (espumante)", "nomeEn": "1 L of house sangria (sparkling)", "categoria": "bebidas", "subcategoria": "sangrias", "preco": 19.5, "bestSeller": true },
+  { "id": "sangria-2l", "nome": "2 L de sangria (tinta/branca/espumante)", "nomeEn": "2 L of sangria (red/white/sparkling)", "categoria": "bebidas", "subcategoria": "sangrias", "preco": 27 },
+
+  { "id": "limonada-tradicional", "nome": "Tradicional", "nomeEn": "Traditional", "categoria": "bebidas", "subcategoria": "limonadas", "preco": 3.1 },
+  { "id": "limonada-ananas-hortela", "nome": "Ananás-hortelã", "nomeEn": "Pineapple and mint", "categoria": "bebidas", "subcategoria": "limonadas", "preco": 3.6 },
+  { "id": "limonada-ananas-maracuja", "nome": "Ananás-maracujá", "nomeEn": "Pineapple and passion fruit", "categoria": "bebidas", "subcategoria": "limonadas", "preco": 3.75 },
+  { "id": "limonada-frutos-vermelhos", "nome": "Frutos vermelhos", "nomeEn": "Red berries", "categoria": "bebidas", "subcategoria": "limonadas", "preco": 3.55 },
+  { "id": "limonada-pessego", "nome": "Pêssego", "nomeEn": "Peach", "categoria": "bebidas", "subcategoria": "limonadas", "preco": 3.6 },
+  { "id": "limonada-manga", "nome": "Manga", "nomeEn": "Mango", "categoria": "bebidas", "subcategoria": "limonadas", "preco": 3.6 },
+  { "id": "limonada-maracuja", "nome": "Maracujá", "nomeEn": "Passion fruit", "categoria": "bebidas", "subcategoria": "limonadas", "preco": 3.6 },
+
+  { "id": "coca-cola", "nome": "Coca-Cola garrafa", "nomeEn": "Coca-Cola bottle", "categoria": "bebidas", "subcategoria": "refrigerantes", "preco": 2.3 },
+  { "id": "coca-cola-zero", "nome": "Coca-Cola Zero garrafa", "nomeEn": "Coca-Cola Zero bottle", "categoria": "bebidas", "subcategoria": "refrigerantes", "preco": 2.4 },
+  { "id": "fanta", "nome": "Fanta laranja/ananás garrafa", "nomeEn": "Fanta orange/pineapple bottle", "categoria": "bebidas", "subcategoria": "refrigerantes", "preco": 2.3 },
+  { "id": "sprite", "nome": "Sprite garrafa", "nomeEn": "Sprite bottle", "categoria": "bebidas", "subcategoria": "refrigerantes", "preco": 2.3 },
+  { "id": "agua-tonica", "nome": "Água tónica", "nomeEn": "Tonic water", "categoria": "bebidas", "subcategoria": "refrigerantes", "preco": 2.2 },
+  { "id": "ginger-ale", "nome": "Ginger ale", "nomeEn": "Ginger ale", "categoria": "bebidas", "subcategoria": "refrigerantes", "preco": 2.2 },
+
+  { "id": "agua-025", "nome": "Água 0,25 L", "nomeEn": "Still water 0.25 L", "categoria": "bebidas", "subcategoria": "aguas", "preco": 1.75 },
+  { "id": "agua-com-gas", "nome": "Água com gás", "nomeEn": "Sparkling water", "categoria": "bebidas", "subcategoria": "aguas", "preco": 2 },
+  { "id": "agua-com-gas-limao", "nome": "Água com gás de limão", "nomeEn": "Sparkling lemon water", "categoria": "bebidas", "subcategoria": "aguas", "preco": 2.2 },
+
+  { "id": "bandida-do-pomar", "nome": "Bandida do Pomar (pressão)", "nomeEn": "Bandida do Pomar (draught)", "categoria": "bebidas", "subcategoria": "cidras", "preco": 3.1 },
+  { "id": "sommerby", "nome": "Sommerby frutos vermelhos", "nomeEn": "Sommerby red berries", "categoria": "bebidas", "subcategoria": "cidras", "preco": 3.1 },
+
+  { "id": "cerveja-pressao", "nome": "Cerveja de pressão", "nomeEn": "Draught beer", "categoria": "bebidas", "subcategoria": "cerveja", "preco": 2.4 },
+  { "id": "caneca", "nome": "Caneca (0,5 L)", "nomeEn": "Half-litre stein", "categoria": "bebidas", "subcategoria": "cerveja", "preco": 4.5 },
+  { "id": "panache-tango", "nome": "Panaché/Tango", "nomeEn": "Shandy", "categoria": "bebidas", "subcategoria": "cerveja", "preco": 2.65 },
+  { "id": "superbock-garrafa", "nome": "Super Bock garrafa", "nomeEn": "Super Bock bottle", "categoria": "bebidas", "subcategoria": "cerveja", "preco": 2.4 },
+  { "id": "superbock-stout", "nome": "Super Bock Stout", "nomeEn": "Super Bock Stout", "categoria": "bebidas", "subcategoria": "cerveja", "preco": 2.55 },
+  { "id": "heineken-00", "nome": "Heineken 0.0 sem álcool", "nomeEn": "Heineken 0.0 alcohol-free", "categoria": "bebidas", "subcategoria": "cerveja", "preco": 2.5 },
+
+  { "id": "altano-douro", "nome": "Altano Douro", "nomeEn": "Altano Douro", "categoria": "bebidas", "subcategoria": "vinhos", "preco": 11 },
+  { "id": "gazela", "nome": "Gazela", "nomeEn": "Gazela", "categoria": "bebidas", "subcategoria": "vinhos", "preco": 10.5 },
+  { "id": "mateus-rose", "nome": "Mateus Rosé", "nomeEn": "Mateus Rosé", "categoria": "bebidas", "subcategoria": "vinhos", "preco": 11 },
+  { "id": "altano-branco", "nome": "Altano (branco)", "nomeEn": "Altano (white)", "categoria": "bebidas", "subcategoria": "vinhos", "preco": 11 },
+  { "id": "copo-de-vinho", "nome": "Copo de vinho", "nomeEn": "Glass of wine", "categoria": "bebidas", "subcategoria": "vinhos", "preco": 4.8 },
+
+  { "id": "licor-beirao", "nome": "Licor Beirão", "nomeEn": "Licor Beirão", "categoria": "bebidas", "subcategoria": "licores", "preco": 5 },
+  { "id": "amendoa-amarga", "nome": "Amêndoa amarga", "nomeEn": "Bitter almond liqueur", "categoria": "bebidas", "subcategoria": "licores", "preco": 5 },
+  { "id": "baileys", "nome": "Bailey's", "nomeEn": "Bailey's", "categoria": "bebidas", "subcategoria": "licores", "preco": 5 },
+
+  { "id": "whiskey-velho", "nome": "Whiskey velho", "nomeEn": "Aged whiskey", "categoria": "bebidas", "subcategoria": "whiskeys", "preco": 7.5 },
+  { "id": "whiskey-novo", "nome": "Whiskey novo", "nomeEn": "Young whiskey", "categoria": "bebidas", "subcategoria": "whiskeys", "preco": 5.5 },
+
+  { "id": "crf", "nome": "CRF", "nomeEn": "CRF", "categoria": "bebidas", "subcategoria": "aguardentes", "preco": 6.25 },
+  { "id": "croft", "nome": "Croft", "nomeEn": "Croft", "categoria": "bebidas", "subcategoria": "aguardentes", "preco": 5.5 },
+
+  { "id": "cafe", "nome": "Café", "nomeEn": "Espresso", "categoria": "bebidas", "subcategoria": "quentes", "preco": 1 },
+  { "id": "carioca-de-limao", "nome": "Carioca de limão", "nomeEn": "Lemon infusion", "categoria": "bebidas", "subcategoria": "quentes", "preco": 0.85 },
+  { "id": "descafeinado", "nome": "Descafeinado", "nomeEn": "Decaf", "categoria": "bebidas", "subcategoria": "quentes", "preco": 1.1 },
+  { "id": "carioca-duplo", "nome": "Carioca duplo", "nomeEn": "Double weak coffee", "categoria": "bebidas", "subcategoria": "quentes", "preco": 1.6 },
+  { "id": "cha", "nome": "Chá", "nomeEn": "Tea", "categoria": "bebidas", "subcategoria": "quentes", "preco": 2.2 },
+  { "id": "cappuccino", "nome": "Cappuccino", "nomeEn": "Cappuccino", "categoria": "bebidas", "subcategoria": "quentes", "preco": 2.4 }
+]

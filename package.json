@@ -1,0 +1,37 @@
+{
+  "name": "santo-burga",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "icons": "node scripts/generate-icons.mjs",
+    "skills:lock": "node scripts/skills-lock.mjs"
+  },
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1",
+    "next": "16.2.12",
+    "next-intl": "^4.13.4",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "sharp": "^0.35.3",
+    "zod": "^4.4.3"
+  },
+  "_comentario_overrides": "O `next` traz cópias suas do `postcss` (fixo em 8.4.31) e do `sharp` (^0.34.5), e ambas têm vulnerabilidades conhecidas. Estes overrides obrigam-no a usar as versões corrigidas em vez das aninhadas. Se um dia o `next` subir sozinho estas duas, os overrides deixam de ser precisos e devem sair — um override esquecido é uma versão presa que ninguém volta a olhar.",
+  "overrides": {
+    "postcss": "^8.5.26",
+    "sharp": "^0.35.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.12",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

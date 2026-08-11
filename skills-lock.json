@@ -1,0 +1,134 @@
+{
+  "_comentario": "Inventário das skills em .agents/skills, copiadas para o projeto para que qualquer agente ou máquina o encontre auto-contido. Os symlinks em .claude/skills apontam para cá. O sha256 é do conteúdo de cada pasta (caminhos + bytes, por ordem): serve para detetar que uma skill mudou sem ninguém dizer. Regenerar com `npm run skills:lock`.",
+  "origem": "~/.agents/skills",
+  "copiadoEm": "2026-08-11",
+  "total": 21,
+  "skills": [
+    {
+      "nome": "animation-vocabulary",
+      "descricao": "Reverse-lookup glossary that turns a vague description of a web animation or motion effect into its exact term (\"the bouncy thing when a popover opens\" → Pop...",
+      "ficheiros": 1,
+      "sha256": "aecb4b30eeede4bb"
+    },
+    {
+      "nome": "apple-design",
+      "descricao": "Apple's approach to interface design and fluid, physical motion, translated for the web. Use when building or reviewing gesture-driven UI, spring animations,...",
+      "ficheiros": 1,
+      "sha256": "cb7e94267dd81d16"
+    },
+    {
+      "nome": "brandkit",
+      "descricao": "Premium brand-kit image generation skill for creating high-end brand-guidelines boards, logo systems, identity decks, and visual-world presentations. Trained...",
+      "ficheiros": 1,
+      "sha256": "c70d4bbed91b6292"
+    },
+    {
+      "nome": "design-taste-frontend",
+      "descricao": "Anti-slop frontend skill for landing pages, portfolios, and redesigns. The agent reads the brief, infers the right design direction, and ships interfaces tha...",
+      "ficheiros": 1,
+      "sha256": "d5dc57437ab12813"
+    },
+    {
+      "nome": "design-taste-frontend-v1",
+      "descricao": "The original v1 taste-skill, preserved for projects depending on its exact behavior. The current default is `design-taste-frontend` (v2 experimental), which ...",
+      "ficheiros": 1,
+      "sha256": "36fa535b0e3c7dd7"
+    },
+    {
+      "nome": "emil-design-eng",
+      "descricao": "This skill encodes Emil Kowalski's philosophy on UI polish, component design, animation decisions, and the invisible details that make software feel great.",
+      "ficheiros": 1,
+      "sha256": "270418d8b08c5202"
+    },
+    {
+      "nome": "find-animation-opportunities",
+      "descricao": "Search a codebase or UI for places that don't animate but should, and reject everything that shouldn't. Read-only; it proposes motion with exact values, it d...",
+      "ficheiros": 1,
+      "sha256": "55064e7e64336dda"
+    },
+    {
+      "nome": "find-skills",
+      "descricao": "Helps users discover and install agent skills when they ask questions like \"how do I do X\", \"find a skill for X\", \"is there a skill that can...\", or express ...",
+      "ficheiros": 1,
+      "sha256": "c4aabf34013e1482"
+    },
+    {
+      "nome": "full-output-enforcement",
+      "descricao": "Overrides default LLM truncation behavior. Enforces complete code generation, bans placeholder patterns, and handles token-limit splits cleanly. Apply to any...",
+      "ficheiros": 1,
+      "sha256": "9dc48575156ed193"
+    },
+    {
+      "nome": "gpt-taste",
+      "descricao": "Elite UX/UI & Advanced GSAP Motion Engineer. Enforces Python-driven true randomization for layout variance, strict AIDA page structure, wide editorial typogr...",
+      "ficheiros": 1,
+      "sha256": "137415f14a3d2916"
+    },
+    {
+      "nome": "high-end-visual-design",
+      "descricao": "Teaches the AI to design like a high-end agency. Defines the exact fonts, spacing, shadows, card structures, and animations that make a website feel expensiv...",
+      "ficheiros": 1,
+      "sha256": "71ce509679b6b187"
+    },
+    {
+      "nome": "image-to-code",
+      "descricao": "Elite website image-to-code skill for Codex. For visually important web tasks, it must first generate the design image(s) itself, deeply analyze them, then i...",
+      "ficheiros": 1,
+      "sha256": "e9dfdedc3929332b"
+    },
+    {
+      "nome": "imagegen-frontend-mobile",
+      "descricao": "Elite mobile app image-generation skill for creating premium, app-native screen concepts and flows. Designed for iOS, Android, and cross-platform mobile prod...",
+      "ficheiros": 1,
+      "sha256": "95c33d195f0e049d"
+    },
+    {
+      "nome": "imagegen-frontend-web",
+      "descricao": "Elite frontend image-direction skill for generating premium, conversion-aware website design references. CRITICAL OUTPUT RULE — generate ONE separate horizon...",
+      "ficheiros": 1,
+      "sha256": "509094546c63fa7f"
+    },
+    {
+      "nome": "impeccable",
+      "descricao": "Use when the user wants to design, redesign, shape, critique, audit, polish, clarify, distill, harden, optimize, adapt, animate, colorize, extract, or otherw...",
+      "ficheiros": 105,
+      "sha256": "fd5e7fae31c7b710"
+    },
+    {
+      "nome": "improve-animations",
+      "descricao": "Survey a codebase's animation and motion code as a senior motion advisor, then produce a prioritized audit and self-contained implementation plans for other ...",
+      "ficheiros": 3,
+      "sha256": "c4d971bb8c5db94e"
+    },
+    {
+      "nome": "industrial-brutalist-ui",
+      "descricao": "Raw mechanical interfaces fusing Swiss typographic print with military terminal aesthetics. Rigid grids, extreme type scale contrast, utilitarian color, anal...",
+      "ficheiros": 1,
+      "sha256": "0726fd268d9d1e59"
+    },
+    {
+      "nome": "minimalist-ui",
+      "descricao": "Clean editorial-style interfaces. Warm monochrome palette, typographic contrast, flat bento grids, muted pastels. No gradients, no heavy shadows.",
+      "ficheiros": 1,
+      "sha256": "c53fbf4d42477710"
+    },
+    {
+      "nome": "redesign-existing-projects",
+      "descricao": "Upgrades existing websites and apps to premium quality. Audits current design, identifies generic AI patterns, and applies high-end design standards without ...",
+      "ficheiros": 1,
+      "sha256": "bcf4459d828ab9cf"
+    },
+    {
+      "nome": "review-animations",
+      "descricao": "Reviews animation and motion code against a high craft bar derived from Emil Kowalski's design engineering philosophy. Default to flagging; approval is earned.",
+      "ficheiros": 2,
+      "sha256": "6cb2a054a9982dec"
+    },
+    {
+      "nome": "stitch-design-taste",
+      "descricao": "Semantic Design System Skill for Google Stitch. Generates agent-friendly DESIGN.md files that enforce premium, anti-generic UI standards — strict typography,...",
+      "ficheiros": 2,
+      "sha256": "bf7ebbb34b2d5052"
+    }
+  ]
+}

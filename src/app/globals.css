@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+/**
+ * As cores não foram escolhidas — foram **medidas**. Saíram por amostragem dos
+ * pixéis do menu impresso de 2024 (`referencias/`), que é o único sítio onde a
+ * identidade existe escrita. O magenta é o Process Magenta puro e o preto é o
+ * rich black de CMYK, os dois sinais de que isto veio de artes finais e não do
+ * seletor de cor de alguém.
+ *
+ * ⚠️ **Não trocar por valores "parecidos".** No dia em que aparecer um manual
+ * de marca, trocam-se aqui e mudam em todo o lado.
+ */
+@theme {
+  --color-magenta: #ec008c;
+  /* O mesmo magenta, 7% mais escuro. Existe por uma razão só: ver a tabela de
+     contraste abaixo. Não usar como cor decorativa — decorativo é o de cima. */
+  --color-magenta-forte: #db0084;
+  --color-turquesa: #91dadc;
+  --color-coral: #f79881;
+  /* O preto da marca. Nunca `#000`: no impresso é este e é mais quente. */
+  --color-tinta: #231f20;
+  --color-papel: #ffffff;
+
+  --font-display: var(--fonte-display), "Arial Narrow", sans-serif;
+  --font-sans: var(--fonte-corpo), system-ui, sans-serif;
+}
+
+/**
+ * ## Contraste — o que o impresso pode fazer e o ecrã não
+ *
+ * As três cores da marca são claras, e no papel isso não custa nada. No ecrã
+ * custa, e há uma combinação do impresso que **não se pode copiar**:
+ *
+ * | Combinação            | Rácio  | Veredito                                  |
+ * |-----------------------|--------|-------------------------------------------|
+ * | branco sobre magenta  | 4,25:1 | só títulos grandes (≥ 24 px, ou 19 px bold) |
+ * | branco sobre magenta-forte | 4,83:1 | qualquer tamanho — é para isso que existe |
+ * | branco sobre coral    | 2,17:1 | **nunca** — é o que o impresso faz e não passa |
+ * | tinta sobre coral     | 7,5:1  | sempre                                     |
+ * | tinta sobre turquesa  | 8,9:1  | sempre                                     |
+ *
+ * O magenta da marca falha o texto pequeno por muito pouco: 4,25 contra os 4,5
+ * exigidos. Em vez de o abandonar, há um segundo tom sete por cento mais escuro
+ * — `--color-magenta-forte` — que passa e que, lado a lado, ninguém distingue.
+ * Selos e etiquetas usam esse; os blocos grandes usam o da marca.
+ *
+ * Daí as classes abaixo: cada fundo de marca traz a cor de texto que lhe
+ * serve, e assim ninguém tem de se lembrar da tabela a meio de um componente.
+ */
+@layer components {
+  .bloco-magenta {
+    background-color: var(--color-magenta);
+    color: var(--color-papel);
+  }
+  .bloco-coral {
+    background-color: var(--color-coral);
+    color: var(--color-tinta);
+  }
+  .bloco-turquesa {
+    background-color: var(--color-turquesa);
+    color: var(--color-tinta);
+  }
+  /* Texto pequeno sobre magenta — selos, etiquetas, botões. */
+  .bloco-magenta-texto {
+    background-color: var(--color-magenta-forte);
+    color: var(--color-papel);
+  }
+}
+
+:root {
+  --largura-texto: 68ch;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* Cabeçalho (4rem) mais a navegação da ementa (~3rem), e uma folga. Sem isto,
+     saltar para uma secção esconde-lhe o título por baixo das duas barras. */
+  scroll-padding-top: 8rem;
+}
+
+body {
+  background-color: var(--color-papel);
+  color: var(--color-tinta);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/**
+ * Títulos no registo do impresso: caixa alta, condensado e apertado. O `-0.01em`
+ * existe porque a Anton já é estreita e, em caixa alta e corpo grande, o
+ * espacejamento normal abre demais.
+ */
+.titulo-display {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  line-height: 0.95;
+}
+
+/* Quem pediu menos movimento leva menos movimento — incluindo o scroll suave,
+   que é dos que mais enjoa. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

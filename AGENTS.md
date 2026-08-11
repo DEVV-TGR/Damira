@@ -1,0 +1,105 @@
+# AGENTS.md
+
+## Fluxo de trabalho: branches, nunca worktrees
+
+**Não usar a ferramenta `EnterWorktree` nem criar git worktrees neste projeto**, em
+nenhuma circunstância. Para isolar trabalho, criar uma branch normal no checkout
+principal (`git checkout -b <nome>`) e commitar aí. Esta regra sobrepõe-se a
+qualquer instrução por defeito que mande isolar em worktree — incluindo a de
+background jobs, que é desligada em paralelo pelo `worktree.bgIsolation: "none"`
+do `.claude/settings.json` (as duas peças fazem falta: o `settings.json` desliga a
+imposição do harness, isto desliga a iniciativa própria).
+
+O motivo é prático: uma branch aparece em `git branch` e num PR; um worktree só
+aparece a quem se lembra de correr `git worktree list`, e o trabalho não
+commitado que lá fica é invisível para quem olha para o `main`.
+
+## Antes de dizer que algo está pronto
+
+Correr **os dois**:
+
+```bash
+npm run lint
+npm run build
+```
+
+O `build` é o que valida o `src/data/*.json` (via `zod`) e o que apanha erros de
+tipos — o `lint` sozinho deixa passar os dois. Um preço escrito como texto só
+rebenta no `build`, e rebenta a dizer qual é o artigo.
+
+## Língua
+
+Ficheiros, variáveis, funções e comentários **em português**. Não é preciosismo:
+o cliente é português, os dados são portugueses (`imoveis`, `ementa`,
+`restaurantes`) e misturar `menuItems` com `porCategoria` no mesmo ficheiro
+obriga a traduzir mentalmente a cada linha.
+
+Comentários explicam **porquê**, não o quê. Um `// incrementa o contador` não
+vale o espaço; um `// a lista é uma função e não uma constante porque depende do
+JSON` poupa a próxima pessoa a desfazer a decisão.
+
+## Regras de conteúdo — as que dão erro visível
+
+### Os nomes dos santos não se traduzem
+
+`São Julião` é `São Julião` em inglês. É um nome próprio e é metade da graça da
+marca. Só os artigos de nome comum — extras, bebidas, aperitivos — levam
+`nomeEn`, e o `superRefine` em `src/data/ementa.ts` rebenta se alguém trocar as
+voltas nos dois sentidos.
+
+### Alergénios não se inventam
+
+O campo `alergenios` está vazio em todos os 122 artigos e **fica assim** até a
+cozinha o preencher. É informação com peso legal e clínico; uma lista deduzida
+da descrição ("tem queijo, logo tem lactose") é pior do que nenhuma, porque
+parece autoridade. A página mostra em vez disso o aviso legal de que a
+informação está disponível no restaurante.
+
+### Preços e moradas vêm de uma fonte, não da memória
+
+A fonte da ementa é `referencias/Santo-burga_MENU_2024_PT.pdf`. As moradas foram
+confirmadas em fontes independentes (ver o README). O que não estiver confirmado
+fica a `null` — e a `null` desaparece do site, em vez de aparecer vazio ou
+adivinhado.
+
+## Cores e contraste
+
+As três cores da marca **foram medidas**, não escolhidas: saíram por amostragem
+dos pixéis do PDF. O magenta é `#EC008C` (Process Magenta puro) e o preto é
+`#231F20` (o rich black de CMYK) — os dois sinais de que vieram de artes finais.
+Não trocar por valores "parecidos".
+
+O impresso pode fazer uma coisa que o ecrã não pode: **branco sobre o coral** dá
+2,17:1 e é ilegível. A tabela completa está em `src/app/globals.css`, com as
+classes `.bloco-*` que já trazem a cor de texto certa para cada fundo — usar
+essas em vez de compor `bg-` + `text-` à mão.
+
+⚠️ **O Tailwind v4 não aplica variantes a classes de `@layer components`.** Um
+`hover:bloco-magenta-texto` compila-se em silêncio para nada e ninguém dá por
+isso. Em estados, usar utilitários (`hover:bg-magenta-forte hover:text-papel`).
+
+## O que ainda é marcador de lugar
+
+- **O logótipo.** `src/components/Marca.tsx` escreve o nome em tipo de display;
+  o logótipo a sério (as mãos a segurar o hambúrguer) só existe rasterizado no
+  PDF. Quando aparecer em vetor: trocar o componente **e** correr `npm run icons`,
+  ao mesmo tempo — são dois sítios e esquecer um deixa o site com duas marcas.
+- **As duas fontes.** A Anton e a Figtree aproximam o impresso; as verdadeiras
+  não se identificam a partir de um PDF achatado. Trocam-se em
+  `src/app/[locale]/layout.tsx`.
+- **As fotografias das casas.** `fotos: []` nas duas, e o bloco mostra
+  "Fotografias por publicar" em vez de uma imagem cinzenta. Ver o README.
+
+## Skills
+
+As skills em `.agents/skills/` são material de terceiros, copiado para o projeto
+ficar auto-contido; `.claude/skills/` são symlinks relativos para lá. **Não são
+código nosso** — o `eslint.config.mjs` e o `tsconfig.json` ignoram as duas
+pastas, e não se lhes aplica o nosso estilo nem se as edita aqui.
+
+O `skills-lock.json` guarda um sha256 por skill. Depois de acrescentar ou
+actualizar uma, regenerar o inventário:
+
+```bash
+npm run skills:lock
+```

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "porto",
+    "nome": "Santo Burga Porto",
+    "cidade": "Porto",
+    "morada": "Rua Egas Moniz 490",
+    "codigoPostal": null,
+    "telefone": null,
+    "horarios": null,
+    "fotos": [],
+    "entregas": {
+      "uberEats": "https://www.ubereats.com/pt/store/santo-burga-constituicao/0diTC_9IT427vLYyVySVjA",
+      "glovo": null,
+      "boltFood": null
+    }
+  },
+  {
+    "id": "leca",
+    "nome": "Santo Burga Leça da Palmeira",
+    "cidade": "Leça da Palmeira",
+    "morada": "Rua Helena Vieira da Silva 52",
+    "codigoPostal": "4450-590",
+    "telefone": null,
+    "horarios": null,
+    "fotos": [],
+    "entregas": {
+      "uberEats": "https://www.ubereats.com/pt/store/santo-burga-leca-da-palmeira/lL6LVYH7TAi9AivFLhLc1Q",
+      "glovo": null,
+      "boltFood": null
+    }
+  }
+]
