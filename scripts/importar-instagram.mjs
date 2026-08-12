@@ -278,3 +278,10 @@ for (const nome of capturas) {
 console.log(
   `\n${guardadas} fotografias em ${DESTINO}, a ${CELULA.largura - MARGEM * 2}×${CELULA.altura - MARGEM * 2} px.`,
 );
+
+/* O recorte apanha o crachá que a grelha desenha por cima das reels e dos
+   carrosséis. Encadeia-se aqui para uma remessa nova não precisar de dois
+   comandos — e porque foi assim que cinco miniaturas chegaram ao site com
+   interface do Instagram lá dentro. */
+console.log();
+await import("./limpar-selo-instagram.mjs");

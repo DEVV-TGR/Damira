@@ -244,6 +244,29 @@ export const escalada = () =>
  */
 export const santos = () => ementa.filter((artigo) => artigo.nomeEn === null);
 
+/**
+ * Os que **têm mesmo nome de santo**. São quarenta.
+ *
+ * ## Porque não chega o `santos()` acima
+ *
+ * ⚠️ **`nomeEn === null` significa "não é texto comum", que é mais largo do que
+ * "chama-se São qualquer coisa".** Pelo caminho entram os *Rollinis*, os
+ * *Folhadinis*, a *Salada à Chef*, a *Delícia da Casa*, os *Santinis* e os dois
+ * *Santinho*. Numa fita a passar a doze pixéis ninguém reparava; num mural com
+ * os nomes em corpo grande, sete intrusos em quarenta e sete são visíveis — e o
+ * mural afirma, em letra do tamanho de um título, que aquilo são os santos.
+ *
+ * O filtro é pelo nome porque é aí que a informação está: o impresso baptiza uns
+ * com santo e outros não, e não há campo que o diga. Não é adivinhar a partir de
+ * prosa — é ler um nome próprio, que é um conjunto fechado de quatro prefixos e
+ * não muda de forma quando alguém reescrever uma descrição.
+ *
+ * `santos()` fica para a fita do rodapé, onde a lista larga é a certa: ali o que
+ * passa é a carta inteira, não o santoral.
+ */
+export const santoral = () =>
+  santos().filter((artigo) => /\b(Santo|Santa|São|Sagrado)\b/.test(artigo.nome));
+
 /** Os santos que levam um pão de cor. Alimenta a secção dos pães. */
 export const porPao = (pao: "rosa" | "azul") =>
   ementa.filter((artigo) => artigo.paes.includes(pao));

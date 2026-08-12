@@ -77,18 +77,24 @@ export function Hero() {
           {marca("quadrado")}
         </p>
 
-        <p className="mt-5 max-w-[42ch] leading-relaxed text-papel/90">
-          {t("heroTexto")}
-        </p>
+        {/*
+          ⚠️ **Papel a 100%, sem opacidade.** Isto esteve em `text-papel/90` e o
+          rácio caía para **3,85:1** — reprovado em texto corrido. A tabela de
+          contraste do `globals.css` mede o papel a cheio (4,57:1) e não cobre a
+          opacidade que se lhe põe por cima; sobre magenta não há folga nenhuma
+          para diluir o branco. A linha das cidades abaixo estava pior ainda, a
+          `/85` e em corpo de 12 px: 3,54:1.
+        */}
+        <p className="mt-5 max-w-[42ch] leading-relaxed">{t("heroTexto")}</p>
 
         <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-4">
           <Link
             href="/ementa"
-            className="rounded-full bg-papel px-7 py-4 text-sm font-semibold uppercase tracking-widest text-tinta transition-transform hover:-translate-y-0.5"
+            className="premivel rounded-full bg-papel px-7 py-4 text-sm font-semibold uppercase tracking-widest text-tinta"
           >
             {t("verEmenta")}
           </Link>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-papel/85">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em]">
             {restaurantes.map((casa) => casa.cidade).join(" · ")}
           </p>
         </div>

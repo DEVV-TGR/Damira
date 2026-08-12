@@ -60,6 +60,47 @@ provisória de uma real. O caminho tem de começar por `/ementa/`, e o `build`
 recusa qualquer outro — a validação já apanhou esse erro uma vez, com o nome do
 artigo à frente.
 
+### Cada pasta de imagem tem o seu tecto — e ele decide onde a imagem entra
+
+Há quatro origens em `public/`, com quatro resoluções, e **não são
+intermutáveis**:
+
+| Pasta | Tamanho | Onde pode entrar |
+|---|---|---|
+| `fotos/` | 1286 × 1600 | onde quiser: mosaico, pães, fecho |
+| `reels/` | 720 × 1280 | vídeo e o seu cartaz |
+| `casas/` | 1280 e **588** | só o bloco de identificação da casa |
+| `instagram/` | **356** × 453 | ladrilho pequeno do herói, e mais nada |
+
+⚠️ **Passar um recorte do `instagram/` para uma célula grande é o erro clássico.**
+A 2× de densidade uma célula do mosaico pede ~700 px e o ficheiro tem 356; vê-se
+o grão da compressão do Instagram ao lado de fotografia a sério. O mesmo para a
+casa de Leça, que tem 588 px e já esteve a ser ampliada 2,4× num bloco de meia
+página sem ninguém dar por isso.
+
+O material em bruto vive em `originais/`, fora do git. Reprocessa-se com:
+
+```bash
+npm run fotos -- originais/fotos public/fotos   # 1600 px, WebP
+npm run reels                                   # HEVC → H.264, sem áudio
+npm run instagram:selo                          # tira o crachá do Instagram
+```
+
+### Os reels são HEVC e não tocam em metade dos browsers
+
+O que sai do telemóvel é HEVC dentro de `.mov`: **toca em Safari e mais em lado
+nenhum**. É o pior tipo de defeito, porque quem programa em Mac não dá por ele.
+O `npm run reels` converte para H.264, corta o áudio (um vídeo com som não
+arranca sozinho em browser nenhum) e limita a oito segundos.
+
+Medido no mais pesado: H.264 CRF 30 dá 686 kB contra 6,8 MB do preset do
+`avconvert`. **Não há webm** — o VP9 saiu maior do que o H.264 e duplicava o
+tempo de codificação.
+
+⚠️ **O `ffmpeg` que vem no cache do Playwright não serve**: é compilado com
+`--disable-everything` e nem lê `.mov`. O que se usa é o `ffmpeg-static`, que é
+`devDependency` e não vai para o cliente.
+
 ### Alergénios não se inventam
 
 O campo `alergenios` está vazio em todos os 122 artigos e **fica assim** até a
@@ -105,9 +146,9 @@ isso. Em estados, usar utilitários (`hover:bg-magenta-forte hover:text-papel`).
 - **As fotografias.** São da galeria antiga do próprio negócio e mostram uma
   decoração que já não existe. Ver o README.
 
-## Três armadilhas que já morderam aqui
+## As armadilhas que já morderam aqui
 
-Estão as três documentadas no sítio onde vivem; ficam aqui em lista porque são do
+Estão documentadas no sítio onde vivem; ficam aqui em lista porque são todas do
 tipo que **falha em silêncio** e ninguém repara até alguém olhar para o site.
 
 1. **`hover:` sobre uma classe de `@layer components`** compila-se para nada
@@ -126,14 +167,25 @@ tipo que **falha em silêncio** e ninguém repara até alguém olhar para o site
    ninguém dar por isso. Materializar com `toBuffer()` antes de medir. (E, em
    PNG, cortar o canal alfa: numa captura opaca tem média 255 e envenena
    qualquer conta de claridade.)
-5. **Somar frações de píxel ao `scrollLeft`** não anda. O browser arredonda-o a
-   inteiro: a 60 quadros por segundo cada passo do carrossel vale menos de meio
-   píxel, escrever `0.4` lê-se de volta como `0`, e a pista fica parada para
-   sempre — mas só quando parte do zero, o que a fazia parecer funcionar em
-   qualquer teste que a empurrasse primeiro. Manter a posição num acumulador em
-   vírgula flutuante, à parte do DOM.
+5. **A opacidade come o contraste e não aparece em tabela nenhuma.** A tabela do
+   `globals.css` mede o papel a 100 % sobre magenta-forte — 4,57:1, passa. Um
+   `text-papel/90` por cima disso cai para **3,85:1** e reprova; a 85 %, para
+   3,54:1. Esteve assim no herói. Sobre magenta não há folga para diluir o
+   branco; sobre tinta há (a 70 % ainda dá 8,2:1).
+6. **Regras fora de `@layer` ganham sempre às de dentro** (Tailwind v4). É o que
+   faz `hover:` funcionar nas nossas classes — e é também o que faz um
+   `transition-colors` escrito ao lado de `premivel` ser descartado em silêncio.
+   Quem declara `transition` fora de camada tem de declarar lá **todas** as
+   propriedades que quer animar.
+7. **Somar frações de píxel ao `scrollLeft`** não anda. O browser arredonda-o a
+   inteiro: a 60 quadros por segundo cada passo valia menos de meio píxel,
+   escrever `0.4` lê-se de volta como `0`, e a pista ficava parada para sempre —
+   mas só quando partia do zero, o que a fazia parecer funcionar em qualquer
+   teste que a empurrasse primeiro. Mordeu no carrossel dos mais pedidos, que
+   entretanto saiu; se algum dia voltar a haver scroll programático, manter a
+   posição num acumulador em vírgula flutuante, à parte do DOM.
 
-O que as três têm em comum: `npm run build` passa, o `lint` passa, e só se
+O que todas têm em comum: `npm run build` passa, o `lint` passa, e só se
 apanham a olhar. **Depois de mexer em desenho, tirar capturas** — há Playwright
 com Chromium em cache nesta máquina.
 

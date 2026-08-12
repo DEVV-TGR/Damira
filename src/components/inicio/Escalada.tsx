@@ -24,7 +24,9 @@ export function Escalada({ locale }: { locale: Locale }) {
     <section className="seccao bg-tinta text-papel">
       <div className="envolvente">
         <p className="olho text-coral">{t("olho")}</p>
-        <h2 className="titulo-display mt-4 max-w-[15ch] text-[clamp(2.5rem,6vw,4.5rem)]">
+        {/* `titulo-alfa`: é um dos dois momentos altos da página e o tamanho
+            di-lo. Ver a escala de três degraus em `globals.css`. */}
+        <h2 className="titulo-display titulo-alfa mt-4 max-w-[15ch]">
           {t("titulo")}
         </h2>
         <p className="mt-4 max-w-[46ch] text-papel/70">{t("texto")}</p>

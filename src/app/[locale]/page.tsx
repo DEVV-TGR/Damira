@@ -1,13 +1,14 @@
 import { setRequestLocale } from "next-intl/server";
 import { useTranslations } from "next-intl";
 import { Hero } from "@/components/inicio/Hero";
-import { FitaSantos } from "@/components/inicio/FitaSantos";
-import { CarrosselMaisPedidos } from "@/components/inicio/CarrosselMaisPedidos";
-import { Escalada } from "@/components/inicio/Escalada";
+import { Mural } from "@/components/inicio/Mural";
+import { MesaPosta } from "@/components/inicio/MesaPosta";
 import { Paes } from "@/components/inicio/Paes";
-import { FaixaFotografias } from "@/components/inicio/FaixaFotografias";
+import { Escalada } from "@/components/inicio/Escalada";
+import { CasaCheia } from "@/components/inicio/CasaCheia";
+import { Fecho } from "@/components/inicio/Fecho";
+import { FitaSantos } from "@/components/inicio/FitaSantos";
 import { Casa } from "@/components/casas/Casa";
-import { bestSellers } from "@/data/ementa";
 import { restaurantes } from "@/data/restaurantes";
 import { routing, type Locale } from "@/i18n/routing";
 
@@ -26,10 +27,42 @@ export default async function PaginaInicial({
 }
 
 /**
- * A ordem da página é uma sequência, não uma lista de secções disponíveis:
- * apetite (o herói), a marca (a fita de santos), o que se pede (os mais
- * pedidos), a bravata (a escalada), a peculiaridade (os pães), o sítio (as
- * fotografias e as casas). Acaba onde tem de acabar — na morada.
+ * # A homepage
+ *
+ * ## A sequência
+ *
+ * *Apetite* (o herói) → *o santoral* (o mural dos nomes) → *a mesa posta* (os
+ * doze do selo, por tempos de refeição) → *a peculiaridade* (o pão de cor) → *a
+ * ousadia* (a escalada até às 640 gramas) → *a casa* (o mosaico) → *o sítio e o
+ * convite* (as moradas e o fecho).
+ *
+ * ⚠️ **Os pães vinham depois da escalada e trocaram.** O pico da página é a
+ * escalada — escura, alta, com os números a crescer — e estava a meio: a página
+ * atingia o ponto mais alto aos 50 % e declinava durante o resto. Com o pão de
+ * cor antes, as duas curiosidades da carta escalam uma para a outra (pão
+ * cor-de-rosa → 640 gramas) e a ousadia passa a ser a última coisa sobre comida
+ * antes de dizermos onde é.
+ *
+ * ## Os dois registos, que é de onde vem o ritmo
+ *
+ * A marca tem duas fontes verdadeiras — a carta impressa e o Instagram — e a
+ * página **alterna** entre elas em vez de as misturar em todas as secções:
+ *
+ * - blocos de **carta**: tipografia a mandar, sem fotografia (mural, mesa posta,
+ *   escalada, fecho);
+ * - blocos de **casa**: imagem a mandar, a sangrar, sem tipografia grande (pães,
+ *   mosaico).
+ *
+ * Antes eram cinco secções com a mesma anatomia — etiqueta, título, parágrafo,
+ * grelha — quatro delas com **o mesmo tamanho de título**, todas encostadas à
+ * mesma goteira. A página tinha uma aresta vertical do topo ao fundo.
+ *
+ * ## O movimento
+ *
+ * Três gestos, e cada um de espécie diferente: as duas filas do herói (deriva
+ * fotográfica, contam como um), os reels a tocar (conteúdo em movimento) e a
+ * fita, uma vez só, a costurar para o rodapé. Eram cinco, e com cinco nada se
+ * destaca.
  */
 function Inicio({ locale }: { locale: Locale }) {
   const t = useTranslations("inicio");
@@ -37,36 +70,42 @@ function Inicio({ locale }: { locale: Locale }) {
   return (
     <>
       <Hero />
-      <FitaSantos />
 
-      <section className="seccao">
-        {/* Os doze do selo, tirados do JSON — marcar um artigo novo como
-            `bestSeller` põe-no aqui sem tocar nesta página. */}
-        <CarrosselMaisPedidos artigos={bestSellers()} locale={locale} />
-      </section>
+      {/* Os quarenta santos, parados e ligados à ementa. É o que separa o herói
+          do resto — antes havia aqui uma fita a andar, no mesmo magenta. */}
+      <Mural />
 
+      {/* Os doze do selo. A lista sai do JSON: marcar um artigo como
+          `bestSeller` põe-no no tempo de refeição certo sem tocar nesta página. */}
+      <MesaPosta locale={locale} />
+
+      <Paes locale={locale} />
       <Escalada locale={locale} />
-      <Paes />
-      <FaixaFotografias />
+      <CasaCheia />
 
-      <section aria-labelledby="casas" className="seccao">
+      <section aria-labelledby="casas" className="seccao bg-papel-fundo">
         <div className="envolvente">
-          <p className="olho">{t("casas.olho")}</p>
-          <h2
-            id="casas"
-            className="titulo-display mt-4 max-w-[14ch] text-[clamp(2.5rem,6vw,4.5rem)]"
-          >
+          {/* Sem etiqueta: "Onde estamos" por cima de "As nossas casas" dizia
+              duas vezes a mesma coisa. A única que sobra na página é a da
+              escalada, onde o texto é o nome verdadeiro de uma categoria da
+              carta impressa. */}
+          <h2 id="casas" className="titulo-display titulo-beta max-w-[14ch]">
             {t("casas.titulo")}
           </h2>
           <p className="mt-4 max-w-[46ch] text-tinta-suave">{t("casas.texto")}</p>
 
-          <div className="mt-14 grid gap-14 lg:grid-cols-2 lg:gap-12">
+          <div className="mt-14 space-y-14">
             {restaurantes.map((casa) => (
               <Casa key={casa.id} casa={casa} />
             ))}
           </div>
         </div>
       </section>
+
+      <Fecho />
+
+      {/* Sobre tinta, a escoar para o rodapé. Ver o comentário do componente. */}
+      <FitaSantos />
     </>
   );
 }
