@@ -1,14 +1,25 @@
 @import "tailwindcss";
 
 /**
- * As cores não foram escolhidas — foram **medidas**. Saíram por amostragem dos
- * pixéis do menu impresso de 2024 (`referencias/`), que é o único sítio onde a
- * identidade existe escrita. O magenta é o Process Magenta puro e o preto é o
- * rich black de CMYK, os dois sinais de que isto veio de artes finais e não do
+ * # Esplanada
+ *
+ * A direção do site é a do Instagram e não a do impresso: luz de fim de tarde,
+ * mesas na rua, gente a comer com as mãos. Base clara com muito ar, conduzida
+ * pela fotografia, **cor como acento e não chapada**.
+ *
+ * O impresso continua a mandar nas cores — só não manda na quantidade. Uma
+ * página inteira a magenta funciona em A3 na mão de alguém e cansa num ecrã que
+ * se percorre durante um minuto à procura do preço de um hambúrguer.
+ */
+
+/**
+ * As cores não foram escolhidas — foram **medidas** por amostragem dos pixéis do
+ * menu impresso (`referencias/`). O magenta é o Process Magenta puro e a tinta é
+ * o rich black de CMYK, os dois sinais de que isto veio de artes finais e não do
  * seletor de cor de alguém.
  *
- * ⚠️ **Não trocar por valores "parecidos".** No dia em que aparecer um manual
- * de marca, trocam-se aqui e mudam em todo o lado.
+ * ⚠️ **Não trocar por valores "parecidos".** No dia em que aparecer um manual de
+ * marca, trocam-se aqui e mudam em todo o lado.
  */
 @theme {
   --color-magenta: #ec008c;
@@ -16,36 +27,78 @@
      contraste abaixo. Não usar como cor decorativa — decorativo é o de cima. */
   --color-magenta-forte: #db0084;
   --color-turquesa: #91dadc;
+  /* O turquesa da marca é claro de mais para texto ou para um filete fino sobre
+     papel. Este é o mesmo tom levado até onde se lê. */
+  --color-turquesa-forte: #1c757b;
   --color-coral: #f79881;
-  /* O preto da marca. Nunca `#000`: no impresso é este e é mais quente. */
   --color-tinta: #231f20;
-  --color-papel: #ffffff;
+  /* Texto secundário. Um `opacity` sobre a tinta dava o mesmo cinzento mas
+     também apagava o que estivesse por baixo em blocos de cor. */
+  --color-tinta-suave: #6d6668;
 
-  --font-display: var(--fonte-display), "Arial Narrow", sans-serif;
+  /**
+   * O papel não é branco. Debaixo de fotografia com madeira, luz quente e pratos
+   * azuis, o `#FFFFFF` lê frio e faz as fotos parecerem desbotadas — este é o
+   * branco com um grão de amarelo que as devolve ao sítio.
+   */
+  --color-papel: #fcf8f2;
+  --color-papel-fundo: #f5eee4;
+
+  --font-display: var(--fonte-display), "Trebuchet MS", sans-serif;
   --font-sans: var(--fonte-corpo), system-ui, sans-serif;
+
+  /* Ritmo vertical. É o "muito ar" desta direção reduzido a um número: uma
+     secção respira entre 4 e 8 rem consoante o ecrã, e todas respiram igual. */
+  --espaco-seccao: clamp(4rem, 9vw, 8rem);
+
+  /**
+   * As curvas.
+   *
+   * As de série do CSS são fracas — falta-lhes o arranque que faz uma transição
+   * parecer intencional em vez de lenta. `--ease-saida` é um *ease-out* forte, e
+   * é o que se usa em quase tudo: começa depressa, que é o momento em que quem
+   * carregou está a olhar.
+   *
+   * ⚠️ **Nunca `ease-in` em interface.** Atrasa o arranque exactamente onde a
+   * atenção está, e a 200 ms *sente-se* mais lento do que um `ease-out` da mesma
+   * duração.
+   */
+  --ease-saida: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-entrada-saida: cubic-bezier(0.77, 0, 0.175, 1);
+  /* Resposta ao toque. Curto de propósito: é confirmação, não animação. */
+  --tempo-toque: 160ms;
 }
 
 /**
  * ## Contraste — o que o impresso pode fazer e o ecrã não
  *
- * As três cores da marca são claras, e no papel isso não custa nada. No ecrã
- * custa, e há uma combinação do impresso que **não se pode copiar**:
+ * As cores da marca são claras, e no papel isso não custa nada. No ecrã custa, e
+ * há combinações do impresso que **não se podem copiar**. Os rácios abaixo estão
+ * medidos por script sobre os valores exactos desta folha:
  *
- * | Combinação            | Rácio  | Veredito                                  |
- * |-----------------------|--------|-------------------------------------------|
- * | branco sobre magenta  | 4,25:1 | só títulos grandes (≥ 24 px, ou 19 px bold) |
- * | branco sobre magenta-forte | 4,83:1 | qualquer tamanho — é para isso que existe |
- * | branco sobre coral    | 2,17:1 | **nunca** — é o que o impresso faz e não passa |
- * | tinta sobre coral     | 7,5:1  | sempre                                     |
- * | tinta sobre turquesa  | 8,9:1  | sempre                                     |
+ * | Combinação                 | Rácio  | Veredito                                    |
+ * |----------------------------|--------|---------------------------------------------|
+ * | branco sobre magenta       | 4,01:1 | só títulos grandes (≥ 24 px, ou 19 px bold) |
+ * | branco sobre magenta-forte | 4,57:1 | qualquer tamanho — é para isso que existe   |
+ * | branco sobre coral         | 2,03:1 | **nunca** — é o que o impresso faz e não passa |
+ * | tinta sobre coral          | 7,6:1  | sempre                                      |
+ * | tinta sobre turquesa       | 10,3:1 | sempre                                      |
+ * | magenta-forte sobre papel  | 4,57:1 | qualquer tamanho                            |
+ * | tinta-suave sobre papel    | 5,3:1  | sempre                                      |
  *
- * O magenta da marca falha o texto pequeno por muito pouco: 4,25 contra os 4,5
- * exigidos. Em vez de o abandonar, há um segundo tom sete por cento mais escuro
- * — `--color-magenta-forte` — que passa e que, lado a lado, ninguém distingue.
- * Selos e etiquetas usam esse; os blocos grandes usam o da marca.
+ * O magenta da marca falha o texto pequeno por muito pouco. Em vez de o
+ * abandonar, há um segundo tom sete por cento mais escuro que passa e que, lado
+ * a lado, ninguém distingue. Superfícies grandes usam o da marca; texto e
+ * filetes finos usam o forte.
  *
- * Daí as classes abaixo: cada fundo de marca traz a cor de texto que lhe
- * serve, e assim ninguém tem de se lembrar da tabela a meio de um componente.
+ * ⚠️ **A opacidade come o contraste, e não aparece em tabela nenhuma.** Um
+ * `text-papel/90` sobre magenta-forte cai de 4,57:1 para **3,85:1** e reprova; a
+ * 85 %, para 3,54:1. Sobre magenta não há folga para diluir o branco — ou é
+ * papel a 100 %, ou muda-se de fundo. (Sobre tinta há: a 70 % ainda dá 8,2:1.)
+ *
+ * ⚠️ **O Tailwind v4 não aplica variantes a classes de `@layer components`.** Um
+ * `hover:bloco-magenta` compila-se em silêncio para nada. Em estados, usar
+ * utilitários (`hover:bg-magenta-forte hover:text-papel`).
  */
 @layer components {
   .bloco-magenta {
@@ -67,9 +120,29 @@
   }
 }
 
-:root {
-  --largura-texto: 68ch;
-}
+/**
+ * ## Onde entra cada fundo
+ *
+ * Sem uma regra, a sequência de cores da página lê-se como acidente — foi o que
+ * aconteceu quando a fita dos santos ficou colada ao herói, no mesmo magenta,
+ * sem fronteira nenhuma entre os dois. A regra é esta e é para seguir:
+ *
+ * - **magenta** — a marca a falar. **Uma superfície inteira, e é o herói.** Em
+ *   baixo aparece só do tamanho de um botão, que é o que o mantém a valer
+ *   alguma coisa. ⚠️ Já foi também o fundo do fecho: com o rodapé escuro logo a
+ *   seguir, o fim da página lia-se como três blocos de três cores em vez de uma
+ *   aterragem.
+ * - **papel** — a superfície de leitura. É o estado normal.
+ * - **papel-fundo** — o depois do pico. Marca que se passou da carta para o
+ *   prático (as casas), e é o único sítio onde a diferença dos dois papéis tem
+ *   um significado.
+ * - **tinta** — o pico (a Escalada) e o chão. O chão é **um bloco só**: fecho,
+ *   fita dos santos e rodapé partilham a mesma cor e a mesma leitura.
+ * - **coral e turquesa** — acentos dentro de blocos. **Nunca secções inteiras**:
+ *   nenhum dos dois aguenta texto corrido por cima.
+ */
+
+/* ── Base ─────────────────────────────────────────────────────────────── */
 
 html {
   scroll-behavior: smooth;
@@ -83,18 +156,219 @@ body {
   color: var(--color-tinta);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 /**
- * Títulos no registo do impresso: caixa alta, condensado e apertado. O `-0.01em`
- * existe porque a Anton já é estreita e, em caixa alta e corpo grande, o
- * espacejamento normal abre demais.
+ * Grão por cima de tudo, a 3,5%.
+ *
+ * Um chapado digital perfeito é a coisa que mais denuncia que isto não veio de
+ * uma máquina de impressão. O grão devolve-lhe a textura do papel sem que
+ * ninguém consiga apontar para ele e dizer o que é — que é o sinal de que está
+ * na dose certa.
+ *
+ * `pointer-events: none` porque isto cobre o ecrã inteiro e não pode roubar um
+ * único clique. `position: fixed` e não num contentor com scroll: um filtro de
+ * ruído por cima de conteúdo a rolar repinta a cada quadro.
+ */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='r'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23r)'/%3E%3C/svg%3E");
+}
+
+/* ── Tipografia ───────────────────────────────────────────────────────── */
+
+/**
+ * A Bricolage Grotesque tem eixo de largura e de tamanho ótico. É o que permite
+ * um título enorme e aberto e uma etiqueta minúscula e apertada **na mesma
+ * fonte** — em vez de duas famílias a fingir que combinam.
+ *
+ * O impresso é caixa alta condensada; aqui a caixa alta fica para as etiquetas e
+ * os títulos ficam em caixa normal. Cento e vinte e dois artigos com títulos de
+ * secção aos berros é o que separa um menu de um cartaz.
  */
 .titulo-display {
   font-family: var(--font-display);
-  text-transform: uppercase;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  font-variation-settings: "wdth" 85, "opsz" 40;
+  letter-spacing: -0.025em;
   line-height: 0.95;
+  text-wrap: balance;
+}
+
+/**
+ * ## Três degraus, e só três
+ *
+ * ⚠️ **Quatro das cinco secções tinham o mesmo `clamp(2.5rem, 6vw, 4.5rem)`.**
+ * Escrito à mão, secção a secção, sempre igual — o que dava uma página inteira
+ * sem hierarquia nenhuma: tudo do mesmo tamanho, tudo encostado à mesma goteira,
+ * uma aresta vertical do topo ao fundo.
+ *
+ * Agora são três degraus, com um salto de ~1,57 entre cada. Uma escala com
+ * degraus de 1,1 lê-se como indecisão; abaixo de 1,25 não se vê que são
+ * diferentes, e então mais valia serem iguais.
+ *
+ * O que decide o degrau é o **peso da secção na página**, não o gosto:
+ * `alfa` para os dois momentos altos, `gama` para o que é prático.
+ */
+.titulo-alfa {
+  font-size: clamp(2.75rem, 7vw, 5.5rem);
+}
+.titulo-beta {
+  font-size: clamp(2rem, 4.5vw, 3.5rem);
+}
+.titulo-gama {
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+/**
+ * Etiqueta de secção: pequena, em caixa alta, precedida de um filete magenta.
+ *
+ * ⚠️ **Uma por página.** Isto esteve em cinco secções seguidas, e em quatro
+ * delas dizia o mesmo que o título logo abaixo ("Onde estamos" sobre "As nossas
+ * casas") ou estragava-lhe a piada ("Pão rosa e pão azul" sobre "Nem todos os
+ * santos vêm em pão normal"). Uma etiqueta que repete o título não é hierarquia,
+ * é ruído — e cinco iguais são a assinatura de uma página montada por reflexo.
+ *
+ * Sobra na Escalada, onde **é conteúdo**: "Para os corajosos" é o nome
+ * verdadeiro de uma categoria da carta impressa, não uma legenda inventada.
+ */
+.olho {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 75, "opsz" 12;
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-magenta-forte);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.olho::before {
+  content: "";
+  width: 2rem;
+  height: 2px;
+  background-color: currentColor;
+  flex: none;
+}
+
+/* ── Composição ───────────────────────────────────────────────────────── */
+
+.envolvente {
+  max-width: 78rem;
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 4vw, 2.5rem);
+}
+
+.seccao {
+  padding-block: var(--espaco-seccao);
+}
+
+/**
+ * Os traços do impresso — o logótipo, o hambúrguer, a taça — são PNG de alfa e
+ * usam-se como máscara. O ficheiro guarda só a forma; a cor vem daqui, o que
+ * deixa desenhar o mesmo traço a magenta ou a tinta sem gerar duas imagens.
+ * Ver `scripts/extrair-tracos.mjs`.
+ */
+.traco {
+  background-color: currentColor;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+}
+
+/* ── Interacção ───────────────────────────────────────────────────────── */
+
+/**
+ * Resposta ao toque: o elemento encolhe um fio enquanto está a ser carregado.
+ *
+ * São dois por cento e ninguém repara neles — que é o ponto. O que se nota é a
+ * ausência: sem isto, um botão parece não ter ouvido o clique.
+ *
+ * ⚠️ **O `hover` fica atrás de `@media (hover: hover)`.** Num telemóvel, tocar
+ * dispara `:hover` e o estado **fica preso** depois de o dedo sair — um botão que
+ * parece carregado para sempre. Só quem tem rato é que tem `hover`.
+ */
+/**
+ * ⚠️ **Declara as cores também, e não é por preguiça.** Estas regras estão fora
+ * de qualquer `@layer`, e no Tailwind v4 o que está fora de camada **ganha
+ * sempre** ao que está dentro — portanto um `transition-colors` escrito ao lado
+ * de `premivel` era silenciosamente descartado, e o botão mudava de cor de
+ * repente. Ou a transição está toda aqui, ou não está.
+ *
+ * (Estar fora de camada é de propósito: é o que permite `hover:` funcionar, ao
+ * contrário do que acontece com `@layer components`.)
+ */
+.premivel {
+  transition:
+    transform var(--tempo-toque) var(--ease-saida),
+    background-color var(--tempo-toque) var(--ease-saida),
+    border-color var(--tempo-toque) var(--ease-saida),
+    color var(--tempo-toque) var(--ease-saida);
+}
+
+.premivel:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .premivel:hover {
+    transform: translateY(-1px);
+  }
+  .premivel:active {
+    transform: scale(0.97);
+  }
+}
+
+/* ── Movimento ────────────────────────────────────────────────────────── */
+
+/**
+ * Revelação ao entrar no ecrã, com *scroll-driven animations*.
+ *
+ * O elemento está **visível por defeito** e a animação só se aplica onde o
+ * browser a suporta. É deliberado e é a diferença entre um enfeite e um site em
+ * branco: se isto dependesse de JavaScript ou de um `opacity: 0` inicial, um
+ * browser sem suporte deixava o conteúdo invisível para sempre.
+ *
+ * ⚠️ **O intervalo tem de fechar dentro do `entry`.** Com `cover 22%` — que aqui
+ * esteve — a revelação só completava quando o elemento atravessasse um quinto do
+ * ecrã, e o **último bloco antes do rodapé nunca lá chegava**: a página acabava
+ * e ele ficava a 0,79 de opacidade para sempre. Fechar em `entry 60%` garante
+ * que qualquer elemento acaba visível assim que entra, esteja onde estiver.
+ *
+ * **Uma revelação por secção, não uma por elemento.** A excepção é a Escalada,
+ * onde os três blocos entram um a um de propósito — ali o escalonamento *é* a
+ * escalada. Em todo o lado o mesmo fade repetido item a item lê-se como reflexo.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .surgir {
+      animation: surgir linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 60%;
+    }
+  }
+}
+
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(1.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* Quem pediu menos movimento leva menos movimento — incluindo o scroll suave,
@@ -109,5 +383,222 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Fitas a correr ───────────────────────────────────────────────────── */
+
+/**
+ * O motor das fitas — as duas do herói e a dos santos, no fundo da página.
+ *
+ * O conteúdo é **duplicado** e a animação desloca metade da largura. É o que faz
+ * o ciclo não ter costura: quando a primeira cópia sai de cena, a segunda está
+ * exactamente onde a primeira começou, e o `translateX` volta a zero sem que se
+ * veja o salto. A cópia é `aria-hidden` — quem usa leitor de ecrã ouve a lista
+ * uma vez, não duas.
+ *
+ * `width: max-content` porque a fita tem de ser tão larga quanto o conteúdo
+ * pedir; com a largura do pai, o `flex` encolhia os itens e a conta do 50%
+ * deixava de fechar.
+ *
+ * ⚠️ **Três fitas seguidas deixam de ser três gestos e passam a ser fundo.** A
+ * dos santos esteve colada ao herói, no mesmo magenta, e o que fazia era acabar
+ * com a ideia do herói: a fila de baixo deixava de o fechar e passava a ser a
+ * primeira de três riscas. Ficaram as duas do herói (que são um gesto só) e a
+ * dos santos lá em baixo, a costurar para o rodapé.
+ */
+.fita {
+  overflow: hidden;
+  /* Sem isto, a fita empurra a largura do documento e o telemóvel ganha scroll
+     horizontal — que é o defeito clássico de um marquee mal contido. */
+  max-width: 100%;
+}
+
+.fita-conteudo {
+  display: flex;
+  width: max-content;
+  animation: correr var(--duracao, 45s) linear infinite;
+}
+
+/* Pausa ao passar o rato: quem quiser ler um nome consegue parar para o ler. */
+.fita:hover .fita-conteudo {
+  animation-play-state: paused;
+}
+
+@keyframes correr {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/**
+ * A fila que anda ao contrário.
+ *
+ * `animation-direction: reverse` e não uma segunda animação: é a mesma regra
+ * lida de trás para a frente, e assim as duas filas nunca podem divergir se
+ * alguém mexer no `@keyframes`.
+ *
+ * Duas filas a andar no mesmo sentido leem-se como uma só coisa a deslizar; em
+ * sentidos opostos, cada uma dá profundidade à outra — e é o que impede o herói
+ * de parecer um banner.
+ */
+.fita-inversa .fita-conteudo {
+  animation-direction: reverse;
+}
+
+/**
+ * Texto em movimento contínuo é dos piores gatilhos para quem tem sensibilidade
+ * a movimento — aqui pára de vez, e a fita passa a ser uma lista normal cortada
+ * pela margem.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .fita-conteudo {
+    animation: none;
+  }
+}
+
+/* ── Cartões sobre fotografia ─────────────────────────────────────────── */
+
+/**
+ * O véu dos cartões: contraste para o nome e o preço por cima da fotografia.
+ *
+ * Sem isto o texto assenta directamente na imagem e a legibilidade passa a
+ * depender do que a fotografia tiver naquele canto — que num cartão de comida é
+ * tudo menos previsível. O gradiente é forte em baixo, onde o texto vive, e
+ * quase transparente em cima, onde só há imagem.
+ *
+ * A escala não é linear: sobe depressa nos primeiros 45 % e depois abranda. Um
+ * gradiente linear a esta altura deixa uma aresta visível a meio do cartão; com
+ * as paragens desencontradas, o olho não a encontra.
+ */
+.veu-cartao {
+  background: linear-gradient(
+    to top,
+    rgb(35 31 32 / 0.94) 0%,
+    rgb(35 31 32 / 0.82) 45%,
+    rgb(35 31 32 / 0.45) 75%,
+    rgb(35 31 32 / 0.2) 100%
+  );
+}
+
+/* ── Mosaico da casa cheia ────────────────────────────────────────────── */
+
+/**
+ * Colunas, e não grelha.
+ *
+ * O pedido para esta secção era «menos geometria mas mantém um padrão». Numa
+ * grelha isso faz-se a dar a cada célula um número de linhas diferente — e essa
+ * conta **não fecha** quando o material tem duas proporções: as fotografias são
+ * 4:5 e os reels 9:16, e qualquer altura escolhida corta uma das duas. Com
+ * `columns`, cada ladrilho fica com a sua proporção natural, as colunas enchem
+ * sozinhas e a irregularidade vem do conteúdo em vez de vir de uma tabela.
+ *
+ * `break-inside: avoid` é o que impede uma imagem de ser partida entre o fim de
+ * uma coluna e o princípio da seguinte.
+ *
+ * ⚠️ **Aqui só entram `public/fotos/` (1286 px) e `public/reels/` (720 px).** Os
+ * recortes de `public/instagram/` têm 356 px — são miniaturas da grelha do
+ * perfil (ver `scripts/importar-instagram.mjs`) — e a esta largura de coluna
+ * seriam ampliados para o dobro num ecrã de dupla densidade. O sítio deles é o
+ * herói, onde o `clamp` os trava nos 240 px. Não os trazer para cá.
+ */
+.mosaico {
+  columns: 2;
+  column-gap: clamp(0.25rem, 0.8vw, 0.5rem);
+}
+
+.mosaico > * {
+  break-inside: avoid;
+  margin-bottom: clamp(0.25rem, 0.8vw, 0.5rem);
+}
+
+@media (min-width: 48rem) {
+  .mosaico {
+    columns: 3;
+  }
+}
+
+@media (min-width: 64rem) {
+  .mosaico {
+    columns: 4;
+  }
+}
+
+/* ── Painel do artigo ─────────────────────────────────────────────────── */
+
+/**
+ * O detalhe de um artigo: **folha a subir de baixo no telemóvel, painel encostado
+ * ao lado em ecrã largo.** A diferença é esta *media query* e mais nada — é o
+ * mesmo `<dialog>`.
+ *
+ * Um `<dialog>` com `showModal()` centra-se sozinho por `margin: auto`; declarar
+ * as margens é o que o tira do centro e o encosta a um lado.
+ */
+.painel-artigo {
+  margin: auto auto 0;
+  width: 100%;
+  max-width: 100%;
+  max-height: 88svh;
+  padding: 0;
+  border: 0;
+  border-radius: 1.25rem 1.25rem 0 0;
+  overflow: hidden;
+
+  translate: 0 100%;
+  opacity: 0;
+  transition:
+    translate 0.32s cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 0.32s ease,
+    display 0.32s allow-discrete,
+    overlay 0.32s allow-discrete;
+}
+
+.painel-artigo[open] {
+  translate: 0 0;
+  opacity: 1;
+}
+
+/* Sem isto a folha aparece de repente: a animação de entrada precisa de um
+   estado inicial declarado, porque o elemento passa de `display: none`. */
+@starting-style {
+  .painel-artigo[open] {
+    translate: 0 100%;
+    opacity: 0;
+  }
+}
+
+.painel-artigo::backdrop {
+  background: rgb(35 31 32 / 0);
+  transition: background 0.32s ease;
+}
+
+.painel-artigo[open]::backdrop {
+  background: rgb(35 31 32 / 0.55);
+}
+
+@starting-style {
+  .painel-artigo[open]::backdrop {
+    background: rgb(35 31 32 / 0);
+  }
+}
+
+@media (min-width: 48rem) {
+  .painel-artigo {
+    margin: 0 0 0 auto;
+    width: min(30rem, 92vw);
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    translate: 100% 0;
+  }
+
+  .painel-artigo[open] {
+    translate: 0 0;
+  }
+
+  @starting-style {
+    .painel-artigo[open] {
+      translate: 100% 0;
+    }
   }
 }

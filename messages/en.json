@@ -7,27 +7,50 @@
   "nav": {
     "inicio": "Home",
     "ementa": "Menu",
-    "casas": "Our places",
     "saltarParaConteudo": "Skip to content",
     "mudarIdioma": "Português"
   },
   "inicio": {
     "heroTexto": "Two places: one in Porto, one by the sea in Leça da Palmeira. The same roll call of saints at both.",
     "verEmenta": "See the menu",
-    "bestSellers": {
-      "titulo": "Best sellers",
-      "texto": "The ones the kitchen makes over and over. They carry the stamp on the menu."
+    "trio": {
+      "titulo": "Three cuts, three saints",
+      "texto": "One of each, and they are the ones the kitchen makes most. There are forty more on the menu.",
+      "verTudo": "See the menu",
+      "ilustrativas": "The photographs are ours and stand as examples — they are not a photograph of each burger."
     },
     "casas": {
       "titulo": "Our places",
       "texto": "Two addresses, one menu. Take whichever is closer."
+    },
+    "casaCheia": {
+      "titulo": "Made by hand, in front of whoever's eating",
+      "credito": "Photography and video by Santo Burga."
+    },
+    "corajosos": {
+      "olho": "For the brave",
+      "titulo": "320, 480 and 640 grams",
+      "texto": "A normal burger is 160 grams. These three are double, triple and quadruple that — and some people finish them."
+    },
+    "paes": {
+      "titulo": "Not every saint comes in a plain bun",
+      "texto": "Sixteen of them come coloured, and you can spot them from the street.",
+      "rosa": "Pink bun",
+      "azul": "Blue bun",
+      "quantos": "{n} saints",
+      "ambos": "The only one that comes both ways"
+    },
+    "fecho": {
+      "titulo": "Before you go, see the menu",
+      "texto": "The same roll call of saints at both places. Take whichever is closer."
     }
   },
   "casas": {
     "direcoes": "Get directions",
     "telefone": "Phone",
     "horario": "Opening hours",
-    "semHorario": "Opening hours yet to be confirmed. Best to call ahead.",
+    "semHorario": "Opening hours yet to be confirmed. Best to check Instagram before heading out.",
+    "semHorarioComTelefone": "Opening hours yet to be confirmed. Best to call ahead.",
     "encerrado": "Closed",
     "entregaTitulo": "Delivery",
     "uberEats": "Uber Eats",
@@ -90,7 +113,13 @@
       "iva": "VAT included at the applicable rate.",
       "alergenios": "Allergen information is available at the restaurant — just ask.",
       "precos": "Prices from the 2024 menu, pending confirmation."
-    }
+    },
+    "ilustrativa": "Illustrative image",
+    "acompanhamento": "Comes with",
+    "abrir": "See details",
+    "fechar": "Close",
+    "acompanhamentoTexto": "Sliced or straight-cut potatoes, included.",
+    "batataDoce": "Sweet potato fries instead"
   },
   "metadata": {
     "inicio": {

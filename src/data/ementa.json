@@ -259,6 +259,7 @@
     "nome": "Santo Esfomeado",
     "categoria": "para-os-corajosos",
     "preco": 12.65,
+    "gramas": 320,
     "descricao": {
       "pt": "320g de novilho (double burga), queijo cheddar, alface, tomate e molho burga",
       "en": "320g of beef (double burga), cheddar cheese, lettuce, tomato and burga sauce"
@@ -269,6 +270,7 @@
     "nome": "São Faminto",
     "categoria": "para-os-corajosos",
     "preco": 14.5,
+    "gramas": 480,
     "descricao": {
       "pt": "480g de novilho (triple burga), queijo cheddar, alface, tomate e molho burga",
       "en": "480g of beef (triple burga), cheddar cheese, lettuce, tomato and burga sauce"
@@ -279,6 +281,7 @@
     "nome": "Mega Santo",
     "categoria": "para-os-corajosos",
     "preco": 19,
+    "gramas": 640,
     "paes": ["rosa", "azul"],
     "bestSeller": true,
     "descricao": {

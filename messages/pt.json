@@ -7,27 +7,50 @@
   "nav": {
     "inicio": "Início",
     "ementa": "Ementa",
-    "casas": "As casas",
     "saltarParaConteudo": "Saltar para o conteúdo",
     "mudarIdioma": "English"
   },
   "inicio": {
     "heroTexto": "Duas casas: uma no Porto, outra à beira-mar em Leça da Palmeira. A mesma carta de santos nas duas.",
     "verEmenta": "Ver a ementa",
-    "bestSellers": {
-      "titulo": "Os mais pedidos",
-      "texto": "Os que saem da cozinha vezes sem conta. Estão assinalados na ementa com o selo."
+    "trio": {
+      "titulo": "Três carnes, três santos",
+      "texto": "Um de cada, e são os que mais saem da cozinha. Há mais quarenta na ementa.",
+      "verTudo": "Ver a ementa",
+      "ilustrativas": "As fotografias são da casa e servem de exemplo — não são a fotografia de cada hambúrguer."
     },
     "casas": {
       "titulo": "As nossas casas",
       "texto": "Duas moradas, a mesma carta. Escolha a que lhe fica mais à mão."
+    },
+    "casaCheia": {
+      "titulo": "Feito à mão, à frente de quem come",
+      "credito": "Fotografia e vídeo do Santo Burga."
+    },
+    "corajosos": {
+      "olho": "Para os corajosos",
+      "titulo": "320, 480 e 640 gramas",
+      "texto": "Um hambúrguer normal tem 160 gramas. Estes três são o dobro, o triplo e o quádruplo — e há quem os acabe."
+    },
+    "paes": {
+      "titulo": "Nem todos os santos vêm em pão normal",
+      "texto": "Há dezasseis que vêm de cor, e vêem-se da rua.",
+      "rosa": "Pão rosa",
+      "azul": "Pão azul",
+      "quantos": "{n} santos",
+      "ambos": "O único que vem dos dois"
+    },
+    "fecho": {
+      "titulo": "Antes de ir, veja a ementa",
+      "texto": "A mesma carta de santos nas duas casas. Escolha a que lhe fica mais à mão."
     }
   },
   "casas": {
     "direcoes": "Como chegar",
     "telefone": "Telefone",
     "horario": "Horário",
-    "semHorario": "Horário por confirmar. Até lá, o mais seguro é telefonar.",
+    "semHorario": "Horário por confirmar. Antes de sair de casa, o mais seguro é ver o Instagram.",
+    "semHorarioComTelefone": "Horário por confirmar. Até lá, o mais seguro é telefonar.",
     "encerrado": "Encerrado",
     "entregaTitulo": "Entrega ao domicílio",
     "uberEats": "Uber Eats",
@@ -90,7 +113,13 @@
       "iva": "I.V.A. incluído à taxa em vigor.",
       "alergenios": "Informação sobre alergénios disponível no restaurante — é só perguntar.",
       "precos": "Preços da carta de 2024, por confirmar."
-    }
+    },
+    "ilustrativa": "Imagem ilustrativa",
+    "acompanhamento": "Acompanhamento",
+    "abrir": "Ver em detalhe",
+    "fechar": "Fechar",
+    "acompanhamentoTexto": "Batata à rodela ou ao palito, incluída.",
+    "batataDoce": "Batata doce em alternativa"
   },
   "metadata": {
     "inicio": {

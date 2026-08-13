@@ -21,8 +21,11 @@ Por ordem de gravidade:
 - [ ] **Alergénios.** `alergenios: []` nos 122 artigos. Preencher com a cozinha —
       **não deduzir das descrições**. Até lá o site mostra o aviso de que a
       informação está disponível no restaurante, que é o que a lei exige.
-- [ ] **Fotografias das duas casas.** Ver *"As fotografias"*, abaixo.
-- [ ] **Logótipo em vetor.** Só existe rasterizado no PDF. Quando chegar, trocar
+- [ ] **Fotografias actuais.** As que estão no site são da galeria antiga do
+      próprio negócio e mostram uma decoração que já não existe. Ver
+      *"As fotografias"*, abaixo.
+- [ ] **Logótipo em vetor.** O desenho já é o verdadeiro, extraído do PDF, mas é
+      rasterizado a 300 dpi. Quando chegar o vetor, trocar
       `src/components/Marca.tsx` **e** correr `npm run icons`, ao mesmo tempo.
 - [ ] **`NEXT_PUBLIC_SITE_URL`** e *redeploy*, para o `sitemap.xml`, o
       `robots.txt` e as imagens de partilha saírem com o domínio certo.
@@ -59,22 +62,97 @@ nenhuma.
 
 ### As fotografias
 
-`fotos: []` nas duas casas, e o bloco mostra "Fotografias por publicar".
+Estão no site, e são do próprio negócio: saíram das páginas
+`santoburgaporto.eatbu.com` e `santoburgaleca.eatbu.com`, que são geridas por
+ele. A atribuição foi feita **cruzando que imagens aparecem em que página** —
+as do espaço só aparecem na página da respectiva casa, e é por isso que se pode
+dizer qual é o Porto e qual é Leça.
 
-Foram tentadas as páginas `santoburgaporto.eatbu.com` e
-`santoburgaleca.eatbu.com`, que são geridas pelo próprio negócio. **Não servem**,
-por três razões: a maior parte das imagens é a mesma nas duas páginas (são fotos
-de marca, não da casa), mostram uma decoração e uma carta que já não existem — a
-ardósia tem *Santa Serra* e *Dois Santos*, que não estão no menu de 2024 — e
-trazem as setas do carrossel queimadas na imagem.
+⚠️ **Mostram uma decoração anterior à actual.** A ardósia de Leça ainda tem
+*Santa Serra* e *Dois Santos*, que não estão na carta de 2024. Entraram por
+serem as melhores que havia; o Instagram tem as actuais e são do cliente.
+**Pedir os originais.**
 
-O Instagram tem fotografias actuais das duas casas, e são do cliente. **Pedir os
-originais.** Depois é largá-los em `public/casas/porto/` e `public/casas/leca/`
-e listá-los em `src/data/restaurantes.json`; a primeira é a capa do bloco.
+Duas notas sobre o que ficou de fora:
 
-Escolher pelo menos uma por casa que **diga qual é qual** num relance — Leça tem
-a esplanada à beira-mar com o mobiliário turquesa, o Porto é sala interior. É
-para isso que a secção existe.
+- **Uma fotografia por casa.** Leça só tinha uma imagem do espaço, repetida em
+  quatro recortes e com as setas do carrossel queimadas nas bordas (recortadas).
+  Dar quatro ao Porto e uma a Leça ficava desequilibrado e dizia a coisa errada
+  sobre as duas casas.
+- **As dez fotos de comida não são de pratos identificados.** Aparecem nas duas
+  páginas, o que prova que são fotografia de marca. Por isso vão para o herói e
+  para a faixa editorial, onde não afirmam nada, e **não** para os cartões dos
+  mais pedidos.
+
+Para trocar por fotografias novas:
+
+```bash
+npm run fotos -- ~/fotos-novas-leca public/casas/leca
+```
+
+Redimensiona a 1600 px, converte para WebP e numera por ordem. Depois é listar
+os caminhos em `src/data/restaurantes.json`. **A primeira é a capa** — escolher
+a que diz num relance qual das duas casas é.
+
+### Fotografia por prato — o que está lá hoje é provisório
+
+Os cartões dos mais pedidos e o painel de detalhe **têm fotografia**, e em todos
+aparece o aviso *"imagem ilustrativa"*. É deliberado: são as fotografias de marca
+distribuídas por família (uma sobremesa leva foto de sobremesa), porque
+fotografia por prato não existe em lado nenhum a que se chegue.
+
+**Para pôr a verdadeira:**
+
+```bash
+npm run fotos -- ~/fotos-dos-santos public/ementa
+```
+
+e depois, no artigo em `src/data/ementa.json`:
+
+```jsonc
+"foto": "/ementa/sao-joao.webp"
+```
+
+O aviso desaparece **só nesse artigo**, sem tocar em código. O caminho tem de
+começar por `/ementa/` — o `npm run build` recusa outro, a dizer o nome do santo.
+
+### As fotografias do Instagram
+
+O herói e a faixa "Da nossa cozinha" usam **doze fotografias do Instagram da
+casa**, recortadas da grelha do perfil a partir de capturas de ecrã
+(`npm run instagram -- <pasta>`). São a vibe certa: sol, mãos, o pão cor-de-rosa,
+a esplanada.
+
+⚠️ **Têm 356 px de largura** — é o tamanho a que o Instagram serve as miniaturas
+da grelha, e o perfil está atrás de login, portanto não há originais a que se
+chegue por programa. Isso decide o desenho, não o contrário: o herói é um mosaico
+de ladrilhos pequenos porque **é a composição que esta resolução aguenta**. Está
+medido — a ampliação máxima é 1,35× em ecrã de 2× e 1,48× num telemóvel de 3×.
+
+**Com os originais**, o herói pode passar a uma fotografia a sangrar sem truques
+e os cartões deixam de ter dois registos fotográficos. É a peça que mais melhora
+o site por menos trabalho: uma exportação do Instagram ou a pasta do fotógrafo.
+
+### Porque a casa de Leça não mudou de fotografia
+
+Há no Instagram uma fotografia de interior com a decoração actual, e a que está
+no site é de uma remodelação anterior. **Não foi trocada de propósito.**
+
+A que lá está sabe-se que é de Leça, porque só aparecia na página dessa casa. A
+do Instagram *parece* o sítio certo e não há como o provar. Numa secção cuja
+função é dizer qual casa é qual, trocar uma prova por uma parecença é o erro
+errado — a foto ficaria mais actual e podia estar a mostrar a casa errada.
+
+### Uma pergunta para a casa
+
+Os hambúrgueres vegetarianos — *Santo do Pau Oco*, *Santa Greta*, *Santo
+Agapito* — **também vêm com batata?**
+
+A nota do impresso diz "todos os hambúrgueres", mas esses três estão na secção
+"Vegetariano & Saladas", que também tem três saladas. Como não há forma de os
+distinguir nos dados, o painel de detalhe **não mostra acompanhamento nenhum**
+nessa secção — nem nos hambúrgueres nem nas saladas. Com a resposta, resolve-se
+numa linha (`CATEGORIAS_COM_BATATA`, em `src/components/ementa/PainelArtigo.tsx`).
 
 ## Correr localmente
 

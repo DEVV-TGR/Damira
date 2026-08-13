@@ -29,3 +29,9 @@ next-env.d.ts
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Material em bruto do cliente: fotografias e reels antes de serem
+# processados por `npm run fotos` e `npm run reels`. Os originais pesam 30 MB e
+# o que o site serve são os derivados em `public/` — versionar os dois era
+# guardar a mesma imagem duas vezes, uma delas inútil.
+originais/
