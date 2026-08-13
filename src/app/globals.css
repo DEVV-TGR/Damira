@@ -50,28 +50,51 @@
   /* Ritmo vertical. É o "muito ar" desta direção reduzido a um número: uma
      secção respira entre 4 e 8 rem consoante o ecrã, e todas respiram igual. */
   --espaco-seccao: clamp(4rem, 9vw, 8rem);
+
+  /**
+   * As curvas.
+   *
+   * As de série do CSS são fracas — falta-lhes o arranque que faz uma transição
+   * parecer intencional em vez de lenta. `--ease-saida` é um *ease-out* forte, e
+   * é o que se usa em quase tudo: começa depressa, que é o momento em que quem
+   * carregou está a olhar.
+   *
+   * ⚠️ **Nunca `ease-in` em interface.** Atrasa o arranque exactamente onde a
+   * atenção está, e a 200 ms *sente-se* mais lento do que um `ease-out` da mesma
+   * duração.
+   */
+  --ease-saida: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-entrada-saida: cubic-bezier(0.77, 0, 0.175, 1);
+  /* Resposta ao toque. Curto de propósito: é confirmação, não animação. */
+  --tempo-toque: 160ms;
 }
 
 /**
  * ## Contraste — o que o impresso pode fazer e o ecrã não
  *
  * As cores da marca são claras, e no papel isso não custa nada. No ecrã custa, e
- * há combinações do impresso que **não se podem copiar**:
+ * há combinações do impresso que **não se podem copiar**. Os rácios abaixo estão
+ * medidos por script sobre os valores exactos desta folha:
  *
- * | Combinação                 | Rácio  | Veredito                                  |
- * |----------------------------|--------|-------------------------------------------|
- * | branco sobre magenta       | 4,25:1 | só títulos grandes (≥ 24 px, ou 19 px bold) |
- * | branco sobre magenta-forte | 4,83:1 | qualquer tamanho — é para isso que existe |
- * | branco sobre coral         | 2,17:1 | **nunca** — é o que o impresso faz e não passa |
- * | tinta sobre coral          | 7,5:1  | sempre                                     |
- * | tinta sobre turquesa       | 8,9:1  | sempre                                     |
- * | magenta sobre papel        | 4,01:1 | só texto grande                            |
- * | magenta-forte sobre papel  | 4,57:1 | qualquer tamanho                           |
+ * | Combinação                 | Rácio  | Veredito                                    |
+ * |----------------------------|--------|---------------------------------------------|
+ * | branco sobre magenta       | 4,01:1 | só títulos grandes (≥ 24 px, ou 19 px bold) |
+ * | branco sobre magenta-forte | 4,57:1 | qualquer tamanho — é para isso que existe   |
+ * | branco sobre coral         | 2,03:1 | **nunca** — é o que o impresso faz e não passa |
+ * | tinta sobre coral          | 7,6:1  | sempre                                      |
+ * | tinta sobre turquesa       | 10,3:1 | sempre                                      |
+ * | magenta-forte sobre papel  | 4,57:1 | qualquer tamanho                            |
+ * | tinta-suave sobre papel    | 5,3:1  | sempre                                      |
  *
  * O magenta da marca falha o texto pequeno por muito pouco. Em vez de o
  * abandonar, há um segundo tom sete por cento mais escuro que passa e que, lado
  * a lado, ninguém distingue. Superfícies grandes usam o da marca; texto e
  * filetes finos usam o forte.
+ *
+ * ⚠️ **A opacidade come o contraste, e não aparece em tabela nenhuma.** Um
+ * `text-papel/90` sobre magenta-forte cai de 4,57:1 para **3,85:1** e reprova; a
+ * 85 %, para 3,54:1. Sobre magenta não há folga para diluir o branco — ou é
+ * papel a 100 %, ou muda-se de fundo. (Sobre tinta há: a 70 % ainda dá 8,2:1.)
  *
  * ⚠️ **O Tailwind v4 não aplica variantes a classes de `@layer components`.** Um
  * `hover:bloco-magenta` compila-se em silêncio para nada. Em estados, usar
@@ -96,6 +119,28 @@
     color: var(--color-papel);
   }
 }
+
+/**
+ * ## Onde entra cada fundo
+ *
+ * Sem uma regra, a sequência de cores da página lê-se como acidente — foi o que
+ * aconteceu quando a fita dos santos ficou colada ao herói, no mesmo magenta,
+ * sem fronteira nenhuma entre os dois. A regra é esta e é para seguir:
+ *
+ * - **magenta** — a marca a falar. **Uma superfície inteira, e é o herói.** Em
+ *   baixo aparece só do tamanho de um botão, que é o que o mantém a valer
+ *   alguma coisa. ⚠️ Já foi também o fundo do fecho: com o rodapé escuro logo a
+ *   seguir, o fim da página lia-se como três blocos de três cores em vez de uma
+ *   aterragem.
+ * - **papel** — a superfície de leitura. É o estado normal.
+ * - **papel-fundo** — o depois do pico. Marca que se passou da carta para o
+ *   prático (as casas), e é o único sítio onde a diferença dos dois papéis tem
+ *   um significado.
+ * - **tinta** — o pico (a Escalada) e o chão. O chão é **um bloco só**: fecho,
+ *   fita dos santos e rodapé partilham a mesma cor e a mesma leitura.
+ * - **coral e turquesa** — acentos dentro de blocos. **Nunca secções inteiras**:
+ *   nenhum dos dois aguenta texto corrido por cima.
+ */
 
 /* ── Base ─────────────────────────────────────────────────────────────── */
 
@@ -123,7 +168,8 @@ body {
  * na dose certa.
  *
  * `pointer-events: none` porque isto cobre o ecrã inteiro e não pode roubar um
- * único clique.
+ * único clique. `position: fixed` e não num contentor com scroll: um filtro de
+ * ruído por cima de conteúdo a rolar repinta a cada quadro.
  */
 body::after {
   content: "";
@@ -155,7 +201,43 @@ body::after {
   text-wrap: balance;
 }
 
-/** Etiqueta de secção: pequena, em caixa alta, precedida de um filete magenta. */
+/**
+ * ## Três degraus, e só três
+ *
+ * ⚠️ **Quatro das cinco secções tinham o mesmo `clamp(2.5rem, 6vw, 4.5rem)`.**
+ * Escrito à mão, secção a secção, sempre igual — o que dava uma página inteira
+ * sem hierarquia nenhuma: tudo do mesmo tamanho, tudo encostado à mesma goteira,
+ * uma aresta vertical do topo ao fundo.
+ *
+ * Agora são três degraus, com um salto de ~1,57 entre cada. Uma escala com
+ * degraus de 1,1 lê-se como indecisão; abaixo de 1,25 não se vê que são
+ * diferentes, e então mais valia serem iguais.
+ *
+ * O que decide o degrau é o **peso da secção na página**, não o gosto:
+ * `alfa` para os dois momentos altos, `gama` para o que é prático.
+ */
+.titulo-alfa {
+  font-size: clamp(2.75rem, 7vw, 5.5rem);
+}
+.titulo-beta {
+  font-size: clamp(2rem, 4.5vw, 3.5rem);
+}
+.titulo-gama {
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+/**
+ * Etiqueta de secção: pequena, em caixa alta, precedida de um filete magenta.
+ *
+ * ⚠️ **Uma por página.** Isto esteve em cinco secções seguidas, e em quatro
+ * delas dizia o mesmo que o título logo abaixo ("Onde estamos" sobre "As nossas
+ * casas") ou estragava-lhe a piada ("Pão rosa e pão azul" sobre "Nem todos os
+ * santos vêm em pão normal"). Uma etiqueta que repete o título não é hierarquia,
+ * é ruído — e cinco iguais são a assinatura de uma página montada por reflexo.
+ *
+ * Sobra na Escalada, onde **é conteúdo**: "Para os corajosos" é o nome
+ * verdadeiro de uma categoria da carta impressa, não uma legenda inventada.
+ */
 .olho {
   font-family: var(--font-display);
   font-variation-settings: "wdth" 75, "opsz" 12;
@@ -205,6 +287,49 @@ body::after {
   -webkit-mask-size: contain;
 }
 
+/* ── Interacção ───────────────────────────────────────────────────────── */
+
+/**
+ * Resposta ao toque: o elemento encolhe um fio enquanto está a ser carregado.
+ *
+ * São dois por cento e ninguém repara neles — que é o ponto. O que se nota é a
+ * ausência: sem isto, um botão parece não ter ouvido o clique.
+ *
+ * ⚠️ **O `hover` fica atrás de `@media (hover: hover)`.** Num telemóvel, tocar
+ * dispara `:hover` e o estado **fica preso** depois de o dedo sair — um botão que
+ * parece carregado para sempre. Só quem tem rato é que tem `hover`.
+ */
+/**
+ * ⚠️ **Declara as cores também, e não é por preguiça.** Estas regras estão fora
+ * de qualquer `@layer`, e no Tailwind v4 o que está fora de camada **ganha
+ * sempre** ao que está dentro — portanto um `transition-colors` escrito ao lado
+ * de `premivel` era silenciosamente descartado, e o botão mudava de cor de
+ * repente. Ou a transição está toda aqui, ou não está.
+ *
+ * (Estar fora de camada é de propósito: é o que permite `hover:` funcionar, ao
+ * contrário do que acontece com `@layer components`.)
+ */
+.premivel {
+  transition:
+    transform var(--tempo-toque) var(--ease-saida),
+    background-color var(--tempo-toque) var(--ease-saida),
+    border-color var(--tempo-toque) var(--ease-saida),
+    color var(--tempo-toque) var(--ease-saida);
+}
+
+.premivel:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .premivel:hover {
+    transform: translateY(-1px);
+  }
+  .premivel:active {
+    transform: scale(0.97);
+  }
+}
+
 /* ── Movimento ────────────────────────────────────────────────────────── */
 
 /**
@@ -220,6 +345,10 @@ body::after {
  * ecrã, e o **último bloco antes do rodapé nunca lá chegava**: a página acabava
  * e ele ficava a 0,79 de opacidade para sempre. Fechar em `entry 60%` garante
  * que qualquer elemento acaba visível assim que entra, esteja onde estiver.
+ *
+ * **Uma revelação por secção, não uma por elemento.** A excepção é a Escalada,
+ * onde os três blocos entram um a um de propósito — ali o escalonamento *é* a
+ * escalada. Em todo o lado o mesmo fade repetido item a item lê-se como reflexo.
  */
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
@@ -257,100 +386,10 @@ body::after {
   }
 }
 
-/* ── Carrossel dos mais pedidos ───────────────────────────────────────── */
-
-/**
- * O efeito que dá o carácter à secção: **o cartão ao centro nítido, os dos lados
- * desfocados**, como uma objectiva aberta.
- *
- * A mecânica está toda em `--d`, que o componente escreve em cada cartão — 0 ao
- * centro da pista, 1 na borda. Daqui saem as três propriedades. Não há
- * JavaScript a mexer em estilos: há JavaScript a medir uma distância, e CSS a
- * decidir o que fazer com ela.
- *
- * O `scroll-snap` é nativo de propósito. Dedo, roda do rato, trackpad e setas do
- * teclado já funcionam bem no browser; reescrever isso em JavaScript é a via
- * rápida para um carrossel que não se deixa arrastar como deve ser.
- */
-.carrossel {
-  --largura-cartao: clamp(15rem, 70vw, 25rem);
-  /* Sai o `scroll-snap`: luta contra o avanço programático contínuo, e com a
-     pista sempre em movimento o encaixe deixou de fazer sentido — o foco é
-     contínuo, não por posições. */
-  scroll-snap-type: none;
-  /**
-   * Sem este espaço nas pontas, o primeiro e o último cartão nunca chegam ao
-   * centro da pista — ficam encostados à borda, permanentemente desfocados, e o
-   * primeiro dos mais pedidos era o único que ninguém via bem.
-   */
-  padding-inline: calc(50% - var(--largura-cartao) / 2);
-  /* O `overflow` corta a escala e o desfoque dos cartões nas bordas; a margem
-     negativa e o preenchimento devolvem-lhes o espaço que o efeito precisa. */
-  scroll-padding-inline: calc(50% - var(--largura-cartao) / 2);
-}
-
-.carrossel::-webkit-scrollbar {
-  display: none;
-}
-
-/**
- * O véu dos cartões, agora que levam fotografia. Mesmo princípio do herói: dá
- * contraste ao texto e esconde o que a fotografia não tem para mostrar.
- */
-.veu-cartao {
-  background: linear-gradient(
-    to top,
-    rgb(35 31 32 / 0.94) 0%,
-    rgb(35 31 32 / 0.82) 45%,
-    rgb(35 31 32 / 0.45) 75%,
-    rgb(35 31 32 / 0.2) 100%
-  );
-}
-
-.cartao-carrossel {
-  /* Sem JavaScript `--d` fica em 0 e sai tudo nítido e legível. O desfoque é o
-     enfeite; a lista de doze hambúrgueres é que é a funcionalidade. */
-  --d: 0;
-  flex: none;
-  width: var(--largura-cartao);
-  min-height: clamp(21rem, 46vw, 26rem);
-  filter: blur(calc(var(--d) * 5px));
-  transform: scale(calc(1 - var(--d) * 0.16));
-  opacity: calc(1 - var(--d) * 0.45);
-  will-change: transform, filter;
-}
-
-/**
- * Desfoque a mexer é dos efeitos que mais enjoa quem tem sensibilidade a
- * movimento — aqui desaparece por completo, e a distância ao centro passa a
- * notar-se só pela opacidade, que é inofensiva.
- */
-@media (prefers-reduced-motion: reduce) {
-  /**
- * O véu dos cartões, agora que levam fotografia. Mesmo princípio do herói: dá
- * contraste ao texto e esconde o que a fotografia não tem para mostrar.
- */
-.veu-cartao {
-  background: linear-gradient(
-    to top,
-    rgb(35 31 32 / 0.94) 0%,
-    rgb(35 31 32 / 0.82) 45%,
-    rgb(35 31 32 / 0.45) 75%,
-    rgb(35 31 32 / 0.2) 100%
-  );
-}
-
-.cartao-carrossel {
-    filter: none;
-    transform: none;
-    opacity: calc(1 - var(--d) * 0.3);
-  }
-}
-
 /* ── Fitas a correr ───────────────────────────────────────────────────── */
 
 /**
- * O motor das duas fitas — a dos nomes dos santos e a das fotografias.
+ * O motor das fitas — as duas do herói e a dos santos, no fundo da página.
  *
  * O conteúdo é **duplicado** e a animação desloca metade da largura. É o que faz
  * o ciclo não ter costura: quando a primeira cópia sai de cena, a segunda está
@@ -361,6 +400,12 @@ body::after {
  * `width: max-content` porque a fita tem de ser tão larga quanto o conteúdo
  * pedir; com a largura do pai, o `flex` encolhia os itens e a conta do 50%
  * deixava de fechar.
+ *
+ * ⚠️ **Três fitas seguidas deixam de ser três gestos e passam a ser fundo.** A
+ * dos santos esteve colada ao herói, no mesmo magenta, e o que fazia era acabar
+ * com a ideia do herói: a fila de baixo deixava de o fechar e passava a ser a
+ * primeira de três riscas. Ficaram as duas do herói (que são um gesto só) e a
+ * dos santos lá em baixo, a costurar para o rodapé.
  */
 .fita {
   overflow: hidden;
@@ -412,97 +457,19 @@ body::after {
   }
 }
 
-/* ── Movimento ────────────────────────────────────────────────────────── */
+/* ── Cartões sobre fotografia ─────────────────────────────────────────── */
 
 /**
- * Revelação ao entrar no ecrã, com *scroll-driven animations*.
+ * O véu dos cartões: contraste para o nome e o preço por cima da fotografia.
  *
- * O elemento está **visível por defeito** e a animação só se aplica onde o
- * browser a suporta. É deliberado e é a diferença entre um enfeite e um site em
- * branco: se isto dependesse de JavaScript ou de um `opacity: 0` inicial, um
- * browser sem suporte deixava o conteúdo invisível para sempre.
+ * Sem isto o texto assenta directamente na imagem e a legibilidade passa a
+ * depender do que a fotografia tiver naquele canto — que num cartão de comida é
+ * tudo menos previsível. O gradiente é forte em baixo, onde o texto vive, e
+ * quase transparente em cima, onde só há imagem.
  *
- * ⚠️ **O intervalo tem de fechar dentro do `entry`.** Com `cover 22%` — que aqui
- * esteve — a revelação só completava quando o elemento atravessasse um quinto do
- * ecrã, e o **último bloco antes do rodapé nunca lá chegava**: a página acabava
- * e ele ficava a 0,79 de opacidade para sempre. Fechar em `entry 60%` garante
- * que qualquer elemento acaba visível assim que entra, esteja onde estiver.
- */
-@media (prefers-reduced-motion: no-preference) {
-  @supports (animation-timeline: view()) {
-    .surgir {
-      animation: surgir linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 60%;
-    }
-  }
-}
-
-@keyframes surgir {
-  from {
-    opacity: 0;
-    transform: translateY(1.75rem);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-/* Quem pediu menos movimento leva menos movimento — incluindo o scroll suave,
-   que é dos que mais enjoa. */
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* ── Carrossel dos mais pedidos ───────────────────────────────────────── */
-
-/**
- * O efeito que dá o carácter à secção: **o cartão ao centro nítido, os dos lados
- * desfocados**, como uma objectiva aberta.
- *
- * A mecânica está toda em `--d`, que o componente escreve em cada cartão — 0 ao
- * centro da pista, 1 na borda. Daqui saem as três propriedades. Não há
- * JavaScript a mexer em estilos: há JavaScript a medir uma distância, e CSS a
- * decidir o que fazer com ela.
- *
- * O `scroll-snap` é nativo de propósito. Dedo, roda do rato, trackpad e setas do
- * teclado já funcionam bem no browser; reescrever isso em JavaScript é a via
- * rápida para um carrossel que não se deixa arrastar como deve ser.
- */
-.carrossel {
-  --largura-cartao: clamp(15rem, 70vw, 25rem);
-  /* Sai o `scroll-snap`: luta contra o avanço programático contínuo, e com a
-     pista sempre em movimento o encaixe deixou de fazer sentido — o foco é
-     contínuo, não por posições. */
-  scroll-snap-type: none;
-  /**
-   * Sem este espaço nas pontas, o primeiro e o último cartão nunca chegam ao
-   * centro da pista — ficam encostados à borda, permanentemente desfocados, e o
-   * primeiro dos mais pedidos era o único que ninguém via bem.
-   */
-  padding-inline: calc(50% - var(--largura-cartao) / 2);
-  /* O `overflow` corta a escala e o desfoque dos cartões nas bordas; a margem
-     negativa e o preenchimento devolvem-lhes o espaço que o efeito precisa. */
-  scroll-padding-inline: calc(50% - var(--largura-cartao) / 2);
-}
-
-.carrossel::-webkit-scrollbar {
-  display: none;
-}
-
-/**
- * O véu dos cartões, agora que levam fotografia. Mesmo princípio do herói: dá
- * contraste ao texto e esconde o que a fotografia não tem para mostrar.
+ * A escala não é linear: sobe depressa nos primeiros 45 % e depois abranda. Um
+ * gradiente linear a esta altura deixa uma aresta visível a meio do cartão; com
+ * as paragens desencontradas, o olho não a encontra.
  */
 .veu-cartao {
   background: linear-gradient(
@@ -514,108 +481,46 @@ body::after {
   );
 }
 
-.cartao-carrossel {
-  /* Sem JavaScript `--d` fica em 0 e sai tudo nítido e legível. O desfoque é o
-     enfeite; a lista de doze hambúrgueres é que é a funcionalidade. */
-  --d: 0;
-  flex: none;
-  width: var(--largura-cartao);
-  min-height: clamp(21rem, 46vw, 26rem);
-  filter: blur(calc(var(--d) * 5px));
-  transform: scale(calc(1 - var(--d) * 0.16));
-  opacity: calc(1 - var(--d) * 0.45);
-  will-change: transform, filter;
-}
+/* ── Mosaico da casa cheia ────────────────────────────────────────────── */
 
 /**
- * Desfoque a mexer é dos efeitos que mais enjoa quem tem sensibilidade a
- * movimento — aqui desaparece por completo, e a distância ao centro passa a
- * notar-se só pela opacidade, que é inofensiva.
+ * Colunas, e não grelha.
+ *
+ * O pedido para esta secção era «menos geometria mas mantém um padrão». Numa
+ * grelha isso faz-se a dar a cada célula um número de linhas diferente — e essa
+ * conta **não fecha** quando o material tem duas proporções: as fotografias são
+ * 4:5 e os reels 9:16, e qualquer altura escolhida corta uma das duas. Com
+ * `columns`, cada ladrilho fica com a sua proporção natural, as colunas enchem
+ * sozinhas e a irregularidade vem do conteúdo em vez de vir de uma tabela.
+ *
+ * `break-inside: avoid` é o que impede uma imagem de ser partida entre o fim de
+ * uma coluna e o princípio da seguinte.
+ *
+ * ⚠️ **Aqui só entram `public/fotos/` (1286 px) e `public/reels/` (720 px).** Os
+ * recortes de `public/instagram/` têm 356 px — são miniaturas da grelha do
+ * perfil (ver `scripts/importar-instagram.mjs`) — e a esta largura de coluna
+ * seriam ampliados para o dobro num ecrã de dupla densidade. O sítio deles é o
+ * herói, onde o `clamp` os trava nos 240 px. Não os trazer para cá.
  */
-@media (prefers-reduced-motion: reduce) {
-  /**
- * O véu dos cartões, agora que levam fotografia. Mesmo princípio do herói: dá
- * contraste ao texto e esconde o que a fotografia não tem para mostrar.
- */
-.veu-cartao {
-  background: linear-gradient(
-    to top,
-    rgb(35 31 32 / 0.94) 0%,
-    rgb(35 31 32 / 0.82) 45%,
-    rgb(35 31 32 / 0.45) 75%,
-    rgb(35 31 32 / 0.2) 100%
-  );
+.mosaico {
+  columns: 2;
+  column-gap: clamp(0.25rem, 0.8vw, 0.5rem);
 }
 
-.cartao-carrossel {
-    filter: none;
-    transform: none;
-    opacity: calc(1 - var(--d) * 0.3);
+.mosaico > * {
+  break-inside: avoid;
+  margin-bottom: clamp(0.25rem, 0.8vw, 0.5rem);
+}
+
+@media (min-width: 48rem) {
+  .mosaico {
+    columns: 3;
   }
 }
 
-/* ── Fitas a correr ───────────────────────────────────────────────────── */
-
-/**
- * O motor das duas fitas — a dos nomes dos santos e a das fotografias.
- *
- * O conteúdo é **duplicado** e a animação desloca metade da largura. É o que faz
- * o ciclo não ter costura: quando a primeira cópia sai de cena, a segunda está
- * exactamente onde a primeira começou, e o `translateX` volta a zero sem que se
- * veja o salto. A cópia é `aria-hidden` — quem usa leitor de ecrã ouve a lista
- * uma vez, não duas.
- *
- * `width: max-content` porque a fita tem de ser tão larga quanto o conteúdo
- * pedir; com a largura do pai, o `flex` encolhia os itens e a conta do 50%
- * deixava de fechar.
- */
-.fita {
-  overflow: hidden;
-  /* Sem isto, a fita empurra a largura do documento e o telemóvel ganha scroll
-     horizontal — que é o defeito clássico de um marquee mal contido. */
-  max-width: 100%;
-}
-
-.fita-conteudo {
-  display: flex;
-  width: max-content;
-  animation: correr var(--duracao, 45s) linear infinite;
-}
-
-/* Pausa ao passar o rato: quem quiser ler um nome consegue parar para o ler. */
-.fita:hover .fita-conteudo {
-  animation-play-state: paused;
-}
-
-@keyframes correr {
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-/**
- * A fila que anda ao contrário.
- *
- * `animation-direction: reverse` e não uma segunda animação: é a mesma regra
- * lida de trás para a frente, e assim as duas filas nunca podem divergir se
- * alguém mexer no `@keyframes`.
- *
- * Duas filas a andar no mesmo sentido leem-se como uma só coisa a deslizar; em
- * sentidos opostos, cada uma dá profundidade à outra — e é o que impede o herói
- * de parecer um banner.
- */
-.fita-inversa .fita-conteudo {
-  animation-direction: reverse;
-}
-
-/**
- * Texto em movimento contínuo é dos piores gatilhos para quem tem sensibilidade
- * a movimento — aqui pára de vez, e a fita passa a ser uma lista normal cortada
- * pela margem.
- */
-@media (prefers-reduced-motion: reduce) {
-  .fita-conteudo {
-    animation: none;
+@media (min-width: 64rem) {
+  .mosaico {
+    columns: 4;
   }
 }
 

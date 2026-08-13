@@ -1,8 +1,7 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { Marca } from "./Marca";
 
@@ -13,8 +12,16 @@ import { Marca } from "./Marca";
  */
 export function Cabecalho({ locale }: { locale: Locale }) {
   const t = useTranslations("nav");
-  /* O `usePathname` do next-intl devolve o caminho já sem prefixo de idioma, que
-     é o que o `Link` dele volta a precisar. */
+  /**
+   * ⚠️ **Este `usePathname` é o de `@/i18n/navigation`, não o do
+   * `next/navigation`.** Só o primeiro devolve o caminho **sem** o prefixo de
+   * idioma, que é o que o `Link` volta a precisar para lhe pôr o prefixo novo.
+   *
+   * Com o do Next, em `/en` o caminho vinha `/en` e o botão «Português»
+   * apontava para `/pt/en` — um URL que não existe, que o negociador de idioma
+   * devolvia ao inglês, e **de onde não se saía**. Só se via de `/en` para `/pt`;
+   * no sentido contrário não há prefixo para duplicar e parecia tudo bem.
+   */
   const caminho = usePathname();
   const outra = routing.locales.find((l) => l !== locale) ?? routing.defaultLocale;
 

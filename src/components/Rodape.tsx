@@ -2,12 +2,34 @@ import { useTranslations } from "next-intl";
 import { marca } from "@/data/marca";
 import { restaurantes, moradaCompleta, urlDirecoes } from "@/data/restaurantes";
 import { URL_ESTUDIO } from "@/lib/site";
-import { Marca } from "./Marca";
 
 /**
- * O rodapé é o único bloco escuro do site, e é de propósito: numa página toda
- * clara é o que lhe dá chão e diz que acabou. O magenta chapado que aqui esteve
- * antes competia com o herói pelo mesmo papel.
+ * O rodapé é o chão do site: numa página clara é o que diz que acabou. O magenta
+ * chapado que aqui esteve antes competia com o herói pelo mesmo papel — e hoje o
+ * magenta chapado é mesmo só do herói.
+ *
+ * **Não é o único bloco escuro**, ao contrário do que este comentário dizia
+ * durante um tempo. Na homepage é o terceiro andar de um chão que começa no
+ * fecho e passa pela fita dos santos — os três na mesma tinta, de propósito,
+ * para o fim da página se ler de uma vez. Há ainda a escalada, a meio, e as
+ * notas da carta na ementa; e essa era a razão do defeito a seguir.
+ *
+ * ⚠️ **A marca saiu daqui.** Estava numa quarta coluna, empilhada e a `text-3xl`.
+ * Na homepage isso punha-a **duas vezes no mesmo bloco escuro**, a dois centímetros
+ * de distância e quase do mesmo tamanho: o fecho mostra-a em grande — é a única
+ * vez em todo o site — e o rodapé repetia-a logo por baixo, com a fita dos santos
+ * a fazer de intervalo. Repetir uma marca a essa distância não a reforça, mostra
+ * que ninguém compôs o fim da página.
+ *
+ * O rodapé não fica sem ela: está no cabeçalho de todas as páginas, e a linha do
+ * copyright escreve-lhe o nome. O que aqui vive é o que se **procura** — moradas,
+ * telefone, redes.
+ *
+ * ⚠️ **Sem margem por cima.** Tinha `mt-[var(--espaco-seccao)]`, e como a margem
+ * mostra o fundo do `body`, isso abria **uma faixa de papel entre dois blocos
+ * escuros** nas duas páginas: entre as notas da carta e o rodapé, na ementa, e
+ * entre a fita dos santos e o rodapé, na homepage. O espaço que falta é dado por
+ * quem vem antes — o `.seccao` já traz `padding-block`.
  */
 export function Rodape() {
   const t = useTranslations("rodape");
@@ -20,10 +42,8 @@ export function Rodape() {
   ].filter((rede): rede is { href: string; rotulo: string } => rede.href !== null);
 
   return (
-    <footer className="mt-[var(--espaco-seccao)] bg-tinta text-papel">
-      <div className="envolvente grid gap-12 py-16 sm:grid-cols-2 lg:grid-cols-4">
-        <Marca className="text-3xl" empilhado />
-
+    <footer className="bg-tinta text-papel">
+      <div className="envolvente grid gap-12 py-16 sm:grid-cols-2 lg:grid-cols-3">
         {restaurantes.map((casa) => (
           <div key={casa.id} className="text-sm leading-relaxed">
             <p className="text-xs font-semibold uppercase tracking-widest text-papel/60">

@@ -7,29 +7,25 @@
   "nav": {
     "inicio": "Início",
     "ementa": "Ementa",
-    "casas": "As casas",
     "saltarParaConteudo": "Saltar para o conteúdo",
     "mudarIdioma": "English"
   },
   "inicio": {
     "heroTexto": "Duas casas: uma no Porto, outra à beira-mar em Leça da Palmeira. A mesma carta de santos nas duas.",
     "verEmenta": "Ver a ementa",
-    "bestSellers": {
-      "titulo": "Os mais pedidos",
-      "texto": "Os que saem da cozinha vezes sem conta. Estão assinalados na ementa com o selo.",
-      "olho": "Os do costume",
-      "anterior": "Anterior",
-      "seguinte": "Seguinte"
+    "trio": {
+      "titulo": "Três carnes, três santos",
+      "texto": "Um de cada, e são os que mais saem da cozinha. Há mais quarenta na ementa.",
+      "verTudo": "Ver a ementa",
+      "ilustrativas": "As fotografias são da casa e servem de exemplo — não são a fotografia de cada hambúrguer."
     },
     "casas": {
       "titulo": "As nossas casas",
-      "texto": "Duas moradas, a mesma carta. Escolha a que lhe fica mais à mão.",
-      "olho": "Onde estamos"
+      "texto": "Duas moradas, a mesma carta. Escolha a que lhe fica mais à mão."
     },
-    "cozinha": {
-      "olho": "Da nossa cozinha",
+    "casaCheia": {
       "titulo": "Feito à mão, à frente de quem come",
-      "credito": "Fotografia do Santo Burga."
+      "credito": "Fotografia e vídeo do Santo Burga."
     },
     "corajosos": {
       "olho": "Para os corajosos",
@@ -37,18 +33,24 @@
       "texto": "Um hambúrguer normal tem 160 gramas. Estes três são o dobro, o triplo e o quádruplo — e há quem os acabe."
     },
     "paes": {
-      "olho": "Pão rosa e pão azul",
       "titulo": "Nem todos os santos vêm em pão normal",
-      "texto": "Há dezasseis que vêm de cor. Um deles vem dos dois — está assinalado com uma estrela nos dois lados.",
+      "texto": "Há dezasseis que vêm de cor, e vêem-se da rua.",
       "rosa": "Pão rosa",
-      "azul": "Pão azul"
+      "azul": "Pão azul",
+      "quantos": "{n} santos",
+      "ambos": "O único que vem dos dois"
+    },
+    "fecho": {
+      "titulo": "Antes de ir, veja a ementa",
+      "texto": "A mesma carta de santos nas duas casas. Escolha a que lhe fica mais à mão."
     }
   },
   "casas": {
     "direcoes": "Como chegar",
     "telefone": "Telefone",
     "horario": "Horário",
-    "semHorario": "Horário por confirmar. Até lá, o mais seguro é telefonar.",
+    "semHorario": "Horário por confirmar. Antes de sair de casa, o mais seguro é ver o Instagram.",
+    "semHorarioComTelefone": "Horário por confirmar. Até lá, o mais seguro é telefonar.",
     "encerrado": "Encerrado",
     "entregaTitulo": "Entrega ao domicílio",
     "uberEats": "Uber Eats",

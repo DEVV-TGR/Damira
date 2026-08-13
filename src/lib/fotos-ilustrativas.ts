@@ -93,3 +93,54 @@ export function fotoDoArtigo(artigo: Artigo): FotoDeArtigo | null {
     ilustrativa: true,
   };
 }
+
+/**
+ * As fotografias de vários artigos **vistos ao mesmo tempo**, sem duas iguais.
+ *
+ * ⚠️ **A semente por `id` não sabe quem está ao lado de quem.** A reserva dos
+ * hambúrgueres tem quatro imagens; pedir três, ao acaso, dá duas iguais em quase
+ * metade dos casos — e foi o que aconteceu no trio da homepage, com o Santo
+ * Assunção e o Santo Galinéu a mostrarem o mesmo prato lado a lado. Dois cartões
+ * gémeos numa fila de três não se leem como coincidência, leem-se como avaria.
+ *
+ * Quem colide anda para a frente na reserva até encontrar uma livre. O primeiro
+ * de cada colisão fica com a sua — a ordem entra na decisão, e é por isso que
+ * isto se usa **por secção** e nunca artigo a artigo.
+ *
+ * ⚠️ **Um artigo desdobrado deixa de coincidir com o que a ementa lhe dá.** É
+ * consciente e só se aguenta porque as duas imagens são ilustrativas: nenhuma
+ * afirma ser aquele prato, e o aviso está nos dois sítios. **Se algum dia o
+ * `foto` do artigo estiver preenchido isto não lhe toca** — a fotografia real
+ * nunca se desloca, sai daqui logo no `fotoDoArtigo` e é a mesma em todo o lado.
+ */
+export function fotosDistintas(
+  artigos: readonly Artigo[],
+): (FotoDeArtigo | null)[] {
+  const usadas = new Set<string>();
+
+  return artigos.map((artigo) => {
+    const escolha = fotoDoArtigo(artigo);
+    if (!escolha) return null;
+
+    /* Uma fotografia real não se troca, nem que repita: trocá-la seria mostrar
+       outro prato. Se duas forem iguais, é porque o JSON o diz. */
+    if (!escolha.ilustrativa || !usadas.has(escolha.src)) {
+      usadas.add(escolha.src);
+      return escolha;
+    }
+
+    const reserva = RESERVAS[artigo.categoria] ?? [];
+    const inicio = reserva.indexOf(escolha.src);
+    for (let salto = 1; salto < reserva.length; salto++) {
+      const alternativa = reserva[(inicio + salto) % reserva.length];
+      if (!usadas.has(alternativa)) {
+        usadas.add(alternativa);
+        return { src: alternativa, ilustrativa: true };
+      }
+    }
+
+    /* Mais artigos do que imagens na reserva: repetir é o menos mau. A
+       alternativa era um cartão sem fotografia no meio de outros com ela. */
+    return escolha;
+  });
+}
