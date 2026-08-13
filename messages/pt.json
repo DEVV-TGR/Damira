@@ -13,13 +13,11 @@
   "inicio": {
     "heroTexto": "Duas casas: uma no Porto, outra à beira-mar em Leça da Palmeira. A mesma carta de santos nas duas.",
     "verEmenta": "Ver a ementa",
-    "mural": {
-      "titulo": "Os santos da carta",
-      "nota": "{total} santos na carta, cada um com o seu hambúrguer. A magenta, os que mais saem da cozinha."
-    },
-    "mesa": {
-      "titulo": "Os do selo dão uma refeição inteira",
-      "texto": "São os que a cozinha faz vezes sem conta. Estão pela ordem do impresso, que é a ordem por que se come."
+    "trio": {
+      "titulo": "Três carnes, três santos",
+      "texto": "Um de cada, e são os que mais saem da cozinha. Há mais quarenta na ementa.",
+      "verTudo": "Ver a ementa",
+      "ilustrativas": "As fotografias são da casa e servem de exemplo — não são a fotografia de cada hambúrguer."
     },
     "casas": {
       "titulo": "As nossas casas",
@@ -43,7 +41,7 @@
       "ambos": "O único que vem dos dois"
     },
     "fecho": {
-      "titulo": "Onde nos encontrar",
+      "titulo": "Antes de ir, veja a ementa",
       "texto": "A mesma carta de santos nas duas casas. Escolha a que lhe fica mais à mão."
     }
   },

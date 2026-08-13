@@ -245,27 +245,41 @@ export const escalada = () =>
 export const santos = () => ementa.filter((artigo) => artigo.nomeEn === null);
 
 /**
- * Os que **têm mesmo nome de santo**. São quarenta.
+ * As três carnes da casa, pela ordem da carta impressa.
  *
- * ## Porque não chega o `santos()` acima
- *
- * ⚠️ **`nomeEn === null` significa "não é texto comum", que é mais largo do que
- * "chama-se São qualquer coisa".** Pelo caminho entram os *Rollinis*, os
- * *Folhadinis*, a *Salada à Chef*, a *Delícia da Casa*, os *Santinis* e os dois
- * *Santinho*. Numa fita a passar a doze pixéis ninguém reparava; num mural com
- * os nomes em corpo grande, sete intrusos em quarenta e sete são visíveis — e o
- * mural afirma, em letra do tamanho de um título, que aquilo são os santos.
- *
- * O filtro é pelo nome porque é aí que a informação está: o impresso baptiza uns
- * com santo e outros não, e não há campo que o diga. Não é adivinhar a partir de
- * prosa — é ler um nome próprio, que é um conjunto fechado de quatro prefixos e
- * não muda de forma quando alguém reescrever uma descrição.
- *
- * `santos()` fica para a fita do rodapé, onde a lista larga é a certa: ali o que
- * passa é a carta inteira, não o santoral.
+ * São as famílias que a homepage destaca — uma de cada carne. `outros-santos` e
+ * `vegetariano-saladas` ficam de fora porque **não têm nenhum artigo com selo**
+ * (ver `oDoSelo`), e `para-os-corajosos` porque tem a secção própria, com as
+ * gramas a crescer: mostrá-la duas vezes tirava-lhe o efeito.
  */
-export const santoral = () =>
-  santos().filter((artigo) => /\b(Santo|Santa|São|Sagrado)\b/.test(artigo.nome));
+export const TRES_CARNES = [
+  "santos-novilho",
+  "carnes-maturadas",
+  "santos-frango",
+] as const satisfies readonly Categoria[];
+
+/**
+ * O artigo com selo de uma família — o primeiro, pela ordem do impresso.
+ *
+ * ## Porque é derivado e não uma lista de três `id` escritos à mão
+ *
+ * Uma lista fixa parece mais simples e é mais frágil: no dia em que a casa tirar
+ * um destes da carta, a homepage passa a mostrar um artigo que já não existe —
+ * ou, pior, continua a mostrá-lo. Assim, o que aparece aqui é sempre o que o
+ * `ementa.json` diz que é mais pedido naquela família, e mudar o destaque é
+ * mexer num booleano.
+ *
+ * ⚠️ **`santos-novilho` tem três artigos com selo** (Santo Assunção, São Abel e
+ * São João), e é por isso que existe um critério de desempate em vez de um
+ * `find` a fingir que só há um. A ordem do ficheiro **é** a ordem do impresso —
+ * ver o comentário de `CATEGORIAS` —, por isso o primeiro é o primeiro que a
+ * casa escreveu, e não o primeiro que calhou.
+ *
+ * Devolve `undefined` numa família sem selo. É o caso de `outros-santos` e de
+ * `vegetariano-saladas`, e é a razão de eles não estarem em `TRES_CARNES`.
+ */
+export const oDoSelo = (categoria: Categoria) =>
+  porCategoria(categoria).find((artigo) => artigo.bestSeller);
 
 /** Os santos que levam um pão de cor. Alimenta a secção dos pães. */
 export const porPao = (pao: "rosa" | "azul") =>

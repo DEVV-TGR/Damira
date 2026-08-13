@@ -12,16 +12,15 @@ import { santos } from "@/data/ementa";
  * magenta, deixava de fechar coisa nenhuma e passava a ser a primeira de três
  * riscas: o herói perdia a ideia e a fita perdia-se no meio.
  *
- * Aqui em baixo faz o contrário — sobre tinta, escoa para o rodapé escuro e é a
- * costura entre a página e o pé dela. O santoral em corpo grande, esse, é o
- * `Mural`, logo a seguir ao herói e parado.
+ * Aqui em baixo faz o contrário — na mesma tinta do fecho e do rodapé, é a
+ * costura entre os dois e não uma quarta cor no fim da página.
  *
- * ## A lista larga é a certa *aqui*
+ * ## É o único sítio onde os nomes aparecem todos
  *
- * Usa `santos()` e não `santoral()`: nesta fita o que passa é a carta toda, não
- * o santoral — entram os *Rollinis* e a *Delícia da Casa* e é assim que deve
- * ser. O `Mural`, que afirma em letra de título que aquilo são os santos, é que
- * precisa da lista estreita.
+ * A página mostra três santos, um por carne, com fotografia e preço. Aqui passa
+ * a **carta inteira** — entram os *Rollinis*, a *Delícia da Casa* e as
+ * sobremesas —, e é isso que faz a fita valer o espaço: não é um resumo do que
+ * está acima, é o resto.
  */
 export function FitaSantos({ className = "" }: { className?: string }) {
   const nomes = santos().map((artigo) => artigo.nome);

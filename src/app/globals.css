@@ -127,12 +127,17 @@
  * aconteceu quando a fita dos santos ficou colada ao herói, no mesmo magenta,
  * sem fronteira nenhuma entre os dois. A regra é esta e é para seguir:
  *
- * - **magenta** — a marca a falar. Abre a página e fecha-a, e mais nada.
+ * - **magenta** — a marca a falar. **Uma superfície inteira, e é o herói.** Em
+ *   baixo aparece só do tamanho de um botão, que é o que o mantém a valer
+ *   alguma coisa. ⚠️ Já foi também o fundo do fecho: com o rodapé escuro logo a
+ *   seguir, o fim da página lia-se como três blocos de três cores em vez de uma
+ *   aterragem.
  * - **papel** — a superfície de leitura. É o estado normal.
  * - **papel-fundo** — o depois do pico. Marca que se passou da carta para o
  *   prático (as casas), e é o único sítio onde a diferença dos dois papéis tem
  *   um significado.
- * - **tinta** — o pico (a Escalada) e o chão (o rodapé). Dois, não um.
+ * - **tinta** — o pico (a Escalada) e o chão. O chão é **um bloco só**: fecho,
+ *   fita dos santos e rodapé partilham a mesma cor e a mesma leitura.
  * - **coral e turquesa** — acentos dentro de blocos. **Nunca secções inteiras**:
  *   nenhum dos dois aguenta texto corrido por cima.
  */
@@ -450,6 +455,30 @@ body::after {
   .fita-conteudo {
     animation: none;
   }
+}
+
+/* ── Cartões sobre fotografia ─────────────────────────────────────────── */
+
+/**
+ * O véu dos cartões: contraste para o nome e o preço por cima da fotografia.
+ *
+ * Sem isto o texto assenta directamente na imagem e a legibilidade passa a
+ * depender do que a fotografia tiver naquele canto — que num cartão de comida é
+ * tudo menos previsível. O gradiente é forte em baixo, onde o texto vive, e
+ * quase transparente em cima, onde só há imagem.
+ *
+ * A escala não é linear: sobe depressa nos primeiros 45 % e depois abranda. Um
+ * gradiente linear a esta altura deixa uma aresta visível a meio do cartão; com
+ * as paragens desencontradas, o olho não a encontra.
+ */
+.veu-cartao {
+  background: linear-gradient(
+    to top,
+    rgb(35 31 32 / 0.94) 0%,
+    rgb(35 31 32 / 0.82) 45%,
+    rgb(35 31 32 / 0.45) 75%,
+    rgb(35 31 32 / 0.2) 100%
+  );
 }
 
 /* ── Mosaico da casa cheia ────────────────────────────────────────────── */

@@ -13,13 +13,11 @@
   "inicio": {
     "heroTexto": "Two places: one in Porto, one by the sea in Leça da Palmeira. The same roll call of saints at both.",
     "verEmenta": "See the menu",
-    "mural": {
-      "titulo": "The saints on the menu",
-      "nota": "{total} saints on the menu, one burger each. In magenta, the ones the kitchen makes most."
-    },
-    "mesa": {
-      "titulo": "The ones with the stamp add up to a whole meal",
-      "texto": "These are the ones the kitchen makes over and over. They run in the order of the printed menu, which is the order you eat in."
+    "trio": {
+      "titulo": "Three cuts, three saints",
+      "texto": "One of each, and they are the ones the kitchen makes most. There are forty more on the menu.",
+      "verTudo": "See the menu",
+      "ilustrativas": "The photographs are ours and stand as examples — they are not a photograph of each burger."
     },
     "casas": {
       "titulo": "Our places",
@@ -43,7 +41,7 @@
       "ambos": "The only one that comes both ways"
     },
     "fecho": {
-      "titulo": "Where to find us",
+      "titulo": "Before you go, see the menu",
       "texto": "The same roll call of saints at both places. Take whichever is closer."
     }
   },

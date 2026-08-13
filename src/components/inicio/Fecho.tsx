@@ -2,37 +2,31 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Marca } from "@/components/Marca";
-import { restaurantes, moradaCompleta, urlDirecoes } from "@/data/restaurantes";
 
 /**
- * O fecho: a banda magenta que responde ao herói.
+ * O fecho da homepage: o primeiro andar do bloco escuro que acaba a página.
  *
- * ## Porque a página precisava disto
+ * ## Uma cor só, do fecho ao fim
  *
- * Acabava na grelha das casas e caía directamente no rodapé. Sem remate, sem
- * marca, e com **uma única chamada à acção em toda a página** — a do herói, a
- * sete ecrãs de distância de quem chega aqui depois de ler a carta toda.
+ * ⚠️ **Isto era um bloco magenta entalado entre o papel e o rodapé escuro**, e o
+ * fundo da página lia-se como quatro coisas seguidas: casas em papel-fundo,
+ * fecho em magenta, fita em tinta, rodapé em tinta. Três cores em quatro blocos,
+ * quando o que se quer é uma aterragem.
  *
- * O magenta abre e fecha a página, e mais nada usa magenta chapado. É o que faz
- * a coisa ler-se como uma peça com princípio e fim em vez de uma pilha de
- * secções.
+ * Agora o fecho, a fita dos santos e o rodapé partilham a **tinta** e leem-se
+ * como um bloco só. O magenta fica onde tem força — no herói e no botão daqui.
  *
- * ## O logótipo, finalmente em tamanho
+ * ## E as moradas saíram
  *
- * O site nunca mostrava a marca acima de `text-3xl` — cabeçalho e rodapé. O
- * desenho é uma máscara de alfa a 358×760 px (`scripts/extrair-tracos.mjs`), o
- * que a esta altura dá folga de sobra; só não escala para lá de umas centenas de
- * pixéis, e por isso é aqui que pára.
- *
- * ## A fotografia não é enfeite
- *
- * É o casal a comer no carro, com as caixas de take-away na mão — e **as caixas
- * trazem as duas moradas impressas**. É a única fotografia do acervo que diz
- * exactamente o que esta secção diz.
+ * Estavam **três vezes na mesma página**: na secção das casas, aqui, e no
+ * rodapé. Ficam no rodapé, que é onde alguém as procura e onde já vivem ao lado
+ * do telefone e das redes. Aqui fica o que este bloco tem de próprio: a marca em
+ * tamanho — o site nunca a mostra acima de `text-3xl` — e a única acção que
+ * falta a quem chegou ao fim.
  *
  * ⚠️ **Não há botão de reserva.** Não há telefone nos dados, não há reservas e
- * não há formulário: as únicas acções verdadeiras são a ementa e o Maps.
- * Inventar um terceiro botão era desenhar uma funcionalidade que não existe.
+ * não há formulário: inventar um terceiro botão era desenhar uma funcionalidade
+ * que não existe.
  */
 export function Fecho() {
   const t = useTranslations("inicio.fecho");
@@ -41,50 +35,35 @@ export function Fecho() {
   return (
     <section
       aria-labelledby="fecho"
-      className="bloco-magenta-texto overflow-hidden"
+      className="overflow-hidden bg-tinta text-papel"
     >
-      <div className="envolvente grid items-center gap-12 py-[clamp(3.5rem,8vw,6rem)] lg:grid-cols-[minmax(0,1fr)_clamp(20rem,34vw,30rem)] lg:gap-16">
+      <div className="envolvente grid items-center gap-12 pb-[clamp(2.5rem,6vw,4rem)] pt-[clamp(3.5rem,8vw,6rem)] lg:grid-cols-[minmax(0,1fr)_clamp(18rem,28vw,24rem)] lg:gap-16">
         <div>
+          {/* Invisível, mas é o que dá nome a esta secção no índice de um leitor
+              de ecrã. Dizia «Onde nos encontrar» de quando as moradas estavam
+              aqui — com elas no rodapé, o nome passou a descrever o que este
+              bloco faz mesmo, que é convidar para a carta. */}
           <h2 id="fecho" className="sr-only">
             {t("titulo")}
           </h2>
 
-          <Marca
-            empilhado
-            className="text-[clamp(1.75rem,4.5vw,3.25rem)]"
-          />
+          <Marca empilhado className="text-[clamp(1.75rem,4.5vw,3.25rem)]" />
 
-          {/* ⚠️ Papel a 100%: sobre magenta-forte dá 4,57:1 e passa. Com
-              `text-papel/90` cairia para 3,85:1 e reprovava — a opacidade come o
-              contraste e não aparece em tabela nenhuma. */}
-          <p className="mt-8 max-w-[34ch] text-lg leading-relaxed">{t("texto")}</p>
+          {/* Sobre tinta há folga para diluir o branco: a 85% ainda dá 10,4:1.
+              Sobre magenta não havia nenhuma — ver a tabela em `globals.css`. */}
+          <p className="mt-8 max-w-[34ch] text-lg leading-relaxed text-papel/85">
+            {t("texto")}
+          </p>
 
-          <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-5">
-            {/* O mesmo rótulo do herói, de propósito: um rótulo por intenção. */}
-            <Link
-              href="/ementa"
-              className="premivel rounded-full bg-papel px-7 py-4 text-sm font-semibold uppercase tracking-widest text-tinta"
-            >
-              {nav("verEmenta")}
-            </Link>
-
-            <ul className="space-y-1.5 text-sm">
-              {restaurantes.map((casa) => (
-                <li key={casa.id}>
-                  <a
-                    href={urlDirecoes(casa)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="underline decoration-papel/50 underline-offset-4 transition-[text-decoration-color] duration-200 hover:decoration-papel"
-                  >
-                    {/* Só a morada completa: ela já acaba na cidade, e pôr a
-                        cidade à frente dava "Porto · Rua Egas Moniz 490, Porto". */}
-                    {moradaCompleta(casa)}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {/* O magenta que o bloco perdeu como fundo volta aqui, onde puxa o
+              olho para a única acção da secção. Papel sobre magenta-forte dá
+              4,57:1 e passa a qualquer tamanho. */}
+          <Link
+            href="/ementa"
+            className="premivel mt-9 inline-block rounded-full bg-magenta-forte px-7 py-4 text-sm font-semibold uppercase tracking-widest text-papel"
+          >
+            {nav("verEmenta")}
+          </Link>
         </div>
 
         <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl">
@@ -92,7 +71,7 @@ export function Fecho() {
             src="/fotos/01.webp"
             alt=""
             fill
-            sizes="(max-width: 64rem) 100vw, 30rem"
+            sizes="(max-width: 64rem) 100vw, 24rem"
             className="object-cover"
             loading="lazy"
           />
