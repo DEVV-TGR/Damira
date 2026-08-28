@@ -40,10 +40,10 @@ export function Cabecalho({ locale }: { locale: Locale }) {
         </Link>
 
         <nav className="flex items-center gap-6 text-xs font-semibold uppercase tracking-widest">
-          <Link href="/" className="hidden hover:text-magenta-forte sm:block">
+          <Link href="/" className="hidden hover:text-tijolo sm:block">
             {t("inicio")}
           </Link>
-          <Link href="/ementa" className="hover:text-magenta-forte">
+          <Link href="/ementa" className="hover:text-tijolo">
             {t("ementa")}
           </Link>
           <Link

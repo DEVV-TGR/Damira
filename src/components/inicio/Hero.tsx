@@ -1,69 +1,61 @@
-import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { restaurantes } from "@/data/restaurantes";
+import { casa } from "@/data/casa";
 
 /**
- * As doze fotografias, repartidas pelas duas filas.
+ * O primeiro ecrã: **campo de tijolo chapado, com o motivo das ondas em grande e
+ * o título por cima.**
  *
- * A de cima leva as que têm gente — mãos, risos, o pão cor-de-rosa, a esplanada.
- * A de baixo leva os planos de comida. Não é arrumação: é o que faz a primeira
- * fila dizer "vem cá" e a segunda dizer "come isto".
- */
-const CIMA = [
-  "/instagram/01.webp",
-  "/instagram/02.webp",
-  "/instagram/03.webp",
-  "/instagram/04.webp",
-  "/instagram/11.webp",
-  "/instagram/05.webp",
-];
-const BAIXO = [
-  "/instagram/12.webp",
-  "/instagram/06.webp",
-  "/instagram/09.webp",
-  "/instagram/07.webp",
-  "/instagram/10.webp",
-  "/instagram/08.webp",
-];
-
-/**
- * O primeiro ecrã: **campo de magenta chapado, com o título entre duas filas de
- * fotografias do Instagram a andar em sentidos opostos.**
+ * ## Porque não há fotografia nenhuma aqui
  *
- * ## Porque são ladrilhos e não uma fotografia grande
+ * Porque ainda não há fotografia nenhuma da Damira. O que existe são cinco PDFs
+ * com o texto queimado por cima das imagens, e recortá-las dá ficheiros de 800
+ * px com o grão do JPEG à vista — num herói a sangrar isso vê-se a dois metros.
  *
- * As imagens do Instagram têm 356 px de largura — são recortes das miniaturas da
- * grelha, e o perfil está atrás de login (ver `scripts/importar-instagram.mjs`).
- * Num herói a sangrar isso seria uma ampliação de quase quatro vezes e via-se.
- * Em ladrilhos pequenos, chega.
+ * A alternativa não é pôr fotografia de banco de imagens: é **fazer o herói com
+ * o que a marca tem mesmo**, que é tipografia grande, uma cor e um motivo
+ * próprio. Quando a sessão fotográfica acontecer, este bloco recebe-a — e o
+ * desenho não muda, só ganha uma camada por baixo. Ver o README.
  *
- * ⚠️ **A largura do ladrilho é uma decisão de nitidez, não de composição.** Está
- * medida: com este `clamp`, a ampliação máxima fica em 1,35× num ecrã de dupla
- * densidade e 1,48× num telemóvel de tripla. Alargá-los é começar a ver o grão
- * da compressão do Instagram.
+ * ## O motivo, e porque é enorme
  *
- * ## Porque o magenta é o tom escuro
+ * As três ondas são o **m** do logótipo recortado (ver `scripts/extrair-marca.mjs`).
+ * A 40 % da altura do bloco deixam de se ler como um ícone e passam a ler-se
+ * como textura — que é o que se quer: quem chega vê a marca sem a estar a
+ * decifrar.
  *
- * `bloco-magenta-texto` e não `bloco-magenta`: o parágrafo é texto de tamanho
- * normal, e branco sobre o magenta da marca dá 4,25:1 — abaixo dos 4,5:1. O tom
- * sete por cento mais escuro passa e, lado a lado, ninguém os distingue.
+ * ⚠️ **Papel a 100 %, sem opacidade.** Sobre o tijolo há muito pouca folga: a
+ * 90 % o rácio cai de 6,87:1 para 5,50:1 e a 80 % já reprova em corpo pequeno.
+ * Ver a tabela em `globals.css`.
  */
 export function Hero() {
   const t = useTranslations("inicio");
   const marca = useTranslations("marca");
 
   return (
-    <section className="bloco-magenta-texto overflow-hidden">
-      <FitaDeFotos fotos={CIMA} duracao="70s" />
+    <section className="bloco-tijolo relative overflow-hidden">
+      {/* Decorativo e por baixo de tudo. Corre para fora do bloco à direita de
+          propósito: um motivo cortado pela margem lê-se como padrão contínuo, um
+          motivo inteiro e centrado lê-se como um logótipo repetido. */}
+      <span
+        aria-hidden
+        className="traco pointer-events-none absolute -right-[8%] top-1/2 hidden h-[130%] w-[45%] -translate-y-1/2 opacity-[0.13] lg:block"
+        style={{
+          maskImage: "url(/marca/ondas.png)",
+          WebkitMaskImage: "url(/marca/ondas.png)",
+        }}
+      />
 
-      <div className="envolvente py-[clamp(2.5rem,6vw,4.5rem)]">
+      <div className="envolvente relative py-[clamp(4rem,11vw,8rem)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em]">
+          {marca("desde", { ano: casa.desde })}
+        </p>
+
         <h1
-          className="titulo-display text-[clamp(2.75rem,9vw,7rem)] uppercase"
+          className="titulo-display mt-6 text-[clamp(2.75rem,9vw,7rem)] uppercase"
           style={{
-            /* Muito condensado e em caixa alta: é o registo do menu impresso, e
-               a Bricolage tem eixo de largura para lá chegar sem trocar de
-               fonte. */
+            /* Muito condensado e em caixa alta: é o registo dos impressos, e a
+               Bricolage tem eixo de largura para lá chegar sem trocar de fonte. */
             fontVariationSettings: '"wdth" 62, "opsz" 48',
             /* A entrelinha global é 0,95, que a este corpo faz a cauda do **Q**
                bater na linha de cima. */
@@ -73,91 +65,30 @@ export function Hero() {
           {marca("assinatura")}
         </h1>
 
-        <p className="mt-6 text-sm font-semibold uppercase tracking-[0.2em]">
-          {marca("quadrado")}
+        <p className="mt-6 max-w-[44ch] text-lg leading-relaxed">
+          {t("heroTexto")}
         </p>
 
-        {/*
-          ⚠️ **Papel a 100%, sem opacidade.** Isto esteve em `text-papel/90` e o
-          rácio caía para **3,85:1** — reprovado em texto corrido. A tabela de
-          contraste do `globals.css` mede o papel a cheio (4,57:1) e não cobre a
-          opacidade que se lhe põe por cima; sobre magenta não há folga nenhuma
-          para diluir o branco. A linha das cidades abaixo estava pior ainda, a
-          `/85` e em corpo de 12 px: 3,54:1.
-        */}
-        <p className="mt-5 max-w-[42ch] leading-relaxed">{t("heroTexto")}</p>
-
-        <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-4">
+        <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4">
           <Link
             href="/ementa"
             className="premivel rounded-full bg-papel px-7 py-4 text-sm font-semibold uppercase tracking-widest text-tinta"
           >
             {t("verEmenta")}
           </Link>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em]">
-            {restaurantes.map((casa) => casa.cidade).join(" · ")}
-          </p>
+          <Link
+            href="/encomendas"
+            className="premivel rounded-full border border-papel px-7 py-4 text-sm font-semibold uppercase tracking-widest hover:bg-papel hover:text-tinta"
+          >
+            {t("verEncomendas")}
+          </Link>
         </div>
-      </div>
 
-      {/* Ao contrário da de cima, e mais devagar: o desencontro é o que dá
-          profundidade. */}
-      <FitaDeFotos fotos={BAIXO} duracao="85s" inversa />
+        <p className="mt-8 text-xs font-semibold uppercase tracking-[0.2em]">
+          {casa.cidade}
+          {casa.distrito ? ` · ${casa.distrito}` : ""}
+        </p>
+      </div>
     </section>
-  );
-}
-
-/**
- * Uma fila a correr, no motor de fita que já existe (ver `.fita` em
- * `globals.css`): conteúdo duplicado e deslocado metade da largura, para o ciclo
- * fechar sem costura. A cópia é `aria-hidden`; as fotografias são decorativas e
- * não descrevem prato nenhum.
- *
- * Pára com o rato por cima e desaparece com `prefers-reduced-motion` — imagem em
- * movimento contínuo é dos piores gatilhos para quem tem sensibilidade a
- * movimento.
- */
-function FitaDeFotos({
-  fotos,
-  duracao,
-  inversa = false,
-}: {
-  fotos: string[];
-  duracao: string;
-  inversa?: boolean;
-}) {
-  return (
-    <div className={`fita ${inversa ? "fita-inversa" : ""}`}>
-      <div
-        className="fita-conteudo"
-        style={{ "--duracao": duracao } as React.CSSProperties}
-      >
-        <Serie fotos={fotos} />
-        <Serie fotos={fotos} duplicada />
-      </div>
-    </div>
-  );
-}
-
-function Serie({ fotos, duplicada = false }: { fotos: string[]; duplicada?: boolean }) {
-  return (
-    <ul className="flex shrink-0 gap-1 pr-1" aria-hidden={duplicada || undefined}>
-      {fotos.map((src, indice) => (
-        <li
-          key={src}
-          className="relative aspect-square w-[clamp(8.5rem,22vw,15rem)] shrink-0 overflow-hidden"
-        >
-          <Image
-            src={src}
-            /* Decorativas: são momentos da casa, não descrevem um prato. */
-            alt=""
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 45vw, 15rem"
-            priority={!duplicada && indice < 4}
-          />
-        </li>
-      ))}
-    </ul>
   );
 }

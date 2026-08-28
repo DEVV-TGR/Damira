@@ -1,5 +1,11 @@
 # AGENTS.md
 
+Este site nasceu de um *fork* do [Santo Burga](https://github.com/DEVV-TGR/SantoBurga).
+A infraestrutura é a mesma — Next.js 16, `next-intl`, Tailwind v4, dados em JSON
+validados por `zod`, sem CMS. **O conteúdo, a marca e o modelo de dados não são.**
+Onde uma decisão veio de lá e foi mudada, o comentário no código diz porquê; vale
+a pena lê-los antes de a desfazer.
+
 ## Fluxo de trabalho: branches, nunca worktrees
 
 **Não usar a ferramenta `EnterWorktree` nem criar git worktrees neste projeto**, em
@@ -30,126 +36,137 @@ rebenta no `build`, e rebenta a dizer qual é o artigo.
 ## Língua
 
 Ficheiros, variáveis, funções e comentários **em português**. Não é preciosismo:
-o cliente é português, os dados são portugueses (`imoveis`, `ementa`,
-`restaurantes`) e misturar `menuItems` com `porCategoria` no mesmo ficheiro
-obriga a traduzir mentalmente a cada linha.
+o cliente é português, os dados são portugueses (`ementa`, `encomendas`, `bolos`,
+`casa`) e misturar `menuItems` com `porCategoria` no mesmo ficheiro obriga a
+traduzir mentalmente a cada linha.
 
 Comentários explicam **porquê**, não o quê. Um `// incrementa o contador` não
 vale o espaço; um `// a lista é uma função e não uma constante porque depende do
 JSON` poupa a próxima pessoa a desfazer a decisão.
 
-## Regras de conteúdo — as que dão erro visível
+## O modelo de dados — quatro ficheiros, quatro naturezas
 
-### Os nomes dos santos não se traduzem
+A Damira deu-nos **sete impressos**, e eles não são todos a mesma coisa. A
+divisão dos dados segue a diferença que existe no negócio, não a que existe no
+papel:
 
-`São Julião` é `São Julião` em inglês. É um nome próprio e é metade da graça da
-marca. Só os artigos de nome comum — extras, bebidas, aperitivos — levam
-`nomeEn`, e o `superRefine` em `src/data/ementa.ts` rebenta se alguém trocar as
-voltas nos dois sentidos.
-
-### Fotografia: `foto` é a real, o resto é andaime
-
-`artigo.foto` significa **a fotografia daquele prato** e está a `null` nos 122.
-As imagens que se veem hoje vêm de `src/lib/fotos-ilustrativas.ts`, que só
-responde quando `foto` é `null` e marca o que devolve como ilustrativo — é isso
-que faz aparecer o aviso na interface.
-
-⚠️ **Não escrever imagens de marca no `ementa.json` para "adiantar".** É o que
-faz o aviso passar a mentir: daí a três meses ninguém distingue uma fotografia
-provisória de uma real. O caminho tem de começar por `/ementa/`, e o `build`
-recusa qualquer outro — a validação já apanhou esse erro uma vez, com o nome do
-artigo à frente.
-
-### Cada pasta de imagem tem o seu tecto — e ele decide onde a imagem entra
-
-Há quatro origens em `public/`, com quatro resoluções, e **não são
-intermutáveis**:
-
-| Pasta | Tamanho | Onde pode entrar |
+| Ficheiro | O que é | Porquê separado |
 |---|---|---|
-| `fotos/` | 1286 × 1600 | onde quiser: mosaico, pães, fecho |
-| `reels/` | 720 × 1280 | vídeo e o seu cartaz |
-| `casas/` | 1280 e **588** | só o bloco de identificação da casa |
-| `instagram/` | **356** × 453 | ladrilho pequeno do herói, e mais nada |
+| `ementa.json` | 95 artigos com preço, em 4 cartas | pede-se ao balcão e leva-se |
+| `encomendas.json` | kits de festa, kits de bolo, boxes | tem data, antecedência e orçamento |
+| `bolos.json` | catálogo de massas, recheios, coberturas | **não tem preços nenhuns** |
+| `casa.json` | morada, telefone, horário, entregas | é um objeto, não uma lista |
 
-⚠️ **Passar um recorte do `instagram/` para uma célula grande é o erro clássico.**
-A 2× de densidade uma célula do mosaico pede ~700 px e o ficheiro tem 356; vê-se
-o grão da compressão do Instagram ao lado de fotografia a sério. O mesmo para a
-casa de Leça, que tem 588 px e já esteve a ser ampliada 2,4× num bloco de meia
-página sem ninguém dar por isso.
+⚠️ **Não juntar a encomenda à ementa.** Um kit para setenta pessoas ao lado de um
+croissant é o que leva alguém a aparecer ao sábado à espera de o levar debaixo do
+braço. A separação está no site como duas páginas e aqui como dois ficheiros.
 
-O material em bruto vive em `originais/`, fora do git. Reprocessa-se com:
+### A ementa tem `carta` além de `categoria`
+
+Porque as categorias **repetem-se entre cartas**: há `doces` na carta da casa e
+`doces` na vegan, `salgados` nas duas. A âncora de uma secção é por isso
+`{carta}-{categoria}` e não só a categoria — duas âncoras iguais deixavam uma
+delas inalcançável, sem aviso nenhum.
+
+### `unidade` decide se o preço está certo ou errado
+
+Um bolo vegan são 17 € **ao quilo** e um bolo inteiro pesa dois. Escrever
+"17,00 €" ao lado dele anuncia metade do preço, e o erro só aparece ao balcão,
+com o cliente à frente. O `superRefine` obriga `bolos-inteiros` a ser `kg`.
+
+### O que a casa não afirma, o site não afirma
+
+⚠️ **Não há *best sellers*.** O Santo Burga tinha doze artigos com selo no
+impresso; **os impressos da Damira não marcam nada**. A homepage destaca em vez
+disso as *combinações perfeitas*, que estão escritas no menu — é a diferença
+entre mostrar o que a casa recomenda e escolher seis artigos porque a grelha
+precisava de seis.
+
+⚠️ **Os alergénios estão vazios nos 95 e ficam assim** até a pastelaria os
+preencher. É informação com peso legal e clínico, e uma lista deduzida da
+descrição ("tem queijo, logo tem lactose") é pior do que nenhuma, porque parece
+autoridade. Numa casa com carta vegan isto pesa a dobrar: quem procura a folha
+verde costuma ter uma razão para a procurar.
+
+⚠️ **O `vegan: true` só existe na carta vegan**, e o `superRefine` rebenta nos
+dois sentidos. A Damira não assinala artigos vegan no menu principal; deduzi-lo
+("não tem carne, logo é vegan") era pôr o site a garantir uma coisa que a casa
+não garantiu.
+
+## Fotografia — o buraco conhecido deste site
+
+**Não há uma única fotografia utilizável da Damira.** Os PDFs em `referencias/`
+são artes finais achatadas: as imagens que lá vivem trazem o texto queimado por
+cima e as maiores têm 1080 px de largura. Recortá-las dá material para uma
+miniatura e mais nada.
+
+Por isso, hoje, **o site não tem fotografia nenhuma** — nem de recurso, nem de
+banco de imagens. O herói é tipografia e cor, e o painel de um artigo mostra
+nome, preço e descrição. É feio? Não: é honesto, e é reversível numa tarde.
+
+⚠️ **Não preencher isto com imagens de stock.** Um croissant genérico ao lado do
+preço de um croissant é uma promessa que a casa não fez — e é o tipo de decisão
+que ninguém volta a desfazer, porque "já lá está".
+
+O campo `artigo.foto` existe no esquema, exige um caminho que comece por
+`/ementa/` e está a `null` nos 95. Quando houver sessão fotográfica:
 
 ```bash
 npm run fotos -- originais/fotos public/fotos   # 1600 px, WebP
-npm run reels                                   # HEVC → H.264, sem áudio
-npm run instagram:selo                          # tira o crachá do Instagram
 ```
 
-### Os reels são HEVC e não tocam em metade dos browsers
+## A marca
 
-O que sai do telemóvel é HEVC dentro de `.mov`: **toca em Safari e mais em lado
-nenhum**. É o pior tipo de defeito, porque quem programa em Mac não dá por ele.
-O `npm run reels` converte para H.264, corta o áudio (um vídeo com som não
-arranca sozinho em browser nenhum) e limita a oito segundos.
+O logótipo e o motivo das ondas saem do PDF do menu de almoço:
 
-Medido no mais pesado: H.264 CRF 30 dá 686 kB contra 6,8 MB do preset do
-`avconvert`. **Não há webm** — o VP9 saiu maior do que o H.264 e duplicava o
-tempo de codificação.
+```bash
+npm run marca    # public/marca/{logotipo,logotipo-assinado,ondas}.png
+npm run icons    # favicon + ícones, a partir de public/marca/ondas.png
+```
 
-⚠️ **O `ffmpeg` que vem no cache do Playwright não serve**: é compilado com
-`--disable-everything` e nem lê `.mov`. O que se usa é o `ffmpeg-static`, que é
-`devDependency` e não vai para o cliente.
+⚠️ **São PNG rasterizados a 300 dpi, não vetores.** Chegam para cabeçalho,
+rodapé e ícones; não escalam para lá disso. Quando aparecer o vetor, trocar em
+`src/components/Marca.tsx` **e** correr `npm run icons`, ao mesmo tempo — são
+dois sítios e esquecer um deixa o site com duas marcas.
 
-### Alergénios não se inventam
+São máscaras de alfa e não imagens: guardam só a forma, e a cor vem do CSS. É o
+que permite o mesmo ficheiro servir o logótipo a tijolo sobre papel e a papel
+sobre tinta.
 
-O campo `alergenios` está vazio em todos os 122 artigos e **fica assim** até a
-cozinha o preencher. É informação com peso legal e clínico; uma lista deduzida
-da descrição ("tem queijo, logo tem lactose") é pior do que nenhuma, porque
-parece autoridade. A página mostra em vez disso o aviso legal de que a
-informação está disponível no restaurante.
-
-### Preços e moradas vêm de uma fonte, não da memória
-
-A fonte da ementa é `referencias/Santo-burga_MENU_2024_PT.pdf`. As moradas foram
-confirmadas em fontes independentes (ver o README). O que não estiver confirmado
-fica a `null` — e a `null` desaparece do site, em vez de aparecer vazio ou
-adivinhado.
+**As duas fontes são aproximações.** A Bricolage Grotesque e a Instrument Sans
+aproximam o impresso; as verdadeiras não se identificam a partir de um PDF
+achatado. Trocam-se em `src/app/[locale]/layout.tsx`.
 
 ## Cores e contraste
 
-As três cores da marca **foram medidas**, não escolhidas: saíram por amostragem
-dos pixéis do PDF. O magenta é `#EC008C` (Process Magenta puro) e o preto é
-`#231F20` (o rich black de CMYK) — os dois sinais de que vieram de artes finais.
+As cores **foram medidas**, não escolhidas: saíram por amostragem dos pixéis dos
+cinco impressos e batem certo entre eles, o que é sinal de artes finais. O tijolo
+é `#923D38`, a tinta é `#1F1D1B` (rich black quente, não `#000`), o verde é
+`#698842` e o papel é `#FAFBFB` — branco, ao contrário do creme do Santo Burga.
 Não trocar por valores "parecidos".
 
-O impresso pode fazer uma coisa que o ecrã não pode: **branco sobre o coral** dá
-2,17:1 e é ilegível. A tabela completa está em `src/app/globals.css`, com as
-classes `.bloco-*` que já trazem a cor de texto certa para cada fundo — usar
-essas em vez de compor `bg-` + `text-` à mão.
+⚠️ **Tinta sobre tijolo é a armadilha desta paleta.** O impresso escreve títulos
+pretos sobre o tijolo das capas e resulta lá, em papel mate e com a folha na mão.
+No ecrã dá **2,36:1** e é ilegível. Sobre tijolo escreve-se a papel, e é a única
+opção.
+
+⚠️ **O verde é do vegan e não é um acento disponível.** A carta vegan assinala-se
+com uma folha verde; usar esse verde como cor decorativa numa secção de leitão
+ensina o olho a ignorá-lo justamente onde ele conta.
+
+A tabela completa está em `src/app/globals.css`, com as classes `.bloco-*` que já
+trazem a cor de texto certa para cada fundo — usar essas em vez de compor `bg-` +
+`text-` à mão.
 
 ⚠️ **O Tailwind v4 não aplica variantes a classes de `@layer components`.** Um
-`hover:bloco-magenta-texto` compila-se em silêncio para nada e ninguém dá por
-isso. Em estados, usar utilitários (`hover:bg-magenta-forte hover:text-papel`).
-
-## O que ainda é marcador de lugar
-
-- **O logótipo em vetor.** O desenho já é o verdadeiro — sai do PDF por
-  `npm run tracos` e vive em `public/tracos/logotipo.png` —, mas é **rasterizado
-  a 300 dpi**. Chega para cabeçalho, rodapé e ícones; não escala para lá disso.
-  Quando aparecer o vetor: trocar `src/components/Marca.tsx` **e** correr
-  `npm run icons`, ao mesmo tempo — são dois sítios e esquecer um deixa o site
-  com duas marcas.
-- **As duas fontes.** A Bricolage Grotesque e a Instrument Sans aproximam o
-  impresso; as verdadeiras não se identificam a partir de um PDF achatado.
-  Trocam-se em `src/app/[locale]/layout.tsx`.
-- **As fotografias.** São da galeria antiga do próprio negócio e mostram uma
-  decoração que já não existe. Ver o README.
+`hover:bloco-tijolo` compila-se em silêncio para nada e ninguém dá por isso. Em
+estados, usar utilitários (`hover:bg-tijolo hover:text-papel`).
 
 ## As armadilhas que já morderam aqui
 
 Estão documentadas no sítio onde vivem; ficam aqui em lista porque são todas do
-tipo que **falha em silêncio** e ninguém repara até alguém olhar para o site.
+tipo que **falha em silêncio** e ninguém repara até alguém olhar para o site. As
+primeiras sete vieram do Santo Burga e continuam a valer — o motor é o mesmo.
 
 1. **`hover:` sobre uma classe de `@layer components`** compila-se para nada
    (Tailwind v4). Em estados, usar utilitários.
@@ -157,37 +174,28 @@ tipo que **falha em silêncio** e ninguém repara até alguém olhar para o site
    rodapé preso a meia opacidade — a página acaba antes de a animação completar.
    Fechar em `entry`. Ver `.surgir` em `globals.css`.
 3. **`offsetLeft` para medir posições** conta a partir do ancestral posicionado.
-   No carrossel, pôr a pista numa coluna de grelha fez o "centro" saltar
-   centenas de pixéis e o primeiro cartão nascia desfocado. Usar
-   `getBoundingClientRect`.
+   Usar `getBoundingClientRect`.
 4. **`sharp().extract().stats()` mede a imagem de entrada, não o recorte.** O
-   `stats()` ignora o pipeline: encadeá-lo depois de um `extract` devolve as
-   estatísticas da imagem inteira, iguais para todos os recortes. Foi assim que
-   um filtro de variância no importador do Instagram passou a decorativo sem
-   ninguém dar por isso. Materializar com `toBuffer()` antes de medir. (E, em
-   PNG, cortar o canal alfa: numa captura opaca tem média 255 e envenena
-   qualquer conta de claridade.)
-5. **A opacidade come o contraste e não aparece em tabela nenhuma.** A tabela do
-   `globals.css` mede o papel a 100 % sobre magenta-forte — 4,57:1, passa. Um
-   `text-papel/90` por cima disso cai para **3,85:1** e reprova; a 85 %, para
-   3,54:1. Esteve assim no herói. Sobre magenta não há folga para diluir o
-   branco; sobre tinta há (a 70 % ainda dá 8,2:1).
-6. **Regras fora de `@layer` ganham sempre às de dentro** (Tailwind v4). É o que
-   faz `hover:` funcionar nas nossas classes — e é também o que faz um
-   `transition-colors` escrito ao lado de `premivel` ser descartado em silêncio.
-   Quem declara `transition` fora de camada tem de declarar lá **todas** as
+   `stats()` ignora o pipeline. Materializar com `toBuffer()` antes de medir. (E,
+   em PNG, cortar o canal alfa: numa captura opaca tem média 255 e envenena
+   qualquer conta de claridade.) Vale para o `extrair-marca.mjs`.
+5. **A opacidade come o contraste e não aparece em tabela nenhuma.** Sobre tijolo
+   há muito pouca folga: papel a 100 % dá 6,87:1, a 90 % cai para 5,50:1 e a
+   80 % já reprova em corpo pequeno. Sobre tinta há folga a sério.
+6. **Regras fora de `@layer` ganham sempre às de dentro** (Tailwind v4). Quem
+   declara `transition` fora de camada tem de declarar lá **todas** as
    propriedades que quer animar.
-7. **Somar frações de píxel ao `scrollLeft`** não anda. O browser arredonda-o a
-   inteiro: a 60 quadros por segundo cada passo valia menos de meio píxel,
-   escrever `0.4` lê-se de volta como `0`, e a pista ficava parada para sempre —
-   mas só quando partia do zero, o que a fazia parecer funcionar em qualquer
-   teste que a empurrasse primeiro. Mordeu no carrossel dos mais pedidos, que
-   entretanto saiu; se algum dia voltar a haver scroll programático, manter a
-   posição num acumulador em vírgula flutuante, à parte do DOM.
+7. **Somar frações de píxel ao `scrollLeft`** não anda — o browser arredonda-o a
+   inteiro. Se voltar a haver scroll programático, manter a posição num
+   acumulador em vírgula flutuante, à parte do DOM.
+8. **Uma categoria em duas cartas dá duas âncoras iguais.** É a armadilha nova
+   deste site, e é a razão de a âncora ser `{carta}-{categoria}`. Ver
+   `SeccaoEmenta.tsx`.
 
-O que todas têm em comum: `npm run build` passa, o `lint` passa, e só se
-apanham a olhar. **Depois de mexer em desenho, tirar capturas** — há Playwright
-com Chromium em cache nesta máquina.
+O que todas têm em comum: `npm run build` passa, o `lint` passa, e só se apanham
+a olhar. **Depois de mexer em desenho, tirar capturas** — há Chromium do
+Playwright em cache nesta máquina, em
+`~/Library/Caches/ms-playwright/chromium-1234/chrome-mac-arm64/`.
 
 ## Skills
 

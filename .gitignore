@@ -30,8 +30,18 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Material em bruto do cliente: fotografias e reels antes de serem
-# processados por `npm run fotos` e `npm run reels`. Os originais pesam 30 MB e
-# o que o site serve são os derivados em `public/` — versionar os dois era
-# guardar a mesma imagem duas vezes, uma delas inútil.
+# Material em bruto do cliente. Os `originais/` são o que ainda não passou pelo
+# `npm run fotos`; as `referencias/` são os sete PDFs de artes finais da Damira,
+# 13 MB de ficheiros que o git guarda inteiros a cada versão e que ninguém
+# compara em diff. O que o site serve são os derivados em `public/` e os dados
+# em `src/data/` — versionar os dois era guardar a mesma coisa duas vezes, uma
+# delas inútil.
+#
+# ⚠️ Quem clonar isto não tem a fonte dos preços. Pedi-la ao DevPlus antes de
+# mexer no `ementa.json`. Ver o README.
 originais/
+referencias/
+
+# Pasta temporária do `npm run marca`, apagada pelo próprio script — fica aqui
+# para o caso de ele morrer a meio.
+.marca-tmp/

@@ -12,7 +12,7 @@ import { routing } from "@/i18n/routing";
  * `NEXT_PUBLIC_SITE_URL` no painel da Vercel e faz-se *redeploy*.
  */
 export const URL_SITE = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://santoburga-demo.vercel.app"
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://damira-demo.vercel.app"
 ).replace(/\/+$/, "");
 
 /**
@@ -20,7 +20,7 @@ export const URL_SITE = (
  *
  * O endereço é facto e vive aqui; o nome é o texto da ligação e vive nas
  * mensagens, com o resto da frase. Não vai para o `marca.json`, que é só factos
- * sobre o Santo Burga.
+ * sobre a Damira.
  */
 export const URL_ESTUDIO = "https://devplus.pt";
 
@@ -33,7 +33,7 @@ export const URL_ESTUDIO = "https://devplus.pt";
  * uma página em falta assinalada por nós custa mais do que uma página que ainda
  * não foi prometida.
  */
-export const ROTAS_FIXAS = ["/", "/ementa"] as const;
+export const ROTAS_FIXAS = ["/", "/ementa", "/encomendas"] as const;
 
 export type RotaFixa = (typeof ROTAS_FIXAS)[number];
 

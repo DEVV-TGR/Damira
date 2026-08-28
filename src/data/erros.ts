@@ -10,7 +10,7 @@ import type { ZodError } from "zod";
  * quem quiser saltar direto à linha.
  *
  * Usa `nome` quando existe, `id` quando não — chega para as duas formas de
- * ficheiro que temos (a ementa e os restaurantes).
+ * ficheiro que temos (a ementa, as encomendas, os bolos e a casa).
  */
 export function erroDeFicheiro(
   ficheiro: string,

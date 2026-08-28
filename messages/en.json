@@ -1,62 +1,66 @@
 {
   "marca": {
-    "nome": "Santo Burga",
-    "assinatura": "Handmade burgers with a taste of the divine",
-    "quadrado": "The famous square burger"
+    "nome": "Confeitaria Damira",
+    "assinatura": "Bakery, pastry, and a kitchen, from early morning",
+    "desde": "Ermesinde, since {ano}"
   },
   "nav": {
     "inicio": "Home",
     "ementa": "Menu",
+    "encomendas": "Orders",
     "saltarParaConteudo": "Skip to content",
     "mudarIdioma": "Português"
   },
   "inicio": {
-    "heroTexto": "Two places: one in Porto, one by the sea in Leça da Palmeira. The same roll call of saints at both.",
+    "heroTexto": "Open from seven to nine. Toast and coffee in the morning, burgers and suckling pig at lunch, and a counter full of cakes all day — half of it vegan.",
     "verEmenta": "See the menu",
-    "trio": {
-      "titulo": "Three cuts, three saints",
-      "texto": "One of each, and they are the ones the kitchen makes most. There are forty more on the menu.",
-      "verTudo": "See the menu",
-      "ilustrativas": "The photographs are ours and stand as examples — they are not a photograph of each burger."
+    "verEncomendas": "Orders & parties",
+    "combinacoes": {
+      "olho": "Perfect pairings",
+      "titulo": "What the house recommends",
+      "texto": "Six pairs printed at the bottom of our menu. Not a best-seller list — just what goes well with what.",
+      "verTudo": "See the full menu",
+      "pares": [
+        { "a": "Espresso", "b": "Brigadeiro" },
+        { "a": "Affogato Latte", "b": "American Cookie" },
+        { "a": "Iced Matcha Latte", "b": "Filled Croissant" },
+        { "a": "Cappuccino", "b": "Cake with Brigadeiro Sauce" },
+        { "a": "House Burger", "b": "Príncipe Biscuit" },
+        { "a": "House Chicken Toastie", "b": "Fresh Fruit Juice" }
+      ]
     },
-    "casas": {
-      "titulo": "Our places",
-      "texto": "Two addresses, one menu. Take whichever is closer."
+    "vegan": {
+      "titulo": "Half the counter is vegan",
+      "doces": "Pastries by the piece",
+      "salgados": "Savouries",
+      "bolos": "Whole cakes",
+      "opcoesBolo": "Custom cake options",
+      "verCarta": "See the vegan menu",
+      "proporcao": "{vegan} of our {total} menu items are vegan — not a shelf on the side, but half the house."
     },
-    "casaCheia": {
-      "titulo": "Made by hand, in front of whoever's eating",
-      "credito": "Photography and video by Santo Burga."
-    },
-    "corajosos": {
-      "olho": "For the brave",
-      "titulo": "320, 480 and 640 grams",
-      "texto": "A normal burger is 160 grams. These three are double, triple and quadruple that — and some people finish them."
-    },
-    "paes": {
-      "titulo": "Not every saint comes in a plain bun",
-      "texto": "Sixteen of them come coloured, and you can spot them from the street.",
-      "rosa": "Pink bun",
-      "azul": "Blue bun",
-      "quantos": "{n} saints",
-      "ambos": "The only one that comes both ways"
+    "festas": {
+      "olho": "Party Kits",
+      "titulo": "From twenty to seventy people",
+      "texto": "Three tiers, three sizes, one fixed price. Savoury and fried miniatures, mini pizzas, cheese boards, meat breads — and the sweet half, which is where we come from.",
+      "desde": "from {preco}",
+      "pessoas": "{n} people",
+      "verEncomendas": "See what each one includes"
     },
     "fecho": {
-      "titulo": "Before you go, see the menu",
-      "texto": "The same roll call of saints at both places. Take whichever is closer."
+      "titulo": "Before you go",
+      "texto": "Over the counter every day, seven to nine. For a party, with a phone call first."
     }
   },
-  "casas": {
-    "direcoes": "Get directions",
-    "telefone": "Phone",
+  "casa": {
+    "titulo": "Where and when",
+    "morada": "Address",
+    "direcoes": "Tap to open in Google Maps.",
     "horario": "Opening hours",
-    "semHorario": "Opening hours yet to be confirmed. Best to check Instagram before heading out.",
-    "semHorarioComTelefone": "Opening hours yet to be confirmed. Best to call ahead.",
+    "horarioPorConfirmar": "Daily hours still to be confirmed. If you are coming from far, call ahead.",
+    "semHorario": "Opening hours to be confirmed. Until then, calling is safest.",
     "encerrado": "Closed",
-    "entregaTitulo": "Delivery",
-    "uberEats": "Uber Eats",
-    "glovo": "Glovo",
-    "boltFood": "Bolt Food",
-    "semFotos": "Photographs coming soon",
+    "falarConnosco": "Get in touch",
+    "boltFood": "Order on Bolt Food",
     "dias": {
       "segunda": "Monday",
       "terca": "Tuesday",
@@ -69,77 +73,128 @@
   },
   "ementa": {
     "titulo": "Menu",
-    "intro": "The full menu, the same at both places.",
-    "navegar": "Sections",
-    "bestSeller": "Best seller",
-    "vegetariano": "Vegetarian",
-    "paes": {
-      "rosa": "Pink bun",
-      "azul": "Blue bun"
-    },
-    "variantes": {
-      "a-la-chef": "À la chef"
+    "intro": "Four menus: the everyday counter, the weekend lunch, the vegan one, and the chocolate.",
+    "navegar": "Menus",
+    "vegan": "Vegan",
+    "porQuilo": " /kg",
+    "sabores": "Flavours",
+    "cartas": {
+      "casa": {
+        "curto": "The counter",
+        "titulo": "The house menu",
+        "texto": "What is on the counter every day, from seven to nine: light bites, hot savouries, pastries, and drinks."
+      },
+      "fim-de-semana": {
+        "curto": "Weekend",
+        "titulo": "Saturday and Sunday lunch",
+        "texto": "At weekends there are plates. Bairrada-style suckling pig, steak plate — and the burgers from the house menu keep coming out."
+      },
+      "vegan": {
+        "curto": "Vegan",
+        "titulo": "The vegan menu",
+        "texto": "Pastries, savouries, and whole cakes, all vegan. A menu of its own, not a shelf of exceptions."
+      },
+      "chocolate": {
+        "curto": "Chocolate",
+        "titulo": "Dubai Chocolate",
+        "texto": "Made here, in four sizes, from a pocket square to a half-kilo bar."
+      }
     },
     "categorias": {
-      "aperitivos": "Aperitifs",
-      "entradas": "Starters",
-      "santos-novilho": "Beef Saints",
-      "carnes-maturadas": "Dry-Aged Beef",
-      "para-os-corajosos": "For the Brave",
-      "santos-frango": "Chicken Saints",
-      "outros-santos": "Other Saints",
-      "vegetariano-saladas": "Vegetarian & Salads",
-      "menu-infantil": "Kids' Menu",
-      "sobremesas": "Holy Desserts",
-      "extras": "Extras",
-      "bebidas": "Holy Drinks"
+      "pausa": "Light bites",
+      "salgados": "Savouries",
+      "pratos": "Plates",
+      "doces": "Pastries",
+      "bebidas": "Drinks",
+      "bolos-inteiros": "Whole cakes",
+      "formatos": "Sizes"
     },
     "subcategorias": {
-      "sangrias": "Holy Sangrias",
-      "limonadas": "Lemonades",
-      "refrigerantes": "Soft drinks",
-      "aguas": "Water",
-      "cidras": "Ciders",
-      "cerveja": "Beer",
-      "vinhos": "Wines",
-      "licores": "Liqueurs",
-      "whiskeys": "Whiskeys",
-      "aguardentes": "Spirits",
-      "quentes": "Hot drinks"
+      "batidos": "Shakes & juices",
+      "milkshakes": "Milkshakes",
+      "quentes": "Hot drinks",
+      "frias": "Cold drinks"
     },
     "notas": {
-      "acompanhamento": "Every burger comes with sliced or straight-cut potatoes. Sweet potato fries are also available, under extras.",
-      "infantil": "Includes sliced or straight-cut potatoes and a drink of your choice (mini Coca-Cola, mini orange Fanta, Bongo or 0.25 L water). For children up to 12 only.",
+      "batata": "The burgers, chicken toastie, and sandwiches marked on the menu come with potatoes.",
+      "sabores": "Ask at the counter which flavours we have today.",
+      "palhinhas": "Try your drink with our edible straws, for €1 more.",
       "iva": "VAT included at the applicable rate.",
-      "alergenios": "Allergen information is available at the restaurant — just ask.",
-      "precos": "Prices from the 2024 menu, pending confirmation."
+      "alergenios": "Allergen information is available in the shop — just ask.",
+      "precos": "Prices from the 2025 and 2026 menus, to be confirmed."
     },
-    "ilustrativa": "Illustrative image",
-    "acompanhamento": "Comes with",
     "abrir": "See details",
-    "fechar": "Close",
-    "acompanhamentoTexto": "Sliced or straight-cut potatoes, included.",
-    "batataDoce": "Sweet potato fries instead"
+    "fechar": "Close"
+  },
+  "encomendas": {
+    "olho": "To order",
+    "titulo": "Orders",
+    "intro": "Parties, custom cakes, and boxes for special days. All of it is ordered ahead — it is not what sits on the counter.",
+    "festas": {
+      "titulo": "Party Kits",
+      "texto": "Three tiers at a fixed price, for twenty, forty, or seventy people. Pick how many you are and compare what each one includes.",
+      "quantasPessoas": "How many people?",
+      "pessoas": "{n} people",
+      "paraPessoas": "for {n} people",
+      "salgados": "Savoury",
+      "doces": "Sweet"
+    },
+    "kitsBolo": {
+      "titulo": "Cake and decorated table",
+      "texto": "The cake with the rest of the table to match: decorated biscuits, cupcakes, cakesicles, and brigadeiros.",
+      "nota": "Delivery and setup are not included in the price."
+    },
+    "boxes": {
+      "titulo": "Boxes for special days",
+      "texto": "A closed box to take away: breakfast in bed, a birthday tea, or a visit to someone close by.",
+      "vegan": "Vegan"
+    },
+    "como": {
+      "titulo": "How to order",
+      "texto": "By phone or by email. Tell us what you want, for how many people, and for which day — we reply with a quote and a confirmation.",
+      "prazo": "Minimum notice is still to be confirmed. Call us and we will tell you right away whether your date works.",
+      "telefonar": "Call — {numero}",
+      "email": "Send an email",
+      "assunto": "Order enquiry"
+    }
+  },
+  "bolos": {
+    "titulo": "A cake your way",
+    "texto": "The sponge, the filling, the topping, what goes on top, and what goes around it. That is {classica} choices on the classic line and {vegan} on the vegan one.",
+    "soVegan": "Vegan line only",
+    "semPrecos": "The price of a custom cake depends on weight, filling, and decoration — we quote it by phone, with your request in front of us. Catalogue cakes do have prices, on the menu.",
+    "grupos": {
+      "massas": "Sponges",
+      "recheios": "Fillings",
+      "coberturas": "Toppings",
+      "decoracao": "Decoration",
+      "a-volta": "Around the edge"
+    }
   },
   "metadata": {
     "inicio": {
-      "titulo": "Santo Burga — handmade burgers in Porto and Leça",
-      "descricao": "Handmade burgers with a taste of the divine. Two places: Porto and Leça da Palmeira. Home of the famous square burger."
+      "titulo": "Confeitaria Damira — bakery and pastry shop in Ermesinde since 1996",
+      "descricao": "Bakery, pastry shop, and kitchen in Ermesinde, Portugal. Open every day, 7am to 9pm. A full vegan menu, party kits, and cakes to order."
     },
     "ementa": {
-      "titulo": "Menu — Santo Burga",
-      "descricao": "The full Santo Burga menu: beef and chicken saints, dry-aged beef, vegetarian options, desserts and drinks."
+      "titulo": "Menu",
+      "descricao": "The Confeitaria Damira menu: light bites and savouries over the counter, weekend lunch, a full vegan menu, and Dubai Chocolate."
+    },
+    "encomendas": {
+      "titulo": "Orders & parties",
+      "descricao": "Party kits for 20, 40, or 70 people, custom decorated cakes, and boxes for special days, at Confeitaria Damira in Ermesinde."
     }
   },
   "rodape": {
     "seguirNos": "Follow",
+    "falarConnosco": "Get in touch",
     "feitoPor": "Site by",
     "estudio": "DevPlus",
     "direitos": "All rights reserved."
   },
   "naoEncontrada": {
-    "titulo": "This one doesn't exist",
-    "texto": "The page you're after has moved, or was never here.",
+    "titulo": "This one does not exist",
+    "texto": "The page you are looking for moved or was never here.",
     "voltar": "Back to the start"
   }
 }

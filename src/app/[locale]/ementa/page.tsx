@@ -35,9 +35,9 @@ function Ementa({ locale }: { locale: Locale }) {
 
   return (
     <>
-      {/* Abre a magenta chapado, como a coluna direita da primeira página do
-          impresso. Daí para baixo as secções alternam pelas quatro faces. */}
-      <div className="bloco-magenta-texto relative overflow-hidden">
+      {/* Abre a tijolo chapado, como o topo dos impressos. Daí para baixo a cor
+          marca **a carta** e não a secção — ver o comentário em `Carta.tsx`. */}
+      <div className="bloco-tijolo relative overflow-hidden">
         <div className="envolvente relative py-[clamp(3.5rem,8vw,6rem)]">
           <p className="titulo-display text-xs uppercase tracking-[0.3em] opacity-80">
             {t("navegar")}
@@ -53,23 +53,23 @@ function Ementa({ locale }: { locale: Locale }) {
 
         <span
           aria-hidden
-          className="traco pointer-events-none absolute -right-14 top-1/2 hidden h-[24rem] w-[23.7rem] -translate-y-1/2 opacity-20 lg:block"
+          className="traco pointer-events-none absolute -right-[6%] top-1/2 hidden h-[150%] w-[38%] -translate-y-1/2 opacity-[0.13] lg:block"
           style={{
-            maskImage: "url(/tracos/hamburguer.png)",
-            WebkitMaskImage: "url(/tracos/hamburguer.png)",
+            maskImage: "url(/marca/ondas.png)",
+            WebkitMaskImage: "url(/marca/ondas.png)",
           }}
         />
       </div>
 
       <Carta locale={locale} />
 
-      {/* As duas primeiras notas estão em letra pequena no impresso e são
-          compromissos com quem se senta à mesa — o acompanhamento incluído e o
-          I.V.A. A terceira é nossa, e existe porque a lei manda ter a informação
-          de alergénios disponível, mesmo quando não vai escrita na carta. */}
+      {/* As notas que valem para a ementa toda. As que pertencem a uma secção
+          — a batata, os sabores do dia, as palhinhas — ficam coladas a essa
+          secção, e não aqui. A dos alergénios é nossa, e existe porque a lei
+          manda ter a informação disponível mesmo quando não vai escrita na
+          carta. */}
       <aside className="bg-tinta text-papel">
         <ul className="envolvente max-w-[70ch] space-y-2 py-12 text-sm text-papel/70">
-          <li>{t("notas.acompanhamento")}</li>
           <li>{t("notas.iva")}</li>
           <li>{t("notas.alergenios")}</li>
           <li>{t("notas.precos")}</li>

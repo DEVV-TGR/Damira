@@ -10,7 +10,7 @@ export default function NaoEncontrada() {
       <p className="mt-4 max-w-[46ch]">{t("texto")}</p>
       <Link
         href="/"
-        className="bloco-magenta-texto mt-8 inline-block rounded-full px-6 py-3 text-sm font-bold uppercase tracking-wide"
+        className="bloco-tijolo mt-8 inline-block rounded-full px-6 py-3 text-sm font-bold uppercase tracking-wide"
       >
         {t("voltar")}
       </Link>

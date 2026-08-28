@@ -1,0 +1,25 @@
+{
+  "nome": "Confeitaria Damira",
+  "cidade": "Ermesinde",
+  "morada": "Rua Dom António Castro Meireles 155",
+  "codigoPostal": "4445-397",
+  "distrito": "Porto",
+  "telefone": "+351 229 730 939",
+  "email": "geral.confeitariadamira@gmail.com",
+  "desde": 1996,
+  "horarios": {
+    "segunda": { "abre": "07:00", "fecha": "21:00" },
+    "terca": { "abre": "07:00", "fecha": "21:00" },
+    "quarta": { "abre": "07:00", "fecha": "21:00" },
+    "quinta": { "abre": "07:00", "fecha": "21:00" },
+    "sexta": { "abre": "07:00", "fecha": "21:00" },
+    "sabado": { "abre": "07:00", "fecha": "21:00" },
+    "domingo": { "abre": "07:00", "fecha": "21:00" }
+  },
+  "fotos": [],
+  "entregas": {
+    "uberEats": null,
+    "glovo": null,
+    "boltFood": "https://food.bolt.eu/pt-pt/437-porto/p/49180-confeitaria-damira/"
+  }
+}
