@@ -1,0 +1,812 @@
+{
+  "grupos": [
+    {
+      "id": "massas",
+      "opcoes": [
+        {
+          "nome": {
+            "pt": "Pão-de-Ló",
+            "en": "Sponge"
+          },
+          "nota": null,
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Folhada",
+            "en": "Puff Pastry"
+          },
+          "nota": null,
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Pão-de-Ló de Chocolate",
+            "en": "Chocolate Sponge"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Chocolate",
+            "en": "Chocolate"
+          },
+          "nota": null,
+          "linhas": [
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Pão-de-Ló de Noz",
+            "en": "Walnut Sponge"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Noz",
+            "en": "Walnut"
+          },
+          "nota": null,
+          "linhas": [
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Red Velvet",
+            "en": "Red Velvet"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Brigadeiro",
+            "en": "Brigadeiro"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Cenoura",
+            "en": "Carrot"
+          },
+          "nota": null,
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Laranja",
+            "en": "Orange"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Sabor Caseiro",
+            "en": "Home-Style"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "recheios",
+      "opcoes": [
+        {
+          "nome": {
+            "pt": "Chocolate Crocante",
+            "en": "Crunchy Chocolate"
+          },
+          "nota": {
+            "pt": "tipo Ferrero",
+            "en": "Ferrero-style"
+          },
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Caramelo Salgado",
+            "en": "Salted Caramel"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Caramelo Salgado Crocante",
+            "en": "Crunchy Salted Caramel"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Creme de Avelã",
+            "en": "Hazelnut Cream"
+          },
+          "nota": {
+            "pt": "tipo Kinder Bueno",
+            "en": "Kinder Bueno-style"
+          },
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Raffaello",
+            "en": "Raffaello"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Doce de Leite",
+            "en": "Dulce de Leche"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Doce de Leite sem Leite",
+            "en": "Milk-Free Dulce de Leche"
+          },
+          "nota": null,
+          "linhas": [
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Mousse de Morango",
+            "en": "Strawberry Mousse"
+          },
+          "nota": null,
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Mousse de Frutos Vermelhos",
+            "en": "Red Berry Mousse"
+          },
+          "nota": null,
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Creme Crocante de Frutos Vermelhos",
+            "en": "Crunchy Red Berry Cream"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Creme de Maracujá",
+            "en": "Passion Fruit Cream"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Mousse de Maracujá",
+            "en": "Passion Fruit Mousse"
+          },
+          "nota": null,
+          "linhas": [
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Cream Cheese",
+            "en": "Cream Cheese"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Creme de Lotus",
+            "en": "Lotus Cream"
+          },
+          "nota": null,
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Creme de Pistáchio",
+            "en": "Pistachio Cream"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Nutella",
+            "en": "Nutella"
+          },
+          "nota": null,
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Brigadeiro Tradicional",
+            "en": "Traditional Brigadeiro"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Brigadeiro de Leite Ninho",
+            "en": "Leite Ninho Brigadeiro"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Natas",
+            "en": "Whipped Cream"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Natas",
+            "en": "Whipped Cream"
+          },
+          "nota": {
+            "pt": "soja",
+            "en": "soy"
+          },
+          "linhas": [
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Creme d’Ovos",
+            "en": "Egg Custard"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Creme d’Ovo sem Ovo",
+            "en": "Egg-Free Custard"
+          },
+          "nota": null,
+          "linhas": [
+            "vegan"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "coberturas",
+      "opcoes": [
+        {
+          "nome": {
+            "pt": "Natas",
+            "en": "Whipped Cream"
+          },
+          "nota": null,
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Creme d’Ovo",
+            "en": "Egg Custard"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Creme d’Ovo sem Ovo",
+            "en": "Egg-Free Custard"
+          },
+          "nota": null,
+          "linhas": [
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Chocolate de Leite",
+            "en": "Milk Chocolate"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Espelho de Chocolate",
+            "en": "Chocolate Mirror Glaze"
+          },
+          "nota": null,
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Caramelo",
+            "en": "Caramel"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Raspas de Chocolate de Leite",
+            "en": "Milk Chocolate Shavings"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Raspas de Chocolate Branco",
+            "en": "White Chocolate Shavings"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Raspas de Chocolate",
+            "en": "Chocolate Shavings"
+          },
+          "nota": null,
+          "linhas": [
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Chocolate Crocante",
+            "en": "Crunchy Chocolate"
+          },
+          "nota": {
+            "pt": "tipo Ferrero",
+            "en": "Ferrero-style"
+          },
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Caramelo Salgado",
+            "en": "Salted Caramel"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Caramelo Salgado Crocante",
+            "en": "Crunchy Salted Caramel"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Creme de Avelã",
+            "en": "Hazelnut Cream"
+          },
+          "nota": {
+            "pt": "tipo Kinder Bueno",
+            "en": "Kinder Bueno-style"
+          },
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Raffaello",
+            "en": "Raffaello"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Doce de Leite",
+            "en": "Dulce de Leche"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Doce de Leite sem Leite",
+            "en": "Milk-Free Dulce de Leche"
+          },
+          "nota": null,
+          "linhas": [
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Mousse de Morango",
+            "en": "Strawberry Mousse"
+          },
+          "nota": null,
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Mousse de Frutos Vermelhos",
+            "en": "Red Berry Mousse"
+          },
+          "nota": null,
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Creme Crocante de Frutos Vermelhos",
+            "en": "Crunchy Red Berry Cream"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Creme de Maracujá",
+            "en": "Passion Fruit Cream"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Mousse de Maracujá",
+            "en": "Passion Fruit Mousse"
+          },
+          "nota": null,
+          "linhas": [
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Cream Cheese",
+            "en": "Cream Cheese"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Creme de Lotus",
+            "en": "Lotus Cream"
+          },
+          "nota": null,
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Creme de Pistáchio",
+            "en": "Pistachio Cream"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Nutella",
+            "en": "Nutella"
+          },
+          "nota": null,
+          "linhas": [
+            "vegan"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "decoracao",
+      "opcoes": [
+        {
+          "nome": {
+            "pt": "Morangos",
+            "en": "Strawberries"
+          },
+          "nota": null,
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Frutos Vermelhos",
+            "en": "Red Berries"
+          },
+          "nota": null,
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Frutas Variadas",
+            "en": "Assorted Fruit"
+          },
+          "nota": null,
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Macarrons",
+            "en": "Macarons"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Chocolates Variados",
+            "en": "Assorted Chocolates"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Profiteroles",
+            "en": "Profiteroles"
+          },
+          "nota": null,
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Brigadeiros",
+            "en": "Brigadeiros"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Nozes",
+            "en": "Walnuts"
+          },
+          "nota": null,
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Foto em folha de hóstia",
+            "en": "Photo on wafer paper"
+          },
+          "nota": null,
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "a-volta",
+      "opcoes": [
+        {
+          "nome": {
+            "pt": "Massa Folhada",
+            "en": "Puff Pastry"
+          },
+          "nota": {
+            "pt": "desfeita",
+            "en": "crumbled"
+          },
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Telha de Amêndoa",
+            "en": "Almond Tuile"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Crocante de Caju",
+            "en": "Cashew Crunch"
+          },
+          "nota": null,
+          "linhas": [
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Placas de Chocolate",
+            "en": "Chocolate Shards"
+          },
+          "nota": null,
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Placas de Chocolate com Crocante",
+            "en": "Crunchy Chocolate Shards"
+          },
+          "nota": null,
+          "linhas": [
+            "classica",
+            "vegan"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Kit Kat",
+            "en": "Kit Kat"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        },
+        {
+          "nome": {
+            "pt": "Bolacha Lotus",
+            "en": "Lotus Biscuit"
+          },
+          "nota": null,
+          "linhas": [
+            "classica"
+          ]
+        }
+      ]
+    }
+  ]
+}

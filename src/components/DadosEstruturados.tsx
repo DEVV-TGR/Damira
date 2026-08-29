@@ -1,57 +1,82 @@
 import { marca } from "@/data/marca";
-import { restaurantes, type Restaurante } from "@/data/restaurantes";
+import { casa, DIAS_DA_SEMANA } from "@/data/casa";
 import { URL_SITE } from "@/lib/site";
 
 /**
- * `schema.org/Restaurant`, um por casa.
+ * `schema.org/Bakery` — a casa, uma vez.
  *
- * É o que faz o Google mostrar morada e horário no painel lateral em vez de o
- * adivinhar de agregadores desactualizados — e, para um restaurante com duas
- * moradas, é o que impede que as duas sejam tomadas por uma só.
+ * É o que faz o Google mostrar morada e horário no painel lateral em vez de os
+ * adivinhar de agregadores desactualizados. Para uma casa com uma morada só,
+ * isso é a diferença entre aparecer na pesquisa local de Ermesinde e não
+ * aparecer.
  *
- * ## Um `<script>` por casa, e não um array com as duas
+ * ## Porque `Bakery` e não `Restaurant`
  *
- * ⚠️ Isto **já rebentou uma vez**, em Safari:
+ * Porque é o que a casa é. O `Bakery` do schema.org é um subtipo de
+ * `FoodEstablishment` e aceita as mesmas propriedades (`servesCuisine`,
+ * `hasMenu`, `openingHoursSpecification`), mas diz ao Google que isto é uma
+ * pastelaria — e é por "pastelaria em Ermesinde" que alguém procura, não por
+ * "restaurante". Ao almoço de fim-de-semana serve pratos; isso faz dela uma
+ * pastelaria com cozinha, não um restaurante.
  *
- * ```
- * undefined is not an object (evaluating 'r["@context"].toLowerCase')
- * ```
+ * ⚠️ **Só entra aqui o que está confirmado.** Um horário inventado propaga-se
+ * para fora do site e passa a ser o que o Google mostra a toda a gente — e um
+ * horário errado no Google manda gente a uma porta fechada sem que ninguém
+ * perceba porquê. A `null` no JSON, a propriedade nem chega a ser escrita.
  *
- * A causa era um array no topo do bloco — `[{…}, {…}]`. Um array não tem
- * `@context`, e quem lê dados estruturados costuma fazer
- * `JSON.parse(bloco)["@context"].toLowerCase()` para normalizar o valor; com um
- * array à frente, isso é `undefined.toLowerCase()`. O leitor era uma extensão do
- * browser e não o Next — mas o array era nosso, e a fragilidade também.
- *
- * Dois blocos independentes, cada um um objeto completo, não têm essa aresta: o
- * Google aceita vários blocos por página e cada um traz o seu `@context` e o seu
- * `@type`. A alternativa era um objeto só com `@graph`, que também resolvia o
- * `@context` — mas deixa o topo sem `@type`, e há consumidores que também lhe
- * pegam.
- *
- * **Só entra aqui o que está confirmado.** Um `openingHours` inventado propaga-se
- * para fora do site e passa a ser o horário que o Google mostra a toda a gente;
- * a `null` no JSON, a propriedade nem chega a ser escrita.
+ * ⚠️ **Um objeto, e nunca um array no topo do bloco.** Herdado do Santo Burga,
+ * onde tinha duas casas e um array — e um array não tem `@context`, o que
+ * rebentava em leitores que fazem `JSON.parse(bloco)["@context"].toLowerCase()`
+ * para normalizar o valor. Aqui só há uma casa, mas a regra fica: se um dia
+ * abrir a segunda, são dois `<script>` independentes e não um array.
  */
-function dadosDaCasa(casa: Restaurante, descricao: string) {
+const DIAS_SCHEMA: Record<string, string> = {
+  segunda: "Monday",
+  terca: "Tuesday",
+  quarta: "Wednesday",
+  quinta: "Thursday",
+  sexta: "Friday",
+  sabado: "Saturday",
+  domingo: "Sunday",
+};
+
+function dadosDaCasa(descricao: string) {
+  const horarios = casa.horarios;
+
   return {
     "@context": "https://schema.org",
-    "@type": "Restaurant",
+    "@type": "Bakery",
     name: casa.nome,
     description: descricao,
     url: URL_SITE,
-    servesCuisine: "Burgers",
-    priceRange: "€€",
+    priceRange: "€",
+    ...(casa.desde ? { foundingDate: String(casa.desde) } : {}),
     address: {
       "@type": "PostalAddress",
       streetAddress: casa.morada,
       addressLocality: casa.cidade,
       addressCountry: "PT",
       ...(casa.codigoPostal ? { postalCode: casa.codigoPostal } : {}),
+      ...(casa.distrito ? { addressRegion: casa.distrito } : {}),
     },
     ...(casa.telefone ? { telephone: casa.telefone } : {}),
-    ...(marca.instagram || marca.tiktok
-      ? { sameAs: [marca.instagram, marca.tiktok].filter(Boolean) }
+    ...(casa.email ? { email: casa.email } : {}),
+    ...(horarios
+      ? {
+          openingHoursSpecification: DIAS_DA_SEMANA.filter(
+            (dia) => horarios[dia] !== null,
+          ).map((dia) => ({
+            "@type": "OpeningHoursSpecification",
+            dayOfWeek: DIAS_SCHEMA[dia],
+            opens: horarios[dia]!.abre,
+            closes: horarios[dia]!.fecha,
+          })),
+        }
+      : {}),
+    ...(marca.instagram || marca.tiktok || marca.facebook
+      ? {
+          sameAs: [marca.instagram, marca.tiktok, marca.facebook].filter(Boolean),
+        }
       : {}),
     hasMenu: `${URL_SITE}/ementa`,
   };
@@ -59,20 +84,14 @@ function dadosDaCasa(casa: Restaurante, descricao: string) {
 
 export function DadosEstruturados({ descricao }: { descricao: string }) {
   return (
-    <>
-      {restaurantes.map((casa) => (
-        <script
-          key={casa.id}
-          type="application/ld+json"
-          /* Alimentado por `restaurantes.json` e `marca.json`, os dois validados
-             por `zod` e sem entrada de utilizador. É o único
-             `dangerouslySetInnerHTML` do site — ver o comentário da CSP em
-             `next.config.ts`. */
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(dadosDaCasa(casa, descricao)),
-          }}
-        />
-      ))}
-    </>
+    <script
+      type="application/ld+json"
+      /* Alimentado por `casa.json` e `marca.json`, os dois validados por `zod` e
+         sem entrada de utilizador. É o único `dangerouslySetInnerHTML` do site —
+         ver o comentário da CSP em `next.config.ts`. */
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(dadosDaCasa(descricao)),
+      }}
+    />
   );
 }

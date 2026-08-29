@@ -2,18 +2,43 @@ import { useTranslations } from "next-intl";
 import type { Artigo } from "@/data/ementa";
 import type { Locale } from "@/i18n/routing";
 import { formatarPreco } from "@/lib/preco";
-import { EtiquetaPao, EtiquetaVegetariano, SeloBestSeller } from "./Etiquetas";
+import { EtiquetaVegan } from "./Etiquetas";
 
 /**
- * O nome a mostrar. Os santos ficam como estão nas duas línguas; só os artigos
- * de nome comum (extras, bebidas, aperitivos) têm versão inglesa. Ver o
- * `superRefine` em `src/data/ementa.ts`.
+ * O nome a mostrar. **Todos os artigos têm versão inglesa** — ao contrário do
+ * Santo Burga, onde metade eram nomes de santos e não se traduziam. Ver o
+ * `ementa.ts`.
  */
 const nomeVisivel = (artigo: Artigo, locale: Locale) =>
-  locale === "en" && artigo.nomeEn ? artigo.nomeEn : artigo.nome;
+  locale === "en" ? artigo.nomeEn : artigo.nome;
 
 /**
- * Artigo com descrição — os santos, as saladas, as sobremesas.
+ * O preço escrito por extenso, já com a unidade quando ela existe.
+ *
+ * ⚠️ **O `/kg` não é decoração.** Um bolo de bolacha da carta vegan são 17 € ao
+ * quilo e um bolo inteiro pesa dois: escrever "17,00 €" ao lado dele anuncia
+ * metade do preço, e o erro só aparece ao balcão, com o cliente à frente. Ver
+ * `UNIDADES` em `ementa.ts`.
+ */
+function Preco({ artigo, locale }: { artigo: Artigo; locale: Locale }) {
+  const t = useTranslations("ementa");
+
+  if (artigo.preco === null) return null;
+
+  return (
+    <>
+      {formatarPreco(artigo.preco, locale)}
+      {artigo.unidade === "kg" && (
+        <span className="text-xs font-normal opacity-70">
+          {t("porQuilo")}
+        </span>
+      )}
+    </>
+  );
+}
+
+/**
+ * Artigo com descrição — os salgados, os pratos, os doces da casa.
  *
  * É um `<button>` e não uma `<div>` com `onClick`: abre o painel de detalhe, e
  * isso faz dele um controlo. Assim entra na ordem de tabulação, responde ao
@@ -48,15 +73,15 @@ export function ArtigoEmenta({
             className="min-w-4 flex-1 translate-y-[-0.25em] border-b border-dotted border-current opacity-40"
           />
           <span className="titulo-display shrink-0 tabular-nums">
-            {formatarPreco(artigo.preco, locale)}
+            <Preco artigo={artigo} locale={locale} />
           </span>
         </div>
 
         {artigo.variantes && (
           <p className="mt-1 text-xs tabular-nums opacity-70">
             {artigo.variantes
-              .map((v) => `${t(`variantes.${v.chave}`)} ${formatarPreco(v.preco, locale)}`)
-              .join(" · ")}
+              .map((v) => `${v.chave} · ${formatarPreco(v.preco, locale)}`)
+              .join("   ")}
           </p>
         )}
 
@@ -66,13 +91,15 @@ export function ArtigoEmenta({
           </p>
         )}
 
-        {(artigo.bestSeller || artigo.vegetariano || artigo.paes.length > 0) && (
+        {artigo.sabores.length > 0 && (
+          <p className="mt-1.5 max-w-[46ch] text-sm leading-snug opacity-70">
+            {artigo.sabores.join(" · ")}
+          </p>
+        )}
+
+        {artigo.vegan && (
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-            {artigo.bestSeller && <SeloBestSeller />}
-            {artigo.paes.map((pao) => (
-              <EtiquetaPao key={pao} pao={pao} />
-            ))}
-            {artigo.vegetariano && <EtiquetaVegetariano />}
+            <EtiquetaVegan />
           </div>
         )}
       </button>
@@ -81,11 +108,16 @@ export function ArtigoEmenta({
 }
 
 /**
- * Artigo sem descrição — extras, bebidas, aperitivos. Nome à esquerda, preço à
- * direita, e uma linha pontilhada a ligar os dois, que é como um menu se lê há
- * cem anos: o olho segue a linha e não salta de preço.
+ * Artigo sem descrição — as bebidas, os doces vegan à unidade. Nome à esquerda,
+ * preço à direita, e uma linha pontilhada a ligar os dois, que é como um menu se
+ * lê há cem anos: o olho segue a linha e não salta de preço.
  *
  * Não abre painel: não há o que mostrar além do que já ali está.
+ *
+ * ⚠️ **Os sabores continuam a aparecer aqui**, em linha por baixo. São a única
+ * coisa que uma lista compacta não pode esconder: oito sabores de batido é a
+ * informação toda daquele artigo, e escondê-los atrás de um clique que não
+ * existe deixava-os invisíveis.
  */
 export function ArtigoCompacto({
   artigo,
@@ -95,16 +127,22 @@ export function ArtigoCompacto({
   locale: Locale;
 }) {
   return (
-    <li className="flex scroll-mt-40 items-baseline gap-2 py-1" id={artigo.id}>
-      <span className="text-sm">{nomeVisivel(artigo, locale)}</span>
-      {artigo.bestSeller && <SeloBestSeller />}
-      <span
-        aria-hidden
-        className="min-w-4 flex-1 translate-y-[-0.25em] border-b border-dotted border-current opacity-40"
-      />
-      <span className="text-sm font-semibold tabular-nums">
-        {formatarPreco(artigo.preco, locale)}
-      </span>
+    <li className="scroll-mt-40 py-1" id={artigo.id}>
+      <div className="flex items-baseline gap-2">
+        <span className="text-sm">{nomeVisivel(artigo, locale)}</span>
+        <span
+          aria-hidden
+          className="min-w-4 flex-1 translate-y-[-0.25em] border-b border-dotted border-current opacity-40"
+        />
+        <span className="shrink-0 text-sm font-semibold tabular-nums">
+          <Preco artigo={artigo} locale={locale} />
+        </span>
+      </div>
+      {artigo.sabores.length > 0 && (
+        <p className="max-w-[40ch] text-xs leading-snug opacity-65">
+          {artigo.sabores.join(" · ")}
+        </p>
+      )}
     </li>
   );
 }

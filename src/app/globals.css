@@ -1,48 +1,62 @@
 @import "tailwindcss";
 
 /**
- * # Esplanada
+ * # Balcão
  *
- * A direção do site é a do Instagram e não a do impresso: luz de fim de tarde,
- * mesas na rua, gente a comer com as mãos. Base clara com muito ar, conduzida
- * pela fotografia, **cor como acento e não chapada**.
+ * A direção do site é a dos impressos da casa, que são todos a mesma coisa:
+ * **preto, branco e uma cor** — o tijolo. Muito ar, tipografia grande e sem
+ * medo, e a cor a chegar por blocos inteiros em vez de salpicos.
  *
- * O impresso continua a mandar nas cores — só não manda na quantidade. Uma
- * página inteira a magenta funciona em A3 na mão de alguém e cansa num ecrã que
- * se percorre durante um minuto à procura do preço de um hambúrguer.
+ * O que o ecrã acrescenta ao impresso é o tempo. Uma folha A4 vê-se de uma vez;
+ * esta página percorre-se durante um minuto à procura de um preço, e por isso o
+ * tijolo não pode ser o fundo de tudo — é a cor do topo, dos selos e do fecho,
+ * e mais nada.
+ *
+ * ## A regra que não é decorativa: o verde é do vegan
+ *
+ * A Damira tem uma carta vegan inteira e assinala-a com uma folha verde. Esse
+ * verde **não se usa como cor de acento** em mais lado nenhum do site. Quem
+ * procura o símbolo costuma ter uma razão médica ou ética para o procurar, e um
+ * verde decorativo numa secção de leitão ensina o olho a ignorá-lo justamente
+ * onde ele conta.
  */
 
 /**
- * As cores não foram escolhidas — foram **medidas** por amostragem dos pixéis do
- * menu impresso (`referencias/`). O magenta é o Process Magenta puro e a tinta é
- * o rich black de CMYK, os dois sinais de que isto veio de artes finais e não do
- * seletor de cor de alguém.
+ * As cores não foram escolhidas — foram **medidas** por amostragem dos pixéis
+ * dos menus impressos (`referencias/`). Saíram todas do mesmo sítio e batem
+ * certo entre os cinco documentos, o que é o sinal de que vieram de artes
+ * finais e não do seletor de cor de alguém.
  *
  * ⚠️ **Não trocar por valores "parecidos".** No dia em que aparecer um manual de
  * marca, trocam-se aqui e mudam em todo o lado.
  */
 @theme {
-  --color-magenta: #ec008c;
-  /* O mesmo magenta, 7% mais escuro. Existe por uma razão só: ver a tabela de
-     contraste abaixo. Não usar como cor decorativa — decorativo é o de cima. */
-  --color-magenta-forte: #db0084;
-  --color-turquesa: #91dadc;
-  /* O turquesa da marca é claro de mais para texto ou para um filete fino sobre
-     papel. Este é o mesmo tom levado até onde se lê. */
-  --color-turquesa-forte: #1c757b;
-  --color-coral: #f79881;
-  --color-tinta: #231f20;
+  /* O tijolo do topo dos menus, das capas das boxes e do catálogo de bolos. É
+     *a* cor da marca — a única que não é preto nem branco. */
+  --color-tijolo: #923d38;
+  /* O verde da carta vegan. ⚠️ Só em contexto vegan — ver o cabeçalho. */
+  --color-verde: #698842;
+  /* O mesmo verde, 10% mais escuro. Existe por uma razão só: papel sobre o
+     verde da marca dá 3,89:1 e reprova em texto pequeno. Ver a tabela abaixo. */
+  --color-verde-forte: #5f7a3b;
+  /* O rich black quente do rodapé de todos os impressos. Não é #000. */
+  --color-tinta: #1f1d1b;
   /* Texto secundário. Um `opacity` sobre a tinta dava o mesmo cinzento mas
      também apagava o que estivesse por baixo em blocos de cor. */
-  --color-tinta-suave: #6d6668;
+  --color-tinta-suave: #6b6461;
 
   /**
-   * O papel não é branco. Debaixo de fotografia com madeira, luz quente e pratos
-   * azuis, o `#FFFFFF` lê frio e faz as fotos parecerem desbotadas — este é o
-   * branco com um grão de amarelo que as devolve ao sítio.
+   * O papel da Damira **é** branco — ao contrário do Santo Burga, onde era
+   * creme. Medido nos cinco impressos, dá #FAFBFB: branco com um fio de frio.
+   * É coerente com a marca, que é uma pastelaria de vitrine iluminada e não uma
+   * tasca de madeira, e é o que deixa a fotografia de bolo ser a única coisa
+   * quente na página.
    */
-  --color-papel: #fcf8f2;
-  --color-papel-fundo: #f5eee4;
+  --color-papel: #fafbfb;
+  /* O segundo tom de superfície. ⚠️ **Este é derivado e não medido** — os
+     impressos só têm um branco, porque numa folha não é preciso separar dois
+     blocos que se seguem. Num ecrã é. */
+  --color-papel-fundo: #f1efec;
 
   --font-display: var(--fonte-display), "Trebuchet MS", sans-serif;
   --font-sans: var(--fonte-corpo), system-ui, sans-serif;
@@ -72,50 +86,57 @@
 /**
  * ## Contraste — o que o impresso pode fazer e o ecrã não
  *
- * As cores da marca são claras, e no papel isso não custa nada. No ecrã custa, e
- * há combinações do impresso que **não se podem copiar**. Os rácios abaixo estão
+ * As cores da marca são poucas e escuras, o que ajuda: quase tudo passa. A
+ * exceção é o **verde**, que é o tom mais claro dos cinco impressos e o único
+ * que não aguenta branco por cima em corpo pequeno. Os rácios abaixo estão
  * medidos por script sobre os valores exactos desta folha:
  *
- * | Combinação                 | Rácio  | Veredito                                    |
- * |----------------------------|--------|---------------------------------------------|
- * | branco sobre magenta       | 4,01:1 | só títulos grandes (≥ 24 px, ou 19 px bold) |
- * | branco sobre magenta-forte | 4,57:1 | qualquer tamanho — é para isso que existe   |
- * | branco sobre coral         | 2,03:1 | **nunca** — é o que o impresso faz e não passa |
- * | tinta sobre coral          | 7,6:1  | sempre                                      |
- * | tinta sobre turquesa       | 10,3:1 | sempre                                      |
- * | magenta-forte sobre papel  | 4,57:1 | qualquer tamanho                            |
- * | tinta-suave sobre papel    | 5,3:1  | sempre                                      |
+ * | Combinação                | Rácio   | Veredito                                     |
+ * |---------------------------|---------|----------------------------------------------|
+ * | papel sobre tinta         | 16,21:1 | sempre                                       |
+ * | papel sobre tijolo        | 6,87:1  | qualquer tamanho                             |
+ * | tijolo sobre papel        | 6,87:1  | qualquer tamanho — títulos, filetes, preços  |
+ * | tijolo sobre papel-fundo  | 6,21:1  | qualquer tamanho                             |
+ * | tinta-suave sobre papel   | 5,59:1  | sempre                                       |
+ * | papel sobre verde-forte   | 4,67:1  | qualquer tamanho — é para isso que existe    |
+ * | tinta sobre verde         | 4,16:1  | só títulos grandes (≥ 24 px, ou 19 px bold)  |
+ * | papel sobre verde         | 3,89:1  | só títulos grandes                           |
+ * | tinta sobre tijolo        | 2,36:1  | **nunca** — é o que o impresso faz e não passa |
  *
- * O magenta da marca falha o texto pequeno por muito pouco. Em vez de o
- * abandonar, há um segundo tom sete por cento mais escuro que passa e que, lado
- * a lado, ninguém distingue. Superfícies grandes usam o da marca; texto e
- * filetes finos usam o forte.
+ * O verde da marca falha o texto pequeno. Em vez de o abandonar, há um segundo
+ * tom dez por cento mais escuro que passa e que, lado a lado, ninguém distingue.
+ * Superfícies grandes usam o da marca; texto e etiquetas usam o forte.
+ *
+ * ⚠️ **Tinta sobre tijolo é a armadilha desta paleta.** O impresso escreve
+ * títulos pretos sobre o tijolo das capas e resulta lá — em papel, com tinta
+ * mate e a folha na mão. No ecrã dá 2,36:1 e é ilegível. Sobre tijolo escreve-se
+ * a papel, e é a única opção.
  *
  * ⚠️ **A opacidade come o contraste, e não aparece em tabela nenhuma.** Um
- * `text-papel/90` sobre magenta-forte cai de 4,57:1 para **3,85:1** e reprova; a
- * 85 %, para 3,54:1. Sobre magenta não há folga para diluir o branco — ou é
- * papel a 100 %, ou muda-se de fundo. (Sobre tinta há: a 70 % ainda dá 8,2:1.)
+ * `text-papel/90` sobre tijolo cai de 6,87:1 para **5,50:1** — ainda passa, mas
+ * é a última paragem: a 80 % já reprova em corpo pequeno. Sobre tinta há folga a
+ * sério (a 70 % ainda dá mais de 8:1); sobre tijolo não há quase nenhuma.
  *
  * ⚠️ **O Tailwind v4 não aplica variantes a classes de `@layer components`.** Um
- * `hover:bloco-magenta` compila-se em silêncio para nada. Em estados, usar
- * utilitários (`hover:bg-magenta-forte hover:text-papel`).
+ * `hover:bloco-tijolo` compila-se em silêncio para nada. Em estados, usar
+ * utilitários (`hover:bg-tijolo hover:text-papel`).
  */
 @layer components {
-  .bloco-magenta {
-    background-color: var(--color-magenta);
+  /* A cor da marca em superfície inteira: o herói, o fecho, os selos. Texto a
+     papel — nunca a tinta. */
+  .bloco-tijolo {
+    background-color: var(--color-tijolo);
     color: var(--color-papel);
   }
-  .bloco-coral {
-    background-color: var(--color-coral);
+  /* O verde da marca em superfície grande, onde só entram títulos. ⚠️ Corpo de
+     texto por cima disto reprova — usar `.bloco-verde-texto`. */
+  .bloco-verde {
+    background-color: var(--color-verde);
     color: var(--color-tinta);
   }
-  .bloco-turquesa {
-    background-color: var(--color-turquesa);
-    color: var(--color-tinta);
-  }
-  /* Texto pequeno sobre magenta — selos, etiquetas, botões. */
-  .bloco-magenta-texto {
-    background-color: var(--color-magenta-forte);
+  /* Texto pequeno sobre verde — a etiqueta «vegan», e é praticamente só isso. */
+  .bloco-verde-texto {
+    background-color: var(--color-verde-forte);
     color: var(--color-papel);
   }
 }
@@ -123,23 +144,19 @@
 /**
  * ## Onde entra cada fundo
  *
- * Sem uma regra, a sequência de cores da página lê-se como acidente — foi o que
- * aconteceu quando a fita dos santos ficou colada ao herói, no mesmo magenta,
- * sem fronteira nenhuma entre os dois. A regra é esta e é para seguir:
+ * Sem uma regra, a sequência de cores da página lê-se como acidente. A regra é
+ * esta e é para seguir:
  *
- * - **magenta** — a marca a falar. **Uma superfície inteira, e é o herói.** Em
- *   baixo aparece só do tamanho de um botão, que é o que o mantém a valer
- *   alguma coisa. ⚠️ Já foi também o fundo do fecho: com o rodapé escuro logo a
- *   seguir, o fim da página lia-se como três blocos de três cores em vez de uma
- *   aterragem.
+ * - **tijolo** — a marca a falar. **Uma superfície inteira por página**, e é o
+ *   topo. Daí para baixo aparece do tamanho de um selo ou de um botão, que é o
+ *   que o mantém a valer alguma coisa.
  * - **papel** — a superfície de leitura. É o estado normal.
  * - **papel-fundo** — o depois do pico. Marca que se passou da carta para o
- *   prático (as casas), e é o único sítio onde a diferença dos dois papéis tem
- *   um significado.
- * - **tinta** — o pico (a Escalada) e o chão. O chão é **um bloco só**: fecho,
- *   fita dos santos e rodapé partilham a mesma cor e a mesma leitura.
- * - **coral e turquesa** — acentos dentro de blocos. **Nunca secções inteiras**:
- *   nenhum dos dois aguenta texto corrido por cima.
+ *   prático (o horário, a morada, o formulário), e é o único sítio onde a
+ *   diferença dos dois papéis tem um significado.
+ * - **tinta** — o chão. Fecho e rodapé partilham a mesma cor e leem-se como um
+ *   bloco só. Também é o fundo do bloco das festas, que é o outro momento alto.
+ * - **verde** — **só quando o assunto é vegan.** Não é um acento disponível.
  */
 
 /* ── Base ─────────────────────────────────────────────────────────────── */
@@ -227,7 +244,7 @@ body::after {
 }
 
 /**
- * Etiqueta de secção: pequena, em caixa alta, precedida de um filete magenta.
+ * Etiqueta de secção: pequena, em caixa alta, precedida de um filete tijolo.
  *
  * ⚠️ **Uma por página.** Isto esteve em cinco secções seguidas, e em quatro
  * delas dizia o mesmo que o título logo abaixo ("Onde estamos" sobre "As nossas
@@ -245,7 +262,7 @@ body::after {
   font-size: 0.75rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--color-magenta-forte);
+  color: var(--color-tijolo);
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -274,8 +291,8 @@ body::after {
 /**
  * Os traços do impresso — o logótipo, o hambúrguer, a taça — são PNG de alfa e
  * usam-se como máscara. O ficheiro guarda só a forma; a cor vem daqui, o que
- * deixa desenhar o mesmo traço a magenta ou a tinta sem gerar duas imagens.
- * Ver `scripts/extrair-tracos.mjs`.
+ * deixa desenhar o mesmo traço a tijolo ou a papel sem gerar duas imagens.
+ * Ver `scripts/extrair-marca.mjs`.
  */
 .traco {
   background-color: currentColor;
@@ -402,7 +419,7 @@ body::after {
  * deixava de fechar.
  *
  * ⚠️ **Três fitas seguidas deixam de ser três gestos e passam a ser fundo.** A
- * dos santos esteve colada ao herói, no mesmo magenta, e o que fazia era acabar
+ * dos santos esteve colada ao herói, no mesmo tom, e o que fazia era acabar
  * com a ideia do herói: a fila de baixo deixava de o fechar e passava a ser a
  * primeira de três riscas. Ficaram as duas do herói (que são um gesto só) e a
  * dos santos lá em baixo, a costurar para o rodapé.

@@ -1,14 +1,10 @@
 import { setRequestLocale } from "next-intl/server";
-import { useTranslations } from "next-intl";
 import { Hero } from "@/components/inicio/Hero";
-import { Trio } from "@/components/inicio/Trio";
-import { Paes } from "@/components/inicio/Paes";
-import { Escalada } from "@/components/inicio/Escalada";
-import { CasaCheia } from "@/components/inicio/CasaCheia";
+import { Combinacoes } from "@/components/inicio/Combinacoes";
+import { Vegan } from "@/components/inicio/Vegan";
+import { Festas } from "@/components/inicio/Festas";
 import { Fecho } from "@/components/inicio/Fecho";
-import { FitaSantos } from "@/components/inicio/FitaSantos";
-import { Casa } from "@/components/casas/Casa";
-import { restaurantes } from "@/data/restaurantes";
+import { Contactos } from "@/components/casa/Contactos";
 import { routing, type Locale } from "@/i18n/routing";
 
 export function generateStaticParams() {
@@ -30,83 +26,47 @@ export default async function PaginaInicial({
  *
  * ## A sequência
  *
- * *Apetite* (o herói) → *a prova* (três carnes, três santos) → *a peculiaridade*
- * (o pão de cor) → *a ousadia* (a escalada até às 640 gramas) → *a casa* (o
- * mosaico) → *o sítio e o convite* (as moradas e o fecho).
+ * *Quem somos* (o herói) → *o que se come* (as combinações do impresso) →
+ * *o que nos torna diferentes* (a carta vegan) → *até onde vamos* (as festas) →
+ * *onde é e a que horas* (os contactos) → *o convite* (o fecho).
  *
- * **O trio vem logo a seguir ao herói** porque responde à pergunta que o herói
- * levanta — *o que é que eles têm?* — e responde-lhe em três cartões, não em
- * trinta. Aqui esteve um mural com os quarenta nomes (bonito, e nenhum deles com
- * preço ou fotografia) e depois cinco filas de família, que eram cinco secções
- * disfarçadas de uma. **A homepage abre o apetite; a ementa é que serve a
- * carta.** Os quarenta nomes continuam no site, na fita do fundo.
+ * **As combinações vêm logo a seguir ao herói** porque respondem à pergunta que
+ * o herói levanta — *o que é que eles têm?* — e respondem-lhe em seis pares, não
+ * em noventa e cinco artigos. A homepage abre o apetite; a ementa é que serve a
+ * carta.
  *
- * ⚠️ **Os pães vinham depois da escalada e trocaram.** O pico da página é a
- * escalada — escura, alta, com os números a crescer — e estava a meio: a página
- * atingia o ponto mais alto aos 50 % e declinava durante o resto. Com o pão de
- * cor antes, as duas curiosidades da carta escalam uma para a outra (pão
- * cor-de-rosa → 640 gramas) e a ousadia passa a ser a última coisa sobre comida
- * antes de dizermos onde é.
+ * ## Os três argumentos, por ordem de força
  *
- * ## Os dois registos, que é de onde vem o ritmo
+ * A Damira tem três coisas que as outras pastelarias da rua não têm, e a página
+ * gasta-as por ordem crescente:
  *
- * A marca tem duas fontes verdadeiras — a carta impressa e o Instagram — e a
- * página **alterna** entre elas em vez de as misturar em todas as secções:
+ * 1. **as combinações** — a casa a dizer o que sabe bem com o quê. É simpático;
+ *    não é decisivo.
+ * 2. **a carta vegan** — metade da ementa. Isto já é raro, e é o que faz alguém
+ *    atravessar Ermesinde.
+ * 3. **as festas** — até setenta pessoas, com preço fechado. É o que muda o
+ *    valor de uma encomenda de três euros para mil.
  *
- * - blocos de **carta**: tipografia a mandar, com a fotografia dentro de cartões
- *   (as famílias, a escalada);
- * - blocos de **casa**: imagem a mandar, a sangrar, sem tipografia grande (pães,
- *   mosaico, fecho).
+ * ⚠️ **Não há aqui uma secção de fotografia da casa**, e é o buraco conhecido
+ * desta página: ainda não existe fotografia da Damira que se possa usar (ver o
+ * README). O sítio dela é entre as festas e os contactos, e a página está
+ * composta a contar com ela — não é um espaço a preencher com o que houver.
  *
- * Antes eram cinco secções com a mesma anatomia — etiqueta, título, parágrafo,
- * grelha — quatro delas com **o mesmo tamanho de título**, todas encostadas à
- * mesma goteira. A página tinha uma aresta vertical do topo ao fundo.
+ * ## O ritmo das superfícies
  *
- * ## O movimento
- *
- * Três gestos, e cada um de espécie diferente: as duas filas do herói (deriva
- * fotográfica, contam como um), os reels a tocar (conteúdo em movimento) e a
- * fita, uma vez só, a costurar para o rodapé. Eram cinco, e com cinco nada se
- * destaca.
+ * tijolo → papel → verde → tinta → papel-fundo → tinta. Nunca duas superfícies
+ * de cor seguidas, e o escuro só nos dois momentos que o merecem: o pico (as
+ * festas) e o chão (o fecho e o rodapé, que são o mesmo bloco).
  */
 function Inicio({ locale }: { locale: Locale }) {
-  const t = useTranslations("inicio");
-
   return (
     <>
       <Hero />
-
-      {/* Uma carne de cada, e é o JSON que escolhe quais: marcar outro artigo
-          como `bestSeller` troca o destaque sem tocar nesta página. */}
-      <Trio locale={locale} />
-
-      <Paes locale={locale} />
-      <Escalada locale={locale} />
-      <CasaCheia />
-
-      <section aria-labelledby="casas" className="seccao bg-papel-fundo">
-        <div className="envolvente">
-          {/* Sem etiqueta: "Onde estamos" por cima de "As nossas casas" dizia
-              duas vezes a mesma coisa. A única que sobra na página é a da
-              escalada, onde o texto é o nome verdadeiro de uma categoria da
-              carta impressa. */}
-          <h2 id="casas" className="titulo-display titulo-beta max-w-[14ch]">
-            {t("casas.titulo")}
-          </h2>
-          <p className="mt-4 max-w-[46ch] text-tinta-suave">{t("casas.texto")}</p>
-
-          <div className="mt-14 space-y-14">
-            {restaurantes.map((casa) => (
-              <Casa key={casa.id} casa={casa} />
-            ))}
-          </div>
-        </div>
-      </section>
-
+      <Combinacoes />
+      <Vegan />
+      <Festas locale={locale} />
+      <Contactos />
       <Fecho />
-
-      {/* Sobre tinta, a escoar para o rodapé. Ver o comentário do componente. */}
-      <FitaSantos />
     </>
   );
 }

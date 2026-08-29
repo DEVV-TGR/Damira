@@ -1,0 +1,2043 @@
+{
+  "kitsFesta": [
+    {
+      "id": "basico",
+      "nome": {
+        "pt": "Kit Básico",
+        "en": "Basic Kit"
+      },
+      "resumo": null,
+      "escaloes": [
+        {
+          "pessoas": 20,
+          "preco": 180,
+          "salgados": [
+            {
+              "nome": {
+                "pt": "Miniaturas Salgadas",
+                "en": "Savoury Miniatures"
+              },
+              "quantidade": {
+                "pt": "40 unidades",
+                "en": "40 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Miniaturas Fritas",
+                "en": "Fried Miniatures"
+              },
+              "quantidade": {
+                "pt": "40 unidades",
+                "en": "40 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Pães com Chouriço",
+                "en": "Mini Chouriço Breads"
+              },
+              "quantidade": {
+                "pt": "20 unidades",
+                "en": "20 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Pizzas",
+                "en": "Mini Pizzas"
+              },
+              "quantidade": {
+                "pt": "20 unidades",
+                "en": "20 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Bola de Carne",
+                "en": "Meat Bread"
+              },
+              "quantidade": {
+                "pt": "1 unidade",
+                "en": "1 item"
+              }
+            }
+          ],
+          "doces": [
+            {
+              "nome": {
+                "pt": "Miniaturas Variadas",
+                "en": "Assorted Miniatures"
+              },
+              "quantidade": {
+                "pt": "40 unidades",
+                "en": "40 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tarteletes",
+                "en": "Tartlets"
+              },
+              "quantidade": {
+                "pt": "20 unidades",
+                "en": "20 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Brigadeiros",
+                "en": "Brigadeiros"
+              },
+              "quantidade": {
+                "pt": "20 unidades",
+                "en": "20 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Húngaros",
+                "en": "Húngaros"
+              },
+              "quantidade": {
+                "pt": "20 unidades",
+                "en": "20 items"
+              }
+            }
+          ]
+        },
+        {
+          "pessoas": 40,
+          "preco": 350,
+          "salgados": [
+            {
+              "nome": {
+                "pt": "Miniaturas Salgadas",
+                "en": "Savoury Miniatures"
+              },
+              "quantidade": {
+                "pt": "60 unidades",
+                "en": "60 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Miniaturas Fritas",
+                "en": "Fried Miniatures"
+              },
+              "quantidade": {
+                "pt": "80 unidades",
+                "en": "80 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Pães com Chouriço",
+                "en": "Mini Chouriço Breads"
+              },
+              "quantidade": {
+                "pt": "40 unidades",
+                "en": "40 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Pizzas",
+                "en": "Mini Pizzas"
+              },
+              "quantidade": {
+                "pt": "40 unidades",
+                "en": "40 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Bola de Carne",
+                "en": "Meat Bread"
+              },
+              "quantidade": {
+                "pt": "2 unidades",
+                "en": "2 items"
+              }
+            }
+          ],
+          "doces": [
+            {
+              "nome": {
+                "pt": "Miniaturas Variadas",
+                "en": "Assorted Miniatures"
+              },
+              "quantidade": {
+                "pt": "80 unidades",
+                "en": "80 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tarteletes",
+                "en": "Tartlets"
+              },
+              "quantidade": {
+                "pt": "40 unidades",
+                "en": "40 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Brigadeiros",
+                "en": "Brigadeiros"
+              },
+              "quantidade": {
+                "pt": "30 unidades",
+                "en": "30 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Húngaros",
+                "en": "Húngaros"
+              },
+              "quantidade": {
+                "pt": "30 unidades",
+                "en": "30 items"
+              }
+            }
+          ]
+        },
+        {
+          "pessoas": 70,
+          "preco": 595,
+          "salgados": [
+            {
+              "nome": {
+                "pt": "Miniaturas Salgadas",
+                "en": "Savoury Miniatures"
+              },
+              "quantidade": {
+                "pt": "100 unidades",
+                "en": "100 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Miniaturas Fritas",
+                "en": "Fried Miniatures"
+              },
+              "quantidade": {
+                "pt": "140 unidades",
+                "en": "140 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Pães com Chouriço",
+                "en": "Mini Chouriço Breads"
+              },
+              "quantidade": {
+                "pt": "70 unidades",
+                "en": "70 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Pizzas",
+                "en": "Mini Pizzas"
+              },
+              "quantidade": {
+                "pt": "70 unidades",
+                "en": "70 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Bola de Carne",
+                "en": "Meat Bread"
+              },
+              "quantidade": {
+                "pt": "4 unidades",
+                "en": "4 items"
+              }
+            }
+          ],
+          "doces": [
+            {
+              "nome": {
+                "pt": "Miniaturas Variadas",
+                "en": "Assorted Miniatures"
+              },
+              "quantidade": {
+                "pt": "140 unidades",
+                "en": "140 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tarteletes",
+                "en": "Tartlets"
+              },
+              "quantidade": {
+                "pt": "35 unidades",
+                "en": "35 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Brigadeiros",
+                "en": "Brigadeiros"
+              },
+              "quantidade": {
+                "pt": "40 unidades",
+                "en": "40 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Húngaros",
+                "en": "Húngaros"
+              },
+              "quantidade": {
+                "pt": "50 unidades",
+                "en": "50 items"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "medio",
+      "nome": {
+        "pt": "Kit Médio",
+        "en": "Medium Kit"
+      },
+      "resumo": null,
+      "escaloes": [
+        {
+          "pessoas": 20,
+          "preco": 300,
+          "salgados": [
+            {
+              "nome": {
+                "pt": "Miniaturas Salgadas",
+                "en": "Savoury Miniatures"
+              },
+              "quantidade": {
+                "pt": "20 unidades",
+                "en": "20 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Miniaturas Salgadas Fritas",
+                "en": "Fried Savoury Miniatures"
+              },
+              "quantidade": {
+                "pt": "40 unidades",
+                "en": "40 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Pizzas",
+                "en": "Mini Pizzas"
+              },
+              "quantidade": {
+                "pt": "20 unidades",
+                "en": "20 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Humus",
+                "en": "Hummus"
+              },
+              "quantidade": {
+                "pt": "1 unidade",
+                "en": "1 item"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Guacamole",
+                "en": "Guacamole"
+              },
+              "quantidade": {
+                "pt": "1 unidade",
+                "en": "1 item"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Nachos",
+                "en": "Nachos"
+              },
+              "quantidade": {
+                "pt": "3 pacotes",
+                "en": "3 packs"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Batatas Fritas",
+                "en": "Crisps"
+              },
+              "quantidade": {
+                "pt": "2 pacotes",
+                "en": "2 packs"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tábuas de Queijos e Enchidos",
+                "en": "Cheese & Cured Meat Boards"
+              },
+              "quantidade": {
+                "pt": "1 unidade",
+                "en": "1 item"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Pães com Chouriço",
+                "en": "Mini Chouriço Breads"
+              },
+              "quantidade": {
+                "pt": "20 unidades",
+                "en": "20 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Bola de Carne",
+                "en": "Meat Bread"
+              },
+              "quantidade": {
+                "pt": "1 unidade (800gr)",
+                "en": "1 item (800g)"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Palitos de Mozzarella e Tomate Cherry",
+                "en": "Mozzarella & Cherry Tomato Skewers"
+              },
+              "quantidade": {
+                "pt": "10 unidades",
+                "en": "10 items"
+              }
+            }
+          ],
+          "doces": [
+            {
+              "nome": {
+                "pt": "Miniaturas Doces",
+                "en": "Sweet Miniatures"
+              },
+              "quantidade": {
+                "pt": "40 unidades",
+                "en": "40 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Húngaros",
+                "en": "Húngaros"
+              },
+              "quantidade": {
+                "pt": "20 unidades",
+                "en": "20 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tarteletes",
+                "en": "Tartlets"
+              },
+              "quantidade": {
+                "pt": "20 unidades",
+                "en": "20 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tarte ou Cheesecake ou Semifrio",
+                "en": "Tart, Cheesecake, or Semifreddo"
+              },
+              "quantidade": {
+                "pt": "1 unidade",
+                "en": "1 item"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Croissants Folhados Recheados",
+                "en": "Filled Puff Croissants"
+              },
+              "quantidade": {
+                "pt": "15 unidades",
+                "en": "15 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Brigadeiros",
+                "en": "Brigadeiros"
+              },
+              "quantidade": {
+                "pt": "10 unidades",
+                "en": "10 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tábua de Fruta",
+                "en": "Fruit Board"
+              },
+              "quantidade": {
+                "pt": "1 unidade",
+                "en": "1 item"
+              }
+            }
+          ]
+        },
+        {
+          "pessoas": 40,
+          "preco": 590,
+          "salgados": [
+            {
+              "nome": {
+                "pt": "Miniaturas Salgadas",
+                "en": "Savoury Miniatures"
+              },
+              "quantidade": {
+                "pt": "40 unidades",
+                "en": "40 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Miniaturas Salgadas Fritas",
+                "en": "Fried Savoury Miniatures"
+              },
+              "quantidade": {
+                "pt": "80 unidades",
+                "en": "80 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Pizzas",
+                "en": "Mini Pizzas"
+              },
+              "quantidade": {
+                "pt": "40 unidades",
+                "en": "40 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Humus",
+                "en": "Hummus"
+              },
+              "quantidade": {
+                "pt": "1 unidade",
+                "en": "1 item"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Guacamole",
+                "en": "Guacamole"
+              },
+              "quantidade": {
+                "pt": "2 unidades",
+                "en": "2 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Nachos",
+                "en": "Nachos"
+              },
+              "quantidade": {
+                "pt": "4 pacotes",
+                "en": "4 packs"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Batatas Fritas",
+                "en": "Crisps"
+              },
+              "quantidade": {
+                "pt": "4 pacotes",
+                "en": "4 packs"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tábuas de Queijos e Enchidos",
+                "en": "Cheese & Cured Meat Boards"
+              },
+              "quantidade": {
+                "pt": "2 unidades",
+                "en": "2 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Pães com Chouriço",
+                "en": "Mini Chouriço Breads"
+              },
+              "quantidade": {
+                "pt": "40 unidades",
+                "en": "40 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Bola de Carne",
+                "en": "Meat Bread"
+              },
+              "quantidade": {
+                "pt": "2 unidades (800gr)",
+                "en": "2 items (800g)"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Palitos de Mozzarella e Tomate Cherry",
+                "en": "Mozzarella & Cherry Tomato Skewers"
+              },
+              "quantidade": {
+                "pt": "20 unidades",
+                "en": "20 items"
+              }
+            }
+          ],
+          "doces": [
+            {
+              "nome": {
+                "pt": "Miniaturas Doces",
+                "en": "Sweet Miniatures"
+              },
+              "quantidade": {
+                "pt": "80 unidades",
+                "en": "80 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Húngaros",
+                "en": "Húngaros"
+              },
+              "quantidade": {
+                "pt": "40 unidades",
+                "en": "40 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tarteletes",
+                "en": "Tartlets"
+              },
+              "quantidade": {
+                "pt": "30 unidades",
+                "en": "30 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tarte ou Cheesecake ou Semifrio",
+                "en": "Tart, Cheesecake, or Semifreddo"
+              },
+              "quantidade": {
+                "pt": "1 unidade",
+                "en": "1 item"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Croissants Folhados Recheados",
+                "en": "Filled Puff Croissants"
+              },
+              "quantidade": {
+                "pt": "25 unidades",
+                "en": "25 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Brigadeiros",
+                "en": "Brigadeiros"
+              },
+              "quantidade": {
+                "pt": "20 unidades",
+                "en": "20 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tábua de Fruta",
+                "en": "Fruit Board"
+              },
+              "quantidade": {
+                "pt": "2 unidades",
+                "en": "2 items"
+              }
+            }
+          ]
+        },
+        {
+          "pessoas": 70,
+          "preco": 1000,
+          "salgados": [
+            {
+              "nome": {
+                "pt": "Miniaturas Salgadas",
+                "en": "Savoury Miniatures"
+              },
+              "quantidade": {
+                "pt": "70 unidades",
+                "en": "70 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Miniaturas Salgadas Fritas",
+                "en": "Fried Savoury Miniatures"
+              },
+              "quantidade": {
+                "pt": "140 unidades",
+                "en": "140 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Pizzas",
+                "en": "Mini Pizzas"
+              },
+              "quantidade": {
+                "pt": "70 unidades",
+                "en": "70 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Humus",
+                "en": "Hummus"
+              },
+              "quantidade": {
+                "pt": "2 unidades",
+                "en": "2 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Guacamole",
+                "en": "Guacamole"
+              },
+              "quantidade": {
+                "pt": "2 unidades",
+                "en": "2 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Nachos",
+                "en": "Nachos"
+              },
+              "quantidade": {
+                "pt": "4 pacotes",
+                "en": "4 packs"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Batatas Fritas",
+                "en": "Crisps"
+              },
+              "quantidade": {
+                "pt": "6 pacotes",
+                "en": "6 packs"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tábuas de Queijos e Enchidos",
+                "en": "Cheese & Cured Meat Boards"
+              },
+              "quantidade": {
+                "pt": "3 unidades",
+                "en": "3 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Pães com Chouriço",
+                "en": "Mini Chouriço Breads"
+              },
+              "quantidade": {
+                "pt": "70 unidades",
+                "en": "70 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Bola de Carne",
+                "en": "Meat Bread"
+              },
+              "quantidade": {
+                "pt": "3 unidades (800gr)",
+                "en": "3 items (800g)"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Palitos de Mozzarella e Tomate Cherry",
+                "en": "Mozzarella & Cherry Tomato Skewers"
+              },
+              "quantidade": {
+                "pt": "35 unidades",
+                "en": "35 items"
+              }
+            }
+          ],
+          "doces": [
+            {
+              "nome": {
+                "pt": "Miniaturas Doces",
+                "en": "Sweet Miniatures"
+              },
+              "quantidade": {
+                "pt": "140 unidades",
+                "en": "140 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Húngaros",
+                "en": "Húngaros"
+              },
+              "quantidade": {
+                "pt": "60 unidades",
+                "en": "60 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tarteletes",
+                "en": "Tartlets"
+              },
+              "quantidade": {
+                "pt": "50 unidades",
+                "en": "50 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tarte ou Cheesecake ou Semifrio",
+                "en": "Tart, Cheesecake, or Semifreddo"
+              },
+              "quantidade": {
+                "pt": "2 unidades",
+                "en": "2 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Croissants Folhados Recheados",
+                "en": "Filled Puff Croissants"
+              },
+              "quantidade": {
+                "pt": "35 unidades",
+                "en": "35 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Brigadeiros",
+                "en": "Brigadeiros"
+              },
+              "quantidade": {
+                "pt": "30 unidades",
+                "en": "30 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tábua de Fruta",
+                "en": "Fruit Board"
+              },
+              "quantidade": {
+                "pt": "3 unidades",
+                "en": "3 items"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "premium",
+      "nome": {
+        "pt": "Kit Premium",
+        "en": "Premium Kit"
+      },
+      "resumo": null,
+      "escaloes": [
+        {
+          "pessoas": 20,
+          "preco": 335,
+          "salgados": [
+            {
+              "nome": {
+                "pt": "Miniaturas Salgadas",
+                "en": "Savoury Miniatures"
+              },
+              "quantidade": {
+                "pt": "20 unidades",
+                "en": "20 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Miniaturas Salgadas Fritas",
+                "en": "Fried Savoury Miniatures"
+              },
+              "quantidade": {
+                "pt": "40 unidades",
+                "en": "40 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Pizzas",
+                "en": "Mini Pizzas"
+              },
+              "quantidade": {
+                "pt": "20 unidades",
+                "en": "20 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Humus",
+                "en": "Hummus"
+              },
+              "quantidade": {
+                "pt": "1 unidade",
+                "en": "1 item"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Guacamole",
+                "en": "Guacamole"
+              },
+              "quantidade": {
+                "pt": "1 unidade",
+                "en": "1 item"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Nachos",
+                "en": "Nachos"
+              },
+              "quantidade": {
+                "pt": "3 pacotes",
+                "en": "3 packs"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Batatas Fritas",
+                "en": "Crisps"
+              },
+              "quantidade": {
+                "pt": "2 pacotes",
+                "en": "2 packs"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tábuas de Queijos e Enchidos",
+                "en": "Cheese & Cured Meat Boards"
+              },
+              "quantidade": {
+                "pt": "1 unidade",
+                "en": "1 item"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Pães com Chouriço",
+                "en": "Mini Chouriço Breads"
+              },
+              "quantidade": {
+                "pt": "20 unidades",
+                "en": "20 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Bola de Carne",
+                "en": "Meat Bread"
+              },
+              "quantidade": {
+                "pt": "1 unidade (800gr)",
+                "en": "1 item (800g)"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Palitos de Mozzarella e Tomate Cherry",
+                "en": "Mozzarella & Cherry Tomato Skewers"
+              },
+              "quantidade": {
+                "pt": "10 unidades",
+                "en": "10 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Camarão Cozido",
+                "en": "Boiled Prawns"
+              },
+              "quantidade": {
+                "pt": "1kg",
+                "en": "1kg"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Sêmea Recheada",
+                "en": "Filled Semea Loaf"
+              },
+              "quantidade": {
+                "pt": "1 unidade",
+                "en": "1 item"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Cachorros",
+                "en": "Mini Hot Dogs"
+              },
+              "quantidade": {
+                "pt": "15 unidades",
+                "en": "15 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Hambúrgueres",
+                "en": "Mini Burgers"
+              },
+              "quantidade": {
+                "pt": "15 unidades",
+                "en": "15 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Folhado de Queijo Camembert e Frutos Vermelhos",
+                "en": "Camembert & Red Berry Puff"
+              },
+              "quantidade": {
+                "pt": "1 unidade",
+                "en": "1 item"
+              }
+            }
+          ],
+          "doces": [
+            {
+              "nome": {
+                "pt": "Miniaturas Doces",
+                "en": "Sweet Miniatures"
+              },
+              "quantidade": {
+                "pt": "40 unidades",
+                "en": "40 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Húngaros",
+                "en": "Húngaros"
+              },
+              "quantidade": {
+                "pt": "20 unidades",
+                "en": "20 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tarteletes",
+                "en": "Tartlets"
+              },
+              "quantidade": {
+                "pt": "10 unidades",
+                "en": "10 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Brownie com Brigadeiro",
+                "en": "Brownie with Brigadeiro"
+              },
+              "quantidade": {
+                "pt": "20 unidades",
+                "en": "20 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tarte ou Cheesecake ou Semifrio",
+                "en": "Tart, Cheesecake, or Semifreddo"
+              },
+              "quantidade": {
+                "pt": "1 unidade",
+                "en": "1 item"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Croissants Folhados Recheados",
+                "en": "Filled Puff Croissants"
+              },
+              "quantidade": {
+                "pt": "15 unidades",
+                "en": "15 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Brigadeiros",
+                "en": "Brigadeiros"
+              },
+              "quantidade": {
+                "pt": "10 unidades",
+                "en": "10 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tábua de Fruta",
+                "en": "Fruit Board"
+              },
+              "quantidade": {
+                "pt": "1 unidade",
+                "en": "1 item"
+              }
+            }
+          ]
+        },
+        {
+          "pessoas": 40,
+          "preco": 650,
+          "salgados": [
+            {
+              "nome": {
+                "pt": "Miniaturas Salgadas",
+                "en": "Savoury Miniatures"
+              },
+              "quantidade": {
+                "pt": "40 unidades",
+                "en": "40 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Miniaturas Salgadas Fritas",
+                "en": "Fried Savoury Miniatures"
+              },
+              "quantidade": {
+                "pt": "80 unidades",
+                "en": "80 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Pizzas",
+                "en": "Mini Pizzas"
+              },
+              "quantidade": {
+                "pt": "40 unidades",
+                "en": "40 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Humus",
+                "en": "Hummus"
+              },
+              "quantidade": {
+                "pt": "1 unidade",
+                "en": "1 item"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Guacamole",
+                "en": "Guacamole"
+              },
+              "quantidade": {
+                "pt": "1 unidade",
+                "en": "1 item"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Nachos",
+                "en": "Nachos"
+              },
+              "quantidade": {
+                "pt": "3 pacotes",
+                "en": "3 packs"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Batatas Fritas",
+                "en": "Crisps"
+              },
+              "quantidade": {
+                "pt": "4 pacotes",
+                "en": "4 packs"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tábuas de Queijos e Enchidos",
+                "en": "Cheese & Cured Meat Boards"
+              },
+              "quantidade": {
+                "pt": "2 unidades",
+                "en": "2 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Pães com Chouriço",
+                "en": "Mini Chouriço Breads"
+              },
+              "quantidade": {
+                "pt": "20 unidades",
+                "en": "20 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Bola de Carne",
+                "en": "Meat Bread"
+              },
+              "quantidade": {
+                "pt": "2 unidades (800gr)",
+                "en": "2 items (800g)"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Palitos de Mozzarella e Tomate Cherry",
+                "en": "Mozzarella & Cherry Tomato Skewers"
+              },
+              "quantidade": {
+                "pt": "15 unidades",
+                "en": "15 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Camarão Cozido",
+                "en": "Boiled Prawns"
+              },
+              "quantidade": {
+                "pt": "2kg",
+                "en": "2kg"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Sêmea Recheada",
+                "en": "Filled Semea Loaf"
+              },
+              "quantidade": {
+                "pt": "2 unidades",
+                "en": "2 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Cachorros",
+                "en": "Mini Hot Dogs"
+              },
+              "quantidade": {
+                "pt": "40 unidades",
+                "en": "40 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Hambúrgueres",
+                "en": "Mini Burgers"
+              },
+              "quantidade": {
+                "pt": "40 unidades",
+                "en": "40 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Folhado de Queijo Camembert e Frutos Vermelhos",
+                "en": "Camembert & Red Berry Puff"
+              },
+              "quantidade": {
+                "pt": "1 unidade",
+                "en": "1 item"
+              }
+            }
+          ],
+          "doces": [
+            {
+              "nome": {
+                "pt": "Miniaturas Doces",
+                "en": "Sweet Miniatures"
+              },
+              "quantidade": {
+                "pt": "60 unidades",
+                "en": "60 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Húngaros",
+                "en": "Húngaros"
+              },
+              "quantidade": {
+                "pt": "30 unidades",
+                "en": "30 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tarteletes",
+                "en": "Tartlets"
+              },
+              "quantidade": {
+                "pt": "20 unidades",
+                "en": "20 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Brownie com Brigadeiro",
+                "en": "Brownie with Brigadeiro"
+              },
+              "quantidade": {
+                "pt": "30 unidades",
+                "en": "30 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tarte ou Cheesecake ou Semifrio",
+                "en": "Tart, Cheesecake, or Semifreddo"
+              },
+              "quantidade": {
+                "pt": "1 unidade",
+                "en": "1 item"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Croissants Folhados Recheados",
+                "en": "Filled Puff Croissants"
+              },
+              "quantidade": {
+                "pt": "30 unidades",
+                "en": "30 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Brigadeiros",
+                "en": "Brigadeiros"
+              },
+              "quantidade": {
+                "pt": "20 unidades",
+                "en": "20 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tábua de Fruta",
+                "en": "Fruit Board"
+              },
+              "quantidade": {
+                "pt": "2 unidades",
+                "en": "2 items"
+              }
+            }
+          ]
+        },
+        {
+          "pessoas": 70,
+          "preco": 1100,
+          "salgados": [
+            {
+              "nome": {
+                "pt": "Miniaturas Salgadas",
+                "en": "Savoury Miniatures"
+              },
+              "quantidade": {
+                "pt": "70 unidades",
+                "en": "70 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Miniaturas Salgadas Fritas",
+                "en": "Fried Savoury Miniatures"
+              },
+              "quantidade": {
+                "pt": "100 unidades",
+                "en": "100 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Pizzas",
+                "en": "Mini Pizzas"
+              },
+              "quantidade": {
+                "pt": "70 unidades",
+                "en": "70 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Humus",
+                "en": "Hummus"
+              },
+              "quantidade": {
+                "pt": "2 unidades",
+                "en": "2 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Guacamole",
+                "en": "Guacamole"
+              },
+              "quantidade": {
+                "pt": "3 unidades",
+                "en": "3 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Nachos",
+                "en": "Nachos"
+              },
+              "quantidade": {
+                "pt": "5 pacotes",
+                "en": "5 packs"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Batatas Fritas",
+                "en": "Crisps"
+              },
+              "quantidade": {
+                "pt": "7 pacotes",
+                "en": "7 packs"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tábuas de Queijos e Enchidos",
+                "en": "Cheese & Cured Meat Boards"
+              },
+              "quantidade": {
+                "pt": "3 unidades",
+                "en": "3 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Pães com Chouriço",
+                "en": "Mini Chouriço Breads"
+              },
+              "quantidade": {
+                "pt": "40 unidades",
+                "en": "40 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Bola de Carne",
+                "en": "Meat Bread"
+              },
+              "quantidade": {
+                "pt": "4 unidades (800gr)",
+                "en": "4 items (800g)"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Palitos de Mozzarella e Tomate Cherry",
+                "en": "Mozzarella & Cherry Tomato Skewers"
+              },
+              "quantidade": {
+                "pt": "30 unidades",
+                "en": "30 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Camarão Cozido",
+                "en": "Boiled Prawns"
+              },
+              "quantidade": {
+                "pt": "4kg",
+                "en": "4kg"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Sêmea Recheada",
+                "en": "Filled Semea Loaf"
+              },
+              "quantidade": {
+                "pt": "3 unidades",
+                "en": "3 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Cachorros",
+                "en": "Mini Hot Dogs"
+              },
+              "quantidade": {
+                "pt": "70 unidades",
+                "en": "70 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Mini Hambúrgueres",
+                "en": "Mini Burgers"
+              },
+              "quantidade": {
+                "pt": "70 unidades",
+                "en": "70 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Folhado de Queijo Camembert e Frutos Vermelhos",
+                "en": "Camembert & Red Berry Puff"
+              },
+              "quantidade": {
+                "pt": "2 unidades",
+                "en": "2 items"
+              }
+            }
+          ],
+          "doces": [
+            {
+              "nome": {
+                "pt": "Miniaturas Doces",
+                "en": "Sweet Miniatures"
+              },
+              "quantidade": {
+                "pt": "70 unidades",
+                "en": "70 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Húngaros",
+                "en": "Húngaros"
+              },
+              "quantidade": {
+                "pt": "50 unidades",
+                "en": "50 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tarteletes",
+                "en": "Tartlets"
+              },
+              "quantidade": {
+                "pt": "25 unidades",
+                "en": "25 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Brownie com Brigadeiro",
+                "en": "Brownie with Brigadeiro"
+              },
+              "quantidade": {
+                "pt": "40 unidades",
+                "en": "40 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tarte ou Cheesecake ou Semifrio",
+                "en": "Tart, Cheesecake, or Semifreddo"
+              },
+              "quantidade": {
+                "pt": "2 unidades",
+                "en": "2 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Croissants Folhados Recheados",
+                "en": "Filled Puff Croissants"
+              },
+              "quantidade": {
+                "pt": "50 unidades",
+                "en": "50 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Brigadeiros",
+                "en": "Brigadeiros"
+              },
+              "quantidade": {
+                "pt": "40 unidades",
+                "en": "40 items"
+              }
+            },
+            {
+              "nome": {
+                "pt": "Tábua de Fruta",
+                "en": "Fruit Board"
+              },
+              "quantidade": {
+                "pt": "3 unidades",
+                "en": "3 items"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "kitsBolo": [
+    {
+      "id": "bolo-premium",
+      "nome": {
+        "pt": "Kit Premium",
+        "en": "Premium Kit"
+      },
+      "resumo": {
+        "pt": "Perfeito para festas mais sofisticadas.",
+        "en": "For a more elaborate party."
+      },
+      "preco": 145,
+      "itens": [
+        {
+          "nome": {
+            "pt": "Bolo Decorado",
+            "en": "Decorated Cake"
+          },
+          "quantidade": {
+            "pt": "2,50 kg",
+            "en": "2.5 kg"
+          }
+        },
+        {
+          "nome": {
+            "pt": "Bolachas Decoradas",
+            "en": "Decorated Biscuits"
+          },
+          "quantidade": {
+            "pt": "10 unidades",
+            "en": "10 items"
+          }
+        },
+        {
+          "nome": {
+            "pt": "Cakesicles",
+            "en": "Cakesicles"
+          },
+          "quantidade": {
+            "pt": "6 unidades",
+            "en": "6 items"
+          }
+        },
+        {
+          "nome": {
+            "pt": "Cupcakes",
+            "en": "Cupcakes"
+          },
+          "quantidade": {
+            "pt": "8 unidades",
+            "en": "8 items"
+          }
+        },
+        {
+          "nome": {
+            "pt": "Donuts Decorados",
+            "en": "Decorated Doughnuts"
+          },
+          "quantidade": {
+            "pt": "6 unidades",
+            "en": "6 items"
+          }
+        },
+        {
+          "nome": {
+            "pt": "Brigadeiros Decorados",
+            "en": "Decorated Brigadeiros"
+          },
+          "quantidade": {
+            "pt": "6 unidades",
+            "en": "6 items"
+          }
+        }
+      ]
+    },
+    {
+      "id": "bolo-intermedio",
+      "nome": {
+        "pt": "Kit Intermédio",
+        "en": "Intermediate Kit"
+      },
+      "resumo": {
+        "pt": "Para quem quer algo mais completo.",
+        "en": "For something a little fuller."
+      },
+      "preco": 95,
+      "itens": [
+        {
+          "nome": {
+            "pt": "Bolo Decorado",
+            "en": "Decorated Cake"
+          },
+          "quantidade": {
+            "pt": "2 kg",
+            "en": "2 kg"
+          }
+        },
+        {
+          "nome": {
+            "pt": "Bolachas Decoradas",
+            "en": "Decorated Biscuits"
+          },
+          "quantidade": {
+            "pt": "4 unidades",
+            "en": "4 items"
+          }
+        },
+        {
+          "nome": {
+            "pt": "Cakesicles",
+            "en": "Cakesicles"
+          },
+          "quantidade": {
+            "pt": "4 unidades",
+            "en": "4 items"
+          }
+        },
+        {
+          "nome": {
+            "pt": "Cupcakes",
+            "en": "Cupcakes"
+          },
+          "quantidade": {
+            "pt": "6 unidades",
+            "en": "6 items"
+          }
+        },
+        {
+          "nome": {
+            "pt": "Brigadeiros Decorados",
+            "en": "Decorated Brigadeiros"
+          },
+          "quantidade": {
+            "pt": "6 unidades",
+            "en": "6 items"
+          }
+        }
+      ]
+    },
+    {
+      "id": "bolo-basico",
+      "nome": {
+        "pt": "Kit Básico",
+        "en": "Basic Kit"
+      },
+      "resumo": {
+        "pt": "Ideal para uma decoração simples e elegante.",
+        "en": "For simple, elegant decoration."
+      },
+      "preco": 70,
+      "itens": [
+        {
+          "nome": {
+            "pt": "Bolo Decorado",
+            "en": "Decorated Cake"
+          },
+          "quantidade": {
+            "pt": "2 kg",
+            "en": "2 kg"
+          }
+        },
+        {
+          "nome": {
+            "pt": "Bolachas Decoradas",
+            "en": "Decorated Biscuits"
+          },
+          "quantidade": {
+            "pt": "4 unidades",
+            "en": "4 items"
+          }
+        },
+        {
+          "nome": {
+            "pt": "Cupcakes",
+            "en": "Cupcakes"
+          },
+          "quantidade": {
+            "pt": "4 unidades",
+            "en": "4 items"
+          }
+        },
+        {
+          "nome": {
+            "pt": "Brigadeiros Decorados",
+            "en": "Decorated Brigadeiros"
+          },
+          "quantidade": {
+            "pt": "6 unidades",
+            "en": "6 items"
+          }
+        }
+      ]
+    }
+  ],
+  "boxes": [
+    {
+      "id": "pequeno-almoco",
+      "nome": {
+        "pt": "Box Pequeno-Almoço",
+        "en": "Breakfast Box"
+      },
+      "preco": 27.5,
+      "vegan": false,
+      "itens": [
+        {
+          "pt": "2 Croissants",
+          "en": "2 croissants"
+        },
+        {
+          "pt": "2 Pães de Água",
+          "en": "2 soft rolls"
+        },
+        {
+          "pt": "1 Tarte de Morangos e Profiteroles",
+          "en": "1 strawberry and profiterole tart"
+        },
+        {
+          "pt": "2 Natas",
+          "en": "2 custard tarts"
+        },
+        {
+          "pt": "4 Húngaros",
+          "en": "4 húngaros"
+        },
+        {
+          "pt": "4 Panquecas",
+          "en": "4 pancakes"
+        },
+        {
+          "pt": "Ovos Mexidos",
+          "en": "Scrambled eggs"
+        },
+        {
+          "pt": "Queijo e Fiambre",
+          "en": "Cheese and ham"
+        },
+        {
+          "pt": "Nutella",
+          "en": "Nutella"
+        },
+        {
+          "pt": "500 ml de Sumo Natural de Laranja",
+          "en": "500 ml fresh orange juice"
+        },
+        {
+          "pt": "Fruta Variada",
+          "en": "Assorted fruit"
+        }
+      ]
+    },
+    {
+      "id": "lanche-aniversario",
+      "nome": {
+        "pt": "Box Lanche de Aniversário",
+        "en": "Birthday Tea Box"
+      },
+      "preco": 40,
+      "vegan": false,
+      "itens": [
+        {
+          "pt": "1 Naked Cake de 500 gr",
+          "en": "1 naked cake, 500 g"
+        },
+        {
+          "pt": "4 Croissants Mistos Mini",
+          "en": "4 mini ham and cheese croissants"
+        },
+        {
+          "pt": "2 Croissants Mini",
+          "en": "2 mini croissants"
+        },
+        {
+          "pt": "8 Morangos com Chocolate",
+          "en": "8 chocolate-dipped strawberries"
+        },
+        {
+          "pt": "3 Croissants Folhados Recheados",
+          "en": "3 filled puff croissants"
+        },
+        {
+          "pt": "6 Brigadeiros",
+          "en": "6 brigadeiros"
+        },
+        {
+          "pt": "1 Arranjo Floral",
+          "en": "1 floral arrangement"
+        }
+      ]
+    },
+    {
+      "id": "aniversario",
+      "nome": {
+        "pt": "Box Aniversário",
+        "en": "Birthday Box"
+      },
+      "preco": 35,
+      "vegan": false,
+      "itens": [
+        {
+          "pt": "1 Vintage Cake «Happy Birthday» de 500 a 700 gr",
+          "en": "1 “Happy Birthday” vintage cake, 500–700 g"
+        },
+        {
+          "pt": "1 Ramo de Flores",
+          "en": "1 bouquet"
+        },
+        {
+          "pt": "1 Coroa",
+          "en": "1 crown"
+        }
+      ]
+    },
+    {
+      "id": "por-perto",
+      "nome": {
+        "pt": "Box Por Perto",
+        "en": "Close By Box"
+      },
+      "preco": 37.5,
+      "vegan": false,
+      "itens": [
+        {
+          "pt": "2 Croissants",
+          "en": "2 croissants"
+        },
+        {
+          "pt": "Queijo e Fiambre",
+          "en": "Cheese and ham"
+        },
+        {
+          "pt": "2 Fatias de Bola de Carne",
+          "en": "2 slices of meat bread"
+        },
+        {
+          "pt": "10 Miniaturas Salgadas Fritas",
+          "en": "10 fried savoury miniatures"
+        },
+        {
+          "pt": "Queijo e Enchidos",
+          "en": "Cheese and cured meats"
+        },
+        {
+          "pt": "Frutos Secos",
+          "en": "Nuts"
+        },
+        {
+          "pt": "Fruta Fresca",
+          "en": "Fresh fruit"
+        },
+        {
+          "pt": "4 Húngaros",
+          "en": "4 húngaros"
+        },
+        {
+          "pt": "2 Natas",
+          "en": "2 custard tarts"
+        },
+        {
+          "pt": "500 ml de Sumo de Laranja Natural",
+          "en": "500 ml fresh orange juice"
+        }
+      ]
+    },
+    {
+      "id": "pequeno-almoco-vegan",
+      "nome": {
+        "pt": "Box Pequeno-Almoço Vegan",
+        "en": "Vegan Breakfast Box"
+      },
+      "preco": 28.5,
+      "vegan": true,
+      "itens": [
+        {
+          "pt": "2 Pães",
+          "en": "2 breads"
+        },
+        {
+          "pt": "2 Croissants",
+          "en": "2 croissants"
+        },
+        {
+          "pt": "2 Tartes de Morango e Profiteroles",
+          "en": "2 strawberry and profiterole tarts"
+        },
+        {
+          "pt": "2 Natas",
+          "en": "2 custard tarts"
+        },
+        {
+          "pt": "500 ml de Sumo de Laranja Natural",
+          "en": "500 ml fresh orange juice"
+        },
+        {
+          "pt": "2 Morangos",
+          "en": "2 strawberries"
+        },
+        {
+          "pt": "Ovos Mexidos de Tofu",
+          "en": "Tofu scramble"
+        },
+        {
+          "pt": "Queijo e Fiambre",
+          "en": "Cheese and ham"
+        }
+      ]
+    }
+  ]
+}

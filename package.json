@@ -1,5 +1,5 @@
 {
-  "name": "santo-burga",
+  "name": "confeitaria-damira",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,10 +10,7 @@
     "icons": "node scripts/generate-icons.mjs",
     "skills:lock": "node scripts/skills-lock.mjs",
     "fotos": "node scripts/importar-fotos.mjs",
-    "tracos": "node scripts/extrair-tracos.mjs",
-    "instagram": "node scripts/importar-instagram.mjs",
-    "instagram:selo": "node scripts/limpar-selo-instagram.mjs",
-    "reels": "node scripts/preparar-reels.mjs"
+    "marca": "node scripts/extrair-marca.mjs"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
@@ -36,7 +33,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.12",
-    "ffmpeg-static": "^5.3.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

@@ -15,64 +15,86 @@ import dados from "./ementa.json";
  * preço escrito como texto rebenta o `npm run build` com o artigo e o campo
  * identificados, em vez de chegar a produção como `NaN €`.
  *
- * A fonte é o menu impresso de 2024, em `referencias/`.
+ * ## A diferença que a Damira tem para uma casa de um menu só
+ *
+ * A Damira não tem *uma* carta: tem **sete impressos**, e cada um é autónomo —
+ * a casa distribui-os em separado. Quatro deles são ementa e vivem aqui: o menu
+ * do balcão, o do almoço de fim-de-semana, o vegan e o do chocolate.
+ *
+ * É por isso que existe `carta` **além** de `categoria`. Achatar tudo numa lista
+ * de categorias — que foi a primeira tentativa — obrigava a inventar categorias
+ * como `vegan-doces` e `vegan-salgados`, e a repetir a palavra "vegan" em
+ * metade do enum só para dizer de que folheto vinha o artigo.
+ *
+ * ⚠️ **Os outros três impressos não são ementa e não entram aqui.** O Kit
+ * Festas, as Boxes e o catálogo de massas e recheios são encomenda: não se
+ * pedem ao balcão, têm antecedência e o de massas nem preço tem. Vivem em
+ * `encomendas.ts` e em `bolos.ts`, e a diferença não é arrumação — é o que
+ * separa uma lista de preços de um formulário com prazo.
+ *
+ * As fontes estão em `referencias/`.
  */
 
 /**
- * A ordem do enum **é** a ordem em que as secções saem na página — mudar uma
- * linha de sítio aqui muda o site. É a mesma ordem do impresso, que já está
+ * Os cinco impressos. A ordem **é** a ordem por que as cartas saem na página da
+ * ementa, e é a ordem do dia: o balcão abre às sete, o almoço é ao fim-de-semana,
+ * e o resto é encomenda.
+ */
+export const CARTAS = ["casa", "fim-de-semana", "vegan", "chocolate"] as const;
+
+export type Carta = (typeof CARTAS)[number];
+
+/**
+ * A ordem do enum **é** a ordem em que as secções saem dentro de cada carta —
+ * mudar uma linha de sítio aqui muda o site. É a ordem do impresso, que já está
  * pensada: come-se pela ordem em que vem escrito.
+ *
+ * Nem toda a carta usa todas: a vegan não tem bebidas, a do chocolate só tem
+ * `formatos`. Uma categoria sem artigos desaparece sozinha — ver
+ * `categoriasDaCarta`.
  */
 export const CATEGORIAS = [
-  "aperitivos",
-  "entradas",
-  "santos-novilho",
-  "carnes-maturadas",
-  "para-os-corajosos",
-  "santos-frango",
-  "outros-santos",
-  "vegetariano-saladas",
-  "menu-infantil",
-  "sobremesas",
-  "extras",
+  "pausa",
+  "salgados",
+  "pratos",
+  "doces",
   "bebidas",
+  "bolos-inteiros",
+  "formatos",
 ] as const;
 
 export type Categoria = (typeof CATEGORIAS)[number];
 
 /** Dentro das bebidas, pela ordem do impresso. */
 export const SUBCATEGORIAS = [
-  "sangrias",
-  "limonadas",
-  "refrigerantes",
-  "aguas",
-  "cidras",
-  "cerveja",
-  "vinhos",
-  "licores",
-  "whiskeys",
-  "aguardentes",
+  "batidos",
+  "milkshakes",
   "quentes",
+  "frias",
 ] as const;
 
 export type Subcategoria = (typeof SUBCATEGORIAS)[number];
 
 /**
- * As três categorias cujos artigos **não têm descrição** — no impresso são
- * listas de nome e preço, e inventar-lhes uma frase era escrever ementa que a
- * casa não escreveu.
+ * Como o preço se lê. **Não é decoração tipográfica: é o que o artigo é.**
  *
- * São também as únicas em que o `nome` é texto comum ("Cebola frita") em vez de
- * um santo, e portanto as únicas que levam `nomeEn`. Ver o `superRefine`.
+ * Um bolo da Damira vende-se ao quilo e um croissant à unidade, e escrever
+ * "17,00 €" ao lado de um bolo de bolacha sem o `/kg` é anunciar um preço que
+ * não existe — o erro mais caro que este site pode cometer, porque só se
+ * descobre ao balcão, com o cliente à frente.
  */
-const SEM_DESCRICAO: readonly Categoria[] = ["aperitivos", "extras", "bebidas"];
+export const UNIDADES = ["un", "kg"] as const;
+
+export type Unidade = (typeof UNIDADES)[number];
 
 const Texto = z.object({ pt: z.string().min(1), en: z.string().min(1) });
 
 /**
- * Os *Rollinis* são 4,75 € e os *Rollinis à la Chef* 5,40 €, no mesmo bloco do
- * impresso e com a mesma descrição. Uma variante em vez de dois artigos evita
- * duplicar a frase — e duas frases quase iguais divergem à primeira correção.
+ * Preços diferentes para o mesmo artigo, no mesmo bloco do impresso.
+ *
+ * É o caso do Chocolate do Dubai, que é um produto com quatro pesos, e não
+ * quatro produtos. Uma variante em vez de quatro artigos evita repetir a
+ * descrição — e quatro frases quase iguais divergem à primeira correção.
  *
  * `chave` é uma chave de tradução (`ementa.variantes.*`), não texto.
  */
@@ -83,96 +105,93 @@ const Variante = z.object({
 
 const EsquemaArtigo = z
   .object({
-    /** Minúsculas, números e hífenes: é a âncora do URL (`/ementa#sao-juliao`). */
+    /** Minúsculas, números e hífenes: é a âncora do URL (`/ementa#nata`). */
     id: z
       .string()
       .regex(/^[a-z0-9-]+$/, "só minúsculas, números e hífenes (o id vai para o URL)"),
-    /**
-     * O nome como está no impresso. **Os santos não se traduzem** — "São Julião"
-     * é um nome próprio e é metade da graça da marca; traduzi-lo para "Saint
-     * Julian" dava um sítio diferente do que está na mesa.
-     */
+    /** O nome como está no impresso. */
     nome: z.string().min(1),
-    /** Só onde o nome é texto comum e não um santo. Ver `SEM_DESCRICAO`. */
-    nomeEn: z.string().min(1).nullable().default(null),
+    /**
+     * O nome em inglês.
+     *
+     * ⚠️ **Obrigatório em todos os artigos**, ao contrário do Santo Burga, onde
+     * metade dos nomes eram santos e não se traduziam. Aqui não há nomes
+     * próprios: "Bola de Berlim" é um bolo e "Croissant Misto" é uma sandes, e
+     * quem entra na loja em agosto quer saber o que são.
+     */
+    nomeEn: z.string().min(1),
+    carta: z.enum(CARTAS),
     categoria: z.enum(CATEGORIAS),
     subcategoria: z.enum(SUBCATEGORIAS).nullable().default(null),
-    /** Em euros. O impresso escreve "7€"; aqui é `7` e a formatação é do site. */
-    preco: z.number().positive(),
-    /**
-     * O peso da carne, em gramas.
-     *
-     * Existe como campo próprio porque a secção da escalada — 320 → 480 → 640 —
-     * mostra o número em grande e desenha uma barra proporcional. Até aqui a
-     * grama vivia **dentro do texto da descrição** ("320g de novilho (double
-     * burga)…"), e ir buscá-la por expressão regular a prosa parte no primeiro
-     * dia em que alguém reescrever a frase.
-     *
-     * Opcional em quase tudo — uma sangria não tem gramas — e **obrigatório em
-     * `para-os-corajosos`**, que é a secção que depende dele. Ver o
-     * `superRefine`.
-     */
-    gramas: z.number().int().positive().nullable().default(null),
+    /** Em euros. O impresso escreve "1,60€"; aqui é `1.6` e a formatação é do site. */
+    preco: z.number().positive().nullable().default(null),
+    unidade: z.enum(UNIDADES).default("un"),
     variantes: z.array(Variante).min(1).nullable().default(null),
     descricao: Texto.nullable().default(null),
     /**
-     * Os pães de cor são um argumento de venda visível no impresso, com
-     * etiqueta própria. Lista, e não um só, porque o *Mega Santo* traz os dois.
+     * Os sabores em que o artigo se faz, quando o impresso os lista debaixo do
+     * preço — os oito dos batidos, os cinco dos cafés gelados.
+     *
+     * É lista e não prosa porque **a mesma lista aparece em três artigos**
+     * (batidos, sumos e milkshakes partilham os oito sabores): escrita na
+     * descrição, uma correção de sabor obrigava a lembrar dos outros dois.
      */
-    paes: z.array(z.enum(["rosa", "azul"])).default([]),
-    /** O selo "BEST SELLER" do impresso. São doze. */
-    bestSeller: z.boolean().default(false),
+    sabores: z.array(z.string()).default([]),
     /**
-     * Marcado a partir do que o impresso afirma, não do que parece. A secção
-     * chama-se "Vegetariano & Saladas" e tem lá dentro saladas de frango e de
-     * novilho — essas ficam a `false`.
+     * Vegan. Vem afirmado pelo impresso — a carta vegan tem símbolo próprio ao
+     * lado de cada linha — e **não se deduz** de um artigo não ter nome de
+     * carne. Ver o `superRefine`.
      */
-    vegetariano: z.boolean().default(false),
+    vegan: z.boolean().default(false),
     /**
-     * **Vazio de propósito, em todos os artigos.** Os alergénios não constam do
-     * impresso e **não se inventam**: é informação com peso legal e clínico, e
-     * uma lista adivinhada é pior do que nenhuma. O campo já existe porque
-     * acrescentá-lo depois obrigava a mexer em 122 objetos. Preenche-se com a
-     * cozinha — ver o README.
+     * **Vazio de propósito, em todos os artigos.** Os alergénios não constam de
+     * nenhum dos cinco impressos e **não se inventam**: é informação com peso
+     * legal e clínico, e uma lista adivinhada é pior do que nenhuma. Numa
+     * confeitaria com carta vegan isto pesa a dobrar — quem procura o símbolo
+     * da folha costuma ter uma razão para o procurar. Preenche-se com a
+     * pastelaria; ver o README.
      */
     alergenios: z.array(z.string()).default([]),
     foto: z.string().startsWith("/ementa/").nullable().default(null),
   })
   .superRefine((artigo, ctx) => {
-    const semDescricao = SEM_DESCRICAO.includes(artigo.categoria);
-
-    if (!semDescricao && artigo.descricao === null) {
+    /* Ou tem preço, ou tem variantes. Um artigo sem nenhum dos dois sai na
+       página com um espaço em branco onde devia estar o número — e ninguém
+       repara até um cliente perguntar. */
+    if (artigo.preco === null && artigo.variantes === null) {
       ctx.addIssue({
         code: "custom",
-        path: ["descricao"],
-        message: `a categoria "${artigo.categoria}" leva descrição nas duas línguas`,
+        path: ["preco"],
+        message: "sem preço nem variantes — o artigo sairia sem número nenhum",
       });
     }
-    /* Um `nomeEn` num santo é sinal de que alguém começou a traduzir os nomes —
-       falha aqui, à primeira, e não vinte artigos depois. */
-    if (!semDescricao && artigo.nomeEn !== null) {
+    if (artigo.preco !== null && artigo.variantes !== null) {
       ctx.addIssue({
         code: "custom",
-        path: ["nomeEn"],
-        message: "os nomes dos santos não se traduzem — deixar `nomeEn` fora",
+        path: ["variantes"],
+        message: "preço e variantes ao mesmo tempo: escolher um",
       });
     }
-    if (semDescricao && artigo.nomeEn === null) {
+    /* Toda a carta vegan é vegan, e nada fora dela o é — a Damira não marca
+       artigos vegan no menu principal. Se um dia marcar, esta regra cai; até lá
+       é o que apanha um `vegan: true` copiado à pressa para o sítio errado. */
+    if (artigo.carta === "vegan" && !artigo.vegan) {
       ctx.addIssue({
         code: "custom",
-        path: ["nomeEn"],
-        message: `"${artigo.nome}" é texto comum e precisa de \`nomeEn\``,
+        path: ["vegan"],
+        message: "está na carta vegan e não está marcado como vegan",
       });
     }
-    if (artigo.categoria === "para-os-corajosos" && artigo.gramas === null) {
+    if (artigo.carta !== "vegan" && artigo.vegan) {
       ctx.addIssue({
         code: "custom",
-        path: ["gramas"],
-        message: "a escalada dos corajosos desenha-se a partir das gramas",
+        path: ["vegan"],
+        message:
+          "só a carta vegan tem artigos vegan — o impresso principal não os assinala",
       });
     }
-    /* A subcategoria só existe dentro das bebidas, que são 47 artigos e sem ela
-       sairiam numa lista corrida de café a sangria. */
+    /* A subcategoria só existe dentro das bebidas, que são 25 artigos e sem ela
+       sairiam numa lista corrida de café a milkshake. */
     if (artigo.categoria === "bebidas" && artigo.subcategoria === null) {
       ctx.addIssue({
         code: "custom",
@@ -185,6 +204,15 @@ const EsquemaArtigo = z
         code: "custom",
         path: ["subcategoria"],
         message: "só as bebidas têm subcategoria",
+      });
+    }
+    /* Um bolo inteiro vende-se ao quilo. Escrevê-lo à unidade é anunciar um
+       bolo de dois quilos por dezassete euros. */
+    if (artigo.categoria === "bolos-inteiros" && artigo.unidade !== "kg") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["unidade"],
+        message: "um bolo inteiro vende-se ao quilo",
       });
     }
   });
@@ -212,89 +240,31 @@ if (repetidos.length > 0) {
   );
 }
 
-export const porCategoria = (categoria: Categoria) =>
-  ementa.filter((artigo) => artigo.categoria === categoria);
+export const daCarta = (carta: Carta) =>
+  ementa.filter((artigo) => artigo.carta === carta);
+
+export const porCategoria = (carta: Carta, categoria: Categoria) =>
+  ementa.filter((a) => a.carta === carta && a.categoria === categoria);
 
 export const porSubcategoria = (subcategoria: Subcategoria) =>
   ementa.filter((artigo) => artigo.subcategoria === subcategoria);
 
 export const porId = (id: string) => ementa.find((artigo) => artigo.id === id);
 
-/** Os doze com selo. É o que a homepage mostra em destaque. */
-export const bestSellers = () => ementa.filter((artigo) => artigo.bestSeller);
-
 /**
- * Os corajosos, do mais leve para o mais pesado — é a ordem em que a secção os
- * desenha, e sai das gramas em vez da ordem do ficheiro para não depender de
- * ninguém se lembrar de os manter arrumados.
- */
-export const escalada = () =>
-  porCategoria("para-os-corajosos")
-    .slice()
-    .sort((a, b) => (a.gramas ?? 0) - (b.gramas ?? 0));
-
-/**
- * Só os que têm nome de santo.
- *
- * O critério é `nomeEn === null`, que não é um truque: **o esquema garante que
- * só os artigos de nome comum — extras, bebidas, aperitivos — têm `nomeEn`**
- * (ver o `superRefine`). Filtrar por aí é filtrar pela mesma regra que o `build`
- * já obriga, em vez de manter uma segunda lista de categorias que um dia
- * discorda desta.
- */
-export const santos = () => ementa.filter((artigo) => artigo.nomeEn === null);
-
-/**
- * As três carnes da casa, pela ordem da carta impressa.
- *
- * São as famílias que a homepage destaca — uma de cada carne. `outros-santos` e
- * `vegetariano-saladas` ficam de fora porque **não têm nenhum artigo com selo**
- * (ver `oDoSelo`), e `para-os-corajosos` porque tem a secção própria, com as
- * gramas a crescer: mostrá-la duas vezes tirava-lhe o efeito.
- */
-export const TRES_CARNES = [
-  "santos-novilho",
-  "carnes-maturadas",
-  "santos-frango",
-] as const satisfies readonly Categoria[];
-
-/**
- * O artigo com selo de uma família — o primeiro, pela ordem do impresso.
- *
- * ## Porque é derivado e não uma lista de três `id` escritos à mão
- *
- * Uma lista fixa parece mais simples e é mais frágil: no dia em que a casa tirar
- * um destes da carta, a homepage passa a mostrar um artigo que já não existe —
- * ou, pior, continua a mostrá-lo. Assim, o que aparece aqui é sempre o que o
- * `ementa.json` diz que é mais pedido naquela família, e mudar o destaque é
- * mexer num booleano.
- *
- * ⚠️ **`santos-novilho` tem três artigos com selo** (Santo Assunção, São Abel e
- * São João), e é por isso que existe um critério de desempate em vez de um
- * `find` a fingir que só há um. A ordem do ficheiro **é** a ordem do impresso —
- * ver o comentário de `CATEGORIAS` —, por isso o primeiro é o primeiro que a
- * casa escreveu, e não o primeiro que calhou.
- *
- * Devolve `undefined` numa família sem selo. É o caso de `outros-santos` e de
- * `vegetariano-saladas`, e é a razão de eles não estarem em `TRES_CARNES`.
- */
-export const oDoSelo = (categoria: Categoria) =>
-  porCategoria(categoria).find((artigo) => artigo.bestSeller);
-
-/** Os santos que levam um pão de cor. Alimenta a secção dos pães. */
-export const porPao = (pao: "rosa" | "azul") =>
-  ementa.filter((artigo) => artigo.paes.includes(pao));
-
-/**
- * As categorias que têm mesmo artigos, pela ordem do enum.
+ * As categorias que uma carta tem mesmo, pela ordem do enum.
  *
  * A navegação da ementa sai daqui em vez de sair de `CATEGORIAS`: se um dia a
- * casa tirar as sobremesas da carta, o link para a secção desaparece sozinho em
+ * casa tirar as bebidas da carta, o link para a secção desaparece sozinho em
  * vez de apontar para uma âncora vazia.
  */
-export const categoriasComArtigos = (): Categoria[] =>
-  CATEGORIAS.filter((categoria) => porCategoria(categoria).length > 0);
+export const categoriasDaCarta = (carta: Carta): Categoria[] =>
+  CATEGORIAS.filter((categoria) => porCategoria(carta, categoria).length > 0);
 
 /** O mesmo, dentro das bebidas. */
 export const subcategoriasComArtigos = (): Subcategoria[] =>
   SUBCATEGORIAS.filter((sub) => porSubcategoria(sub).length > 0);
+
+/** As cartas que têm mesmo artigos, pela ordem do enum. */
+export const cartasComArtigos = (): Carta[] =>
+  CARTAS.filter((carta) => daCarta(carta).length > 0);

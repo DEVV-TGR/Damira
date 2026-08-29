@@ -56,7 +56,7 @@ export async function generateMetadata({
   return {
     metadataBase: new URL(URL_SITE),
     /* O `%s` é o título de cada página; a homepage usa o `default`. Poupa
-       repetir "— Santo Burga" em cada `generateMetadata`. */
+       repetir "— Confeitaria Damira" em cada `generateMetadata`. */
     title: { default: t("titulo"), template: `%s — ${marca("nome")}` },
     description: t("descricao"),
   };

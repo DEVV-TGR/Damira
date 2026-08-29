@@ -1,62 +1,66 @@
 {
   "marca": {
-    "nome": "Santo Burga",
-    "assinatura": "Hambúrgueres artesanais que sabem a Santo",
-    "quadrado": "O famoso hambúrguer quadrado"
+    "nome": "Confeitaria Damira",
+    "assinatura": "Pastelaria, padaria e cozinha, desde manhã cedo",
+    "desde": "Ermesinde, desde {ano}"
   },
   "nav": {
     "inicio": "Início",
     "ementa": "Ementa",
+    "encomendas": "Encomendas",
     "saltarParaConteudo": "Saltar para o conteúdo",
     "mudarIdioma": "English"
   },
   "inicio": {
-    "heroTexto": "Duas casas: uma no Porto, outra à beira-mar em Leça da Palmeira. A mesma carta de santos nas duas.",
+    "heroTexto": "Abre às sete e fecha às nove. Torradas e cafés de manhã, hambúrgueres e leitão à hora de almoço, e uma vitrine de doces o dia inteiro — metade dela vegan.",
     "verEmenta": "Ver a ementa",
-    "trio": {
-      "titulo": "Três carnes, três santos",
-      "texto": "Um de cada, e são os que mais saem da cozinha. Há mais quarenta na ementa.",
-      "verTudo": "Ver a ementa",
-      "ilustrativas": "As fotografias são da casa e servem de exemplo — não são a fotografia de cada hambúrguer."
+    "verEncomendas": "Encomendas e festas",
+    "combinacoes": {
+      "olho": "Combinações perfeitas",
+      "titulo": "O que a casa recomenda",
+      "texto": "Seis pares que estão escritos no fim do nosso menu. Não é uma lista de mais vendidos — é o que sabe bem com o quê.",
+      "verTudo": "Ver a ementa completa",
+      "pares": [
+        { "a": "Café", "b": "Brigadeiro" },
+        { "a": "Affogato Latte", "b": "American Cookie" },
+        { "a": "Matcha Latte Gelado", "b": "Croissant Recheado" },
+        { "a": "Cappuccino", "b": "Bolo com Calda de Brigadeiro" },
+        { "a": "Hambúrguer da Casa", "b": "Príncipe" },
+        { "a": "Tosta de Frango da Casa", "b": "Sumo Natural de Fruta" }
+      ]
     },
-    "casas": {
-      "titulo": "As nossas casas",
-      "texto": "Duas moradas, a mesma carta. Escolha a que lhe fica mais à mão."
+    "vegan": {
+      "titulo": "Metade da vitrine é vegan",
+      "doces": "Doces à unidade",
+      "salgados": "Salgados",
+      "bolos": "Bolos inteiros",
+      "opcoesBolo": "Opções de bolo por medida",
+      "verCarta": "Ver a carta vegan",
+      "proporcao": "{vegan} dos {total} artigos da nossa ementa são vegan — não é uma prateleira à parte, é metade da casa."
     },
-    "casaCheia": {
-      "titulo": "Feito à mão, à frente de quem come",
-      "credito": "Fotografia e vídeo do Santo Burga."
-    },
-    "corajosos": {
-      "olho": "Para os corajosos",
-      "titulo": "320, 480 e 640 gramas",
-      "texto": "Um hambúrguer normal tem 160 gramas. Estes três são o dobro, o triplo e o quádruplo — e há quem os acabe."
-    },
-    "paes": {
-      "titulo": "Nem todos os santos vêm em pão normal",
-      "texto": "Há dezasseis que vêm de cor, e vêem-se da rua.",
-      "rosa": "Pão rosa",
-      "azul": "Pão azul",
-      "quantos": "{n} santos",
-      "ambos": "O único que vem dos dois"
+    "festas": {
+      "olho": "Kit Festas",
+      "titulo": "De vinte a setenta pessoas",
+      "texto": "Três gamas, três dimensões e preço fechado. Miniaturas salgadas e fritas, mini pizzas, tábuas de queijos, bolas de carne — e a parte doce, que é a nossa.",
+      "desde": "desde {preco}",
+      "pessoas": "{n} pessoas",
+      "verEncomendas": "Ver tudo o que levam"
     },
     "fecho": {
-      "titulo": "Antes de ir, veja a ementa",
-      "texto": "A mesma carta de santos nas duas casas. Escolha a que lhe fica mais à mão."
+      "titulo": "Antes de ir",
+      "texto": "Ao balcão todos os dias das sete às nove. Para uma festa, com um telefonema à frente."
     }
   },
-  "casas": {
-    "direcoes": "Como chegar",
-    "telefone": "Telefone",
+  "casa": {
+    "titulo": "Onde e a que horas",
+    "morada": "Morada",
+    "direcoes": "Toque para abrir no Google Maps.",
     "horario": "Horário",
-    "semHorario": "Horário por confirmar. Antes de sair de casa, o mais seguro é ver o Instagram.",
-    "semHorarioComTelefone": "Horário por confirmar. Até lá, o mais seguro é telefonar.",
+    "horarioPorConfirmar": "Horário por confirmar dia a dia. Antes de vir de longe, o mais seguro é telefonar.",
+    "semHorario": "Horário por confirmar. Até lá, o mais seguro é telefonar.",
     "encerrado": "Encerrado",
-    "entregaTitulo": "Entrega ao domicílio",
-    "uberEats": "Uber Eats",
-    "glovo": "Glovo",
-    "boltFood": "Bolt Food",
-    "semFotos": "Fotografias por publicar",
+    "falarConnosco": "Falar connosco",
+    "boltFood": "Pedir no Bolt Food",
     "dias": {
       "segunda": "Segunda",
       "terca": "Terça",
@@ -69,70 +73,121 @@
   },
   "ementa": {
     "titulo": "Ementa",
-    "intro": "A carta completa das duas casas.",
-    "navegar": "Secções",
-    "bestSeller": "Best seller",
-    "vegetariano": "Vegetariano",
-    "paes": {
-      "rosa": "Pão rosa",
-      "azul": "Pão azul"
-    },
-    "variantes": {
-      "a-la-chef": "À la chef"
+    "intro": "Quatro cartas: o balcão de todos os dias, o almoço de fim-de-semana, a vegan e o chocolate.",
+    "navegar": "Cartas",
+    "vegan": "Vegan",
+    "porQuilo": " /kg",
+    "sabores": "Sabores",
+    "cartas": {
+      "casa": {
+        "curto": "Da casa",
+        "titulo": "A carta da casa",
+        "texto": "O que há ao balcão todos os dias, das sete às nove: pausas, salgados quentes, doces e bebidas."
+      },
+      "fim-de-semana": {
+        "curto": "Sábado e domingo",
+        "titulo": "Almoço de sábado e domingo",
+        "texto": "Ao fim-de-semana há pratos. Leitão à Bairrada, prego no prato — e os hambúrgueres da carta da casa continuam a sair."
+      },
+      "vegan": {
+        "curto": "Vegan",
+        "titulo": "A carta vegan",
+        "texto": "Doces, salgados e bolos inteiros, todos vegan. É uma carta completa e não uma prateleira de exceções."
+      },
+      "chocolate": {
+        "curto": "Chocolate",
+        "titulo": "Chocolate do Dubai",
+        "texto": "Feito cá, em quatro formatos, do quadrado de bolso à barra de meio quilo."
+      }
     },
     "categorias": {
-      "aperitivos": "Aperitivos",
-      "entradas": "Entradas",
-      "santos-novilho": "Santos de Novilho",
-      "carnes-maturadas": "Carnes Maturadas",
-      "para-os-corajosos": "Para os Corajosos",
-      "santos-frango": "Santos de Frango",
-      "outros-santos": "Outros Santos",
-      "vegetariano-saladas": "Vegetariano & Saladas",
-      "menu-infantil": "Menu Infantil",
-      "sobremesas": "Santas Sobremesas",
-      "extras": "Extras",
-      "bebidas": "Santas Bebidas"
+      "pausa": "Para uma pausa",
+      "salgados": "Salgados",
+      "pratos": "Pratos",
+      "doces": "Doces",
+      "bebidas": "Bebidas",
+      "bolos-inteiros": "Bolos inteiros",
+      "formatos": "Formatos"
     },
     "subcategorias": {
-      "sangrias": "Santas Sangrias",
-      "limonadas": "Limonadas",
-      "refrigerantes": "Refrigerantes",
-      "aguas": "Águas",
-      "cidras": "Cidras",
-      "cerveja": "Cerveja",
-      "vinhos": "Vinhos",
-      "licores": "Licores",
-      "whiskeys": "Whiskeys",
-      "aguardentes": "Aguardentes",
-      "quentes": "Bebidas quentes"
+      "batidos": "Batidos e sumos",
+      "milkshakes": "Milkshakes",
+      "quentes": "Bebidas quentes",
+      "frias": "Bebidas frias"
     },
     "notas": {
-      "acompanhamento": "Todos os hambúrgueres são acompanhados por batata à rodela ou batata ao palito. Batata doce também disponível, na secção de extras.",
-      "infantil": "Inclui batata à rodela ou ao palito e bebida à escolha (mini Coca-Cola, mini Fanta de laranja, Bongo ou água 0,25 L). Disponível apenas até aos 12 anos.",
+      "batata": "Os hambúrgueres, a tosta de frango e as sandes assinalados no menu acompanham com batata.",
+      "sabores": "Pergunte ao balcão que sabores temos disponíveis hoje.",
+      "palhinhas": "Experimente a sua bebida com as nossas palhinhas comestíveis, por mais 1 €.",
       "iva": "I.V.A. incluído à taxa em vigor.",
-      "alergenios": "Informação sobre alergénios disponível no restaurante — é só perguntar.",
-      "precos": "Preços da carta de 2024, por confirmar."
+      "alergenios": "Informação sobre alergénios disponível na loja — é só perguntar.",
+      "precos": "Preços das cartas de 2025 e 2026, por confirmar."
     },
-    "ilustrativa": "Imagem ilustrativa",
-    "acompanhamento": "Acompanhamento",
     "abrir": "Ver em detalhe",
-    "fechar": "Fechar",
-    "acompanhamentoTexto": "Batata à rodela ou ao palito, incluída.",
-    "batataDoce": "Batata doce em alternativa"
+    "fechar": "Fechar"
+  },
+  "encomendas": {
+    "olho": "Por encomenda",
+    "titulo": "Encomendas",
+    "intro": "Festas, bolos por medida e boxes para dias especiais. Tudo isto se pede com antecedência — não é o que está na vitrine.",
+    "festas": {
+      "titulo": "Kit Festas",
+      "texto": "Três gamas com preço fechado, para vinte, quarenta ou setenta pessoas. Escolha quantos são e compare o que cada uma leva.",
+      "quantasPessoas": "Para quantas pessoas?",
+      "pessoas": "{n} pessoas",
+      "paraPessoas": "para {n} pessoas",
+      "salgados": "Salgados",
+      "doces": "Doces"
+    },
+    "kitsBolo": {
+      "titulo": "Bolo e mesa decorada",
+      "texto": "O bolo com o resto da mesa a condizer: bolachas, cupcakes, cakesicles e brigadeiros decorados.",
+      "nota": "A deslocação e a montagem não estão incluídas no preço."
+    },
+    "boxes": {
+      "titulo": "Boxes para dias especiais",
+      "texto": "Uma caixa fechada para levar: pequeno-almoço na cama, um lanche de aniversário, ou uma visita a quem está por perto.",
+      "vegan": "Vegan"
+    },
+    "como": {
+      "titulo": "Como encomendar",
+      "texto": "Por telefone ou por correio eletrónico. Diga-nos o que quer, para quantas pessoas e para que dia — respondemos com o orçamento e a confirmação.",
+      "prazo": "A antecedência mínima está por confirmar. Telefone-nos e dizemos-lhe logo se dá para a data que quer.",
+      "telefonar": "Telefonar — {numero}",
+      "email": "Enviar um email",
+      "assunto": "Pedido de encomenda"
+    }
+  },
+  "bolos": {
+    "titulo": "Um bolo à sua maneira",
+    "texto": "A massa, o recheio, a cobertura, o que leva em cima e o que lhe fica à volta. São {classica} escolhas na linha clássica e {vegan} na vegan.",
+    "soVegan": "Só na linha vegan",
+    "semPrecos": "O preço de um bolo por medida depende do peso, do recheio e da decoração — dizemo-lo por telefone, com o pedido à frente. Os bolos de catálogo, esses, têm preço na ementa.",
+    "grupos": {
+      "massas": "Massas",
+      "recheios": "Recheios",
+      "coberturas": "Coberturas",
+      "decoracao": "Para decorar",
+      "a-volta": "À volta"
+    }
   },
   "metadata": {
     "inicio": {
-      "titulo": "Santo Burga — hambúrgueres artesanais no Porto e em Leça",
-      "descricao": "Hambúrgueres artesanais que sabem a Santo. Duas casas: Porto e Leça da Palmeira. O famoso hambúrguer quadrado."
+      "titulo": "Confeitaria Damira — pastelaria e padaria em Ermesinde desde 1996",
+      "descricao": "Pastelaria, padaria e cozinha em Ermesinde. Aberto todos os dias das 7h às 21h. Carta vegan completa, kits de festa e bolos por encomenda."
     },
     "ementa": {
-      "titulo": "Ementa — Santo Burga",
-      "descricao": "A carta completa do Santo Burga: santos de novilho e de frango, carnes maturadas, opções vegetarianas, sobremesas e bebidas."
+      "titulo": "Ementa",
+      "descricao": "A ementa da Confeitaria Damira: pausas e salgados ao balcão, almoço de fim-de-semana, uma carta vegan completa e o Chocolate do Dubai."
+    },
+    "encomendas": {
+      "titulo": "Encomendas e festas",
+      "descricao": "Kits de festa para 20, 40 ou 70 pessoas, bolos decorados por medida e boxes para dias especiais, na Confeitaria Damira, em Ermesinde."
     }
   },
   "rodape": {
     "seguirNos": "Seguir",
+    "falarConnosco": "Falar connosco",
     "feitoPor": "Site por",
     "estudio": "DevPlus",
     "direitos": "Todos os direitos reservados."
