@@ -209,12 +209,27 @@ body::after {
  * os títulos ficam em caixa normal. Cento e vinte e dois artigos com títulos de
  * secção aos berros é o que separa um menu de um cartaz.
  */
+/**
+ * ⚠️ **O tracking e a entrelinha da base são os do texto pequeno, não os do
+ * título grande.**
+ *
+ * Isto tinha `-0.025em` e `0.95` fixos para toda a gente, e um valor fixo está
+ * errado em algum tamanho — necessariamente. A `.titulo-display` sozinha, sem
+ * degrau, é o que veste as etiquetas, os preços e o texto dos botões, a 12 e
+ * 14 px: a esse corpo, `-0.025em` fecha as letras umas contra as outras e a
+ * entrelinha de `0.95` faz duas linhas tocarem-se.
+ *
+ * Os títulos apertam-se nos degraus abaixo, que é onde se sabe o tamanho. A
+ * regra é a da tipografia impressa e não muda: **quanto maior o corpo, mais
+ * negativo o tracking e mais curta a entrelinha** — as letras parecem afastar-se
+ * à medida que crescem, e as linhas parecem cair.
+ */
 .titulo-display {
   font-family: var(--font-display);
   font-weight: 700;
   font-variation-settings: "wdth" 85, "opsz" 40;
-  letter-spacing: -0.025em;
-  line-height: 0.95;
+  letter-spacing: -0.008em;
+  line-height: 1.15;
   text-wrap: balance;
 }
 
@@ -233,14 +248,44 @@ body::after {
  * O que decide o degrau é o **peso da secção na página**, não o gosto:
  * `alfa` para os dois momentos altos, `gama` para o que é prático.
  */
+/* Cada degrau traz o seu tracking e a sua entrelinha, e não só o corpo. São
+   três propriedades que só fazem sentido decididas em conjunto — mudar o
+   tamanho sem mexer nas outras duas é o que dá um título grande com espaçamento
+   de legenda. */
 .titulo-alfa {
   font-size: clamp(2.75rem, 7vw, 5.5rem);
+  letter-spacing: -0.032em;
+  line-height: 0.94;
 }
 .titulo-beta {
   font-size: clamp(2rem, 4.5vw, 3.5rem);
+  letter-spacing: -0.024em;
+  line-height: 0.98;
 }
 .titulo-gama {
   font-size: clamp(1.5rem, 3vw, 2.25rem);
+  letter-spacing: -0.014em;
+  line-height: 1.06;
+}
+
+/**
+ * O quarto degrau, que não é da escala: é o `<h1>` de uma página — o herói, a
+ * capa da ementa, a das encomendas. Sobe aos 9 rem e é a única tipografia do
+ * site que se lê como cartaz.
+ *
+ * Fica fora dos três degraus de propósito, porque **não compete com eles**:
+ * aparece uma vez por página e no topo, onde não há nada por perto com que se
+ * comparar. Metê-lo na escala obrigava a escolher entre um alfa gigante nas
+ * secções ou uma capa pequena.
+ *
+ * ⚠️ A entrelinha é `1.0` e não menos. A Bricolage tem descendentes longos e a
+ * caixa alta desta capa leva **Ç** — a `0.95`, a cedilha de «ENCOMENDAS» bate na
+ * linha de cima assim que o título parte em duas, o que num telemóvel acontece
+ * sempre.
+ */
+.titulo-capa {
+  letter-spacing: -0.04em;
+  line-height: 1;
 }
 
 /**
@@ -403,142 +448,47 @@ body::after {
   }
 }
 
-/* ── Fitas a correr ───────────────────────────────────────────────────── */
+/* ── Troca de escalão ─────────────────────────────────────────────────── */
 
 /**
- * O motor das fitas — as duas do herói e a dos santos, no fundo da página.
+ * A entrada das colunas quando se muda o número de pessoas nas encomendas.
  *
- * O conteúdo é **duplicado** e a animação desloca metade da largura. É o que faz
- * o ciclo não ter costura: quando a primeira cópia sai de cena, a segunda está
- * exactamente onde a primeira começou, e o `translateX` volta a zero sem que se
- * veja o salto. A cópia é `aria-hidden` — quem usa leitor de ecrã ouve a lista
- * uma vez, não duas.
+ * ## Porquê animar de todo
  *
- * `width: max-content` porque a fita tem de ser tão larga quanto o conteúdo
- * pedir; com a largura do pai, o `flex` encolhia os itens e a conta do 50%
- * deixava de fechar.
+ * Porque sem isto três colunas inteiras — preço, dezasseis linhas de salgados,
+ * oito de doces — mudam entre dois quadros. O olho não vê uma transição, vê um
+ * **piscar**, e um piscar não diz o que aconteceu: quem carregou em «40 pessoas»
+ * fica sem saber se a página mudou porque ele mandou ou porque se recarregou.
  *
- * ⚠️ **Três fitas seguidas deixam de ser três gestos e passam a ser fundo.** A
- * dos santos esteve colada ao herói, no mesmo tom, e o que fazia era acabar
- * com a ideia do herói: a fila de baixo deixava de o fechar e passava a ser a
- * primeira de três riscas. Ficaram as duas do herói (que são um gesto só) e a
- * dos santos lá em baixo, a costurar para o rodapé.
+ * ## E porquê com direção
+ *
+ * ⚠️ **A direção não é enfeite: é a informação.** De 20 para 40 o conteúdo entra
+ * de baixo, de 40 para 20 entra de cima — a mesma direção em que o número se
+ * move na escala. Um fade sem direção mostra que algo mudou; com direção, mostra
+ * **para que lado**, e isso é a diferença entre uma animação decorativa e uma que
+ * explica.
+ *
+ * A saída é imediata e a entrada é curta (0,26 s): ninguém está a ver um efeito,
+ * está à espera de um preço. O `--ease-saida` é um *ease-out* forte — começa
+ * depressa, que é o momento em que quem carregou está a olhar.
+ *
+ * Sem `translate` em quem pediu menos movimento: a regra global de
+ * `prefers-reduced-motion` já corta a duração, e o que sobra é uma troca seca,
+ * que é o equivalente honesto.
  */
-.fita {
-  overflow: hidden;
-  /* Sem isto, a fita empurra a largura do documento e o telemóvel ganha scroll
-     horizontal — que é o defeito clássico de um marquee mal contido. */
-  max-width: 100%;
-}
-
-.fita-conteudo {
-  display: flex;
-  width: max-content;
-  animation: correr var(--duracao, 45s) linear infinite;
-}
-
-/* Pausa ao passar o rato: quem quiser ler um nome consegue parar para o ler. */
-.fita:hover .fita-conteudo {
-  animation-play-state: paused;
-}
-
-@keyframes correr {
+@keyframes entrar-escalao {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--direcao, 1) * 0.75rem));
+  }
   to {
-    transform: translateX(-50%);
+    opacity: 1;
+    transform: none;
   }
 }
 
-/**
- * A fila que anda ao contrário.
- *
- * `animation-direction: reverse` e não uma segunda animação: é a mesma regra
- * lida de trás para a frente, e assim as duas filas nunca podem divergir se
- * alguém mexer no `@keyframes`.
- *
- * Duas filas a andar no mesmo sentido leem-se como uma só coisa a deslizar; em
- * sentidos opostos, cada uma dá profundidade à outra — e é o que impede o herói
- * de parecer um banner.
- */
-.fita-inversa .fita-conteudo {
-  animation-direction: reverse;
-}
-
-/**
- * Texto em movimento contínuo é dos piores gatilhos para quem tem sensibilidade
- * a movimento — aqui pára de vez, e a fita passa a ser uma lista normal cortada
- * pela margem.
- */
-@media (prefers-reduced-motion: reduce) {
-  .fita-conteudo {
-    animation: none;
-  }
-}
-
-/* ── Cartões sobre fotografia ─────────────────────────────────────────── */
-
-/**
- * O véu dos cartões: contraste para o nome e o preço por cima da fotografia.
- *
- * Sem isto o texto assenta directamente na imagem e a legibilidade passa a
- * depender do que a fotografia tiver naquele canto — que num cartão de comida é
- * tudo menos previsível. O gradiente é forte em baixo, onde o texto vive, e
- * quase transparente em cima, onde só há imagem.
- *
- * A escala não é linear: sobe depressa nos primeiros 45 % e depois abranda. Um
- * gradiente linear a esta altura deixa uma aresta visível a meio do cartão; com
- * as paragens desencontradas, o olho não a encontra.
- */
-.veu-cartao {
-  background: linear-gradient(
-    to top,
-    rgb(35 31 32 / 0.94) 0%,
-    rgb(35 31 32 / 0.82) 45%,
-    rgb(35 31 32 / 0.45) 75%,
-    rgb(35 31 32 / 0.2) 100%
-  );
-}
-
-/* ── Mosaico da casa cheia ────────────────────────────────────────────── */
-
-/**
- * Colunas, e não grelha.
- *
- * O pedido para esta secção era «menos geometria mas mantém um padrão». Numa
- * grelha isso faz-se a dar a cada célula um número de linhas diferente — e essa
- * conta **não fecha** quando o material tem duas proporções: as fotografias são
- * 4:5 e os reels 9:16, e qualquer altura escolhida corta uma das duas. Com
- * `columns`, cada ladrilho fica com a sua proporção natural, as colunas enchem
- * sozinhas e a irregularidade vem do conteúdo em vez de vir de uma tabela.
- *
- * `break-inside: avoid` é o que impede uma imagem de ser partida entre o fim de
- * uma coluna e o princípio da seguinte.
- *
- * ⚠️ **Aqui só entram `public/fotos/` (1286 px) e `public/reels/` (720 px).** Os
- * recortes de `public/instagram/` têm 356 px — são miniaturas da grelha do
- * perfil (ver `scripts/importar-instagram.mjs`) — e a esta largura de coluna
- * seriam ampliados para o dobro num ecrã de dupla densidade. O sítio deles é o
- * herói, onde o `clamp` os trava nos 240 px. Não os trazer para cá.
- */
-.mosaico {
-  columns: 2;
-  column-gap: clamp(0.25rem, 0.8vw, 0.5rem);
-}
-
-.mosaico > * {
-  break-inside: avoid;
-  margin-bottom: clamp(0.25rem, 0.8vw, 0.5rem);
-}
-
-@media (min-width: 48rem) {
-  .mosaico {
-    columns: 3;
-  }
-}
-
-@media (min-width: 64rem) {
-  .mosaico {
-    columns: 4;
-  }
+.escalao {
+  animation: entrar-escalao 0.26s var(--ease-saida) both;
 }
 
 /* ── Painel do artigo ─────────────────────────────────────────────────── */
@@ -585,17 +535,17 @@ body::after {
 }
 
 .painel-artigo::backdrop {
-  background: rgb(35 31 32 / 0);
+  background: rgb(31 29 27 / 0);
   transition: background 0.32s ease;
 }
 
 .painel-artigo[open]::backdrop {
-  background: rgb(35 31 32 / 0.55);
+  background: rgb(31 29 27 / 0.55);
 }
 
 @starting-style {
   .painel-artigo[open]::backdrop {
-    background: rgb(35 31 32 / 0);
+    background: rgb(31 29 27 / 0);
   }
 }
 

@@ -35,7 +35,11 @@ export function Cabecalho({ locale }: { locale: Locale }) {
        sobre a página e não colada em cima dela. */
     <header className="sticky top-0 z-50 h-16 border-b border-tinta/10 bg-papel/80 backdrop-blur-md">
       <div className="envolvente flex h-full items-center justify-between gap-6">
-        <Link href="/" className="text-xl" aria-label={t("inicio")}>
+        {/* O tamanho do logótipo sai daqui: a `Marca` desenha-se a `1em` de
+            altura, e a `text-xl` dava 20 px — a palavra "damira" a 52 px de
+            largura, que num cabeçalho não se lê, lê-se-lhe a forma. A 1,75 rem
+            passa a wordmark. */}
+        <Link href="/" className="text-[1.75rem]" aria-label={t("inicio")}>
           <Marca />
         </Link>
 

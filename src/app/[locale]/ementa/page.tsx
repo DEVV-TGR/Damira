@@ -43,7 +43,7 @@ function Ementa({ locale }: { locale: Locale }) {
             {t("navegar")}
           </p>
           <h1
-            className="titulo-display mt-4 text-[clamp(3.5rem,12vw,9rem)] uppercase"
+            className="titulo-display titulo-capa mt-4 text-[clamp(3.5rem,12vw,9rem)] uppercase"
             style={{ fontVariationSettings: '"wdth" 68, "opsz" 48' }}
           >
             {t("titulo")}

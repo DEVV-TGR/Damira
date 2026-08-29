@@ -57,7 +57,7 @@ export function SeccaoEmenta({
           </span>
           <h2
             id={`titulo-${ancora}`}
-            className="titulo-display text-[clamp(1.5rem,3.5vw,2.25rem)] uppercase"
+            className="titulo-display titulo-gama uppercase"
             style={{ fontVariationSettings: '"wdth" 70, "opsz" 40' }}
           >
             {t(`categorias.${categoria}`)}

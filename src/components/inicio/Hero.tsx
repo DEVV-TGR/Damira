@@ -2,6 +2,10 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { casa } from "@/data/casa";
 
+/* O ano do logótipo. Vem do `casa.json` e não das mensagens, para não haver uma
+   versão do "1996" por cada língua. */
+const DESDE = casa.desde;
+
 /**
  * O primeiro ecrã: **campo de tijolo chapado, com o motivo das ondas em grande e
  * o título por cima.**
@@ -48,19 +52,17 @@ export function Hero() {
 
       <div className="envolvente relative py-[clamp(4rem,11vw,8rem)]">
         <p className="text-xs font-semibold uppercase tracking-[0.3em]">
-          {marca("desde", { ano: casa.desde })}
+          {marca("desde", { ano: DESDE })}
         </p>
 
         <h1
-          className="titulo-display mt-6 text-[clamp(2.75rem,9vw,7rem)] uppercase"
-          style={{
-            /* Muito condensado e em caixa alta: é o registo dos impressos, e a
-               Bricolage tem eixo de largura para lá chegar sem trocar de fonte. */
-            fontVariationSettings: '"wdth" 62, "opsz" 48',
-            /* A entrelinha global é 0,95, que a este corpo faz a cauda do **Q**
-               bater na linha de cima. */
-            lineHeight: "1.02",
-          }}
+          className="titulo-display titulo-capa mt-6 text-[clamp(2.75rem,9vw,7rem)] uppercase"
+          /* Muito condensado e em caixa alta: é o registo dos impressos, e a
+             Bricolage tem eixo de largura para lá chegar sem trocar de fonte.
+             A entrelinha e o tracking vêm do `.titulo-capa` — eram um override
+             inline, e um valor de tipografia escrito num componente é o que faz
+             a escala deixar de ser uma escala. */
+          style={{ fontVariationSettings: '"wdth" 62, "opsz" 48' }}
         >
           {marca("assinatura")}
         </h1>
@@ -84,10 +86,6 @@ export function Hero() {
           </Link>
         </div>
 
-        <p className="mt-8 text-xs font-semibold uppercase tracking-[0.2em]">
-          {casa.cidade}
-          {casa.distrito ? ` · ${casa.distrito}` : ""}
-        </p>
       </div>
     </section>
   );

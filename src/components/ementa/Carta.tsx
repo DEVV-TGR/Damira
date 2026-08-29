@@ -73,7 +73,7 @@ export function Carta({ locale }: { locale: Locale }) {
             >
               <div className="envolvente">
                 <h2
-                  className="titulo-display text-[clamp(2rem,5.5vw,3.5rem)] uppercase"
+                  className="titulo-display titulo-beta uppercase"
                   style={{ fontVariationSettings: '"wdth" 68, "opsz" 44' }}
                 >
                   {t(`cartas.${carta}.titulo`)}
