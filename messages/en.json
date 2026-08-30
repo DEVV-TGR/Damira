@@ -187,6 +187,51 @@
       "telefonar": "Call — {numero}",
       "email": "Send an email",
       "assunto": "Order enquiry"
+    },
+    "formulario": {
+      "titulo": "Request a quote",
+      "texto": "Tell us what you want, for how many people, and for which day. We reply with the price and a confirmation — there is no payment on this page.",
+      "assunto": "Order enquiry — {nome}, {data}",
+      "enviar": "Send request",
+      "aEnviar": "Sending…",
+      "nota": "No payment, no automatic booking. Your order is confirmed only when we reply.",
+      "tipos": {
+        "festa": "Party kit",
+        "bolo": "Custom cake",
+        "box": "Box",
+        "outro": "Something else"
+      },
+      "campos": {
+        "tipo": "What would you like to order",
+        "nome": "Name",
+        "data": "For which day",
+        "email": "Email",
+        "telefone": "Phone",
+        "umDosDois": "Either one will do — it is how we reply.",
+        "pessoas": "For how many people",
+        "detalhe": "What you need",
+        "detalhePlaceholder": "A chocolate cake with red berries, for 15 people, with the name “Matilde” on top.",
+        "consentimento": "I agree that my details may be used to answer this request. They are not used for anything else, nor shared.",
+        "armadilha": "Leave this field blank"
+      },
+      "erros": {
+        "nome-curto": "Please write your name.",
+        "data-invalida": "Please pick a date.",
+        "data-passada": "That date has already passed.",
+        "sem-contacto": "Leave an email or a phone number — without one we cannot reply.",
+        "detalhe-curto": "Tell us a little more about what you need.",
+        "consentimento": "We need this permission in order to reply to you."
+      },
+      "sucesso": {
+        "titulo": "Request sent.",
+        "texto": "We will reply with a quote and confirm the date. If it is urgent, call us — that is always faster."
+      },
+      "semServico": {
+        "titulo": "One step left.",
+        "texto": "Automatic sending is not switched on for this site yet. Your request is written and ready: open it in your email app and press send.",
+        "abrir": "Open in my email",
+        "verTexto": "Or copy the request text"
+      }
     }
   },
   "bolos": {
@@ -203,6 +248,7 @@
     }
   },
   "metadata": {
+    "imagemAlt": "The storefront of Confeitaria e Pão Quente Damira in Ermesinde, with the sign and the words “Histórias com sabor” painted on the glass.",
     "inicio": {
       "titulo": "Confeitaria e Pão Quente Damira — Ermesinde, since 1996",
       "descricao": "Bakery, pastry shop, and kitchen in Ermesinde, Portugal. Fresh bread and a full counter every day, 7am to 9pm. A complete vegan menu, party kits, and cakes to order."

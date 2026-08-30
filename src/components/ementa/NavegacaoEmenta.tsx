@@ -42,7 +42,7 @@ export function NavegacaoEmenta({ cartas }: { cartas: Carta[] }) {
                  rolar noventa e cinco artigos —, e ao toque não há `hover`
                  nenhum: sem estado de pressão, tocar num separador não dava
                  sinal nenhum antes da página saltar. */
-              className="premivel titulo-display block whitespace-nowrap border border-tinta px-3.5 py-1.5 hover:bg-tinta hover:text-papel"
+              className="premivel alvo-toque titulo-display block whitespace-nowrap border border-tinta px-3.5 py-1.5 hover:bg-tinta hover:text-papel"
             >
               {t(`cartas.${carta}.curto`)}
             </a>

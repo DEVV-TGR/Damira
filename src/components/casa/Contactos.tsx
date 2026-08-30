@@ -88,7 +88,7 @@ export function Contactos() {
             <ul className="mt-3 space-y-1 text-lg leading-relaxed">
               {telefone && (
                 <li>
-                  <a href={telefone} className="premivel underline underline-offset-4">
+                  <a href={telefone} className="premivel alvo-toque underline underline-offset-4">
                     {casa.telefone}
                   </a>
                 </li>
@@ -97,7 +97,7 @@ export function Contactos() {
                 <li>
                   <a
                     href={`mailto:${casa.email}`}
-                    className="premivel break-all underline underline-offset-4"
+                    className="premivel alvo-toque break-all underline underline-offset-4"
                   >
                     {casa.email}
                   </a>

@@ -469,6 +469,39 @@ body::after {
   }
 }
 
+/**
+ * ## Alvo de toque: cresce para o dedo, não para o olho
+ *
+ * Medidos a 390 px, os controlos de navegação deste site tinham **17 px de
+ * altura** (os links do cabeçalho), 28 px (os separadores das cartas) e 35 px (o
+ * botão de idioma). O mínimo confortável é 44 px, e a diferença não é teórica: é
+ * quem tenta saltar para a carta vegan com o polegar e abre a do chocolate.
+ *
+ * ⚠️ **Não se resolve com `padding`**, e é por isso que isto existe. Estes
+ * controlos têm borda visível ou vivem em barras de altura fixa: engordá-los
+ * mudava o desenho, e no caso da barra da ementa mudava-lhe a **altura**, que é
+ * a medida de que dependem o `top-16` da barra colada, o `scroll-padding-top` do
+ * documento e os `scroll-mt-*` de todas as secções. Uma correção de acessibilidade
+ * não pode desalinhar as âncoras da página.
+ *
+ * A caixa cresce 12 px para cima e para baixo e **zero para os lados**: a
+ * vertical é onde falta espaço, e alargar na horizontal punha os alvos de dois
+ * separadores vizinhos a sobreporem-se — que troca um erro de toque por outro.
+ *
+ * O pseudo-elemento fica por cima do texto do próprio controlo e isso é
+ * inofensivo: vive **dentro** dele, por isso o clique tem na mesma o link como
+ * alvo. Não leva cor nenhuma — só apanha o dedo.
+ */
+.alvo-toque {
+  position: relative;
+}
+
+.alvo-toque::after {
+  content: "";
+  position: absolute;
+  inset: -0.75rem 0;
+}
+
 /* ── Movimento ────────────────────────────────────────────────────────── */
 
 /**

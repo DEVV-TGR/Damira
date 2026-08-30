@@ -55,12 +55,12 @@ export function Rodape() {
             {t("falarConnosco")}
           </p>
           {telefone && (
-            <a href={telefone} className="mt-2 block">
+            <a href={telefone} className="alvo-toque mt-2 block">
               {casa.telefone}
             </a>
           )}
           {casa.email && (
-            <a href={`mailto:${casa.email}`} className="mt-1 block break-all">
+            <a href={`mailto:${casa.email}`} className="alvo-toque mt-1 block break-all">
               {casa.email}
             </a>
           )}

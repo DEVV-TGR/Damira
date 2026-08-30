@@ -84,7 +84,7 @@ export function TabelaKits({ locale }: { locale: Locale }) {
                 aria-pressed={activo}
                 /* Utilitários e não `.bloco-tijolo`: o Tailwind v4 não aplica
                    variantes a classes de `@layer components`. */
-                className={`premivel titulo-display rounded-full border px-6 py-2.5 text-sm tabular-nums ${
+                className={`premivel alvo-toque titulo-display rounded-full border px-6 py-2.5 text-sm tabular-nums ${
                   activo
                     ? "border-tijolo bg-tijolo text-papel"
                     : "border-tinta/25 hover:bg-tinta hover:text-papel"

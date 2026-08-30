@@ -10,6 +10,13 @@ import { Marca } from "./Marca";
  * está para trocar de língua **sem sair dela** — mandar sempre para a homepage é
  * o erro clássico, e faz o visitante perder o sítio onde ia.
  */
+/**
+ * As duas secções de topo, por ordem de leitura. Uma lista e não dois `<Link>`
+ * escritos à mão: o estado de página actual tem de ser decidido da mesma
+ * maneira para as duas, e duplicar a condição é como uma delas fica para trás.
+ */
+const SECOES = ["/ementa", "/encomendas"] as const;
+
 export function Cabecalho({ locale }: { locale: Locale }) {
   const t = useTranslations("nav");
   /**
@@ -41,7 +48,7 @@ export function Cabecalho({ locale }: { locale: Locale }) {
             passa a wordmark. */}
         <Link
           href="/"
-          className="text-[1.5rem] sm:text-[1.75rem]"
+          className="alvo-toque text-[1.5rem] sm:text-[1.75rem]"
           aria-label={t("inicio")}
         >
           <Marca />
@@ -58,16 +65,42 @@ export function Cabecalho({ locale }: { locale: Locale }) {
             mesmo sítio, lado a lado, gastam a largura que num telemóvel não
             sobra. `gap-4` até ao `sm` pela mesma razão. */}
         <nav className="flex items-center gap-3 text-[0.7rem] font-semibold uppercase tracking-[0.09em] sm:gap-6 sm:text-xs sm:tracking-widest">
-          <Link href="/ementa" className="hover:text-tijolo">
-            {t("ementa")}
-          </Link>
-          <Link href="/encomendas" className="hover:text-tijolo">
-            {t("encomendas")}
-          </Link>
+          {/* ⚠️ **Nenhuma das duas dizia em que página se estava.** Com uma só
+              entrada era quase desculpável; com duas, a barra passa a ser uma
+              escolha, e uma escolha que não mostra a opção activa obriga quem
+              chega de fora — de uma partilha, de uma pesquisa — a ler o título
+              da página para saber onde caiu.
+
+              O `aria-current` é a metade que conta: é o que faz um leitor de
+              ecrã anunciar "página actual" em vez de mais um link igual aos
+              outros. O filete a tijolo é a mesma marca que o `.olho` usa e que
+              as ligações dos contactos e do rodapé já sublinham — o estado novo
+              não traz desenho novo, usa o que a casa tem. */}
+          {SECOES.map((seccao) => {
+            const actual = caminho === seccao;
+            return (
+              <Link
+                key={seccao}
+                href={seccao}
+                aria-current={actual ? "page" : undefined}
+                /* `py-3.5` e não a classe `.alvo-toque`: aqui o espaço sai de
+                   graça, porque a barra tem altura fixa (`h-16`) e os itens
+                   estão centrados — o link passa de 17 px para 45 px de alvo
+                   sem que nada se mexa um pixel. */
+                className={`py-3.5 ${
+                  actual
+                    ? "text-tijolo underline decoration-tijolo decoration-2 underline-offset-[6px]"
+                    : "hover:text-tijolo"
+                }`}
+              >
+                {t(seccao.slice(1) as "ementa" | "encomendas")}
+              </Link>
+            );
+          })}
           <Link
             href={caminho}
             locale={outra}
-            className="rounded-full border border-tinta/25 px-3 py-2 transition-colors hover:bg-tinta hover:text-papel sm:px-3.5"
+            className="alvo-toque rounded-full border border-tinta/25 px-3.5 py-2 transition-colors hover:bg-tinta hover:text-papel"
             /* `lang` no link diz aos leitores de ecrã para pronunciar "English"
                à inglesa, em vez de o lerem com fonética portuguesa. */
             lang={outra}

@@ -63,6 +63,19 @@ falta, faz o site mentir a alguém:
 
 ### Bloqueadores
 
+- [ ] **Mudar o destino dos pedidos.** O formulário de encomendas manda hoje
+      para `support@devplus.pt` — a agência, não a casa. É de propósito enquanto
+      isto é uma demonstração, e é **a primeira coisa a mudar no dia do
+      lançamento**: um site publicado a mandar as encomendas para quem o
+      construiu é uma casa a perder trabalho sem dar por isso. Muda-se com a
+      variável `EMAIL_PEDIDOS`.
+- [ ] **Chave do serviço de email (`RESEND_API_KEY`) e domínio verificado.** Sem
+      ela o formulário não se parte — devolve o pedido escrito para a pessoa o
+      enviar do seu correio —, mas cada pedido passa a depender de ela carregar
+      em enviar uma segunda vez.
+- [ ] **Política de privacidade.** O formulário recolhe nome, email, telefone e
+      uma data, e pede consentimento explícito para os tratar. Falta a página
+      que diz durante quanto tempo se guardam e como se pede a eliminação.
 - [ ] **Prazo de antecedência das encomendas.** Quantos dias precisa a casa para
       um kit de 20, de 40 e de 70? Sem isto, `/encomendas` diz "por confirmar" —
       e alguém vai pedir setenta doses para amanhã.

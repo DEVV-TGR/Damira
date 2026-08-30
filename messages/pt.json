@@ -187,6 +187,51 @@
       "telefonar": "Telefonar — {numero}",
       "email": "Enviar um email",
       "assunto": "Pedido de encomenda"
+    },
+    "formulario": {
+      "titulo": "Pedir um orçamento",
+      "texto": "Diga-nos o que quer, para quantas pessoas e para que dia. Respondemos com o preço e a confirmação — não há pagamento nesta página.",
+      "assunto": "Pedido de encomenda — {nome}, {data}",
+      "enviar": "Enviar pedido",
+      "aEnviar": "A enviar…",
+      "nota": "Não há pagamento nem reserva automática. O pedido só fica confirmado quando lhe respondermos.",
+      "tipos": {
+        "festa": "Kit de festa",
+        "bolo": "Bolo por medida",
+        "box": "Box",
+        "outro": "Outra coisa"
+      },
+      "campos": {
+        "tipo": "O que quer encomendar",
+        "nome": "Nome",
+        "data": "Para que dia",
+        "email": "Email",
+        "telefone": "Telefone",
+        "umDosDois": "Basta um dos dois — é por aí que respondemos.",
+        "pessoas": "Para quantas pessoas",
+        "detalhe": "O que precisa",
+        "detalhePlaceholder": "Um bolo de chocolate com frutos vermelhos, para 15 pessoas, com o nome «Matilde» em cima.",
+        "consentimento": "Autorizo que os meus dados sejam usados para responder a este pedido. Não são usados para mais nada nem partilhados.",
+        "armadilha": "Deixe este campo em branco"
+      },
+      "erros": {
+        "nome-curto": "Escreva o seu nome.",
+        "data-invalida": "Escolha uma data.",
+        "data-passada": "Essa data já passou.",
+        "sem-contacto": "Deixe um email ou um telefone — sem isso não conseguimos responder.",
+        "detalhe-curto": "Diga-nos um pouco mais sobre o que precisa.",
+        "consentimento": "Precisamos desta autorização para lhe poder responder."
+      },
+      "sucesso": {
+        "titulo": "Pedido enviado.",
+        "texto": "Respondemos com o orçamento e a confirmação da data. Se for urgente, telefone — é sempre mais rápido."
+      },
+      "semServico": {
+        "titulo": "Falta um passo.",
+        "texto": "O envio automático ainda não está ligado neste site. O pedido está escrito e pronto: abra-o no seu email e carregue em enviar.",
+        "abrir": "Abrir no meu email",
+        "verTexto": "Ou copiar o texto do pedido"
+      }
     }
   },
   "bolos": {
@@ -203,6 +248,7 @@
     }
   },
   "metadata": {
+    "imagemAlt": "A montra da Confeitaria e Pão Quente Damira, em Ermesinde, com o letreiro e a frase «Histórias com sabor» pintada no vidro.",
     "inicio": {
       "titulo": "Confeitaria e Pão Quente Damira — Ermesinde, desde 1996",
       "descricao": "Confeitaria, padaria e cozinha em Ermesinde. Pão quente e vitrine cheia todos os dias, das 7h às 21h. Carta vegan completa, kits de festa e bolos por encomenda."

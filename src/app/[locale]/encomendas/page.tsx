@@ -8,6 +8,7 @@ import { formatarPreco } from "@/lib/preco";
 import { routing, type Locale } from "@/i18n/routing";
 import { metadataDaPagina } from "@/lib/metadata";
 import { TabelaKits } from "@/components/encomendas/TabelaKits";
+import { FormularioPedido } from "@/components/encomendas/FormularioPedido";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -53,7 +54,12 @@ export default async function PaginaEncomendas({
  * 3. *quero um bolo à minha maneira* — o configurador, que **não tem preços** e
  *    por isso acaba num pedido de orçamento e não num total;
  * 4. *e para dois?* — as boxes, que é a encomenda pequena;
- * 5. *como é que peço?* — o bloco de contacto, com o prazo à frente.
+ * 5. *como é que peço?* — o formulário, com o telefone ao lado e o prazo à
+ *    frente.
+ *
+ * ⚠️ **O formulário é o fim da página e não o princípio.** Um pedido de
+ * orçamento no topo é uma pergunta feita a quem ainda não sabe o que quer
+ * pedir; no fim, é a pergunta que a página inteira preparou.
  *
  * ## O prazo é a informação mais importante desta página
  *
@@ -271,44 +277,48 @@ function Encomendas({ locale }: { locale: Locale }) {
 
       {/* ── Como encomendar ───────────────────────────────────────────── */}
       <section aria-labelledby="como" className="seccao bg-tinta text-papel">
-        <div className="envolvente">
-          <h2 id="como" className="titulo-display titulo-beta max-w-[14ch]">
-            {t("como.titulo")}
-          </h2>
-          <p className="mt-5 max-w-[48ch] text-lg leading-relaxed text-papel/85">
-            {t("como.texto")}
-          </p>
+        <div className="envolvente grid gap-12 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-20">
+          <div>
+            <h2 id="como" className="titulo-display titulo-beta max-w-[12ch]">
+              {t("formulario.titulo")}
+            </h2>
+            <p className="mt-5 max-w-[40ch] text-lg leading-relaxed text-papel/85">
+              {t("formulario.texto")}
+            </p>
 
-          {/* ⚠️ O prazo de antecedência ainda não veio da casa. Enquanto não
-              vier, esta linha diz que está por confirmar em vez de inventar um
-              número — alguém a pedir setenta doses para amanhã é o erro que uma
-              página de encomendas não pode cometer. */}
-          <p className="mt-4 max-w-[48ch] text-sm text-papel/70">
-            {t("como.prazo")}
-          </p>
+            {/* ⚠️ O prazo de antecedência ainda não veio da casa. Enquanto não
+                vier, esta linha diz que está por confirmar em vez de inventar um
+                número — alguém a pedir setenta doses para amanhã é o erro que
+                uma página de encomendas não pode cometer. */}
+            <p className="mt-4 max-w-[40ch] text-sm text-papel/65">
+              {t("como.prazo")}
+            </p>
 
-          <div className="mt-9 flex flex-wrap gap-4">
-            {telefone && (
-              <a
-                href={telefone}
-                className="premivel rounded-full bg-tijolo px-7 py-4 text-sm font-semibold uppercase tracking-widest text-papel"
-              >
-                {t("como.telefonar", { numero: casa.telefone ?? "" })}
-              </a>
-            )}
-            {casa.email && (
-              <a
-                href={`mailto:${casa.email}?subject=${encodeURIComponent(
-                  t("como.assunto"),
-                )}`}
-                className="premivel rounded-full border border-papel/40 px-7 py-4 text-sm font-semibold uppercase tracking-widest hover:bg-papel hover:text-tinta"
-              >
-                {t("como.email")}
-              </a>
-            )}
+            {/* O telefone fica ao lado do formulário e não escondido depois
+                dele: para metade das encomendas — e para todas as urgentes — é
+                a via boa, e um formulário que finge ser a única forma de falar
+                com uma pastelaria de bairro está a inventar uma empresa que não
+                existe. */}
+            <div className="mt-8 border-t border-papel/20 pt-6">
+              <p className="text-xs font-semibold uppercase tracking-widest text-papel/60">
+                {t("como.titulo")}
+              </p>
+              {telefone && (
+                <a
+                  href={telefone}
+                  className="premivel titulo-display mt-2 block text-2xl"
+                >
+                  {casa.telefone}
+                </a>
+              )}
+              <p className="mt-2 text-sm text-papel/65">{t("como.texto")}</p>
+            </div>
           </div>
+
+          <FormularioPedido />
         </div>
       </section>
+
     </>
   );
 }
