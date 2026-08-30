@@ -75,7 +75,10 @@ export function PainelArtigo({
               type="button"
               onClick={aoFechar}
               aria-label={t("fechar")}
-              className="grid size-10 shrink-0 place-items-center rounded-full border border-tinta/20 text-tinta transition-colors hover:bg-tinta hover:text-papel"
+              /* `premivel` e não `transition-colors`: é o botão que fecha a
+                 peça mais usada da ementa, e era o único controlo do painel sem
+                 resposta ao carregar. */
+              className="premivel grid size-10 shrink-0 place-items-center rounded-full border border-tinta/20 text-tinta hover:bg-tinta hover:text-papel"
             >
               <svg
                 viewBox="0 0 24 24"

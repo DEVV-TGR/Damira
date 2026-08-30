@@ -291,8 +291,23 @@ body::after {
  * caixa alta desta capa leva **Ç** — a `0.95`, a cedilha de «ENCOMENDAS» bate na
  * linha de cima assim que o título parte em duas, o que num telemóvel acontece
  * sempre.
+ *
+ * ⚠️ **O tamanho vive aqui, e passou a viver.** Estava escrito à mão nas três
+ * páginas, com três valores diferentes — `9rem` na ementa, `8rem` nas
+ * encomendas, `7,5rem` no herói — enquanto este comentário anunciava "sobe aos
+ * 9 rem" como se fosse uma coisa só. Não era: era a mesma classe a valer três
+ * coisas, e o `Hero.tsx` já dizia noutro sítio exactamente porque é que isso é
+ * mau ("um valor de tipografia escrito num componente é o que faz a escala
+ * deixar de ser uma escala"). Ficou a meio: o tracking e a entrelinha vieram
+ * para cá, o corpo não.
+ *
+ * O valor é o do caso pior — o herói, que é a capa com mais palavras e a única
+ * que assenta sobre uma fotografia. Uma capa dimensionada pela palavra mais
+ * curta ("EMENTA") obriga todas as outras a partir a linha, e o que decide o
+ * corpo de uma capa é a largura do ecrã, não quantas letras calhou o título ter.
  */
 .titulo-capa {
+  font-size: clamp(3rem, 10vw, 7.5rem);
   letter-spacing: -0.04em;
   line-height: 1;
 }
@@ -411,12 +426,34 @@ body::after {
  * (Estar fora de camada é de propósito: é o que permite `hover:` funcionar, ao
  * contrário do que acontece com `@layer components`.)
  */
+/**
+ * ⚠️ **`opacity` e `translate` entraram na lista, e o motivo é uma armadilha a
+ * sério.** O botão flutuante das encomendas escrevia
+ * `transition-[opacity,transform] duration-300` em utilitários para aparecer ao
+ * rolar. Essa declaração **nunca chegou a existir**: os utilitários do Tailwind
+ * vivem em `@layer utilities` e esta regra está fora de camada, por isso a
+ * `transition` daqui substitui a de lá por inteiro — e nem `opacity` nem
+ * `translate` estavam nesta lista. O botão saltava para dentro e para fora do
+ * ecrã de um fotograma para o outro, com o código da animação escrito e a não
+ * correr. É a armadilha 6 do AGENTS.md a acontecer outra vez.
+ *
+ * (E `translate` e não `transform`: no Tailwind v4 o utilitário `translate-y-*`
+ * usa a propriedade autónoma `translate`. É o que permite a entrada e a pressão
+ * correrem a velocidades diferentes sem se pisarem — a pressão fica com o
+ * `transform`.)
+ *
+ * As durações são diferentes de propósito: 160 ms a ser carregado, porque é uma
+ * confirmação e ninguém a vê; 300 ms a aparecer, porque é uma chegada e é a
+ * única coisa a mexer-se no ecrã nesse momento.
+ */
 .premivel {
   transition:
     transform var(--tempo-toque) var(--ease-saida),
     background-color var(--tempo-toque) var(--ease-saida),
     border-color var(--tempo-toque) var(--ease-saida),
-    color var(--tempo-toque) var(--ease-saida);
+    color var(--tempo-toque) var(--ease-saida),
+    opacity 0.3s var(--ease-saida),
+    translate 0.3s var(--ease-saida);
 }
 
 .premivel:active {

@@ -8,40 +8,45 @@ import { casa } from "@/data/casa";
 const DESDE = casa.desde;
 
 /**
- * O primeiro ecrã: **a vitrine, o tijolo por cima dela, e o título.**
+ * O primeiro ecrã: **a fachada, o tijolo por cima dela, e o título.**
  *
  * ## A fotografia
  *
- * É a montra vista de dentro, ao balcão: tarteletes, bolos de morango e
- * folhados, com a luz quente das prateleiras. Ganhou o lugar por duas razões, e
- * nenhuma delas é ser bonita:
+ * É a montra vista da rua — a mesma imagem que a casa usa como capa no
+ * Facebook, e a única fotografia deste site que foi feita por um profissional.
+ * Ganhou o lugar por três razões, e nenhuma delas é ser bonita:
  *
- * 1. **é escura e densa**, o que aguenta texto por cima sem precisar de um véu
- *    que a apague;
- * 2. **é o que a casa é** — uma vitrine cheia às sete da manhã diz mais sobre
- *    uma pastelaria do que qualquer plano de um doce isolado.
+ * 1. **mostra a marca no sítio dela** — a placa com o pão e o vapor, o letreiro
+ *    "Pão Quente" e o *Histórias com sabor* pintado no vidro, que é o mesmo
+ *    texto que o `<h1>` escreve por cima;
+ * 2. **é escura à esquerda**, que é exactamente onde o texto assenta, e clara à
+ *    direita, onde não há nada por cima;
+ * 3. **é uma fachada**, e uma fachada diz "isto existe e fica aqui" melhor do
+ *    que um plano de comida — que é o que uma homepage tem de dizer antes de
+ *    abrir o apetite.
  *
- * ⚠️ **O lugar era da fachada e continua a ser.** A imagem certa para aqui é a
- * capa do Facebook da casa: a montra vista da rua, com a placa do pão, o
- * letreiro "Pão Quente" e o *Histórias com sabor* pintado no vidro — mostra a
- * marca no sítio dela e diz "isto existe e fica aqui", que é o que uma homepage
- * tem de dizer antes de abrir o apetite. **Não a temos em ficheiro**: no
- * Facebook é servida por um endereço assinado que não se guarda. Está pedida à
- * casa; quando chegar, entra como `/fotos/06.webp` e troca-se a linha do `src`.
+ * ## O véu, e os números que o decidem
  *
- * ⚠️ **O véu por cima não é filtro de gosto, é contraste.** Sem ele, o lado
- * claro da imagem deixa o papel abaixo de 3:1 e o título desaparece por cima do
- * vidro. São duas camadas de propósito: o tijolo dá a cor da marca, o gradiente
- * escurece só a metade esquerda. Um véu chapado forte apagava a fotografia
- * inteira; assim a fachada continua a ver-se à direita, onde não há texto.
- * **Não baixar as opacidades sem voltar a medir.**
+ * ⚠️ **Não é filtro de gosto, é contraste — e foi medido, não afinado a olho.**
+ * O pior píxel da zona onde o texto assenta, com estas duas camadas, dá
+ * **5,70:1** contra o papel. A tabela:
  *
- * ## O que ainda não está bem
+ * | Véu                          | Pior ponto | |
+ * |------------------------------|-----------|---|
+ * | tijolo 70% + gradiente 85→45% | 8,17:1  | passa, e apaga a fotografia |
+ * | **tijolo 55% + gradiente 75→35%** | **5,70:1** | **é este** |
+ * | tijolo 45% + gradiente 70→30% | 4,49:1  | reprova por um triz |
+ * | tijolo 30% + gradiente 60→20% | 2,93:1  | reprova |
  *
- * ⚠️ **A fotografia tem 960 px de largura** e este bloco ocupa o ecrã todo: num
- * portátil isso já é ampliação, e num monitor grande vê-se. É a razão de haver
- * véu a sério por cima — e é o argumento mais forte para a sessão fotográfica.
- * Ver o README.
+ * Começou nos 70% — que passava com folga e dava uma mancha castanha onde devia
+ * estar a loja. A 55% a placa e o letreiro voltam a ver-se e ainda sobra mais de
+ * um ponto de margem sobre o mínimo. **Abaixo disto não descer sem voltar a
+ * medir**: o degrau seguinte já reprova.
+ *
+ * São duas camadas e não uma porque fazem coisas diferentes: o tijolo dá a cor
+ * da marca em toda a superfície, o gradiente escurece só a metade esquerda. Uma
+ * camada só teria de ser forte o suficiente para o pior ponto, e escurecia
+ * também o lado direito, onde não é preciso.
  */
 export function Hero() {
   const t = useTranslations("inicio");
@@ -50,20 +55,31 @@ export function Hero() {
   return (
     <section className="relative isolate overflow-hidden bg-tinta text-papel">
       <Image
-        src="/fotos/01.webp"
+        src="/fotos/06.webp"
         /* Decorativa: é ambiente, não descreve artigo nenhum, e o que interessa
            dela está escrito em texto por cima. */
         alt=""
         fill
         priority
         sizes="100vw"
+        /* Centrada, e ⚠️ **um `object-position` horizontal aqui não faz nada** —
+           experimentei. A fotografia é 16:9 e este bloco fica em torno de 2:1,
+           portanto o `cover` corta em cima e em baixo e a largura entra
+           inteira: não há folga horizontal por onde deslizar. Para deslocar a
+           fachada seria preciso ampliá-la primeiro, e ampliar uma imagem de
+           1920 px para a empurrar de lado é trocar nitidez por enquadramento.
+
+           Deixa-se como está, e o resultado é melhor do que a correção: o
+           *Histórias com sabor* pintado no vidro cai **por baixo** do `<h1>`,
+           que escreve as mesmas palavras. Não se sobrepõem — o título acaba
+           antes de ele começar — e a repetição lê-se como eco, não como erro. */
         className="object-cover object-center"
       />
 
-      <div aria-hidden className="absolute inset-0 bg-tijolo/70" />
+      <div aria-hidden className="absolute inset-0 bg-tijolo/55" />
       <div
         aria-hidden
-        className="absolute inset-0 bg-gradient-to-r from-tinta/85 via-tinta/45 to-transparent"
+        className="absolute inset-0 bg-gradient-to-r from-tinta/75 via-tinta/35 to-transparent"
       />
 
       <div className="envolvente relative py-[clamp(4.5rem,12vw,9rem)]">
@@ -77,7 +93,7 @@ export function Hero() {
             tinha escrito a descrever o negócio; esta é a que a casa escolheu
             para si própria, e não há concurso entre as duas. */}
         <h1
-          className="titulo-display titulo-capa mt-6 text-[clamp(3rem,10vw,7.5rem)] uppercase"
+          className="titulo-display titulo-capa mt-6 uppercase"
           /* Muito condensado e em caixa alta: é o registo dos impressos, e a
              Bricolage tem eixo de largura para lá chegar sem trocar de fonte. */
           style={{ fontVariationSettings: '"wdth" 62, "opsz" 48' }}

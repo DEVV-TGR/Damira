@@ -84,7 +84,7 @@ function Encomendas({ locale }: { locale: Locale }) {
             {t("olho")}
           </p>
           <h1
-            className="titulo-display titulo-capa mt-4 text-[clamp(3rem,11vw,8rem)] uppercase"
+            className="titulo-display titulo-capa mt-4 uppercase"
             style={{ fontVariationSettings: '"wdth" 68, "opsz" 48' }}
           >
             {t("titulo")}

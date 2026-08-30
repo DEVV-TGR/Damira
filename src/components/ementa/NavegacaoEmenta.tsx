@@ -34,8 +34,15 @@ export function NavegacaoEmenta({ cartas }: { cartas: Carta[] }) {
               href={`#${carta}`}
               /* Utilitários e não uma classe `.bloco-*`: o Tailwind v4 não
                  aplica variantes (`hover:`) a classes de `@layer components`, e
-                 um `hover:bloco-...` compila-se em silêncio para nada. */
-              className="titulo-display block whitespace-nowrap border border-tinta px-3.5 py-1.5 transition-colors hover:bg-tinta hover:text-papel"
+                 um `hover:bloco-...` compila-se em silêncio para nada.
+
+                 O `premivel` substituiu o `transition-colors`, e traz a
+                 transição de cor **e** a resposta ao carregar. Esta barra é a
+                 peça que mais se usa ao polegar — existe para não haver que
+                 rolar noventa e cinco artigos —, e ao toque não há `hover`
+                 nenhum: sem estado de pressão, tocar num separador não dava
+                 sinal nenhum antes da página saltar. */
+              className="premivel titulo-display block whitespace-nowrap border border-tinta px-3.5 py-1.5 hover:bg-tinta hover:text-papel"
             >
               {t(`cartas.${carta}.curto`)}
             </a>

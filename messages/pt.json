@@ -67,13 +67,13 @@
     },
     "fotografia": {
       "titulo": "A casa, por dentro",
-      "texto": "A vitrine de manhã, a sala ao almoço e a porta na rua. As fotografias são da casa.",
+      "texto": "O pão, a doçaria, os bombons e o prato do dia. As fotografias são da casa — todas com a marca dela.",
       "credito": "Fotografias da Confeitaria e Pão Quente Damira.",
       "legendas": {
-        "vitrine": "A vitrine de doces, com folhados, tartes de morango e bolos.",
-        "tigela": "Tigela de iogurte com banana, morango, framboesa, granola e hortelã.",
-        "sala": "A sala de refeições, com um empregado a servir à mesa.",
-        "placa": "A placa da entrada, com o pão e o vapor da marca."
+        "pao": "Pães da aldeia acabados de cozer, na montra.",
+        "tartes": "Tarteletes de morango a serem montadas, numa bandeja.",
+        "bombons": "Bombons dourados, alinhados numa travessa.",
+        "almoco": "Prato de peixe grelhado com legumes, do almoço."
       }
     },
     "fecho": {

@@ -67,13 +67,13 @@
     },
     "fotografia": {
       "titulo": "Inside the house",
-      "texto": "The counter in the morning, the dining room at lunch, and the door on the street. The photographs are the house's own.",
+      "texto": "The bread, the pastries, the chocolates, and the dish of the day. The photographs are the house's own — each one carries its mark.",
       "credito": "Photographs by Confeitaria e Pão Quente Damira.",
       "legendas": {
-        "vitrine": "The pastry counter, with puff pastries, strawberry tarts, and cakes.",
-        "tigela": "A yoghurt bowl with banana, strawberry, raspberry, granola, and mint.",
-        "sala": "The dining room, with a waiter serving at a table.",
-        "placa": "The sign at the entrance, with the bread and steam of the brand."
+        "pao": "Freshly baked village loaves on the counter.",
+        "tartes": "Strawberry tartlets being assembled on a tray.",
+        "bombons": "Gold-wrapped chocolates lined up on a platter.",
+        "almoco": "A plate of grilled fish with vegetables, from the lunch menu."
       }
     },
     "fecho": {

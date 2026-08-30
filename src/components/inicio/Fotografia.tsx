@@ -7,39 +7,54 @@ import { useTranslations } from "next-intl";
  * ## Este bloco estava marcado como buraco, e é o que o fecha
  *
  * A homepage foi composta a contar com fotografia entre as festas e os
- * contactos, e durante todo o arranque esse lugar esteve vazio — não havia uma
- * única imagem utilizável da Damira. Estas vieram do TripAdvisor e da própria
- * casa. Não são uma sessão fotográfica; são o que existe.
+ * contactos, e durante todo o arranque esse lugar esteve vazio.
  *
- * ## Porque são quatro e não oito
+ * ## São as da casa, e vê-se
  *
- * Porque só quatro sobrevivem a ser vistas grandes. As outras que se
- * recuperaram têm etiquetas de preço à vista, embalagens de plástico no
- * enquadramento, ou são fotografias de clientes tiradas à mesa. **Uma grelha
- * cheia com material fraco não parece mais completa — parece descuidada**, e num
- * site de pastelaria a fotografia é metade do argumento.
+ * ⚠️ **Todas trazem a marca de água da Damira**, e é esse o critério de seleção
+ * — não a composição. As primeiras que aqui estiveram vinham do álbum geral do
+ * TripAdvisor, misturado com fotografias de clientes: uma delas era uma igreja
+ * e outra era de outro estabelecimento. As deste álbum foram publicadas pela
+ * própria casa, e a marca de água é a prova de origem que uma fotografia solta
+ * não tem.
  *
- * A ordem não é estética: vitrine (o que se vê ao entrar) → tigela (o que a casa
- * faz de melhor) → sala (que há serviço de mesa, coisa que ninguém adivinha de
- * uma pastelaria) → placa (onde é).
+ * ## Porque são estas quatro
  *
- * ⚠️ **A fotografia da sala tem clientes de frente e reconhecíveis.** Numa demo
- * é aceitável; **antes de o site ir para o ar a sério**, a casa tem de ter o
- * consentimento dessas pessoas, ou a imagem sai. Está na lista *Antes de
- * publicar* do README, e não é formalidade: é a única imagem do site que mostra
- * pessoas identificáveis.
+ * Havia dezasseis, quase todas boas. Estas quatro não são as mais bonitas — são
+ * as que **contam quatro coisas diferentes**, e é isso que uma grelha de quatro
+ * tem de fazer:
  *
- * ⚠️ **Alturas fixas por célula, e não a proporção de cada ficheiro.** As quatro
- * imagens têm três proporções diferentes (4:3, 1:1 e 3:4) e uma grelha que as
- * respeitasse dava uma escada. Com `object-cover` dentro de uma altura comum,
- * cada uma perde o que tem a mais nas bordas — que em fotografia de vitrine não
- * custa nada, porque o assunto está sempre no meio.
+ * - **o pão da aldeia**, que é o negócio que dá nome à casa e o desenho que está
+ *   no símbolo;
+ * - **as tarteletes de morango**, com a mão do pasteleiro em cima — é a única
+ *   que mostra que aquilo é feito ali;
+ * - **os bombons**, que dizem que a casa faz coisas finas e não só almoços;
+ * - **o prato de peixe**, que prova o serviço de mesa.
+ *
+ * ⚠️ Oito fotografias de doçaria seguidas não seriam o dobro desta secção; seriam
+ * a mesma imagem repetida oito vezes com açúcares diferentes.
+ *
+ * A quarta substituiu uma fotografia da sala que mostrava **clientes de frente e
+ * reconhecíveis** — e isso resolveu de caminho um problema de consentimento que
+ * teria de ser tratado antes do site ir para o ar. O prato diz a mesma coisa
+ * sobre o almoço e não põe a cara de ninguém no site.
+ *
+ * ⚠️ **A célula é 4:5 e as fotografias são 16:10** — mais altas do que largas
+ * contra mais largas do que altas. O `cover` resolve isso **cortando nos lados
+ * e mantendo a altura inteira**, e não ao contrário: a foto entra a 40% da
+ * escala, o que dá altura exacta e largura a mais.
+ *
+ * Isso é o que salva a marca de água. Ela vive no fundo ao centro de cada
+ * fotografia e é a prova de que a imagem é da casa — o critério por que estas
+ * quatro foram escolhidas. Com este enquadramento sobrevive nas quatro
+ * (verificado a olho, não deduzido). ⚠️ **Um `object-position` que empurre para
+ * o topo cortaria o fundo e levava-a com ele.**
  */
 const FOTOS = [
-  { src: "/fotos/02.webp", chave: "vitrine" },
-  { src: "/fotos/03.webp", chave: "tigela" },
-  { src: "/fotos/04.webp", chave: "sala" },
-  { src: "/fotos/05.webp", chave: "placa" },
+  { src: "/fotos/01.webp", chave: "pao" },
+  { src: "/fotos/02.webp", chave: "tartes" },
+  { src: "/fotos/03.webp", chave: "bombons" },
+  { src: "/fotos/04.webp", chave: "almoco" },
 ] as const;
 
 export function Fotografia() {

@@ -68,7 +68,7 @@ export function BotaoEncomendar() {
          documento. */
       aria-hidden={!visivel}
       tabIndex={visivel ? undefined : -1}
-      className={`premivel fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-full bg-tijolo py-3.5 pl-5 pr-6 text-sm font-semibold uppercase tracking-widest text-papel shadow-lg shadow-tinta/25 transition-[opacity,transform] duration-300 ${
+      className={`premivel fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-full bg-tijolo py-3.5 pl-5 pr-6 text-sm font-semibold uppercase tracking-widest text-papel shadow-lg shadow-tinta/25 ${
         visivel
           ? "translate-y-0 opacity-100"
           : "pointer-events-none translate-y-4 opacity-0"
