@@ -75,8 +75,8 @@ function Encomendas({ locale }: { locale: Locale }) {
           aria-hidden
           className="traco pointer-events-none absolute -right-[6%] top-1/2 hidden h-[150%] w-[38%] -translate-y-1/2 opacity-[0.13] lg:block"
           style={{
-            maskImage: "url(/marca/ondas.png)",
-            WebkitMaskImage: "url(/marca/ondas.png)",
+            maskImage: "url(/marca/simbolo.svg)",
+            WebkitMaskImage: "url(/marca/simbolo.svg)",
           }}
         />
         <div className="envolvente relative py-[clamp(3.5rem,8vw,6rem)]">

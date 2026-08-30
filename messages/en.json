@@ -1,8 +1,9 @@
 {
   "marca": {
-    "nome": "Confeitaria Damira",
-    "assinatura": "Bakery, pastry, and a kitchen, from early morning",
-    "desde": "Ermesinde, since {ano}"
+    "nome": "Confeitaria e Pão Quente Damira",
+    "assinatura": "Stories with flavour",
+    "desde": "Ermesinde, since {ano}",
+    "nomeCurto": "Damira"
   },
   "nav": {
     "inicio": "Home",
@@ -12,7 +13,7 @@
     "mudarIdioma": "Português"
   },
   "inicio": {
-    "heroTexto": "Open from seven to nine. Toast and coffee in the morning, burgers and suckling pig at lunch, and a counter full of cakes all day — half of it vegan.",
+    "heroTexto": "Open from seven to nine. Fresh bread and toast in the morning, burgers and suckling pig at lunch, and a counter full of cakes all day — half of it vegan.",
     "verEmenta": "See the menu",
     "verEncomendas": "Orders & parties",
     "combinacoes": {
@@ -21,12 +22,30 @@
       "texto": "Six pairs printed at the bottom of our menu. Not a best-seller list — just what goes well with what.",
       "verTudo": "See the full menu",
       "pares": [
-        { "a": "Espresso", "b": "Brigadeiro" },
-        { "a": "Affogato Latte", "b": "American Cookie" },
-        { "a": "Iced Matcha Latte", "b": "Filled Croissant" },
-        { "a": "Cappuccino", "b": "Cake with Brigadeiro Sauce" },
-        { "a": "House Burger", "b": "Príncipe Biscuit" },
-        { "a": "House Chicken Toastie", "b": "Fresh Fruit Juice" }
+        {
+          "a": "Espresso",
+          "b": "Brigadeiro"
+        },
+        {
+          "a": "Affogato Latte",
+          "b": "American Cookie"
+        },
+        {
+          "a": "Iced Matcha Latte",
+          "b": "Filled Croissant"
+        },
+        {
+          "a": "Cappuccino",
+          "b": "Cake with Brigadeiro Sauce"
+        },
+        {
+          "a": "House Burger",
+          "b": "Príncipe Biscuit"
+        },
+        {
+          "a": "House Chicken Toastie",
+          "b": "Fresh Fruit Juice"
+        }
       ]
     },
     "vegan": {
@@ -46,6 +65,17 @@
       "pessoas": "{n} people",
       "verEncomendas": "See what each one includes"
     },
+    "fotografia": {
+      "titulo": "Inside the house",
+      "texto": "The counter in the morning, the dining room at lunch, and the door on the street. The photographs are the house's own.",
+      "credito": "Photographs by Confeitaria e Pão Quente Damira.",
+      "legendas": {
+        "vitrine": "The pastry counter, with puff pastries, strawberry tarts, and cakes.",
+        "tigela": "A yoghurt bowl with banana, strawberry, raspberry, granola, and mint.",
+        "sala": "The dining room, with a waiter serving at a table.",
+        "placa": "The sign at the entrance, with the bread and steam of the brand."
+      }
+    },
     "fecho": {
       "titulo": "Before you go",
       "texto": "Over the counter every day, seven to nine. For a party, with a phone call first."
@@ -56,6 +86,7 @@
     "morada": "Address",
     "direcoes": "Tap to open in Google Maps.",
     "horario": "Opening hours",
+    "intervaloDias": "{primeiro} to {ultimo}",
     "horarioPorConfirmar": "Daily hours still to be confirmed. If you are coming from far, call ahead.",
     "semHorario": "Opening hours to be confirmed. Until then, calling is safest.",
     "encerrado": "Closed",
@@ -173,16 +204,16 @@
   },
   "metadata": {
     "inicio": {
-      "titulo": "Confeitaria Damira — bakery and pastry shop in Ermesinde since 1996",
-      "descricao": "Bakery, pastry shop, and kitchen in Ermesinde, Portugal. Open every day, 7am to 9pm. A full vegan menu, party kits, and cakes to order."
+      "titulo": "Confeitaria e Pão Quente Damira — Ermesinde, since 1996",
+      "descricao": "Bakery, pastry shop, and kitchen in Ermesinde, Portugal. Fresh bread and a full counter every day, 7am to 9pm. A complete vegan menu, party kits, and cakes to order."
     },
     "ementa": {
       "titulo": "Menu",
-      "descricao": "The Confeitaria Damira menu: light bites and savouries over the counter, weekend lunch, a full vegan menu, and Dubai Chocolate."
+      "descricao": "The Confeitaria e Pão Quente Damira menu: light bites and savouries over the counter, weekend lunch, a full vegan menu, and Dubai Chocolate."
     },
     "encomendas": {
       "titulo": "Orders & parties",
-      "descricao": "Party kits for 20, 40, or 70 people, custom decorated cakes, and boxes for special days, at Confeitaria Damira in Ermesinde."
+      "descricao": "Party kits for 20, 40, or 70 people, custom decorated cakes, and boxes for special days, at Confeitaria e Pão Quente Damira in Ermesinde."
     }
   },
   "rodape": {

@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Analytics } from "@vercel/analytics/next";
 import { Cabecalho } from "@/components/Cabecalho";
 import { Rodape } from "@/components/Rodape";
+import { BotaoEncomendar } from "@/components/BotaoEncomendar";
 import { DadosEstruturados } from "@/components/DadosEstruturados";
 import { routing, type Locale } from "@/i18n/routing";
 import { URL_SITE } from "@/lib/site";
@@ -56,8 +57,14 @@ export async function generateMetadata({
   return {
     metadataBase: new URL(URL_SITE),
     /* O `%s` é o título de cada página; a homepage usa o `default`. Poupa
-       repetir "— Confeitaria Damira" em cada `generateMetadata`. */
-    title: { default: t("titulo"), template: `%s — ${marca("nome")}` },
+       repetir o nome da casa em cada `generateMetadata`.
+       ⚠️ **Aqui vai o nome curto e não o completo.** "Encomendas — Confeitaria
+       e Pão Quente Damira" são 45 caracteres, e um separador de browser mostra
+       uns vinte: o que o utilizador lê é "Encomendas — Confeit…", que perde
+       justamente a parte que identifica a casa. O nome completo fica onde é
+       identificação a sério — na descrição, nos dados estruturados e no
+       copyright. */
+    title: { default: t("titulo"), template: `%s — ${marca("nomeCurto")}` },
     description: t("descricao"),
   };
 }
@@ -94,6 +101,10 @@ export default async function LayoutIdioma({
           <Cabecalho locale={locale as Locale} />
           <main id="conteudo">{children}</main>
           <Rodape />
+          {/* Fica fora do `<main>`: é navegação persistente, não conteúdo da
+              página. Ver o componente para as duas regras que o mantêm
+              discreto. */}
+          <BotaoEncomendar />
         </NextIntlClientProvider>
         <DadosEstruturados descricao={t("descricao")} />
         <Analytics />

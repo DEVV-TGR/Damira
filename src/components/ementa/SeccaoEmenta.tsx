@@ -21,13 +21,11 @@ const COMPACTAS: readonly Categoria[] = ["bebidas", "bolos-inteiros"];
 export function SeccaoEmenta({
   carta,
   categoria,
-  indice,
   locale,
   aoAbrir,
 }: {
   carta: Carta;
   categoria: Categoria;
-  indice: number;
   locale: Locale;
   aoAbrir: (artigo: Artigo) => void;
 }) {
@@ -51,10 +49,14 @@ export function SeccaoEmenta({
       className="relative scroll-mt-32 py-[clamp(2rem,4vw,3.5rem)]"
     >
       <div className="envolvente relative">
+        {/* ⚠️ **Aqui esteve um "01", "02", "03" antes do título**, e saiu porque
+            não numerava nada: a contagem reinicia em cada carta, por isso a
+            mesma página mostrava quatro secções "02" — uma por carta. Um número
+            que se repete não serve para referir ("vê no 02" não diz qual), e
+            estava `aria-hidden`, ou seja, já assumido como não-informação.
+
+            O que ancora a secção é o filete por baixo do título, que ficou. */}
         <div className="flex items-baseline gap-4 border-b-2 border-current pb-3">
-          <span aria-hidden className="titulo-display text-sm tabular-nums opacity-60">
-            {String(indice + 1).padStart(2, "0")}
-          </span>
           <h2
             id={`titulo-${ancora}`}
             className="titulo-display titulo-gama uppercase"

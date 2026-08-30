@@ -3,6 +3,7 @@ import { Hero } from "@/components/inicio/Hero";
 import { Combinacoes } from "@/components/inicio/Combinacoes";
 import { Vegan } from "@/components/inicio/Vegan";
 import { Festas } from "@/components/inicio/Festas";
+import { Fotografia } from "@/components/inicio/Fotografia";
 import { Fecho } from "@/components/inicio/Fecho";
 import { Contactos } from "@/components/casa/Contactos";
 import { routing, type Locale } from "@/i18n/routing";
@@ -47,16 +48,20 @@ export default async function PaginaInicial({
  * 3. **as festas** — até setenta pessoas, com preço fechado. É o que muda o
  *    valor de uma encomenda de três euros para mil.
  *
- * ⚠️ **Não há aqui uma secção de fotografia da casa**, e é o buraco conhecido
- * desta página: ainda não existe fotografia da Damira que se possa usar (ver o
- * README). O sítio dela é entre as festas e os contactos, e a página está
- * composta a contar com ela — não é um espaço a preencher com o que houver.
+ * A secção de fotografia fica **entre as festas e os contactos**, e o lugar foi
+ * decidido antes de haver uma única fotografia: é onde a página passa do que a
+ * casa vende para o que a casa é, imediatamente antes de dizer onde fica. Ver o
+ * `Fotografia.tsx` — as imagens que lá estão são as que sobreviveram, e não uma
+ * sessão fotográfica.
  *
  * ## O ritmo das superfícies
  *
- * tijolo → papel → verde → tinta → papel-fundo → tinta. Nunca duas superfícies
- * de cor seguidas, e o escuro só nos dois momentos que o merecem: o pico (as
- * festas) e o chão (o fecho e o rodapé, que são o mesmo bloco).
+ * fotografia → papel → verde → tinta → papel → papel-fundo → tinta.
+ *
+ * Nunca duas superfícies de cor seguidas, e o escuro só nos dois momentos que o
+ * merecem: o pico (as festas) e o chão (o fecho e o rodapé, que são o mesmo
+ * bloco). O herói deixou de ser tijolo chapado e passou a ser fotografia com o
+ * tijolo por cima — a cor continua lá, mas agora tem uma imagem por baixo.
  */
 function Inicio({ locale }: { locale: Locale }) {
   return (
@@ -65,6 +70,7 @@ function Inicio({ locale }: { locale: Locale }) {
       <Combinacoes />
       <Vegan />
       <Festas locale={locale} />
+      <Fotografia />
       <Contactos />
       <Fecho />
     </>

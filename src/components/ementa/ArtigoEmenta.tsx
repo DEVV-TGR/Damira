@@ -62,7 +62,13 @@ export function ArtigoEmenta({
         type="button"
         onClick={() => aoAbrir(artigo)}
         aria-label={`${nomeVisivel(artigo, locale)} — ${t("abrir")}`}
-        className="w-full cursor-pointer py-5 text-left transition-opacity hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+        /* O `active:` responde ao **carregar** e não ao largar. Num telemóvel
+           não há `hover` nenhum (o Tailwind v4 já o fecha atrás de
+           `@media (hover: hover)`), e entre o dedo tocar e a folha começar a
+           subir passava um terço de segundo sem a linha dar sinal de ter
+           ouvido. Não é uma animação: é a confirmação de que se acertou na
+           linha certa. */
+        className="w-full cursor-pointer py-5 text-left transition-opacity hover:opacity-70 active:opacity-55 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
       >
         <div className="flex items-baseline gap-2">
           <h3 className="titulo-display text-lg uppercase tracking-wide">

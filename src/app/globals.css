@@ -78,7 +78,16 @@
    * duração.
    */
   --ease-saida: cubic-bezier(0.23, 1, 0.32, 1);
-  --ease-entrada-saida: cubic-bezier(0.77, 0, 0.175, 1);
+  /* A curva das folhas e dos painéis. É a do Ionic, e é a que a indústria
+     copiou do iOS: arranca quase a direito e trava muito no fim, que é o que
+     faz uma folha grande parecer pousar em vez de bater. Estava escrita à mão
+     no `.painel-artigo`, e uma curva escrita à mão é uma curva que a segunda
+     folha deste site vai ter *ligeiramente* diferente.
+
+     ⚠️ Aqui esteve `--ease-entrada-saida`, um *ease-in-out* forte que nunca
+     ninguém usou. Um token que não é usado não é vocabulário, é uma escolha por
+     fazer à espera de alguém que a copie sem saber para quê. */
+  --ease-folha: cubic-bezier(0.32, 0.72, 0, 1);
   /* Resposta ao toque. Curto de propósito: é confirmação, não animação. */
   --tempo-toque: 160ms;
 }
@@ -291,14 +300,22 @@ body::after {
 /**
  * Etiqueta de secção: pequena, em caixa alta, precedida de um filete tijolo.
  *
- * ⚠️ **Uma por página.** Isto esteve em cinco secções seguidas, e em quatro
- * delas dizia o mesmo que o título logo abaixo ("Onde estamos" sobre "As nossas
- * casas") ou estragava-lhe a piada ("Pão rosa e pão azul" sobre "Nem todos os
- * santos vêm em pão normal"). Uma etiqueta que repete o título não é hierarquia,
- * é ruído — e cinco iguais são a assinatura de uma página montada por reflexo.
+ * ⚠️ **Só quando o olho é o nome que o impresso dá à coisa.** Esta regra estava
+ * aqui escrita como "uma por página" e a explicação falava de secções do Santo
+ * Burga — a Escalada, o pão rosa — que este site não tem: era documentação
+ * herdada a defender um limite que a homepage da Damira já não cumpre, com dois
+ * olhos, e a não dizer nada sobre o critério que ela segue mesmo.
  *
- * Sobra na Escalada, onde **é conteúdo**: "Para os corajosos" é o nome
- * verdadeiro de uma categoria da carta impressa, não uma legenda inventada.
+ * O critério é este, e é o que sobrevive à mudança de casa: um olho vale quando
+ * é **conteúdo** e não legenda. «Combinações perfeitas» é como o menu impresso
+ * chama àquele canto da última coluna; «Kit Festas» é o nome do produto no
+ * folheto das encomendas. Nenhum dos dois repete o título que tem por baixo
+ * («O que a casa recomenda», «De vinte a setenta pessoas»): dizem *como aquilo
+ * se chama*, e o título diz *o que é*.
+ *
+ * ⚠️ O que continua proibido é o olho inventado para a grelha ficar bonita —
+ * uma etiqueta que repete o título logo abaixo não é hierarquia, é ruído, e
+ * várias iguais em fila são a assinatura de uma página montada por reflexo.
  */
 .olho {
   font-family: var(--font-display);
@@ -347,6 +364,29 @@ body::after {
   -webkit-mask-repeat: no-repeat;
   -webkit-mask-position: center;
   -webkit-mask-size: contain;
+}
+
+/**
+ * A barra do cabeçalho é vidro: papel a 80 % com desfoque por trás, para deixar
+ * adivinhar o que passa por baixo em vez de o cortar a direito.
+ *
+ * ⚠️ **`prefers-reduced-transparency` não é o mesmo pedido que
+ * `prefers-reduced-motion`**, e a regra global de movimento não cobre isto. Quem
+ * liga a opção do sistema costuma tê-lo feito porque o conteúdo a passar por
+ * baixo de uma barra translúcida lhe dificulta a leitura — devolver-lhe papel
+ * chapado é a resposta, e o desfoque desaparece com ele (mantê-lo sobre um fundo
+ * opaco é gastar uma camada de composição para não se ver nada).
+ *
+ * Esta regra vive **fora de `@layer`** de propósito: é assim que ganha aos
+ * utilitários `bg-papel/80` e `backdrop-blur-md` que o componente escreve, que o
+ * Tailwind v4 põe dentro de camada.
+ */
+@media (prefers-reduced-transparency: reduce) {
+  .barra-vidro {
+    background-color: var(--color-papel);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }
 
 /* ── Interacção ───────────────────────────────────────────────────────── */
@@ -408,9 +448,15 @@ body::after {
  * e ele ficava a 0,79 de opacidade para sempre. Fechar em `entry 60%` garante
  * que qualquer elemento acaba visível assim que entra, esteja onde estiver.
  *
- * **Uma revelação por secção, não uma por elemento.** A excepção é a Escalada,
- * onde os três blocos entram um a um de propósito — ali o escalonamento *é* a
- * escalada. Em todo o lado o mesmo fade repetido item a item lê-se como reflexo.
+ * **Uma revelação por secção, não uma por elemento.** O mesmo fade repetido
+ * item a item lê-se como reflexo; escalonar só se justifica quando o
+ * escalonamento *é* a informação, e neste site esse caso é o `.escalao` das
+ * encomendas, mais abaixo, onde a direção diz para que lado o número mudou.
+ *
+ * ⚠️ **Hoje nenhum componente usa esta classe.** Fica por decidir, e não por
+ * esquecimento: a página é a de um impresso e a leitura calma é uma escolha.
+ * Quando entrar, entra secção a secção — e o intervalo acima é a razão de não
+ * se dever copiar um `.surgir` de outro sítio qualquer.
  */
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
@@ -513,16 +559,36 @@ body::after {
 
   translate: 0 100%;
   opacity: 0;
+
+  /**
+   * ⚠️ **A saída é mais rápida do que a entrada, e não é distração.**
+   *
+   * As duas estavam a 0,32 s. A entrada é o sistema a mostrar uma coisa nova, e
+   * aí vale a pena o tempo: a folha sobe, vê-se de onde veio e o que trouxe. A
+   * saída é a resposta a alguém que já decidiu — carregou no ×, no `Esc` ou
+   * fora da caixa — e nesse momento o que se quer é a lista de volta, não a
+   * despedida da folha.
+   *
+   * A regra por trás é sempre a mesma: **devagar onde o utilizador está a
+   * decidir, depressa onde o sistema está a responder.** É por isso que as duas
+   * durações vivem em regras diferentes: numa transição, a que conta é a do
+   * estado de **destino** — abrir vai parar a `[open]`, fechar vai parar aqui.
+   */
   transition:
-    translate 0.32s cubic-bezier(0.32, 0.72, 0, 1),
-    opacity 0.32s ease,
-    display 0.32s allow-discrete,
-    overlay 0.32s allow-discrete;
+    translate 0.22s var(--ease-folha),
+    opacity 0.22s ease,
+    display 0.22s allow-discrete,
+    overlay 0.22s allow-discrete;
 }
 
 .painel-artigo[open] {
   translate: 0 0;
   opacity: 1;
+  transition:
+    translate 0.32s var(--ease-folha),
+    opacity 0.32s ease,
+    display 0.32s allow-discrete,
+    overlay 0.32s allow-discrete;
 }
 
 /* Sem isto a folha aparece de repente: a animação de entrada precisa de um
@@ -534,13 +600,16 @@ body::after {
   }
 }
 
+/* O escurecer do fundo acompanha a folha nas duas velocidades — se ficasse aos
+   0,32 s, ao fechar via-se a sala ainda escura com a folha já fora do ecrã. */
 .painel-artigo::backdrop {
   background: rgb(31 29 27 / 0);
-  transition: background 0.32s ease;
+  transition: background 0.22s ease;
 }
 
 .painel-artigo[open]::backdrop {
   background: rgb(31 29 27 / 0.55);
+  transition: background 0.32s ease;
 }
 
 @starting-style {

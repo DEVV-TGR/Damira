@@ -82,12 +82,11 @@ export function Carta({ locale }: { locale: Locale }) {
               </div>
             </div>
 
-            {categorias.map((categoria, indice) => (
+            {categorias.map((categoria) => (
               <SeccaoEmenta
                 key={`${carta}-${categoria}`}
                 carta={carta}
                 categoria={categoria}
-                indice={indice}
                 locale={locale}
                 aoAbrir={setAberto}
               />

@@ -1,8 +1,9 @@
 {
   "marca": {
-    "nome": "Confeitaria Damira",
-    "assinatura": "Pastelaria, padaria e cozinha, desde manhã cedo",
-    "desde": "Ermesinde, desde {ano}"
+    "nome": "Confeitaria e Pão Quente Damira",
+    "assinatura": "Histórias com sabor",
+    "desde": "Ermesinde, desde {ano}",
+    "nomeCurto": "Damira"
   },
   "nav": {
     "inicio": "Início",
@@ -12,7 +13,7 @@
     "mudarIdioma": "English"
   },
   "inicio": {
-    "heroTexto": "Abre às sete e fecha às nove. Torradas e cafés de manhã, hambúrgueres e leitão à hora de almoço, e uma vitrine de doces o dia inteiro — metade dela vegan.",
+    "heroTexto": "Abre às sete e fecha às nove. Pão quente e torradas de manhã, hambúrgueres e leitão à hora de almoço, e uma vitrine de doces o dia inteiro — metade dela vegan.",
     "verEmenta": "Ver a ementa",
     "verEncomendas": "Encomendas e festas",
     "combinacoes": {
@@ -21,12 +22,30 @@
       "texto": "Seis pares que estão escritos no fim do nosso menu. Não é uma lista de mais vendidos — é o que sabe bem com o quê.",
       "verTudo": "Ver a ementa completa",
       "pares": [
-        { "a": "Café", "b": "Brigadeiro" },
-        { "a": "Affogato Latte", "b": "American Cookie" },
-        { "a": "Matcha Latte Gelado", "b": "Croissant Recheado" },
-        { "a": "Cappuccino", "b": "Bolo com Calda de Brigadeiro" },
-        { "a": "Hambúrguer da Casa", "b": "Príncipe" },
-        { "a": "Tosta de Frango da Casa", "b": "Sumo Natural de Fruta" }
+        {
+          "a": "Café",
+          "b": "Brigadeiro"
+        },
+        {
+          "a": "Affogato Latte",
+          "b": "American Cookie"
+        },
+        {
+          "a": "Matcha Latte Gelado",
+          "b": "Croissant Recheado"
+        },
+        {
+          "a": "Cappuccino",
+          "b": "Bolo com Calda de Brigadeiro"
+        },
+        {
+          "a": "Hambúrguer da Casa",
+          "b": "Príncipe"
+        },
+        {
+          "a": "Tosta de Frango da Casa",
+          "b": "Sumo Natural de Fruta"
+        }
       ]
     },
     "vegan": {
@@ -46,6 +65,17 @@
       "pessoas": "{n} pessoas",
       "verEncomendas": "Ver tudo o que levam"
     },
+    "fotografia": {
+      "titulo": "A casa, por dentro",
+      "texto": "A vitrine de manhã, a sala ao almoço e a porta na rua. As fotografias são da casa.",
+      "credito": "Fotografias da Confeitaria e Pão Quente Damira.",
+      "legendas": {
+        "vitrine": "A vitrine de doces, com folhados, tartes de morango e bolos.",
+        "tigela": "Tigela de iogurte com banana, morango, framboesa, granola e hortelã.",
+        "sala": "A sala de refeições, com um empregado a servir à mesa.",
+        "placa": "A placa da entrada, com o pão e o vapor da marca."
+      }
+    },
     "fecho": {
       "titulo": "Antes de ir",
       "texto": "Ao balcão todos os dias das sete às nove. Para uma festa, com um telefonema à frente."
@@ -56,6 +86,7 @@
     "morada": "Morada",
     "direcoes": "Toque para abrir no Google Maps.",
     "horario": "Horário",
+    "intervaloDias": "{primeiro} a {ultimo}",
     "horarioPorConfirmar": "Horário por confirmar dia a dia. Antes de vir de longe, o mais seguro é telefonar.",
     "semHorario": "Horário por confirmar. Até lá, o mais seguro é telefonar.",
     "encerrado": "Encerrado",
@@ -173,16 +204,16 @@
   },
   "metadata": {
     "inicio": {
-      "titulo": "Confeitaria Damira — pastelaria e padaria em Ermesinde desde 1996",
-      "descricao": "Pastelaria, padaria e cozinha em Ermesinde. Aberto todos os dias das 7h às 21h. Carta vegan completa, kits de festa e bolos por encomenda."
+      "titulo": "Confeitaria e Pão Quente Damira — Ermesinde, desde 1996",
+      "descricao": "Confeitaria, padaria e cozinha em Ermesinde. Pão quente e vitrine cheia todos os dias, das 7h às 21h. Carta vegan completa, kits de festa e bolos por encomenda."
     },
     "ementa": {
       "titulo": "Ementa",
-      "descricao": "A ementa da Confeitaria Damira: pausas e salgados ao balcão, almoço de fim-de-semana, uma carta vegan completa e o Chocolate do Dubai."
+      "descricao": "A ementa da Confeitaria e Pão Quente Damira: pausas e salgados ao balcão, almoço de fim-de-semana, uma carta vegan completa e o Chocolate do Dubai."
     },
     "encomendas": {
       "titulo": "Encomendas e festas",
-      "descricao": "Kits de festa para 20, 40 ou 70 pessoas, bolos decorados por medida e boxes para dias especiais, na Confeitaria Damira, em Ermesinde."
+      "descricao": "Kits de festa para 20, 40 ou 70 pessoas, bolos decorados por medida e boxes para dias especiais, na Confeitaria e Pão Quente Damira, em Ermesinde."
     }
   },
   "rodape": {

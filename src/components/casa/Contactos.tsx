@@ -62,7 +62,9 @@ export function Contactos() {
                 <ul className="mt-3 space-y-1 text-lg leading-relaxed">
                   {grupos.map((grupo) => (
                     <li key={grupo.dias[0]}>
-                      {nomeDoGrupo(grupo.dias, dias)}
+                      {nomeDoGrupo(grupo.dias, dias, (primeiro, ultimo) =>
+                        t("intervaloDias", { primeiro, ultimo }),
+                      )}
                       {" · "}
                       {grupo.horario
                         ? `${grupo.horario.abre}–${grupo.horario.fecha}`
@@ -124,7 +126,17 @@ export function Contactos() {
 }
 
 /**
- * "Segunda a domingo" para um grupo seguido, "Domingo" para um dia só.
+ * "Segunda a Domingo" para um grupo seguido, "Domingo" para um dia só.
+ *
+ * ⚠️ **O intervalo escreve-se por extenso e não com um travessão.** Isto dizia
+ * `Segunda – Domingo`, e um traço entre dois dias tanto se lê como "de segunda
+ * a domingo" como "segunda e domingo" — que é meia semana de diferença para
+ * quem está a decidir se vale a pena a viagem. A palavra não tem esse
+ * problema, e é o que o comentário desta secção já dizia que aqui estava.
+ *
+ * A ligação vem das mensagens (`casa.intervaloDias`) porque **é palavra**: em
+ * inglês é "to" e não "a", e um traço escrito no código servia as duas línguas
+ * por não dizer nada em nenhuma.
  *
  * Não trata do caso de dois dias soltos ("segunda e quarta") de propósito: os
  * grupos saem sempre seguidos, porque `horariosAgrupados()` percorre a semana
@@ -133,8 +145,9 @@ export function Contactos() {
 function nomeDoGrupo(
   grupo: DiaDaSemana[],
   dias: (chave: DiaDaSemana) => string,
+  intervalo: (primeiro: string, ultimo: string) => string,
 ): string {
   const primeiro = dias(grupo[0]);
   if (grupo.length === 1) return primeiro;
-  return `${primeiro} – ${dias(grupo[grupo.length - 1])}`;
+  return intervalo(primeiro, dias(grupo[grupo.length - 1]));
 }
