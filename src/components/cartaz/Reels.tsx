@@ -28,6 +28,16 @@ import { VaporMarca } from "./Vapor";
  * Recortá-los para paisagem para encaixarem melhor numa grelha é deitar fora
  * metade de cada plano.
  *
+ * ## É um carril que se arrasta com o dedo, e é nativo
+ *
+ * `overflow-x: auto` com `scroll-snap`, e mais nada: o browser trata do
+ * arrastar, da inércia e de parar certinho em cada cela, e faz isso melhor do
+ * que qualquer carrossel em JavaScript — com a vantagem de funcionar sem ele.
+ * É o gesto que a pessoa já faz no próprio Instagram, no mesmo sentido.
+ *
+ * ⚠️ Não é o `pan` do motor: esse converte rolagem vertical em travessia
+ * lateral, e aqui o cliente pediu explicitamente o dedo de lado.
+ *
  * ## Acessibilidade
  *
  * ⚠️ **Um lugar por encher não é um botão.** Enquanto está vazio é um `<div>`
@@ -62,7 +72,7 @@ export function Reels() {
           e duas secções seguidas com o mesmo dispositivo são uma secção
           mostrada duas vezes. As celas revelam-se de baixo para cima, que é o
           sentido em que um vídeo vertical se lê. */}
-      <ul className="reels__fila">
+      <ul className="reels__fila" aria-label={t("titulo")}>
         {redes.reels.map((reel, indice) =>
           publicado(reel) ? (
             <li key={reel.id} className="reels__cela" data-sc-reveal="up" data-sc-reveal-at="0.05 0.5">
@@ -92,11 +102,12 @@ export function Reels() {
       </ul>
 
       {conta && (
-        <p className="cap__nota">
-          <a className="cap__accao" href={conta} target="_blank" rel="noopener noreferrer">
-            {t("verTudo")}
+        <div className="reels__instagram">
+          <p className="cap__olho">{t("instagram")}</p>
+          <a className="cap__accao cap__accao--claro" href={conta} target="_blank" rel="noopener noreferrer">
+            {t("seguir", { utilizador: marca.instagramUtilizador ?? "" })}
           </a>
-        </p>
+        </div>
       )}
     </section>
   );

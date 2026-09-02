@@ -134,7 +134,12 @@
         "peixe": "Grilled fish with cabbage and potato.",
         "frango": "Grilled chicken with salad.",
         "sala": "The dining room at lunchtime, soup being served at a table."
-      }
+      },
+      "ampliar": "Enlarge {nome}",
+      "fechar": "Close",
+      "anterior": "Previous",
+      "seguinte": "Next",
+      "contador": "{n} of {total}"
     },
     "reels": {
       "numeral": "V",
@@ -144,7 +149,9 @@
       "textoSemConta": "Six places waiting for the house's videos. They are drawn and empty on purpose: they fill in as soon as the reel links arrive.",
       "espaco": "Place {n}, still empty",
       "verNoInstagram": "Watch on Instagram",
-      "verTudo": "See them all on Instagram"
+      "verTudo": "See them all on Instagram",
+      "instagram": "The house on Instagram",
+      "seguir": "Follow {utilizador}"
     },
     "raro": {
       "numeral": "VI",
@@ -200,7 +207,11 @@
       "titulo": "Come by",
       "horario": "Every day, {abre} to {fecha}",
       "correr": "It is at <mapa>{morada}</mapa>. To see the menu before you come, <ementa>the menu is here</ementa>. For a party or a cake with a date, <encomendas>orders are here</encomendas>.",
-      "fim": "Confeitaria e Pão Quente Damira, since 1996."
+      "fim": "Confeitaria e Pão Quente Damira, since 1996.",
+      "verMapa": "Show the map",
+      "mapaTitulo": "Map showing the location of {nome}",
+      "mapaNota": "The map is Google's and only loads when you press the button.",
+      "abrirNoMaps": "Open in Google Maps"
     }
   },
   "casa": {
@@ -280,7 +291,6 @@
     "fechar": "Close",
     "procurar": "Search the menu",
     "procurarDica": "Type a name: croissant, toastie, vegan…",
-    "soVegan": "Vegan only",
     "limpar": "Clear",
     "aMostrar": "{n} of {total} items",
     "semResultados": "Nothing by that name",

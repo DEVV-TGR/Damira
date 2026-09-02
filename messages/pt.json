@@ -134,7 +134,12 @@
         "peixe": "Prato de peixe grelhado com couve e batata.",
         "frango": "Prato de frango grelhado com salada.",
         "sala": "A sala da casa à hora de almoço, com sopa a ser servida à mesa."
-      }
+      },
+      "ampliar": "Ampliar {nome}",
+      "fechar": "Fechar",
+      "anterior": "Anterior",
+      "seguinte": "Seguinte",
+      "contador": "{n} de {total}"
     },
     "reels": {
       "numeral": "V",
@@ -144,7 +149,9 @@
       "textoSemConta": "Seis lugares à espera dos vídeos da casa. Estão desenhados e vazios de propósito: enchem-se assim que os endereços dos reels chegarem.",
       "espaco": "Lugar {n}, por encher",
       "verNoInstagram": "Ver no Instagram",
-      "verTudo": "Ver todos no Instagram"
+      "verTudo": "Ver todos no Instagram",
+      "instagram": "Instagram da casa",
+      "seguir": "Seguir {utilizador}"
     },
     "raro": {
       "numeral": "VI",
@@ -200,7 +207,11 @@
       "titulo": "Venha cá",
       "horario": "Todos os dias, das {abre} às {fecha}",
       "correr": "Fica na <mapa>{morada}</mapa>. Para ver a carta antes de vir, <ementa>a ementa está aqui</ementa>. Para festa ou bolo com data, <encomendas>as encomendas estão aqui</encomendas>.",
-      "fim": "Confeitaria e Pão Quente Damira, desde 1996."
+      "fim": "Confeitaria e Pão Quente Damira, desde 1996.",
+      "verMapa": "Ver o mapa",
+      "mapaTitulo": "Mapa com a localização da {nome}",
+      "mapaNota": "O mapa é do Google e só carrega quando carregar no botão.",
+      "abrirNoMaps": "Abrir no Google Maps"
     }
   },
   "casa": {
@@ -280,7 +291,6 @@
     "fechar": "Fechar",
     "procurar": "Procurar na ementa",
     "procurarDica": "Escreva um nome: croissant, tosta, vegan…",
-    "soVegan": "Só vegan",
     "limpar": "Limpar",
     "aMostrar": "{n} de {total} artigos",
     "semResultados": "Nada com esse nome",

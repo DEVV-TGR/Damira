@@ -689,16 +689,11 @@ body:has(.cartaz) .barra-vidro {
   }
 }
 
-/* ⚠️ **O botão flutuante das encomendas sai desta página.** A gramática de
-   capítulos não admite chrome a pairar, e na verificação ele apareceu por cima
-   da estampa do pico — que é justamente o ecrã que não pode ter nada em cima.
-
-   O caminho para encomendar não se perde: está no cabeçalho de rosto, no fim
-   do capítulo V e no colofão, com o mesmo rótulo nos três. Nas outras duas
-   páginas do sítio o botão continua onde estava. */
-body:has(.cartaz) [data-flutuante="encomendas"] {
-  display: none;
-}
+/* ⚠️ O botão flutuante das encomendas **esteve escondido nesta página** por a
+   gramática de capítulos não admitir chrome a pairar. O cliente pediu-o de
+   volta: é o atalho mais directo para a coisa que mais interessa ao negócio, e
+   numa página de dezanove ecrãs de altura vale mais do que a pureza da
+   gramática. Fica como nas outras duas páginas. */
 
 /* ------------------------------------------------------------ telemóvel --
    O fólio com títulos não cabe num ecrã de 390 px, e o fio numa margem de
@@ -1168,4 +1163,254 @@ body:has(.cartaz) [data-flutuante="encomendas"] {
   .cap--silencio {
     min-height: 52svh;
   }
+}
+
+/* ===========================================================================
+   SEGUNDA RONDA DO CLIENTE
+   pão simples · reels a arrastar · fotografias que ampliam · o mapa
+   =========================================================================== */
+
+/* ------------------------------------------------------------- II · o pão --
+   Deixou de ser um acto preso: ocupa um ecrã, entra por limpeza, e a rolagem
+   segue. Ver `Pao.tsx`. */
+.cap--pao {
+  padding: 0;
+}
+.pao__estampa {
+  position: relative;
+  inset: auto;
+  height: 100svh;
+  margin: 0;
+  /* O avanço da câmara saiu com o acto preso. Fica uma escala fixa de 1,02 pela
+     mesma razão de antes: uma orla a coincidir com a do contentor abre um fio
+     de fundo na berma. */
+  transform: scale(1.02);
+  transform-origin: 50% 55%;
+  overflow: hidden;
+}
+@media (max-width: 48rem) {
+  .pao__estampa {
+    /* Um ecrã inteiro de pão num telemóvel lê-se como página parada. 72svh dá
+       o pão a encher a largura toda e deixa ver que há mais por baixo. */
+    height: 72svh;
+  }
+}
+
+/* ------------------------------------------------------------ V · os reels --
+   Um carril nativo: arrasta-se com o dedo, pára em cada cela, e não precisa de
+   uma linha de JavaScript. */
+.reels__fila {
+  display: flex;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+  margin: clamp(2.5rem, 5vw, 4rem) calc(-1 * clamp(1.25rem, 5vw, 5rem)) 0 calc(-1 * var(--margem-vapor));
+  padding: 0.25rem var(--margem-vapor) 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline-start: var(--margem-vapor);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  /* As regras de grelha de antes deixam de valer. */
+  grid-template-columns: none;
+}
+.reels__fila::-webkit-scrollbar {
+  display: none;
+}
+.reels__cela {
+  flex: 0 0 clamp(11rem, 46vw, 15rem);
+  scroll-snap-align: start;
+  aspect-ratio: 9 / 16;
+}
+/* O último ganha margem para o carril poder parar nele por inteiro: é a
+   armadilha 10 do AGENTS.md outra vez, o enchimento de fim não conta. */
+.reels__cela:last-child {
+  margin-inline-end: clamp(1.25rem, 5vw, 5rem);
+}
+.reels__instagram {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.5rem;
+  margin-top: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+/* ------------------------------------------------- IV · as fotografias --
+   Cada célula é um botão. Ao passar o rato a fotografia aproxima-se um pouco,
+   que é o sinal de «isto abre»; ao tocar, também. */
+.vitrine__botao {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+  overflow: hidden;
+  border-radius: 2px;
+}
+.vitrine__botao img {
+  transition: transform 420ms var(--sc-ease-out, ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .vitrine__botao:hover img {
+    transform: scale(1.04);
+  }
+}
+.vitrine__botao:active img {
+  transform: scale(0.98);
+}
+.vitrine__botao:focus-visible {
+  outline: 3px solid var(--color-tijolo);
+  outline-offset: 3px;
+}
+
+/* --------------------------------------------------------------- ampliar --
+   O `<dialog>` é o fundo escuro inteiro; a figura fica ao centro. */
+.ampliar {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100svh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: color-mix(in oklab, var(--color-tinta) 94%, transparent);
+  color: var(--color-papel);
+}
+.ampliar::backdrop {
+  background: transparent;
+}
+.ampliar[open] {
+  display: grid;
+  place-items: center;
+  animation: ampliar-entrar 260ms var(--sc-ease-out, ease-out);
+}
+@keyframes ampliar-entrar {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.ampliar__figura {
+  margin: 0;
+  max-width: min(96vw, 90rem);
+  max-height: 100svh;
+  display: grid;
+  gap: 0.75rem;
+  padding: 3.5rem 1rem 1.25rem;
+  animation: ampliar-figura 320ms var(--sc-ease-out, ease-out);
+}
+@keyframes ampliar-figura {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+.ampliar__figura img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: calc(100svh - 7rem);
+  object-fit: contain;
+  margin-inline: auto;
+  border-radius: 2px;
+}
+.ampliar__figura figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: var(--suave-sobre-tinta);
+}
+.ampliar__contador {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ampliar__seta,
+.ampliar__fechar {
+  position: fixed;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border: 0;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--color-papel) 14%, transparent);
+  color: var(--color-papel);
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 160ms var(--sc-ease-out, ease-out);
+}
+.ampliar__seta:hover,
+.ampliar__fechar:hover,
+.ampliar__seta:focus-visible,
+.ampliar__fechar:focus-visible {
+  background: color-mix(in oklab, var(--color-papel) 28%, transparent);
+}
+.ampliar__seta { top: 50%; translate: 0 -50%; }
+.ampliar__seta--esq { left: 0.75rem; }
+.ampliar__seta--dir { right: 0.75rem; }
+.ampliar__fechar { top: 0.75rem; right: 0.75rem; font-size: 1.6rem; }
+@media (prefers-reduced-motion: reduce) {
+  .ampliar[open], .ampliar__figura { animation: none; }
+  .vitrine__botao img { transition: none; }
+}
+
+/* ------------------------------------------------------------- X · o mapa -- */
+.colofao__mapa {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  max-width: 44rem;
+}
+.colofao__mapa iframe {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border: 0;
+  border-radius: 3px;
+  background: var(--color-papel-fundo);
+}
+/* O botão tem a forma do mapa que vai substituir, para não haver salto de
+   maquetização quando o iframe entra. */
+.colofao__mapaBotao {
+  display: grid;
+  place-content: center;
+  gap: 0.35rem;
+  justify-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border: 2px dashed color-mix(in oklab, var(--color-papel) 30%, transparent);
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--color-papel) 6%, transparent);
+  color: var(--color-papel);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 160ms var(--sc-ease-out, ease-out);
+}
+.colofao__mapaBotao:hover,
+.colofao__mapaBotao:focus-visible {
+  background: color-mix(in oklab, var(--color-papel) 12%, transparent);
+}
+.colofao__mapaBotao small {
+  font-weight: 400;
+  font-size: 0.85rem;
+  color: var(--suave-sobre-tinta);
+  max-width: 32ch;
+  text-align: center;
+}
+.colofao__mapaPino {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50% 50% 50% 0;
+  background: var(--color-tijolo);
+  rotate: -45deg;
+  margin-bottom: 0.5rem;
+}
+.colofao__mapaLigacao {
+  justify-self: start;
+  text-decoration: underline;
+  text-underline-offset: 0.24em;
+  color: var(--color-papel);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }

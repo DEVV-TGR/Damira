@@ -2,6 +2,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { casa, moradaCompleta, telefoneMarcavel, urlDirecoes } from "@/data/casa";
 import { VaporMarca } from "./Vapor";
+import { Mapa } from "./Mapa";
 
 /* O horário é igual nos sete dias. Sai daqui e não de uma frase escrita à mão
    para o dia em que a casa mudar de hora não haver duas verdades no site. */
@@ -96,6 +97,10 @@ export function Colofao() {
               telefone é o null" no dia em que alguém o apagasse do JSON. Aqui
               a linha inteira desaparece com ele, que é o comportamento certo,
               e o `build` obriga a que se pense nisto. */}
+          <div data-sc-cue="0.3">
+            <Mapa />
+          </div>
+
           <p className="colofao__fim" data-sc-cue="0.34">
             {casa.telefone && (
               <>
