@@ -7,21 +7,31 @@ import { useTranslations } from "next-intl";
 export type Ampliavel = { src: string; alt: string; largura: number; altura: number };
 
 /**
- * A fotografia em grande, num `<dialog>`.
+ * A fotografia em grande. **Foto, duas setas, um X.** Mais nada.
  *
- * ## Porque `<dialog>` e não um `<div>` fixo
+ * ## O que saiu, e porquê
  *
- * O `showModal()` traz de graça o que um lightbox à mão demora uma tarde a
- * acertar e nunca acerta de todo: o foco fica preso lá dentro, o Escape fecha,
- * o resto da página deixa de ser alcançável por leitor de ecrã, e ao fechar o
- * foco volta ao botão que abriu. É por isso que não há aqui gestão de foco
- * nenhuma — é o browser a fazê-la.
+ * A primeira versão tinha legenda e contador por baixo da fotografia, e o
+ * cliente viu-a «toda desformatada»: no telemóvel a legenda empurrava a imagem
+ * para cima, a imagem encolhia para caber, e o conjunto lia-se como um cartão
+ * mal alinhado. Uma fotografia em grande não precisa de dizer o que é — a
+ * pessoa acabou de a ver com legenda na grelha.
  *
- * ## As setas
+ * ## O fundo não rola — e no iPhone isso obriga a prender o `body`
  *
- * Esquerda e direita mudam de fotografia; no telemóvel os dois botões estão nas
- * bermas e têm 44 px. O contador diz onde se está, porque catorze fotografias
- * sem contador são um ciclo de que não se sabe o fim.
+ * ⚠️ **`overflow: hidden` no `body` não trava o dedo no Safari do iOS.** A
+ * primeira versão fazia só isso e o cliente continuava a rolar a página por
+ * trás da fotografia. O que o iOS respeita é `position: fixed` no `body`:
+ * enquanto a fotografia está aberta, o `body` fica preso com `top` negativo
+ * igual à posição de rolagem, para a página não saltar para o topo; ao fechar,
+ * solta-se e repõe-se a posição. É feio, é o que há, e é o que toda a gente
+ * faz.
+ *
+ * ## Fecha-se com o X, com Escape, ou tocando fora da fotografia
+ *
+ * O `<dialog>` é o próprio fundo escuro. Um toque cujo alvo não é a imagem
+ * nem um botão é um toque no fundo, e fecha. É o gesto que toda a gente já faz
+ * em todas as aplicações de fotografias.
  */
 export function Ampliar({
   itens,
@@ -30,7 +40,6 @@ export function Ampliar({
   aoMudar,
 }: {
   itens: Ampliavel[];
-  /** `null` fechado. */
   indice: number | null;
   aoFechar: () => void;
   aoMudar: (indice: number) => void;
@@ -42,14 +51,31 @@ export function Ampliar({
   useEffect(() => {
     const dialogo = ref.current;
     if (!dialogo) return;
-    if (aberto && !dialogo.open) dialogo.showModal();
-    if (!aberto && dialogo.open) dialogo.close();
+    if (indice !== null && !dialogo.open) dialogo.showModal();
+    if (indice === null && dialogo.open) dialogo.close();
+  }, [indice]);
+
+  /* O bloqueio da rolagem, à maneira que o iOS respeita. */
+  useEffect(() => {
+    if (!aberto) return;
+    const y = window.scrollY;
+    const { style } = document.body;
+    const anterior = { position: style.position, top: style.top, width: style.width };
+    style.position = "fixed";
+    style.top = `-${y}px`;
+    style.width = "100%";
+    return () => {
+      style.position = anterior.position;
+      style.top = anterior.top;
+      style.width = anterior.width;
+      /* «instant» e não suave: com `scroll-behavior: smooth` no `html`, o
+         regresso à posição anda durante meio segundo e a página parece
+         escorregar depois de a fotografia fechar. */
+      window.scrollTo({ top: y, behavior: "instant" });
+    };
   }, [aberto]);
 
   useEffect(() => {
-    /* `indice === null` e não `!aberto`: o TypeScript não estreita `indice` a
-       partir de um booleano derivado dele, e o `+ 1` lá em baixo ficava a
-       somar a `number | null`. */
     if (indice === null) return;
     const aoTecla = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight") aoMudar((indice + 1) % itens.length);
@@ -59,60 +85,57 @@ export function Ampliar({
     return () => window.removeEventListener("keydown", aoTecla);
   }, [indice, itens.length, aoMudar]);
 
+  const anterior = () => indice !== null && aoMudar((indice - 1 + itens.length) % itens.length);
+  const seguinte = () => indice !== null && aoMudar((indice + 1) % itens.length);
+
   return (
     <dialog
       ref={ref}
       className="ampliar"
       onClose={aoFechar}
-      /* Carregar no fundo escuro fecha. O `<dialog>` é o próprio fundo, portanto
-         um clique cujo alvo é o dialog e não um filho é um clique fora da
-         fotografia. */
-      onClick={(e) => { if (e.target === e.currentTarget) aoFechar(); }}
+      onClick={(e) => {
+        const alvo = e.target as HTMLElement;
+        if (!alvo.closest("img, button")) aoFechar();
+      }}
     >
       {indice !== null && (
-        <figure className="ampliar__figura">
-          <Image
-            key={itens[indice].src}
-            src={itens[indice].src}
-            alt={itens[indice].alt}
-            width={itens[indice].largura}
-            height={itens[indice].altura}
-            sizes="100vw"
-            priority
-          />
-          <figcaption>
-            <span>{itens[indice].alt}</span>
-            <span className="ampliar__contador">
-              {t("contador", { n: indice + 1, total: itens.length })}
-            </span>
-          </figcaption>
-        </figure>
+        <Image
+          key={itens[indice].src}
+          className="ampliar__foto"
+          src={itens[indice].src}
+          alt={itens[indice].alt}
+          width={itens[indice].largura}
+          height={itens[indice].altura}
+          sizes="100vw"
+          priority
+        />
       )}
 
       {itens.length > 1 && (
         <>
-          <button
-            type="button"
-            className="ampliar__seta ampliar__seta--esq"
-            aria-label={t("anterior")}
-            onClick={() => indice !== null && aoMudar((indice - 1 + itens.length) % itens.length)}
-          >
-            ‹
+          <button type="button" className="ampliar__seta ampliar__seta--esq" aria-label={t("anterior")} onClick={anterior}>
+            <Icone d="M15 5 8 12l7 7" />
           </button>
-          <button
-            type="button"
-            className="ampliar__seta ampliar__seta--dir"
-            aria-label={t("seguinte")}
-            onClick={() => indice !== null && aoMudar((indice + 1) % itens.length)}
-          >
-            ›
+          <button type="button" className="ampliar__seta ampliar__seta--dir" aria-label={t("seguinte")} onClick={seguinte}>
+            <Icone d="m9 5 7 7-7 7" />
           </button>
         </>
       )}
 
       <button type="button" className="ampliar__fechar" aria-label={t("fechar")} onClick={aoFechar}>
-        ×
+        <Icone d="M6 6l12 12M18 6 6 18" />
       </button>
     </dialog>
+  );
+}
+
+/* ⚠️ SVG e não os glifos `‹ › ×`: no iPhone cada fonte os desenha a uma altura
+   diferente e os botões saíam com o sinal fora do centro. Um traço de SVG é
+   igual em todo o lado. */
+function Icone({ d }: { d: string }) {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d={d} />
+    </svg>
   );
 }

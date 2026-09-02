@@ -1264,7 +1264,8 @@ body:has(.cartaz) .barra-vidro {
 }
 
 /* --------------------------------------------------------------- ampliar --
-   O `<dialog>` é o fundo escuro inteiro; a figura fica ao centro. */
+   Foto, duas setas, um X. O `<dialog>` é o fundo inteiro; a fotografia ocupa o
+   máximo que o ecrã dá, sem legenda a empurrá-la. */
 .ampliar {
   position: fixed;
   inset: 0;
@@ -1275,8 +1276,9 @@ body:has(.cartaz) .barra-vidro {
   margin: 0;
   padding: 0;
   border: 0;
-  background: color-mix(in oklab, var(--color-tinta) 94%, transparent);
+  background: color-mix(in oklab, var(--color-tinta) 96%, transparent);
   color: var(--color-papel);
+  cursor: zoom-out;
 }
 .ampliar::backdrop {
   background: transparent;
@@ -1284,44 +1286,34 @@ body:has(.cartaz) .barra-vidro {
 .ampliar[open] {
   display: grid;
   place-items: center;
-  animation: ampliar-entrar 260ms var(--sc-ease-out, ease-out);
+  animation: ampliar-entrar 200ms var(--sc-ease-out, ease-out);
 }
 @keyframes ampliar-entrar {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-.ampliar__figura {
-  margin: 0;
-  max-width: min(96vw, 90rem);
-  max-height: 100svh;
-  display: grid;
-  gap: 0.75rem;
-  padding: 3.5rem 1rem 1.25rem;
-  animation: ampliar-figura 320ms var(--sc-ease-out, ease-out);
+/* O fundo não rola enquanto a fotografia está aberta. Isto trava a roda do rato
+   nos browsers de secretária; ⚠️ **o iOS ignora-o** e é o `position: fixed` no
+   `body`, posto pelo `Ampliar.tsx`, que trava o dedo. Os dois ficam. */
+body:has(.ampliar[open]) {
+  overflow: hidden;
 }
-@keyframes ampliar-figura {
-  from { opacity: 0; transform: scale(0.96); }
-  to { opacity: 1; transform: scale(1); }
+.ampliar {
+  touch-action: none;
+  overscroll-behavior: contain;
 }
-.ampliar__figura img {
+.ampliar__foto {
   width: auto;
   height: auto;
-  max-width: 100%;
-  max-height: calc(100svh - 7rem);
+  max-width: 100vw;
+  max-height: 100svh;
   object-fit: contain;
-  margin-inline: auto;
-  border-radius: 2px;
+  cursor: default;
+  animation: ampliar-foto 240ms var(--sc-ease-out, ease-out);
 }
-.ampliar__figura figcaption {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  font-size: 0.9rem;
-  color: var(--suave-sobre-tinta);
-}
-.ampliar__contador {
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+@keyframes ampliar-foto {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
 }
 .ampliar__seta,
 .ampliar__fechar {
@@ -1330,12 +1322,15 @@ body:has(.cartaz) .barra-vidro {
   place-items: center;
   width: 3rem;
   height: 3rem;
+  padding: 0;
+  margin: 0;
   border: 0;
   border-radius: 50%;
-  background: color-mix(in oklab, var(--color-papel) 14%, transparent);
+  appearance: none;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  background: color-mix(in oklab, var(--color-tinta) 55%, transparent);
   color: var(--color-papel);
-  font-size: 2rem;
-  line-height: 1;
   cursor: pointer;
   transition: background-color 160ms var(--sc-ease-out, ease-out);
 }
@@ -1343,15 +1338,14 @@ body:has(.cartaz) .barra-vidro {
 .ampliar__fechar:hover,
 .ampliar__seta:focus-visible,
 .ampliar__fechar:focus-visible {
-  background: color-mix(in oklab, var(--color-papel) 28%, transparent);
+  background: var(--color-tijolo);
 }
 .ampliar__seta { top: 50%; translate: 0 -50%; }
 .ampliar__seta--esq { left: 0.75rem; }
 .ampliar__seta--dir { right: 0.75rem; }
-.ampliar__fechar { top: 0.75rem; right: 0.75rem; font-size: 1.6rem; }
+.ampliar__fechar { top: 0.75rem; right: 0.75rem; }
 @media (prefers-reduced-motion: reduce) {
-  .ampliar[open], .ampliar__figura { animation: none; }
-  .vitrine__botao img { transition: none; }
+  .ampliar[open], .ampliar__foto { animation: none; }
 }
 
 /* ------------------------------------------------------------- X · o mapa -- */
