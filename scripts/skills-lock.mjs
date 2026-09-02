@@ -24,6 +24,26 @@ async function ficheirosDe(dir) {
   return saida.sort();
 }
 
+/* O `description:` tanto vem numa linha como num bloco YAML *folded* (`>`) ou
+   literal (`|`) — a scrollcraft usa o primeiro. Sem juntar as linhas seguintes,
+   o inventário guardava ">" como descrição e não dizia nada a ninguém. */
+function descricaoDoFrontmatter(md) {
+  const linhas = md.split(/\r?\n/);
+  const i = linhas.findIndex((linha) => /^description:/.test(linha));
+  if (i === -1) return null;
+
+  const primeira = linhas[i].slice("description:".length).trim();
+  if (!/^[|>][+-]?$/.test(primeira)) return primeira || null;
+
+  /* O bloco acaba na primeira linha não indentada — outra chave, ou o `---`. */
+  const corpo = [];
+  for (const linha of linhas.slice(i + 1)) {
+    if (linha.trim() !== "" && !/^\s/.test(linha)) break;
+    corpo.push(linha.trim());
+  }
+  return corpo.join(" ").replace(/\s+/g, " ").trim() || null;
+}
+
 const nomes = (await readdir(RAIZ, { withFileTypes: true }))
   .filter((entrada) => entrada.isDirectory())
   .map((entrada) => entrada.name)
@@ -42,7 +62,7 @@ for (const nome of nomes) {
   let descricao = null;
   try {
     const md = await readFile(join(dir, "SKILL.md"), "utf8");
-    descricao = md.match(/^description:\s*(.+)$/m)?.[1]?.trim() ?? null;
+    descricao = descricaoDoFrontmatter(md);
     if (descricao && descricao.length > 160) descricao = `${descricao.slice(0, 157)}...`;
   } catch {
     /* uma skill sem SKILL.md entra na mesma no inventário, sem descrição */
