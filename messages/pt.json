@@ -402,7 +402,8 @@
       "passoDe": "Passo {n} de {total}",
       "resumoTitulo": "O que vai no pedido",
       "notas": "Quer acrescentar alguma coisa?",
-      "notasDica": "Recheio, cor, o nome a escrever no bolo, alergias."
+      "notasDica": "Recheio, cor, o nome a escrever no bolo, alergias.",
+      "tipoDoCesto": "Vem do que juntou ao pedido. Para mudar, altere o cesto."
     }
   },
   "bolos": {

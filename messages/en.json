@@ -402,7 +402,8 @@
       "passoDe": "Step {n} of {total}",
       "resumoTitulo": "What goes in the order",
       "notas": "Anything to add?",
-      "notasDica": "Filling, colour, the name to write on the cake, allergies."
+      "notasDica": "Filling, colour, the name to write on the cake, allergies.",
+      "tipoDoCesto": "Comes from what you added. To change it, edit the order."
     }
   },
   "bolos": {
