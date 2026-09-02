@@ -531,9 +531,9 @@ body:has(.cartaz) .barra-vidro {
   opacity: 0.55;
   transition: opacity 420ms var(--sc-ease-out, ease-out);
 }
-.vapor__fio path {
-  transition: stroke-width 420ms var(--sc-ease-out, ease-out);
-}
+/* ⚠️ Sem `transition` nos caminhos. Uma transição em `stroke-width` obrigava
+   o browser a redesenhar o SVG inteiro em cada quadro da transição, por cima do
+   redesenho que o traçado já custa. O engrossar no pico passa a ser seco. */
 
 /* ⚠️ **Duas variáveis, e não o `currentColor`.** Aqui esteve
    `background: currentColor` na pastilha do numeral com `color: transparent`
@@ -1101,6 +1101,11 @@ body:has(.cartaz) .barra-vidro {
   }
   .vapor__fio {
     opacity: 0.35;
+    /* Estático no telemóvel: desenhado por inteiro, sem trabalho por quadro.
+       Ver `Vapor.tsx`. */
+  }
+  .vapor__fio path {
+    stroke-dashoffset: 0 !important;
   }
 
   /* A capa deixa de ser meio ecrã de ar. Num telemóvel o primeiro ecrã é o
@@ -1181,11 +1186,11 @@ body:has(.cartaz) .barra-vidro {
   inset: auto;
   height: 100svh;
   margin: 0;
-  /* O avanço da câmara saiu com o acto preso. Fica uma escala fixa de 1,02 pela
-     mesma razão de antes: uma orla a coincidir com a do contentor abre um fio
-     de fundo na berma. */
-  transform: scale(1.02);
-  transform-origin: 50% 55%;
+  /* ⚠️ Sem `transform` nem `will-change`: uma escala numa fotografia de ecrã
+     inteiro promove-a a camada própria de GPU do tamanho do ecrã a 3×, e num
+     telemóvel isso é memória que a rolagem paga. O fio de fundo na berma que a
+     escala escondia resolve-se com um `inset` negativo de um píxel. */
+  inset: -1px;
   overflow: hidden;
 }
 @media (max-width: 48rem) {
