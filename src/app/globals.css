@@ -708,3 +708,49 @@ body::after {
     }
   }
 }
+
+
+/* ── Cartões de lado no telemóvel ───────────────────────────────────────── */
+
+/**
+ * Uma fila de cartões que, num ecrã estreito, passa a arrastar-se de lado em
+ * vez de empilhar. É a mesma coisa que a página inicial faz com os reels.
+ *
+ * ⚠️ **Fora de `@layer` de propósito.** Os cartões continuam a ter a classe
+ * `grid` do Tailwind, que vive na camada de utilitários e ganharia a qualquer
+ * `display: flex` posto numa camada de componentes. Fora de camada, isto ganha
+ * — e é a única razão de não estar lá em cima com as outras.
+ *
+ * O porquê: a página das encomendas tem três secções de cartões (três kits de
+ * festa, três de bolo, cinco boxes) e num telemóvel isso eram onze cartões
+ * empilhados, cada um com a altura de meio ecrã. Chegar ao formulário era
+ * rolar seis ecrãs. De lado, cada secção ocupa um ecrã e a página encurta para
+ * um terço.
+ *
+ * O `scroll-snap` pára em cada cartão; o `82vw` deixa ver a berma do seguinte,
+ * que é o sinal de que há mais. A margem no último filho é o curso do fim —
+ * o enchimento à direita não conta para o `scrollWidth` (armadilha 10).
+ */
+@media (max-width: 48rem) {
+  .carril-tele {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin-inline: calc(-1 * var(--goteira, 1.25rem));
+    padding-inline: var(--goteira, 1.25rem);
+    padding-block-end: 0.5rem;
+  }
+  .carril-tele::-webkit-scrollbar {
+    display: none;
+  }
+  .carril-tele > * {
+    flex: 0 0 82vw;
+    scroll-snap-align: start;
+  }
+  .carril-tele > *:last-child {
+    margin-inline-end: var(--goteira, 1.25rem);
+  }
+}

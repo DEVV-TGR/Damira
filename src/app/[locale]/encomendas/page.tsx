@@ -126,7 +126,7 @@ function Encomendas({ locale }: { locale: Locale }) {
             {t("kitsBolo.texto")}
           </p>
 
-          <ul className="mt-12 grid gap-6 lg:grid-cols-3">
+          <ul className="carril-tele mt-12 grid gap-6 lg:grid-cols-3">
             {encomendas.kitsBolo.map((kit) => (
               <li
                 key={kit.id}
@@ -283,7 +283,7 @@ function Encomendas({ locale }: { locale: Locale }) {
           </h2>
           <p className="mt-4 max-w-[52ch] text-tinta-suave">{t("boxes.texto")}</p>
 
-          <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="carril-tele mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {encomendas.boxes.map((box) => (
               <li
                 key={box.id}
