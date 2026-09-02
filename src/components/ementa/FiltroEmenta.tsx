@@ -30,31 +30,32 @@ import { useTranslations } from "next-intl";
  * acentos, e uma procura por "pao" que não encontra *Pão da Aldeia* está
  * avariada aos olhos de quem a usou.
  *
- * ## O «só vegan» é um filtro e não uma decoração
+ * ## ⚠️ Aqui esteve um interruptor «só vegan», e saiu por ser um bug de desenho
  *
- * Metade da ementa é vegan e a casa assinala-o com uma folha verde. Quem procura
- * essa folha costuma ter uma razão para a procurar, e obrigá-la a ler os
- * noventa e cinco para separar quarenta e nove é fazê-la trabalhar por uma
- * informação que os dados já têm.
+ * Ficava ao lado da procura, por cima do separador «Vegan», e os dois liam-se
+ * como a mesma coisa. Quem carregava no interruptor à espera de saltar para a
+ * carta vegan via os separadores desaparecerem e o cabeçalho verde sumir, e
+ * concluía que «não passou». O cliente reportou-o exactamente assim.
+ *
+ * E era redundante: o `superRefine` da ementa garante que `vegan: true` só
+ * existe na carta vegan, portanto «só vegan» era, artigo por artigo, o
+ * separador «Vegan». Duas portas para a mesma sala, uma delas a fingir que era
+ * outra sala.
  */
 export function FiltroEmenta({
   procura,
   aoProcurar,
-  soVegan,
-  aoAlternarVegan,
   encontrados,
   total,
 }: {
   procura: string;
   aoProcurar: (valor: string) => void;
-  soVegan: boolean;
-  aoAlternarVegan: (valor: boolean) => void;
   encontrados: number;
   total: number;
 }) {
   const t = useTranslations("ementa");
   const id = useId();
-  const activo = procura.trim().length > 0 || soVegan;
+  const activo = procura.trim().length > 0;
 
   return (
     <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -74,22 +75,6 @@ export function FiltroEmenta({
         />
       </div>
 
-      {/* Um `<button>` com `aria-pressed` e não uma caixa de verificação: é um
-          interruptor que muda a lista à frente da pessoa, não um campo que ela
-          submete depois. */}
-      <button
-        type="button"
-        aria-pressed={soVegan}
-        onClick={() => aoAlternarVegan(!soVegan)}
-        className={`premivel alvo-toque h-11 shrink-0 rounded-full border-2 px-3 text-xs font-semibold uppercase tracking-widest sm:px-4 ${
-          soVegan
-            ? "border-verde-forte bg-verde-forte text-papel"
-            : "border-tinta/20 text-tinta hover:border-verde-forte hover:text-verde-forte"
-        }`}
-      >
-        {t("soVegan")}
-      </button>
-
       {activo && (
         <div className="flex shrink-0 items-center gap-3">
           <p aria-live="polite" className="text-xs tabular-nums text-tinta-suave">
@@ -97,10 +82,7 @@ export function FiltroEmenta({
           </p>
           <button
             type="button"
-            onClick={() => {
-              aoProcurar("");
-              aoAlternarVegan(false);
-            }}
+            onClick={() => aoProcurar("")}
             className="premivel alvo-toque h-11 shrink-0 text-xs font-semibold uppercase tracking-widest text-tijolo underline underline-offset-4"
           >
             {t("limpar")}
