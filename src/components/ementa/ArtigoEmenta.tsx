@@ -78,7 +78,12 @@ export function ArtigoEmenta({
             aria-hidden
             className="min-w-4 flex-1 translate-y-[-0.25em] border-b border-dotted border-current opacity-40"
           />
-          <span className="titulo-display shrink-0 tabular-nums">
+          {/* ⚠️ **O preço é a única coisa colorida do corpo da página.** Antes
+              era tinta como tudo o resto, e numa lista de noventa e cinco linhas
+              iguais o olho não tinha onde pousar: quem procura o preço lia o
+              nome primeiro, linha a linha. O tijolo sobre papel dá 6,87:1 e
+              passa a qualquer tamanho — não é decoração, é o índice da lista. */}
+          <span className="titulo-display shrink-0 tabular-nums text-tijolo">
             <Preco artigo={artigo} locale={locale} />
           </span>
         </div>
@@ -140,7 +145,7 @@ export function ArtigoCompacto({
           aria-hidden
           className="min-w-4 flex-1 translate-y-[-0.25em] border-b border-dotted border-current opacity-40"
         />
-        <span className="shrink-0 text-sm font-semibold tabular-nums">
+        <span className="shrink-0 text-sm font-semibold tabular-nums text-tijolo">
           <Preco artigo={artigo} locale={locale} />
         </span>
       </div>

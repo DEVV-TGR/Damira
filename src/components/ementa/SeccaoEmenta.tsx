@@ -1,8 +1,6 @@
 import { useTranslations } from "next-intl";
 import {
-  porCategoria,
-  porSubcategoria,
-  subcategoriasComArtigos,
+  SUBCATEGORIAS,
   type Artigo,
   type Carta,
   type Categoria,
@@ -21,16 +19,22 @@ const COMPACTAS: readonly Categoria[] = ["bebidas", "bolos-inteiros"];
 export function SeccaoEmenta({
   carta,
   categoria,
+  artigos,
   locale,
   aoAbrir,
 }: {
   carta: Carta;
   categoria: Categoria;
+  /* ⚠️ **Já vêm filtrados de cima.** A secção não sabe se há procura activa e
+     não tem de saber: recebe a lista que lhe cabe mostrar. Filtrar aqui dentro
+     fazia catorze secções repetirem o mesmo trabalho e obrigava cada uma a
+     descobrir que estava vazia **depois** de já ter escrito o título. */
+  artigos: Artigo[];
   locale: Locale;
   aoAbrir: (artigo: Artigo) => void;
 }) {
   const t = useTranslations("ementa");
-  const artigos = porCategoria(carta, categoria);
+
   /* Os doces vegan são 23 linhas de nome e preço, sem descrição nenhuma; os
      doces da casa têm todos frase. A mesma categoria em duas cartas pede
      tratamentos diferentes, e o que decide é o que os artigos têm — não uma
@@ -46,7 +50,7 @@ export function SeccaoEmenta({
     <section
       id={ancora}
       aria-labelledby={`titulo-${ancora}`}
-      className="relative scroll-mt-32 py-[clamp(2rem,4vw,3.5rem)]"
+      className="relative scroll-mt-[13.5rem] py-[clamp(2rem,4vw,3.5rem)]"
     >
       <div className="envolvente relative">
         {/* ⚠️ **Aqui esteve um "01", "02", "03" antes do título**, e saiu porque
@@ -55,8 +59,11 @@ export function SeccaoEmenta({
             que se repete não serve para referir ("vê no 02" não diz qual), e
             estava `aria-hidden`, ou seja, já assumido como não-informação.
 
-            O que ancora a secção é o filete por baixo do título, que ficou. */}
-        <div className="flex items-baseline gap-4 border-b-2 border-current pb-3">
+            O que ancora a secção é o filete por baixo do título. Passou a
+            **tijolo** e ganhou a contagem ao lado: são duas coisas pequenas que
+            dão à página o que ela não tinha — cor no corpo, e a dimensão de cada
+            secção antes de se começar a ler. */}
+        <div className="flex items-baseline gap-4 border-b-2 border-tijolo pb-3">
           <h2
             id={`titulo-${ancora}`}
             className="titulo-display titulo-gama uppercase"
@@ -64,21 +71,37 @@ export function SeccaoEmenta({
           >
             {t(`categorias.${categoria}`)}
           </h2>
+          <span className="ml-auto shrink-0 text-xs tabular-nums uppercase tracking-widest text-tinta-suave">
+            {t("quantosArtigos", { n: artigos.length })}
+          </span>
         </div>
 
         {categoria === "bebidas" ? (
           /* Vinte e cinco bebidas em quatro grupos. Numa lista corrida ia-se do
-             café ao milkshake sem perceber onde acabou um e começou o outro. */
+             café ao milkshake sem perceber onde acabou um e começou o outro.
+
+             ⚠️ Os grupos saem **dos artigos que chegaram**, e não do catálogo
+             inteiro: com uma procura activa, ir buscar `porSubcategoria()` ao
+             conjunto todo voltava a mostrar as bebidas que o filtro tinha
+             acabado de excluir. */
           <div className="mt-8 grid gap-x-12 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
-            {subcategoriasComArtigos().map((sub) => (
+            {SUBCATEGORIAS.filter((sub) =>
+              artigos.some((a) => a.subcategoria === sub),
+            ).map((sub) => (
               <div key={sub}>
-                <h3 className="titulo-display text-xs uppercase tracking-[0.2em]">
+                <h3 className="titulo-display text-xs uppercase tracking-[0.2em] text-tijolo">
                   {t(`subcategorias.${sub}`)}
                 </h3>
                 <ul className="mt-2">
-                  {porSubcategoria(sub).map((artigo) => (
-                    <ArtigoCompacto key={artigo.id} artigo={artigo} locale={locale} />
-                  ))}
+                  {artigos
+                    .filter((a) => a.subcategoria === sub)
+                    .map((artigo) => (
+                      <ArtigoCompacto
+                        key={artigo.id}
+                        artigo={artigo}
+                        locale={locale}
+                      />
+                    ))}
                 </ul>
               </div>
             ))}

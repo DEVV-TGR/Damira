@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { useTranslations } from "next-intl";
+import { ementa } from "@/data/ementa";
 import { Carta } from "@/components/ementa/Carta";
 import { routing, type Locale } from "@/i18n/routing";
 import { metadataDaPagina } from "@/lib/metadata";
@@ -35,12 +36,19 @@ function Ementa({ locale }: { locale: Locale }) {
 
   return (
     <>
-      {/* Abre a tijolo chapado, como o topo dos impressos. Daí para baixo a cor
-          marca **a carta** e não a secção — ver o comentário em `Carta.tsx`. */}
-      <div className="bloco-tijolo relative overflow-hidden">
+      {/* ⚠️ **Abria a tijolo, e a primeira carta é tijolo também.** Os dois
+          blocos ficavam colados com uma tira branca de navegação a separá-los, e
+          lia-se como um só bloco interrompido — o salto de cor que devia
+          anunciar «começou a carta da casa» não acontecia, porque a cor já lá
+          estava.
+
+          Passou a tinta. Daí para baixo a cor marca **a carta** e não a secção
+          (ver o comentário em `Carta.tsx`), e a sequência ficou: tinta, tijolo,
+          papel-fundo, verde, tinta. Nenhuma face repete a anterior. */}
+      <div className="relative overflow-hidden bg-tinta text-papel">
         <div className="envolvente relative py-[clamp(3.5rem,8vw,6rem)]">
           <p className="titulo-display text-xs uppercase tracking-[0.3em] opacity-80">
-            {t("navegar")}
+            {t("quantosArtigos", { n: ementa.length })}
           </p>
           <h1
             className="titulo-display titulo-capa mt-4 uppercase"
