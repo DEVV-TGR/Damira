@@ -47,7 +47,11 @@ export function Festa({ locale }: { locale: Locale }) {
       className="cap cap--festa"
       data-capitulo
       data-sc-act="pan"
-      data-sc-span="3"
+      /* ⚠️ **4,5 e não 3.** O curso de um `pan` é o vão menos um ecrã, e o carril
+         percorre até 1 664 px num monitor largo: com 3, isso passava em dois
+         ecrãs de rolagem e o cliente viu os kits a fugir. A regra do
+         `devices.md` é um ecrã por item mais um — são cinco itens. */
+      data-sc-span="4.5"
       aria-labelledby="festa"
     >
       <div data-sc-stage>
