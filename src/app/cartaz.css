@@ -531,9 +531,9 @@ body:has(.cartaz) .barra-vidro {
   opacity: 0.55;
   transition: opacity 420ms var(--sc-ease-out, ease-out);
 }
-.vapor__fio path {
-  transition: stroke-width 420ms var(--sc-ease-out, ease-out);
-}
+/* ⚠️ Sem `transition` nos caminhos. Uma transição em `stroke-width` obrigava
+   o browser a redesenhar o SVG inteiro em cada quadro da transição, por cima do
+   redesenho que o traçado já custa. O engrossar no pico passa a ser seco. */
 
 /* ⚠️ **Duas variáveis, e não o `currentColor`.** Aqui esteve
    `background: currentColor` na pastilha do numeral com `color: transparent`
@@ -689,16 +689,11 @@ body:has(.cartaz) .barra-vidro {
   }
 }
 
-/* ⚠️ **O botão flutuante das encomendas sai desta página.** A gramática de
-   capítulos não admite chrome a pairar, e na verificação ele apareceu por cima
-   da estampa do pico — que é justamente o ecrã que não pode ter nada em cima.
-
-   O caminho para encomendar não se perde: está no cabeçalho de rosto, no fim
-   do capítulo V e no colofão, com o mesmo rótulo nos três. Nas outras duas
-   páginas do sítio o botão continua onde estava. */
-body:has(.cartaz) [data-flutuante="encomendas"] {
-  display: none;
-}
+/* ⚠️ O botão flutuante das encomendas **esteve escondido nesta página** por a
+   gramática de capítulos não admitir chrome a pairar. O cliente pediu-o de
+   volta: é o atalho mais directo para a coisa que mais interessa ao negócio, e
+   numa página de dezanove ecrãs de altura vale mais do que a pureza da
+   gramática. Fica como nas outras duas páginas. */
 
 /* ------------------------------------------------------------ telemóvel --
    O fólio com títulos não cabe num ecrã de 390 px, e o fio numa margem de
@@ -1106,6 +1101,11 @@ body:has(.cartaz) [data-flutuante="encomendas"] {
   }
   .vapor__fio {
     opacity: 0.35;
+    /* Estático no telemóvel: desenhado por inteiro, sem trabalho por quadro.
+       Ver `Vapor.tsx`. */
+  }
+  .vapor__fio path {
+    stroke-dashoffset: 0 !important;
   }
 
   /* A capa deixa de ser meio ecrã de ar. Num telemóvel o primeiro ecrã é o
@@ -1168,4 +1168,283 @@ body:has(.cartaz) [data-flutuante="encomendas"] {
   .cap--silencio {
     min-height: 52svh;
   }
+}
+
+/* ===========================================================================
+   SEGUNDA RONDA DO CLIENTE
+   pão simples · reels a arrastar · fotografias que ampliam · o mapa
+   =========================================================================== */
+
+/* ------------------------------------------------------------- II · o pão --
+   Deixou de ser um acto preso: ocupa um ecrã, entra por limpeza, e a rolagem
+   segue. Ver `Pao.tsx`. */
+.cap--pao {
+  padding: 0;
+}
+.pao__estampa {
+  position: relative;
+  inset: auto;
+  height: 100svh;
+  margin: 0;
+  /* ⚠️ Sem `transform` nem `will-change`: uma escala numa fotografia de ecrã
+     inteiro promove-a a camada própria de GPU do tamanho do ecrã a 3×, e num
+     telemóvel isso é memória que a rolagem paga. O fio de fundo na berma que a
+     escala escondia resolve-se com um `inset` negativo de um píxel. */
+  inset: -1px;
+  overflow: hidden;
+}
+@media (max-width: 48rem) {
+  .pao__estampa {
+    /* Um ecrã inteiro de pão num telemóvel lê-se como página parada. 72svh dá
+       o pão a encher a largura toda e deixa ver que há mais por baixo. */
+    height: 72svh;
+  }
+}
+
+/* ------------------------------------------------------------ V · os reels --
+   Um `pan`, como o da festa: o palco prende-se e a rolagem faz o carril
+   atravessar. Ver `Reels.tsx` e `.festa__carril`. */
+.reels__carril {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 2.5vw, 2rem);
+  height: 100%;
+  padding-inline-start: var(--margem-vapor);
+  /* ⚠️ 165vw: o curso é `scrollWidth - innerWidth`, e um carril de largura
+     fixa morre à medida que o monitor cresce. Armadilha 11 do AGENTS.md. */
+  min-width: 165vw;
+}
+.reels__carril > * {
+  flex: 0 0 auto;
+}
+.reels__abertura {
+  width: min(28rem, 78vw);
+}
+.reels__fila {
+  display: flex;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.reels__cela {
+  flex: 0 0 auto;
+  width: clamp(11rem, 22vw, 15rem);
+  aspect-ratio: 9 / 16;
+  max-height: 72svh;
+}
+.reels__instagram {
+  width: min(22rem, 74vw);
+  margin-inline-end: 14vw;
+  display: grid;
+  gap: 1rem;
+}
+@media (max-width: 48rem) {
+  .reels__cela {
+    width: 46vw;
+  }
+}
+
+/* ------------------------------------------------- IV · as fotografias --
+   Cada célula é um botão. Ao passar o rato a fotografia aproxima-se um pouco,
+   que é o sinal de «isto abre»; ao tocar, também. */
+.vitrine__botao {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+  overflow: hidden;
+  border-radius: 2px;
+}
+.vitrine__botao img {
+  transition: transform 420ms var(--sc-ease-out, ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .vitrine__botao:hover img {
+    transform: scale(1.04);
+  }
+}
+.vitrine__botao:active img {
+  transform: scale(0.98);
+}
+.vitrine__botao:focus-visible {
+  outline: 3px solid var(--color-tijolo);
+  outline-offset: 3px;
+}
+
+/* --------------------------------------------------------------- ampliar --
+   Foto, duas setas, um X. O `<dialog>` é o fundo inteiro; a fotografia ocupa o
+   máximo que o ecrã dá, sem legenda a empurrá-la. */
+.ampliar {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100svh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: color-mix(in oklab, var(--color-tinta) 96%, transparent);
+  color: var(--color-papel);
+  cursor: zoom-out;
+}
+.ampliar::backdrop {
+  background: transparent;
+}
+.ampliar[open] {
+  display: grid;
+  place-items: center;
+  animation: ampliar-entrar 200ms var(--sc-ease-out, ease-out);
+}
+@keyframes ampliar-entrar {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+/* O fundo não rola enquanto a fotografia está aberta. Isto trava a roda do rato
+   nos browsers de secretária; ⚠️ **o iOS ignora-o** e é o `position: fixed` no
+   `body`, posto pelo `Ampliar.tsx`, que trava o dedo. Os dois ficam. */
+body:has(.ampliar[open]) {
+  overflow: hidden;
+}
+.ampliar {
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+.ampliar__foto {
+  width: auto;
+  height: auto;
+  max-width: 100vw;
+  max-height: 100svh;
+  object-fit: contain;
+  cursor: default;
+  animation: ampliar-foto 240ms var(--sc-ease-out, ease-out);
+}
+@keyframes ampliar-foto {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+.ampliar__seta,
+.ampliar__fechar {
+  position: fixed;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 50%;
+  appearance: none;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  background: color-mix(in oklab, var(--color-tinta) 55%, transparent);
+  color: var(--color-papel);
+  cursor: pointer;
+  transition: background-color 160ms var(--sc-ease-out, ease-out);
+}
+.ampliar__seta:hover,
+.ampliar__fechar:hover,
+.ampliar__seta:focus-visible,
+.ampliar__fechar:focus-visible {
+  background: var(--color-tijolo);
+}
+.ampliar__seta { top: 50%; translate: 0 -50%; }
+.ampliar__seta--esq { left: 0.75rem; }
+.ampliar__seta--dir { right: 0.75rem; }
+.ampliar__fechar { top: 0.75rem; right: 0.75rem; }
+@media (prefers-reduced-motion: reduce) {
+  .ampliar[open], .ampliar__foto { animation: none; }
+}
+
+/* ------------------------------------------------------------- X · o mapa -- */
+.colofao__mapa {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  max-width: 44rem;
+}
+.colofao__mapa iframe {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border: 0;
+  border-radius: 3px;
+  background: var(--color-papel-fundo);
+}
+/* O botão tem a forma do mapa que vai substituir, para não haver salto de
+   maquetização quando o iframe entra. */
+.colofao__mapaBotao {
+  display: grid;
+  place-content: center;
+  gap: 0.35rem;
+  justify-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border: 2px dashed color-mix(in oklab, var(--color-papel) 30%, transparent);
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--color-papel) 6%, transparent);
+  color: var(--color-papel);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 160ms var(--sc-ease-out, ease-out);
+}
+.colofao__mapaBotao:hover,
+.colofao__mapaBotao:focus-visible {
+  background: color-mix(in oklab, var(--color-papel) 12%, transparent);
+}
+.colofao__mapaBotao small {
+  font-weight: 400;
+  font-size: 0.85rem;
+  color: var(--suave-sobre-tinta);
+  max-width: 32ch;
+  text-align: center;
+}
+.colofao__mapaPino {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50% 50% 50% 0;
+  background: var(--color-tijolo);
+  rotate: -45deg;
+  margin-bottom: 0.5rem;
+}
+.colofao__mapaLigacao {
+  justify-self: start;
+  text-decoration: underline;
+  text-underline-offset: 0.24em;
+  color: var(--color-papel);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+
+/* ------------------------------------------- II · o título antes do pão --
+   O cabeçalho do capítulo vem antes da estampa (ver `Pao.tsx`). Menos ar por
+   baixo do que uma secção normal: o que se segue é a fotografia dele. */
+.cap--legenda--antes {
+  padding-block-end: clamp(1.5rem, 3vw, 2.5rem);
+}
+/* A legenda pequena, colada ao fundo da estampa e fora dela. O `figure` é
+   `overflow: hidden` com a fotografia em `fill`, portanto a legenda vive numa
+   faixa própria por baixo, no chão de tinta. */
+.pao__estampa {
+  display: grid;
+  grid-template-rows: 1fr auto;
+}
+.pao__foto {
+  grid-row: 1;
+}
+.pao__legenda {
+  position: relative;
+  z-index: 1;
+  grid-row: 2;
+  padding: 0.75rem var(--margem-vapor) 0.9rem clamp(1.25rem, 5vw, 5rem);
+  padding-inline-start: var(--margem-vapor);
+  background: var(--color-tinta);
+  color: var(--suave-sobre-tinta);
+  font-size: 0.85rem;
 }

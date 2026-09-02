@@ -43,16 +43,12 @@ export function NavegacaoEmenta({
   cartas,
   procura,
   aoProcurar,
-  soVegan,
-  aoAlternarVegan,
   encontrados,
   total,
 }: {
   cartas: Carta[];
   procura: string;
   aoProcurar: (valor: string) => void;
-  soVegan: boolean;
-  aoAlternarVegan: (valor: boolean) => void;
   encontrados: number;
   total: number;
 }) {
@@ -99,8 +95,6 @@ export function NavegacaoEmenta({
         <FiltroEmenta
           procura={procura}
           aoProcurar={aoProcurar}
-          soVegan={soVegan}
-          aoAlternarVegan={aoAlternarVegan}
           encontrados={encontrados}
           total={total}
         />
@@ -109,7 +103,7 @@ export function NavegacaoEmenta({
             filtrar, saltar para uma carta não serve de nada: o resultado já é
             uma lista curta, e os separadores só ocupavam a barra com escolhas
             que não fazem o que prometem. */}
-        {procura.trim().length === 0 && !soVegan && (
+        {procura.trim().length === 0 && (
           <ul className="-mx-1 flex gap-2 overflow-x-auto px-1 text-xs uppercase tracking-[0.15em] [scrollbar-width:none]">
             {cartas.map((carta) => {
               const eActiva = activa === carta;

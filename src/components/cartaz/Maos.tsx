@@ -16,6 +16,13 @@ import { useTranslations } from "next-intl";
  * A coluna é invertida em relação à do capítulo I — lá a imagem estava à
  * direita, aqui está à esquerda. O `taste.md` proíbe mais de dois ziguezagues
  * seguidos, e estes são dois, com o pico de permeio.
+ *
+ * ⚠️ **A inversão é só no computador, e faz-se em CSS.** No DOM o texto vem
+ * primeiro, sempre: num telemóvel as colunas empilham pela ordem do DOM, e com
+ * a figura à frente este capítulo abria pela fotografia com o título por
+ * baixo — ao contrário de todos os outros. O cliente pediu o padrão «título em
+ * cima, foto em baixo» no telemóvel, e é a ordem do DOM que o dá. A troca de
+ * lado no computador é um `order` dentro de uma media query.
  */
 export function Maos() {
   const t = useTranslations("cartaz.maos");
@@ -29,6 +36,16 @@ export function Maos() {
       aria-labelledby="maos"
     >
       <div className="cap__duas cap__duas--invertida">
+        <div className="cap__caixa" data-sc-in data-sc-stagger="60">
+          <p className="cap__olho">
+            <span className="cap__numeral">{t("numeral")}</span> {t("olho")}
+          </p>
+          <h2 id="maos" className="cap__titulo">
+            {t("titulo")}
+          </h2>
+          <p className="cap__texto">{t("texto")}</p>
+        </div>
+
         <figure className="cap__estampa" data-sc-reveal="left" data-sc-reveal-at="0.05 0.5">
           <Image
             src="/fotos/02.webp"
@@ -39,16 +56,6 @@ export function Maos() {
           />
           <figcaption>{t("legenda")}</figcaption>
         </figure>
-
-        <div className="cap__caixa" data-sc-in data-sc-stagger="60">
-          <p className="cap__olho">
-            <span className="cap__numeral">{t("numeral")}</span> {t("olho")}
-          </p>
-          <h2 id="maos" className="cap__titulo">
-            {t("titulo")}
-          </h2>
-          <p className="cap__texto">{t("texto")}</p>
-        </div>
       </div>
     </section>
   );

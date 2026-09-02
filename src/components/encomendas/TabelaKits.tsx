@@ -104,7 +104,7 @@ export function TabelaKits({ locale }: { locale: Locale }) {
           vazio desses lê-se como conteúdo em falta. O que alinha a comparação
           são os títulos e os preços, que ficam à mesma altura de qualquer
           maneira. */}
-      <div className="mt-10 grid items-start gap-6 lg:grid-cols-3">
+      <div className="carril-tele mt-10 grid items-start gap-6 lg:grid-cols-3">
         {encomendas.kitsFesta.map((kit, indice) => {
           const escalao = escalaoDe(kit, pessoas);
           /* Uma gama pode não servir um escalão. Hoje servem todas as três, mas

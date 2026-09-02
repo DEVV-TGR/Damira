@@ -407,3 +407,38 @@ desta página**, e é por aí que uma próxima versão deve pegar.
 
 O pico continua a ser o pão: é o maior salto visual da folha e tem o maior vão.
 O fecho segura em vez de desvanecer.
+
+---
+
+# TERCEIRA RONDA DO CLIENTE
+
+Nove pedidos, todos feitos. Os que mudam decisões do plano ficam aqui.
+
+- **O pão deixou de ser um acto preso.** «Ficamos muito presos a ela, quero
+  algo mais simples.» Tem razão numa página de dezanove ecrãs. Passou a secção
+  normal, um ecrã de altura, a entrar por limpeza de baixo para cima. O pico é a
+  imagem, não o tempo que se fica nela. O `feel.md` diria que o pico perdeu
+  «espaço de rolagem»; o cliente diria que ganhou o polegar. Fica o cliente.
+- **O botão flutuante das encomendas voltou à página inicial.** Tinha-o tirado
+  pela gramática; o cliente quer o atalho. Fica como nas outras páginas.
+- **No telemóvel, título em cima e fotografia em baixo, sempre.** As mãos
+  abriam pela fotografia por causa da ordem do DOM. Corrigido: o texto vem
+  primeiro no DOM e a troca de lado é só CSS, só no computador.
+- **Os reels são um carril que se arrasta com o dedo** — `overflow-x: auto`
+  com `scroll-snap`, nativo, sem JavaScript. Não é o `pan` do motor.
+- **As fotografias ampliam** num `<dialog>` com setas e contador; ao passar o
+  rato aproximam-se. Os reels, quando tiverem endereço, abrem no Instagram —
+  ampliar a capa de um vídeo sem o vídeo não servia para nada.
+- **O mapa do Google entrou no colofão, carregado a pedido.** A CSP abre o
+  `frame-src` ao `www.google.com` e nada mais; o iframe só existe depois de um
+  clique, para o Google não ver quem visita o site sem ter pedido um mapa.
+- **O Instagram é `@confeitariadamira`**, encontrado por pesquisa e confirmado
+  pelo título da própria conta. ⚠️ O Facebook aparece no linktr.ee só como
+  ícone, sem endereço legível: fica a `null`. ⚠️ Uma ficha de terceiros (trip.com)
+  dá o telefone como +351 22 975 4618, diferente do `casa.json`; não mudei
+  nada, mas alguém tem de confirmar qual é o certo.
+- **Na ementa, o interruptor «só vegan» saiu** — era o bug reportado (parecia o
+  separador «Vegan» e fazia outra coisa) e era redundante (o `superRefine`
+  garante que `vegan: true` só existe na carta vegan). A procura passou a apanhar
+  também **nomes de cartas e de secções**: «vegan» dava 0 de 95 com o
+  placeholder a sugeri-lo. Agora dá 49.

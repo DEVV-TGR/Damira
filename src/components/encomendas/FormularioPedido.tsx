@@ -212,33 +212,60 @@ export function FormularioPedido({ locale }: { locale: Locale }) {
           )
         )}
 
-        <fieldset>
-          <legend className="text-xs font-semibold uppercase tracking-widest text-papel/70">
-            {t("campos.tipo")}
-          </legend>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {TIPOS_PEDIDO.map((valor) => (
-              <label
-                key={valor}
-                className={`premivel alvo-toque flex min-h-11 cursor-pointer items-center rounded-full border px-5 text-sm ${
-                  tipo === valor
-                    ? "border-tijolo bg-tijolo text-papel"
-                    : "border-papel/30 hover:bg-papel hover:text-tinta"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="tipo"
-                  value={valor}
-                  checked={tipo === valor}
-                  onChange={() => setTipoManual(valor)}
-                  className="sr-only"
-                />
-                {t(`tipos.${valor}`)}
-              </label>
-            ))}
+        {comCesto ? (
+          /* ⚠️ **Com cesto, o tipo não se escolhe: lê-se.** A primeira versão
+             pedia «que tipo de pedido é?» a quem tinha acabado de juntar um kit
+             de festa e um bolo — e obrigava a escolher um dos dois. O cliente
+             chamou-lhe incoerente, e é. Os tipos vêm do que está no cesto,
+             mostram-se todos, e não se mexem aqui: quem quiser outro tipo muda
+             o cesto, que é onde a escolha vive. O que vai para o servidor é o
+             tipo que o cesto sugere (`outro` quando há mistura). */
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-papel/70">
+              {t("campos.tipo")}
+            </p>
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {[...new Set(cesto.map((i) => i.tipo))].map((valor) => (
+                <li
+                  key={valor}
+                  className="flex min-h-11 items-center rounded-full border border-tijolo bg-tijolo px-5 text-sm text-papel"
+                >
+                  {t(`tipos.${valor}`)}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-sm text-papel/60">{tc("tipoDoCesto")}</p>
+            <input type="hidden" name="tipo" value={tipo} />
           </div>
-        </fieldset>
+        ) : (
+          <fieldset>
+            <legend className="text-xs font-semibold uppercase tracking-widest text-papel/70">
+              {t("campos.tipo")}
+            </legend>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {TIPOS_PEDIDO.map((valor) => (
+                <label
+                  key={valor}
+                  className={`premivel alvo-toque flex min-h-11 cursor-pointer items-center rounded-full border px-5 text-sm ${
+                    tipo === valor
+                      ? "border-tijolo bg-tijolo text-papel"
+                      : "border-papel/30 hover:bg-papel hover:text-tinta"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="tipo"
+                    value={valor}
+                    checked={tipo === valor}
+                    onChange={() => setTipoManual(valor)}
+                    className="sr-only"
+                  />
+                  {t(`tipos.${valor}`)}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
 
         <div>
           <label

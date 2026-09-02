@@ -42,13 +42,6 @@ export function correspondeArtigo(artigo: Artigo, termo: string): boolean {
   return campos.some((campo) => campo && normalizar(campo).includes(t));
 }
 
-/** O filtro completo: a procura e o interruptor do vegan, numa função só. */
-export const filtrarArtigos = (
-  artigos: Artigo[],
-  termo: string,
-  soVegan: boolean,
-): Artigo[] =>
-  artigos.filter(
-    (artigo) =>
-      (!soVegan || artigo.vegan) && correspondeArtigo(artigo, termo),
-  );
+/** O filtro: os artigos que correspondem ao termo. */
+export const filtrarArtigos = (artigos: Artigo[], termo: string): Artigo[] =>
+  artigos.filter((artigo) => correspondeArtigo(artigo, termo));

@@ -50,7 +50,7 @@ export function SeccaoEmenta({
     <section
       id={ancora}
       aria-labelledby={`titulo-${ancora}`}
-      className="relative scroll-mt-[13.5rem] py-[clamp(2rem,4vw,3.5rem)]"
+      className="relative scroll-mt-[5rem] py-[clamp(2rem,4vw,3.5rem)]"
     >
       <div className="envolvente relative">
         {/* ⚠️ **Aqui esteve um "01", "02", "03" antes do título**, e saiu porque

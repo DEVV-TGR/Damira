@@ -10,7 +10,7 @@ import {
   porCategoria,
   type Artigo,
 } from "@/data/ementa";
-import { filtrarArtigos } from "@/lib/procura";
+import { filtrarArtigos, normalizar } from "@/lib/procura";
 import type { Locale } from "@/i18n/routing";
 import { NavegacaoEmenta } from "./NavegacaoEmenta";
 import { SeccaoEmenta } from "./SeccaoEmenta";
@@ -43,6 +43,16 @@ const FACES: Record<string, string> = {
   chocolate: "bg-tinta text-papel",
 };
 
+/* A mesma cor, para o filete da etiqueta que aparece durante a procura. São os
+   valores medidos do `globals.css`; o papel-fundo é claro de mais para um filete
+   e leva a tinta-suave no lugar dele. */
+const COR_DA_CARTA: Record<string, string> = {
+  casa: "var(--color-tijolo)",
+  "fim-de-semana": "var(--color-tinta-suave)",
+  vegan: "var(--color-verde-forte)",
+  chocolate: "var(--color-tinta)",
+};
+
 /**
  * A carta inteira, o filtro que a percorre, e o painel que se abre por cima.
  *
@@ -57,7 +67,6 @@ const FACES: Record<string, string> = {
 export function Carta({ locale }: { locale: Locale }) {
   const [aberto, setAberto] = useState<Artigo | null>(null);
   const [procura, setProcura] = useState("");
-  const [soVegan, setSoVegan] = useState(false);
   const t = useTranslations("ementa");
 
   /* ⚠️ **O filtro corre uma vez por tecla, e não uma vez por secção.** São 95
@@ -66,20 +75,35 @@ export function Carta({ locale }: { locale: Locale }) {
      de já ter renderizado o título. Aqui sai um mapa pronto: que secções
      mostrar, com que artigos, e quantos ao todo. */
   const resultado = useMemo(() => {
+    const termo = normalizar(procura);
     const cartas = cartasComArtigos()
-      .map((carta) => ({
-        carta,
-        categorias: categoriasDaCarta(carta)
-          .map((categoria) => ({
-            categoria,
-            artigos: filtrarArtigos(
-              porCategoria(carta, categoria),
-              procura,
-              soVegan,
-            ),
-          }))
-          .filter((seccao) => seccao.artigos.length > 0),
-      }))
+      .map((carta) => {
+        /* ⚠️ **O nome da carta e o da secção também contam.** Nenhum artigo se
+           chama «vegan» nem «doce» — a carta e a secção é que se chamam — e
+           uma procura por «vegan» que devolvia «0 de 95» parecia avariada a
+           quem a fez, ainda por cima com o placeholder a sugeri-la. Se o termo
+           estiver no nome da carta, entra a carta inteira; se estiver no da
+           secção, entra a secção inteira. */
+        const cartaBate =
+          termo.length > 0 &&
+          [t(`cartas.${carta}.curto`), t(`cartas.${carta}.titulo`)].some((n) =>
+            normalizar(n).includes(termo),
+          );
+        return {
+          carta,
+          categorias: categoriasDaCarta(carta)
+            .map((categoria) => ({
+              categoria,
+              artigos:
+                cartaBate ||
+                (termo.length > 0 &&
+                  normalizar(t(`categorias.${categoria}`)).includes(termo))
+                  ? porCategoria(carta, categoria)
+                  : filtrarArtigos(porCategoria(carta, categoria), procura),
+            }))
+            .filter((seccao) => seccao.artigos.length > 0),
+        };
+      })
       .filter((c) => c.categorias.length > 0);
 
     const encontrados = cartas.reduce(
@@ -88,9 +112,9 @@ export function Carta({ locale }: { locale: Locale }) {
     );
 
     return { cartas, encontrados };
-  }, [procura, soVegan]);
+  }, [procura, t]);
 
-  const aFiltrar = procura.trim().length > 0 || soVegan;
+  const aFiltrar = procura.trim().length > 0;
 
   return (
     <>
@@ -98,8 +122,6 @@ export function Carta({ locale }: { locale: Locale }) {
         cartas={cartasComArtigos()}
         procura={procura}
         aoProcurar={setProcura}
-        soVegan={soVegan}
-        aoAlternarVegan={setSoVegan}
         encontrados={resultado.encontrados}
         total={ementa.length}
       />
@@ -120,19 +142,30 @@ export function Carta({ locale }: { locale: Locale }) {
       ) : (
         resultado.cartas.map(({ carta, categorias }) => (
           <div key={carta}>
-            {/* O cabeçalho da carta é a única superfície de cor. `scroll-mt`
-                conta com o cabeçalho do site e a barra fixa, que somam ~13,5
-                rem depois de a barra ter ganho a caixa de procura. ⚠️ Ficou nos
-                8 rem antigos durante um bocado e o resultado era saltar para uma
-                carta e aterrar com o título por baixo da barra.
+            {/* O cabeçalho da carta é a única superfície de cor.
 
-                ⚠️ **Some enquanto se procura.** Quatro faixas de cor a separar
-                dois resultados leem-se como quatro secções vazias — e a barra
-                de cartas, que é o que elas anunciam, também já lá não está. */}
-            {!aFiltrar && (
+                ⚠️ **O `scroll-mt` soma-se ao `scroll-padding-top: 8rem` que o
+                `globals.css` já põe no `html`.** Medido: com 13,5 rem aqui, o
+                cabeçalho aterrava a 344 px do topo, 152 px abaixo da barra. Os
+                5 rem daqui mais os 8 rem de lá dão 13 rem = 208 px, e a barra
+                acaba nos 192: aterra mesmo por baixo dela, com um dedo de ar.
+
+                ⚠️ **Encolhe enquanto se procura, mas não some.** Quatro faixas
+                de cor inteiras a separar dois resultados liam-se como quatro
+                secções vazias; mas sem etiqueta nenhuma, dois «Doces» seguidos
+                (o da casa e o vegan) não se distinguiam. Fica uma linha com o
+                nome da carta e a cor dela no filete. */}
+            {aFiltrar ? (
+              <p
+                className="envolvente mt-10 border-l-4 pl-4 text-xs font-semibold uppercase tracking-[0.2em]"
+                style={{ borderColor: COR_DA_CARTA[carta] }}
+              >
+                {t(`cartas.${carta}.curto`)}
+              </p>
+            ) : (
               <div
                 id={carta}
-                className={`scroll-mt-[13.5rem] ${FACES[carta]} py-[clamp(2.5rem,5vw,4rem)]`}
+                className={`scroll-mt-[5rem] ${FACES[carta]} py-[clamp(2.5rem,5vw,4rem)]`}
               >
                 <div className="envolvente">
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] opacity-75">
