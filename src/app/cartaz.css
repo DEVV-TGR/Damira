@@ -1414,3 +1414,31 @@ body:has(.cartaz) .barra-vidro {
   display: inline-flex;
   align-items: center;
 }
+
+
+/* ------------------------------------------- II · o título antes do pão --
+   O cabeçalho do capítulo vem antes da estampa (ver `Pao.tsx`). Menos ar por
+   baixo do que uma secção normal: o que se segue é a fotografia dele. */
+.cap--legenda--antes {
+  padding-block-end: clamp(1.5rem, 3vw, 2.5rem);
+}
+/* A legenda pequena, colada ao fundo da estampa e fora dela. O `figure` é
+   `overflow: hidden` com a fotografia em `fill`, portanto a legenda vive numa
+   faixa própria por baixo, no chão de tinta. */
+.pao__estampa {
+  display: grid;
+  grid-template-rows: 1fr auto;
+}
+.pao__foto {
+  grid-row: 1;
+}
+.pao__legenda {
+  position: relative;
+  z-index: 1;
+  grid-row: 2;
+  padding: 0.75rem var(--margem-vapor) 0.9rem clamp(1.25rem, 5vw, 5rem);
+  padding-inline-start: var(--margem-vapor);
+  background: var(--color-tinta);
+  color: var(--suave-sobre-tinta);
+  font-size: 0.85rem;
+}
