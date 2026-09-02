@@ -134,12 +134,7 @@
         "peixe": "Grilled fish with cabbage and potato.",
         "frango": "Grilled chicken with salad.",
         "sala": "The dining room at lunchtime, soup being served at a table."
-      },
-      "ampliar": "Enlarge {nome}",
-      "fechar": "Close",
-      "anterior": "Previous",
-      "seguinte": "Next",
-      "contador": "{n} of {total}"
+      }
     },
     "reels": {
       "numeral": "V",
@@ -439,7 +434,10 @@
     "falarConnosco": "Get in touch",
     "feitoPor": "Site by",
     "estudio": "DevPlus",
-    "direitos": "All rights reserved."
+    "direitos": "All rights reserved.",
+    "paginas": "Pages",
+    "horario": "Opening hours",
+    "verMapa": "See on the map"
   },
   "naoEncontrada": {
     "titulo": "This one does not exist",

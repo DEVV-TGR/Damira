@@ -134,12 +134,7 @@
         "peixe": "Prato de peixe grelhado com couve e batata.",
         "frango": "Prato de frango grelhado com salada.",
         "sala": "A sala da casa à hora de almoço, com sopa a ser servida à mesa."
-      },
-      "ampliar": "Ampliar {nome}",
-      "fechar": "Fechar",
-      "anterior": "Anterior",
-      "seguinte": "Seguinte",
-      "contador": "{n} de {total}"
+      }
     },
     "reels": {
       "numeral": "V",
@@ -439,7 +434,10 @@
     "falarConnosco": "Falar connosco",
     "feitoPor": "Site por",
     "estudio": "DevPlus",
-    "direitos": "Todos os direitos reservados."
+    "direitos": "Todos os direitos reservados.",
+    "paginas": "Páginas",
+    "horario": "Horário",
+    "verMapa": "Ver no mapa"
   },
   "naoEncontrada": {
     "titulo": "Esta não existe",
