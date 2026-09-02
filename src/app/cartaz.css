@@ -1197,40 +1197,47 @@ body:has(.cartaz) .barra-vidro {
 }
 
 /* ------------------------------------------------------------ V · os reels --
-   Um carril nativo: arrasta-se com o dedo, pára em cada cela, e não precisa de
-   uma linha de JavaScript. */
+   Um `pan`, como o da festa: o palco prende-se e a rolagem faz o carril
+   atravessar. Ver `Reels.tsx` e `.festa__carril`. */
+.reels__carril {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 2.5vw, 2rem);
+  height: 100%;
+  padding-inline-start: var(--margem-vapor);
+  /* ⚠️ 165vw: o curso é `scrollWidth - innerWidth`, e um carril de largura
+     fixa morre à medida que o monitor cresce. Armadilha 11 do AGENTS.md. */
+  min-width: 165vw;
+}
+.reels__carril > * {
+  flex: 0 0 auto;
+}
+.reels__abertura {
+  width: min(28rem, 78vw);
+}
 .reels__fila {
   display: flex;
   gap: clamp(0.75rem, 2vw, 1.25rem);
-  margin: clamp(2.5rem, 5vw, 4rem) calc(-1 * clamp(1.25rem, 5vw, 5rem)) 0 calc(-1 * var(--margem-vapor));
-  padding: 0.25rem var(--margem-vapor) 1rem;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-padding-inline-start: var(--margem-vapor);
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  /* As regras de grelha de antes deixam de valer. */
-  grid-template-columns: none;
-}
-.reels__fila::-webkit-scrollbar {
-  display: none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 .reels__cela {
-  flex: 0 0 clamp(11rem, 46vw, 15rem);
-  scroll-snap-align: start;
+  flex: 0 0 auto;
+  width: clamp(11rem, 22vw, 15rem);
   aspect-ratio: 9 / 16;
-}
-/* O último ganha margem para o carril poder parar nele por inteiro: é a
-   armadilha 10 do AGENTS.md outra vez, o enchimento de fim não conta. */
-.reels__cela:last-child {
-  margin-inline-end: clamp(1.25rem, 5vw, 5rem);
+  max-height: 72svh;
 }
 .reels__instagram {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem 1.5rem;
-  margin-top: clamp(1.5rem, 3vw, 2.5rem);
+  width: min(22rem, 74vw);
+  margin-inline-end: 14vw;
+  display: grid;
+  gap: 1rem;
+}
+@media (max-width: 48rem) {
+  .reels__cela {
+    width: 46vw;
+  }
 }
 
 /* ------------------------------------------------- IV · as fotografias --
