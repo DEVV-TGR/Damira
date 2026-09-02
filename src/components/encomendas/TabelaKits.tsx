@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { encomendas, escaloesDisponiveis, escalaoDe } from "@/data/encomendas";
 import { formatarPreco } from "@/lib/preco";
+import { BotaoJuntar } from "./BotaoJuntar";
 import type { Locale } from "@/i18n/routing";
 
 /**
@@ -34,7 +35,38 @@ import type { Locale } from "@/i18n/routing";
 export function TabelaKits({ locale }: { locale: Locale }) {
   const t = useTranslations("encomendas.festas");
   const escaloes = escaloesDisponiveis();
-  const [pessoas, setPessoas] = useState(escaloes[0]);
+  /**
+   * O escalão escolhido **e de que lado o conteúdo novo entra**, num estado só.
+   *
+   * `direcao` é `1` a subir de escalão (entra de baixo, como o número que
+   * cresce) e `-1` a descer.
+   *
+   * ⚠️ **Os dois juntos, e não dois `useState`.** Não é arrumação: são um par
+   * que nunca pode ser lido desirmanado. Separados, qualquer render que
+   * apanhasse o escalão novo com a direção velha desenhava a entrada para o lado
+   * errado — e um `useRef` para a direção, que foi a primeira tentativa, é pior
+   * ainda: ler um ref durante o render é precisamente o que o React não garante.
+   */
+  const [escolha, setEscolha] = useState({
+    pessoas: escaloes[0],
+    direcao: 1,
+    /**
+     * ⚠️ **A animação não corre na primeira pintura**, e isto é o que a trava.
+     *
+     * Com `animation-fill-mode: both` e um atraso por coluna, os cartões nascem
+     * invisíveis e só aparecem 40 e 80 ms depois — quem chega à página vê as
+     * três colunas a entrar sem ter feito nada, e numa captura de ecrã o Kit
+     * Premium **não aparece de todo**. Foi assim que este defeito se apanhou.
+     *
+     * A animação existe para explicar uma troca. Sem troca não há nada para
+     * explicar, e movimento sem informação é só ruído a atrasar a leitura.
+     */
+    trocou: false,
+  });
+  const { pessoas, direcao, trocou } = escolha;
+
+  const escolher = (n: number) =>
+    setEscolha({ pessoas: n, direcao: n > pessoas ? 1 : -1, trocou: true });
 
   return (
     <div className="envolvente mt-10">
@@ -49,11 +81,11 @@ export function TabelaKits({ locale }: { locale: Locale }) {
               <button
                 key={n}
                 type="button"
-                onClick={() => setPessoas(n)}
+                onClick={() => escolher(n)}
                 aria-pressed={activo}
                 /* Utilitários e não `.bloco-tijolo`: o Tailwind v4 não aplica
                    variantes a classes de `@layer components`. */
-                className={`premivel titulo-display rounded-full border px-6 py-2.5 text-sm tabular-nums ${
+                className={`premivel alvo-toque titulo-display rounded-full border px-6 py-2.5 text-sm tabular-nums ${
                   activo
                     ? "border-tijolo bg-tijolo text-papel"
                     : "border-tinta/25 hover:bg-tinta hover:text-papel"
@@ -66,8 +98,14 @@ export function TabelaKits({ locale }: { locale: Locale }) {
         </div>
       </fieldset>
 
-      <div className="mt-10 grid gap-6 lg:grid-cols-3">
-        {encomendas.kitsFesta.map((kit) => {
+      {/* `items-start` para cada cartão ter a altura do seu conteúdo. Esticados
+          todos à altura do maior, o Kit Básico — que tem nove linhas contra as
+          dezanove do Premium — ficava com meio cartão de branco por baixo, e um
+          vazio desses lê-se como conteúdo em falta. O que alinha a comparação
+          são os títulos e os preços, que ficam à mesma altura de qualquer
+          maneira. */}
+      <div className="mt-10 grid items-start gap-6 lg:grid-cols-3">
+        {encomendas.kitsFesta.map((kit, indice) => {
           const escalao = escalaoDe(kit, pessoas);
           /* Uma gama pode não servir um escalão. Hoje servem todas as três, mas
              o dia em que a casa deixar de fazer o Premium de setenta não pode
@@ -76,8 +114,24 @@ export function TabelaKits({ locale }: { locale: Locale }) {
 
           return (
             <article
-              key={kit.id}
-              className="flex flex-col rounded-2xl border border-tinta/15 p-7"
+              /* A `key` inclui o escalão de propósito: é o que faz o React
+                 substituir o cartão em vez de o actualizar, e é a substituição
+                 que reinicia a animação de entrada. Com a `key` só no `kit.id`,
+                 o conteúdo mudava dentro do mesmo nó e a animação nunca voltava
+                 a correr — que é como isto estava. */
+              key={`${kit.id}-${escalao.pessoas}`}
+              className={`flex flex-col rounded-2xl border border-tinta/15 p-7 ${
+                trocou ? "escalao" : ""
+              }`}
+              style={
+                {
+                  "--direcao": direcao,
+                  /* Um atraso mínimo por coluna: as três entram quase juntas,
+                     mas não em uníssono. Acima de ~60 ms lê-se como três coisas
+                     a acontecer em fila, que é mais lento sem ser mais claro. */
+                  animationDelay: `${indice * 40}ms`,
+                } as React.CSSProperties
+              }
             >
               <h3 className="titulo-display titulo-gama">{kit.nome[locale]}</h3>
               <p className="titulo-display mt-4 text-4xl tabular-nums text-tijolo">
@@ -89,6 +143,23 @@ export function TabelaKits({ locale }: { locale: Locale }) {
 
               <Bloco titulo={t("salgados")} linhas={escalao.salgados} locale={locale} />
               <Bloco titulo={t("doces")} linhas={escalao.doces} locale={locale} />
+
+              {/* ⚠️ **O `id` inclui o escalão.** «Kit Médio» e «Kit Médio para
+                  setenta» são pedidos diferentes com preços diferentes; um `id`
+                  só com o kit fazia a segunda escolha somar quantidade à
+                  primeira e o email saía a pedir dois kits de vinte. */}
+              <div className="mt-7 pt-1">
+                <BotaoJuntar
+                  item={{
+                    id: `festa:${kit.id}:${escalao.pessoas}`,
+                    tipo: "festa",
+                    nome: kit.nome[locale],
+                    variante: t("paraPessoas", { n: escalao.pessoas }),
+                    preco: escalao.preco,
+                    pessoas: escalao.pessoas,
+                  }}
+                />
+              </div>
             </article>
           );
         })}

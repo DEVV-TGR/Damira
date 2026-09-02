@@ -1,8 +1,8 @@
 {
   "_comentario": "Inventário das skills em .agents/skills, copiadas para o projeto para que qualquer agente ou máquina o encontre auto-contido. Os symlinks em .claude/skills apontam para cá. O sha256 é do conteúdo de cada pasta (caminhos + bytes, por ordem): serve para detetar que uma skill mudou sem ninguém dizer. Regenerar com `npm run skills:lock`.",
   "origem": "~/.agents/skills",
-  "copiadoEm": "2026-08-11",
-  "total": 21,
+  "copiadoEm": "2026-09-01",
+  "total": 22,
   "skills": [
     {
       "nome": "animation-vocabulary",
@@ -123,6 +123,12 @@
       "descricao": "Reviews animation and motion code against a high craft bar derived from Emil Kowalski's design engineering philosophy. Default to flagging; approval is earned.",
       "ficheiros": 2,
       "sha256": "6cb2a054a9982dec"
+    },
+    {
+      "nome": "scrollcraft",
+      "descricao": "Build a premium, scroll-driven interactive landing page for any business: a service company, a physical product, a food brand, a drink brand. Scroll becomes ...",
+      "ficheiros": 22,
+      "sha256": "118ae2a57496c5f4"
     },
     {
       "nome": "stitch-design-taste",

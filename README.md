@@ -63,14 +63,47 @@ falta, faz o site mentir a alguém:
 
 ### Bloqueadores
 
+- [ ] **Mudar o destino dos pedidos.** O formulário de encomendas manda hoje
+      para `support@devplus.pt` — a agência, não a casa. É de propósito enquanto
+      isto é uma demonstração, e é **a primeira coisa a mudar no dia do
+      lançamento**: um site publicado a mandar as encomendas para quem o
+      construiu é uma casa a perder trabalho sem dar por isso. Muda-se com a
+      variável `EMAIL_PEDIDOS`.
+- [ ] **Chave do serviço de email (`RESEND_API_KEY`) e domínio verificado.** Sem
+      ela o formulário não se parte — devolve o pedido escrito para a pessoa o
+      enviar do seu correio —, mas cada pedido passa a depender de ela carregar
+      em enviar uma segunda vez.
+- [ ] **Política de privacidade.** O formulário recolhe nome, email, telefone e
+      uma data, e pede consentimento explícito para os tratar. Falta a página
+      que diz durante quanto tempo se guardam e como se pede a eliminação.
 - [ ] **Prazo de antecedência das encomendas.** Quantos dias precisa a casa para
       um kit de 20, de 40 e de 70? Sem isto, `/encomendas` diz "por confirmar" —
       e alguém vai pedir setenta doses para amanhã.
 - [ ] **Horário, dia a dia.** Temos "07h00–21h00" do cartão de contactos, sem
       dizer a que dias se aplica. O domingo é o candidato a ser diferente. Isto
       vai para os dados estruturados e passa a ser o horário que o Google mostra.
-- [ ] **Fotografia.** Não há nenhuma utilizável (ver o AGENTS.md). É preciso uma
-      sessão: montra, interior, três ou quatro pratos, um kit de festa montado.
+- [ ] **Consentimento das pessoas na fotografia da sala.** `public/fotos/04.webp`
+      mostra clientes de frente e reconhecíveis. É a única imagem do site com
+      pessoas identificáveis. Numa demo passa; **no ar a sério, ou a casa tem o
+      consentimento delas, ou a imagem sai.**
+- [ ] **A fotografia da fachada, em ficheiro.** É a capa do Facebook da casa — a
+      montra vista da rua, com a placa, o letreiro "Pão Quente" e o *Histórias
+      com sabor* no vidro. É a imagem certa para o herói e não a temos: no
+      Facebook é servida por um endereço assinado que não se guarda. Pedir o
+      original à casa; entra como `/fotos/06.webp` e é uma linha em `Hero.tsx`.
+- [ ] **Qual é o logótipo oficial.** Há dois em circulação: o sans-serif com
+      "desde 1996" (nos impressos, na placa, no avatar do Facebook — é o que o
+      site usa) e um **serifado a vermelho `#891C1F`** com "pão quente ·
+      confeitaria", que a casa publicou no TripAdvisor em 2019. O segundo parece
+      antigo, mas ninguém confirmou. E os dois vermelhos não coincidem: o dos
+      impressos é `#923D38`.
+- [ ] **Sessão fotográfica.** O que existe são cinco imagens recuperadas do
+      TripAdvisor, a maior com 1440 px de lado — chega para cartões, não chega
+      para um herói a sangrar. É preciso: montra, interior, três ou quatro
+      pratos, um kit de festa montado. Ver o AGENTS.md.
+- [ ] **A carta de almoço de segunda a sexta.** A fotografia da sala mostra
+      serviço de mesa a meio da semana, e a ementa do site só tem pratos ao
+      sábado e domingo — foi o que o impresso disse. Falta o impresso do dia.
 - [ ] **Confirmar os preços** das cartas de 2025/2026 contra o que está hoje ao
       balcão.
 

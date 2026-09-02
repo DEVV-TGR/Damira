@@ -45,3 +45,11 @@ referencias/
 # Pasta temporária do `npm run marca`, apagada pelo próprio script — fica aqui
 # para o caso de ele morrer a meio.
 .marca-tmp/
+
+# As capturas de verificação do scrollcraft. São 400 MB de PNG a 2880×1800 que
+# se regeram num comando, e mudam a cada retoque de desenho: versioná-las era
+# encher o histórico com binário que ninguém volta a abrir.
+#
+# ⚠️ **O que fica versionado é o que se lê**: o `BRIEF.md` de cada build e o
+# `FINGERPRINTS.md`. Regerar as capturas com o `shoot.mjs` — ver o AGENTS.md.
+scrollcraft/builds/*/lab/

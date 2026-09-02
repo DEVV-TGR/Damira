@@ -5,15 +5,50 @@ import { routing } from "@/i18n/routing";
  *
  * É preciso em sítios que têm de concordar entre si: o `metadataBase` (que
  * transforma os caminhos relativos das imagens de partilha em absolutos), o
- * `sitemap.ts`/`robots.ts` e os dados estruturados das duas casas.
+ * `sitemap.ts`/`robots.ts` e os dados estruturados da casa.
  *
  * ⚠️ O valor por defeito é um subdomínio de demonstração da Vercel, porque **o
  * domínio final ainda não está decidido**. Quando estiver, define-se
  * `NEXT_PUBLIC_SITE_URL` no painel da Vercel e faz-se *redeploy*.
  */
-export const URL_SITE = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://damira-demo.vercel.app"
-).replace(/\/+$/, "");
+const PREDEFINIDO = "https://damira-demo.vercel.app";
+
+/**
+ * ⚠️ **`||` e não `??`, e a diferença é o build inteiro.**
+ *
+ * Uma variável de ambiente **criada no painel da Vercel sem lhe pôr valor** não
+ * é `undefined` — é a string vazia. O `??`, que só cai no predefinido em `null`
+ * ou `undefined`, deixava-a passar: o `URL_SITE` ficava `""`, e a primeira
+ * página a gerar metadata rebentava o build com
+ *
+ * ```
+ * TypeError: Invalid URL … input: ''
+ * ```
+ *
+ * — uma mensagem que não nomeia a variável nem o painel onde ela está, e que
+ * manda quem a lê procurar o erro no `generateMetadata` de uma página que não
+ * tem defeito nenhum. Aconteceu no primeiro deploy, em `/pt/ementa`.
+ *
+ * O `.trim()` cobre o mesmo acidente com um espaço lá dentro, que é invisível
+ * no painel.
+ */
+const configurado = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+
+export const URL_SITE = (configurado || PREDEFINIDO).replace(/\/+$/, "");
+
+/* E, se alguém escrever um valor que não é um URL absoluto — `damira.pt` sem
+   esquema é o erro provável —, falha **aqui**, a dizer o que está mal e onde se
+   corrige, em vez de rebentar três ficheiros à frente. */
+try {
+  new URL(URL_SITE);
+} catch {
+  throw new Error(
+    `NEXT_PUBLIC_SITE_URL inválido: ${JSON.stringify(configurado)}. ` +
+      "Tem de ser um URL absoluto com esquema (https://exemplo.pt). " +
+      "Corrigir nas variáveis de ambiente da Vercel — ou apagar a variável, " +
+      `que faz o site voltar ao predefinido (${PREDEFINIDO}).`,
+  );
+}
 
 /**
  * Estúdio que desenhou e desenvolveu o site, creditado no rodapé.

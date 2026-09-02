@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 250">
+<!--
+  O símbolo da Damira: o vapor e o pão, como estão na placa da porta.
+
+  ORIGEM. Os impressos só trazem a palavra "damira", com o m desenhado como
+  três ondas. A placa da rua mostra que essas ondas são metade de um símbolo:
+  por baixo há um pão, e a placa assina "Confeitaria · Pão Quente". As ondas são
+  VAPOR A SAIR DE UM PÃO ACABADO DE COZER. Ver
+  originais/tripadvisor/exterior-logotipo.jpg.
+
+  E os dois cortes da faca sao o proprio m: na palavra o m é feito de ondas; no
+  pão, a faca repete o mesmo gesto em duas pernas, com o gancho da segunda a
+  fechar como um m cursivo.
+
+  AVISO. Isto é um desenho novo a partir de uma fotografia, e nao a arte final.
+  As proporções foram medidas contra a placa, mas a placa está fotografada em
+  perspetiva e de baixo. Quando o cliente entregar o vetor, este ficheiro sai.
+
+  UMA COR. Usa-se como mask-image sobre um bloco de cor (classe .traco), tal
+  como o logotipo e as ondas — o mesmo ficheiro serve papel sobre tijolo,
+  tijolo sobre papel e papel sobre tinta. Na placa o miolo é dourado; esse
+  dourado NAO existe em nenhum dos cinco impressos, e tirá-lo de uma fotografia
+  de chapa metálica ao sol era inventar um valor de marca.
+-->
+<g fill="none" stroke="#000" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+  <!-- O vapor. Três ondas em S, de alturas escalonadas: na placa a da direita
+       é a mais alta, e é o que impede as três de se lerem como um pente. -->
+  <path d="M70 104C62 86 80 74 72 56c-5-12 2-22 4-28"/>
+  <path d="M110 104C102 84 120 72 112 52c-5-13 2-24 4-30"/>
+  <path d="M150 104C142 82 160 70 152 48c-5-14 2-26 4-32"/>
+
+  <!-- A côdea. Não é uma elipse: o lado direito é mais cheio e o esquerdo acaba
+       num bico, que é o que faz o desenho parecer feito à mão. -->
+  <path d="M14 198C14 171 62 145 122 143c52-2 86 17 85 41-1 29-48 50-108 49C52 232 14 218 14 198Z"/>
+  <!-- Os cortes: o m. -->
+  <path d="M54 200C49 181 55 167 69 161"/>
+  <path d="M90 204C83 181 94 164 114 158c9-3 13 3 11 10"/>
+</g>
+</svg>

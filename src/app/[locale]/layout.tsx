@@ -6,9 +6,11 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Analytics } from "@vercel/analytics/next";
 import { Cabecalho } from "@/components/Cabecalho";
 import { Rodape } from "@/components/Rodape";
+import { BotaoEncomendar } from "@/components/BotaoEncomendar";
 import { DadosEstruturados } from "@/components/DadosEstruturados";
 import { routing, type Locale } from "@/i18n/routing";
-import { URL_SITE } from "@/lib/site";
+import { URL_SITE, urlLocalizado } from "@/lib/site";
+import { imagensDePartilha } from "@/lib/metadata";
 import "../globals.css";
 
 /**
@@ -52,13 +54,46 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "metadata.inicio" });
   const marca = await getTranslations({ locale, namespace: "marca" });
+  const meta = await getTranslations({ locale, namespace: "metadata" });
 
   return {
     metadataBase: new URL(URL_SITE),
     /* O `%s` é o título de cada página; a homepage usa o `default`. Poupa
-       repetir "— Confeitaria Damira" em cada `generateMetadata`. */
-    title: { default: t("titulo"), template: `%s — ${marca("nome")}` },
+       repetir o nome da casa em cada `generateMetadata`.
+       ⚠️ **Aqui vai o nome curto e não o completo.** "Encomendas — Confeitaria
+       e Pão Quente Damira" são 45 caracteres, e um separador de browser mostra
+       uns vinte: o que o utilizador lê é "Encomendas — Confeit…", que perde
+       justamente a parte que identifica a casa. O nome completo fica onde é
+       identificação a sério — na descrição, nos dados estruturados e no
+       copyright. */
+    title: { default: t("titulo"), template: `%s — ${marca("nomeCurto")}` },
     description: t("descricao"),
+    /**
+     * ⚠️ **A homepage não tinha `openGraph` nenhum**, e é o URL que mais se
+     * partilha — o que se manda a um amigo é "damira.pt", não
+     * "damira.pt/encomendas". As outras duas páginas recebiam o bloco pelo
+     * `metadataDaPagina()`; esta monta as suas metadata aqui e ficou de fora.
+     *
+     * ⚠️ **E não se herda.** O `openGraph` de uma rota-filha **substitui** o do
+     * pai por inteiro em vez de se fundir campo a campo, por isso este bloco
+     * tem de estar completo aqui e completo lá — não chega pô-lo num sítio e
+     * contar com o outro.
+     */
+    openGraph: {
+      type: "website",
+      siteName: marca("nome"),
+      title: t("titulo"),
+      description: t("descricao"),
+      url: urlLocalizado("/", locale),
+      locale: locale === "pt" ? "pt_PT" : "en_GB",
+      images: imagensDePartilha(meta("imagemAlt")),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: t("titulo"),
+      description: t("descricao"),
+      images: imagensDePartilha(meta("imagemAlt")),
+    },
   };
 }
 
@@ -94,6 +129,10 @@ export default async function LayoutIdioma({
           <Cabecalho locale={locale as Locale} />
           <main id="conteudo">{children}</main>
           <Rodape />
+          {/* Fica fora do `<main>`: é navegação persistente, não conteúdo da
+              página. Ver o componente para as duas regras que o mantêm
+              discreto. */}
+          <BotaoEncomendar />
         </NextIntlClientProvider>
         <DadosEstruturados descricao={t("descricao")} />
         <Analytics />

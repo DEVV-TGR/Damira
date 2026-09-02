@@ -16,15 +16,27 @@ import { readdir, mkdir, writeFile, readFile } from "node:fs/promises";
 import { join, extname } from "node:path";
 import sharp from "sharp";
 
-const [origem, destino] = process.argv.slice(2);
+const [origem, destino, ladoPedido] = process.argv.slice(2);
 
 if (!origem || !destino) {
-  console.error("uso: node scripts/importar-fotos.mjs <origem> <destino>");
+  console.error("uso: node scripts/importar-fotos.mjs <origem> <destino> [lado-maior]");
   process.exit(1);
 }
 
-/** 1600 px chega para ecrãs Retina a toda a largura sem servir ficheiros de 2 MB. */
-const LADO_MAIOR = 1600;
+/**
+ * 1600 px chega para ecrãs Retina a toda a largura sem servir ficheiros de 2 MB.
+ *
+ * O terceiro argumento sobrepõe-no, e existe por causa do herói: aquele bloco
+ * ocupa a largura toda do ecrã, e a 1600 px num monitor grande a ampliação
+ * vê-se. ⚠️ **Não subir isto para todas as fotografias** — uma imagem de 2400 px
+ * num cartão de 400 é peso servido para nada, e o cartão é o caso normal.
+ */
+const LADO_MAIOR = Number(ladoPedido) || 1600;
+
+if (ladoPedido && !Number.isFinite(LADO_MAIOR)) {
+  console.error(`lado-maior tem de ser um número: recebi "${ladoPedido}"`);
+  process.exit(1);
+}
 const ACEITES = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif"]);
 
 const ficheiros = (await readdir(origem))

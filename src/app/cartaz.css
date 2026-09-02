@@ -1,0 +1,1171 @@
+/* ===========================================================================
+   O CARTAZ — a página inicial, em capítulos.
+
+   Gramática: editorial em capítulos (uniqueness.md §2.2), família estética
+   maximalista. Ver `scrollcraft/builds/damira-inicio/BRIEF.md` para o plano
+   inteiro: a entrevista, a curva de sentir, a partitura e o porquê das outras
+   sete gramáticas terem perdido.
+
+   ⚠️ **Isto está fora de `@layer` de propósito.** No Tailwind v4 as regras
+   fora de camada ganham sempre às de dentro, e é isso que permite a este
+   ficheiro destravar o cabeçalho do sítio sem `!important` nenhum. A conta a
+   pagar é conhecida: quem declarar aqui uma `transition` tem de declarar
+   **todas** as propriedades que quer animar, porque não herda as da camada.
+   =========================================================================== */
+
+.cartaz {
+  /* As seis funções de cor do motor, mapeadas na paleta medida dos impressos.
+     Nenhuma cor nova: o "colorido" desta página é um fundo por capítulo, e os
+     fundos já existiam todos. */
+  --sc-canvas: var(--color-papel);
+  --sc-surface: var(--color-papel-fundo);
+  --sc-ink: var(--color-tinta);
+  --sc-ink-soft: var(--color-tinta-suave);
+  --sc-accent: var(--color-tijolo);
+  --sc-accent-ink: var(--color-papel);
+
+  --sc-font-display: var(--font-display);
+  --sc-font-text: var(--font-sans);
+
+  /* ⚠️ **Texto secundário sobre fundo escuro: tons opacos, e medidos.**
+     Aqui esteve `color-mix(..., transparent)` e reprovou a verificação a
+     1,27:1 nos três capítulos escuros. A opacidade come contraste e não
+     aparece em tabela nenhuma — é a armadilha 5 do `AGENTS.md`, e apanhou-me
+     nela. Estes dois são opacos e foram medidos contra o fundo em que vivem:
+
+     | Tom       | Sobre     | Razão    |
+     |-----------|-----------|----------|
+     | `#D3CEC9` | tinta     | 10,75:1  |
+     | `#E0DCD8` | tijolo    |  5,23:1  |
+
+     São o papel puxado para a tinta, não um cinzento novo: um `#888` sobre um
+     fundo quente lê-se sujo. */
+  --suave-sobre-tinta: #d3cec9;
+  --suave-sobre-tijolo: #e0dcd8;
+
+  /* A margem que o vapor ocupa. O conteúdo afasta-se dela em vez de lhe passar
+     por baixo: um fio que corta texto é um risco, não uma marca. */
+  --margem-vapor: clamp(3rem, 7vw, 6.5rem);
+
+  background: var(--sc-canvas);
+  color: var(--sc-ink);
+  overflow-x: clip;
+}
+
+/* ⚠️ **O cabeçalho do sítio destrava-se aqui.** A gramática de capítulos
+   proíbe barra fixa: a navegação de uma peça impressa é o fólio na margem, e é
+   o que o vapor faz. Uma barra de vidro colada ao topo passaria por cima de
+   cada capítulo e por cima da estampa do pico.
+
+   Não deixa de existir — passa a **cabeçalho de rosto**, que é o que uma peça
+   impressa põe na primeira página. Continua a ser a navegação entre as três
+   páginas do sítio, e continua a apanhar o salto de teclado.
+
+   O `:has()` prende isto à homepage. Nas outras duas páginas a barra continua
+   colada, que é o que lá faz sentido. */
+body:has(.cartaz) .barra-vidro {
+  position: static;
+}
+
+/* ------------------------------------------------------- os oito capítulos --
+   Cada capítulo assenta no seu próprio fundo e fica lá. Os cortes são secos:
+   o `devices.md` §10 é explícito em que um corte não é uma interpolação, e
+   interpolar entre dois fundos de capítulo é exactamente a moleza que esta
+   gramática existe para recusar. Por isso não há `data-sc-drift` em lado
+   nenhum desta página.
+
+   ⚠️ **Ao reinscrever `--sc-ink` é obrigatório reinscrever `color`.** A cor
+   herda-se já resolvida, portanto o texto que resolveu a cor no `.cartaz`
+   mantém-na por muito que a secção redefina o token. Falha em silêncio e dá
+   1,15:1. Está no `taste.md`, e cada bloco abaixo cumpre-o. */
+.cap {
+  position: relative;
+  padding-block: clamp(4rem, 9vw, 8rem);
+  padding-inline: var(--margem-vapor) clamp(1.25rem, 5vw, 5rem);
+}
+.cap__caixa {
+  max-width: 46rem;
+}
+
+/* ⚠️ **A folha de rosto é tijolo, e não papel.** A gramática de capítulos pede
+   tipografia no papel, e assim esteve; o cliente viu e pediu cor. Tem razão, e
+   a razão tem nome: a página abria num ecrã branco com letra preta e o primeiro
+   sinal de que ali havia uma marca era o logótipo de 28 px no cabeçalho. As
+   capas dos impressos da Damira são tijolo chapado — isto é o que a casa faz em
+   papel.
+
+   Papel sobre tijolo dá **6,87:1** e passa a qualquer tamanho. ⚠️ Tinta sobre
+   tijolo dá 2,36:1 e é a armadilha desta paleta: sobre tijolo escreve-se a
+   papel, e é a única opção. */
+.cap--capa {
+  background: var(--color-tijolo);
+  --sc-ink: var(--color-papel);
+  /* 5,23:1 sobre o tijolo. Ver a tabela no topo deste ficheiro. */
+  --sc-ink-soft: var(--suave-sobre-tijolo);
+  color: var(--sc-ink);
+  min-height: 88svh;
+  display: flex;
+  align-items: center;
+}
+
+.capa__atalhos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: clamp(2rem, 4vw, 2.75rem) 0 0;
+}
+.cap--porta {
+  background: var(--color-papel-fundo);
+  --sc-ink: var(--color-tinta);
+  --sc-ink-soft: var(--color-tinta-suave);
+  color: var(--sc-ink);
+}
+.cap--silencio {
+  background: var(--color-tinta);
+  --sc-ink: var(--color-papel);
+  --sc-ink-soft: var(--suave-sobre-tinta);
+  color: var(--sc-ink);
+  min-height: 52svh;
+  display: flex;
+  align-items: center;
+}
+.cap--legenda {
+  background: var(--color-papel);
+  --sc-ink: var(--color-tinta);
+  --sc-ink-soft: var(--color-tinta-suave);
+  color: var(--sc-ink);
+}
+.cap--maos {
+  background: var(--color-papel-fundo);
+  --sc-ink: var(--color-tinta);
+  --sc-ink-soft: var(--color-tinta-suave);
+  color: var(--sc-ink);
+}
+/* ⚠️ O verde é do vegan e de mais nada. É o único capítulo verde da página, e
+   é essa exclusividade que faz dele o corte mais forte da sequência.
+
+   ⚠️ **É o `verde-forte` e não o verde da marca, e não foi escolha de gosto.**
+   O verde da marca (`#698842`) dá 3,89:1 com papel e 4,16:1 com tinta: os dois
+   reprovam em corpo pequeno, e este capítulo tem um olho, um corpo e uma
+   ligação em corpo pequeno. O `verde-forte` existe no `globals.css`
+   exactamente para isto e dá **4,67:1** com papel. É o mesmo verde 10% mais
+   escuro, portanto continua a ser a folha do vegan e não uma cor nova.
+
+   A verificação apanhou isto a 1,46:1 na primeira volta. Não descer daqui sem
+   voltar a medir. */
+.cap--raro {
+  background: var(--color-verde-forte);
+  --sc-ink: var(--color-papel);
+  /* ⚠️ Sobre este verde **não há folga para um tom secundário**: o papel a
+     4,67:1 é o melhor que a paleta dá, e qualquer tom mais escuro cai abaixo
+     de 4,5:1. A hierarquia deste capítulo faz-se por tamanho e por peso, que é
+     como se fazia antes de haver cinzentos. */
+  --sc-ink-soft: var(--color-papel);
+  color: var(--sc-ink);
+}
+.cap--festa {
+  background: var(--color-tijolo);
+  --sc-ink: var(--color-papel);
+  --sc-ink-soft: var(--suave-sobre-tijolo);
+  color: var(--sc-ink);
+}
+.cap--colofao {
+  background: var(--color-tinta);
+  --sc-ink: var(--color-papel);
+  --sc-ink-soft: var(--suave-sobre-tinta);
+  color: var(--sc-ink);
+}
+
+/* ---------------------------------------------------------- a tipografia --
+   Cartaz: o contraste de escala é que faz o ritmo, não o movimento. */
+.cap__olho {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--sc-ink-soft);
+  margin: 0;
+}
+.cap__numeral {
+  color: var(--sc-ink);
+  margin-right: 0.6em;
+}
+.cap__titulo,
+.capa__titulo {
+  font-family: var(--sc-font-display);
+  font-weight: 600;
+  line-height: 0.94;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+  margin: 0.5rem 0 0;
+}
+.cap__titulo {
+  font-size: clamp(2.2rem, 1.4rem + 3.6vw, 4.4rem);
+}
+/* A capa é o único momento de herói da página, e é onde o `taste.md` levanta o
+   tecto dos 6rem. A Bricolage tem eixo de largura, portanto condensa-se sem
+   trocar de família — é o registo dos impressos. */
+.capa__titulo {
+  font-size: clamp(3rem, 1rem + 11vw, 10rem);
+  font-variation-settings: "wdth" 62, "opsz" 48;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+.cap__lede {
+  font-size: clamp(1.1rem, 1rem + 0.5vw, 1.4rem);
+  line-height: 1.44;
+  max-width: 40ch;
+  margin: 1.75rem 0 0;
+  text-wrap: pretty;
+}
+.cap__texto {
+  max-width: 56ch;
+  line-height: 1.62;
+  color: var(--sc-ink-soft);
+  margin: 1.25rem 0 0;
+  text-wrap: pretty;
+}
+.cap__nota {
+  font-size: 0.85rem;
+  color: var(--sc-ink-soft);
+  max-width: 42ch;
+  margin: 2.5rem 0 0;
+}
+.cap__legendaLinha {
+  font-size: 0.95rem;
+  color: var(--sc-ink-soft);
+  margin: 1rem 0 0;
+}
+.cap__ligacao {
+  display: inline-block;
+  margin-top: 1.5rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.28em;
+  text-decoration-thickness: 1px;
+  transition: text-decoration-thickness 160ms var(--sc-ease-out, ease-out);
+}
+.cap__ligacao:hover {
+  text-decoration-thickness: 3px;
+}
+
+/* ------------------------------------------------------- as duas colunas --
+   A imagem vive na sua coluna com legenda, que é o que a gramática exige. Não
+   há uma letra por cima de fotografia nenhuma nesta página, e por isso não há
+   véu nenhum a medir. */
+.cap__duas {
+  display: grid;
+  gap: clamp(2rem, 5vw, 4.5rem);
+  align-items: center;
+}
+@media (min-width: 62rem) {
+  .cap__duas {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  }
+  .cap__duas--invertida > .cap__estampa {
+    order: -1;
+  }
+}
+.cap__estampa {
+  margin: 0;
+}
+.cap__estampa img {
+  width: 100%;
+  height: auto;
+  border-radius: 2px;
+}
+.cap__estampa figcaption {
+  font-size: 0.85rem;
+  color: var(--sc-ink-soft);
+  margin-top: 0.75rem;
+}
+
+.silencio__linha {
+  font-family: var(--sc-font-display);
+  font-size: clamp(1.3rem, 1rem + 1.6vw, 2.2rem);
+  line-height: 1.2;
+  max-width: 26ch;
+  margin: 0;
+  text-wrap: balance;
+}
+
+/* ------------------------------------------------------------- II · o pão --
+   O pico. Estampa de página inteira, sem uma letra por cima. */
+.cap--pao {
+  background: var(--color-tinta);
+  padding: 0;
+}
+.pao__palco {
+  background: var(--color-tinta);
+}
+.pao__estampa {
+  position: absolute;
+  inset: 0;
+  /* O avanço da câmara, conduzido pelo progresso que o motor publica no acto.
+     Começa em 1,02 e não em 1: com `object-fit: cover` uma escala exacta faz a
+     orla coincidir com a do palco, e um arredondamento de sub-píxel abre um
+     fio de fundo na berma. */
+  transform: scale(calc(1.02 + 0.1 * var(--sc-p, 0)));
+  transform-origin: 50% 55%;
+  will-change: transform;
+}
+.pao__foto {
+  object-fit: cover;
+}
+
+/* ------------------------------------------------------------ IV · o raro -- */
+.raro__palco {
+  display: flex;
+  align-items: center;
+  /* ⚠️ **O mesmo verde que a secção**, e não o da marca. O palco é preso e fica
+     por cima da secção, portanto é a cor **dele** que se vê: pintar só a
+     secção deixou a verificação a medir 3,84:1 outra vez, com o CSS da secção
+     já corrigido e aparentemente certo. Duas camadas, uma cor. */
+  background: var(--color-verde-forte);
+  padding-inline: var(--margem-vapor) clamp(1.25rem, 5vw, 5rem);
+}
+.raro__caixa {
+  max-width: 44rem;
+}
+.raro__conta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: 1rem 0 0;
+  flex-wrap: wrap;
+}
+.raro__numero {
+  font-family: var(--sc-font-display);
+  font-size: clamp(4rem, 2rem + 12vw, 11rem);
+  font-variation-settings: "wdth" 70;
+  line-height: 0.86;
+  letter-spacing: -0.04em;
+  color: var(--color-papel);
+}
+.raro__de {
+  font-size: clamp(1rem, 0.9rem + 0.5vw, 1.3rem);
+  color: var(--color-papel);
+}
+/* Com o chão já em `verde-forte`, o corpo e a ligação são papel liso: 4,67:1,
+   sem pastilha nenhuma por baixo. A pastilha que aqui esteve era o
+   `verde-forte` sobre o verde, e deixou de fazer sentido quando o chão passou
+   a ser ele. */
+.cap--raro .cap__texto {
+  color: var(--color-papel);
+}
+
+/* ----------------------------------------------------------- V · a festa --
+   ⚠️ O carril tem de transbordar a largura do ecrã, senão o curso é zero e o
+   acto passa a ser um palco preso a segurar um ecrã imóvel. Ver `Festa.tsx`
+   para a medição, que é à mão: a verificação automática não a apanha. */
+.festa__carril {
+  display: flex;
+  align-items: center;
+  gap: clamp(1.5rem, 3vw, 3rem);
+  height: 100%;
+  /* ⚠️ **O ar do fim é margem no último item, não enchimento do carril.** O
+     enchimento à direita de um contentor flex **não entra no `scrollWidth`**
+     em Chrome, e o motor percorre exactamente `scrollWidth - innerWidth`: com
+     `padding-inline-end` o curso acabava cedo e o bloco de fecho ficava
+     cortado pela berma — visível na captura, invisível em qualquer leitura do
+     CSS. A margem do último filho conta. */
+  padding-inline-start: var(--margem-vapor);
+
+  /* ⚠️ **165vw, e é isto que impede o acto de morrer num monitor largo.**
+     Os itens têm larguras fixas em `rem`, portanto o carril tem largura
+     constante enquanto o ecrã cresce: medido, dava 1349 px de transbordo num
+     telemóvel, 834 num portátil e **376 num monitor de 1920** — contra os
+     960 que meio ecrã exige ali. Abaixo desse valor o `pan` deixa de andar e o
+     acto passa a ser um palco preso a segurar um ecrã imóvel durante três
+     alturas de rolagem.
+
+     É a armadilha do `devices.md` §3 na sua forma mais traiçoeira: **correcta
+     no telemóvel e morta no computador ao mesmo tempo**, e a verificação
+     automática não a apanha — deu "sem rolagem morta" em todas as passagens.
+     Só se vê medindo `scrollWidth - innerWidth` a três larguras.
+
+     Amarrar a largura mínima ao ecrã garante 65% de transbordo em qualquer
+     um. O espaço a mais cai depois do último item, que é onde o queremos. */
+  min-width: 165vw;
+}
+.festa__carril > * {
+  flex: 0 0 auto;
+}
+.festa__abertura {
+  width: min(30rem, 78vw);
+}
+.festa__fecho {
+  width: min(26rem, 74vw);
+  margin-inline-end: 14vw;
+}
+.festa__kit {
+  width: min(23rem, 72vw);
+  border-top: 2px solid var(--color-papel);
+  padding-top: 1rem;
+}
+.festa__kit h3 {
+  font-family: var(--sc-font-display);
+  font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.4rem);
+  line-height: 1;
+  margin: 0;
+}
+.festa__desde {
+  font-size: 0.85rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sc-ink-soft);
+  margin: 0.5rem 0 0;
+}
+.festa__escaloes {
+  list-style: none;
+  margin: 1.5rem 0 0;
+  padding: 0;
+}
+.festa__escaloes li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid color-mix(in oklab, var(--color-papel) 30%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+.festa__ate {
+  font-family: var(--sc-font-display);
+  font-size: clamp(2rem, 1.4rem + 3vw, 3.6rem);
+  font-variation-settings: "wdth" 66;
+  line-height: 1;
+  margin: 0;
+}
+
+/* --------------------------------------------------------- VI · o colofão -- */
+.colofao__palco {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2rem;
+  background: var(--color-tinta);
+  padding-inline: var(--margem-vapor) clamp(1.25rem, 5vw, 5rem);
+}
+/* O fecho do movimento de assinatura: as mesmas três ondas, à escala do
+   logótipo, com o traçado conduzido pelo progresso deste acto. A marca
+   desenha-se sozinha à medida que a página acaba. */
+.colofao__marca {
+  width: clamp(3rem, 6vw, 4.75rem);
+  height: auto;
+  color: var(--color-tijolo);
+}
+.colofao__marca path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(1 - var(--sc-p, 0));
+}
+.colofao__caixa {
+  max-width: 44rem;
+}
+.colofao__corrido {
+  font-size: clamp(1rem, 0.95rem + 0.4vw, 1.2rem);
+  line-height: 1.7;
+  margin: 1.5rem 0 0;
+  max-width: 52ch;
+  text-wrap: pretty;
+}
+.colofao__corrido a {
+  text-decoration: underline;
+  text-underline-offset: 0.24em;
+  text-decoration-thickness: 1px;
+  color: var(--color-papel);
+}
+.colofao__corrido a:hover {
+  text-decoration-thickness: 3px;
+}
+.colofao__horario {
+  font-size: 0.9rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sc-ink-soft);
+  margin: 1.75rem 0 0;
+}
+.colofao__fim {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--sc-ink-soft);
+  margin: 0.6rem 0 0;
+}
+.colofao__fim a {
+  color: var(--color-papel);
+  text-decoration: underline;
+  text-underline-offset: 0.24em;
+}
+
+/* ===========================================================================
+   O VAPOR — o movimento de assinatura
+
+   As três ondas do logótipo, esticadas à altura do ecrã, fixas na margem, com
+   o traçado conduzido pela posição de rolagem. Ver `Vapor.tsx` para os quatro
+   papéis que desempenha ao longo da página.
+   =========================================================================== */
+.vapor {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: var(--margem-vapor);
+  z-index: 40;
+  /* ⚠️ O fio não apanha o rato: é desenho, e apanhá-lo roubava o clique a tudo
+     o que estivesse por baixo da margem. Só os botões do fólio o recuperam. */
+  pointer-events: none;
+  --fio: var(--color-tijolo);
+  --chao: var(--color-papel);
+  color: var(--fio);
+  /* Fora de camada é preciso nomear cada propriedade: um `transition: all`
+     está proibido e um atalho aqui não herdaria nada da camada. */
+  transition: color 420ms var(--sc-ease-out, ease-out);
+}
+
+.vapor__fio {
+  width: 100%;
+  height: 100%;
+  /* Discreto por omissão. A 0,85 os três traços liam-se como uma cercadura a
+     competir com o texto; o fio é para se dar por ele, não para tomar conta da
+     margem. O pico é que o acende. */
+  opacity: 0.55;
+  transition: opacity 420ms var(--sc-ease-out, ease-out);
+}
+.vapor__fio path {
+  transition: stroke-width 420ms var(--sc-ease-out, ease-out);
+}
+
+/* ⚠️ **Duas variáveis, e não o `currentColor`.** Aqui esteve
+   `background: currentColor` na pastilha do numeral com `color: transparent`
+   no mesmo elemento — e o `currentColor` resolve para a cor **do próprio
+   elemento**, portanto a pastilha ficava transparente. Na captura leu-se como
+   blocos cinzentos em cima do fio, sem numeral nenhum.
+
+   Agora o capítulo activo declara duas coisas explícitas: `--fio`, a cor do
+   vapor, e `--chao`, a cor do fundo por baixo dele. A pastilha é fio com o
+   numeral em chão, que é legível por construção em vez de por sorte.
+
+   Uma matiz, duas claridades, keyed ao fundo: é a excepção que o `taste.md`
+   abre para páginas que cortam entre claro e escuro. */
+.vapor[data-capitulo-activo="capa"] {
+  --fio: var(--color-papel);
+  --chao: var(--color-tijolo);
+}
+.vapor[data-capitulo-activo="cap-porta"],
+.vapor[data-capitulo-activo="cap-maos"],
+.vapor[data-capitulo-activo="cap-provar"] {
+  --fio: var(--color-tijolo);
+  --chao: var(--color-papel-fundo);
+}
+.vapor[data-capitulo-activo="cap-vitrine"],
+.vapor[data-capitulo-activo="cap-encomendar"] {
+  --fio: var(--color-tijolo);
+  --chao: var(--color-papel);
+}
+/* ⚠️ Os reels vivem no escuro, e o tijolo sobre a tinta dá 2,36:1: o fio
+   desaparecia. Cada chão novo obriga a declarar as duas cores — esquecer-se
+   disto não rebenta nada, só apaga a assinatura durante uma secção inteira. */
+.vapor[data-capitulo-activo="cap-reels"] {
+  --fio: var(--color-papel);
+  --chao: var(--color-tinta);
+}
+.vapor[data-capitulo-activo="cap-raro"] {
+  --fio: var(--color-papel);
+  --chao: var(--color-verde-forte);
+}
+.vapor[data-capitulo-activo="cap-festa"] {
+  --fio: var(--color-papel);
+  --chao: var(--color-tijolo);
+}
+.vapor[data-capitulo-activo="cap-colofao"] {
+  --fio: var(--color-papel);
+  --chao: var(--color-tinta);
+}
+
+/* Durante o silêncio o fio fica em tijolo sobre a tinta, que dá 2,36:1 e
+   portanto quase se apaga. É efeito secundário de o silêncio não ser capítulo
+   e herdar a cor do anterior — mas é o efeito certo, e fica: o fio esmorece na
+   pausa e reacende no ecrã seguinte, que é exactamente o que a pausa existe
+   para preparar. Se algum dia o silêncio ganhar marcador no fólio, isto tem de
+   voltar a ser decidido em vez de herdado.
+
+   **No pico o vapor nasce do pão.** É o único sítio da página onde os traços
+   engrossam, e é o que amarra a assinatura ao momento que o cliente escolheu:
+   o pão enche o ecrã, e o vapor sai dele. */
+.vapor[data-capitulo-activo="cap-pao"] {
+  --fio: var(--color-papel);
+  --chao: var(--color-tinta);
+}
+.vapor[data-capitulo-activo="cap-pao"] .vapor__fio {
+  opacity: 1;
+}
+.vapor[data-capitulo-activo="cap-pao"] .vapor__fio path {
+  stroke-width: 13;
+}
+
+/* ------------------------------------------------------------------ fólio --
+   Os marcadores são a navegação desta página, e não um indicador de posição.
+   O `uniqueness.md` §2.2 exige que a peça em capítulos se navegue por fólio na
+   margem, e um fólio que não se pode clicar não é navegação. */
+.vapor__folio {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.vapor__folio ol {
+  position: relative;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.vapor__folio li {
+  position: absolute;
+  inset-inline-start: 0;
+  translate: 0 -50%;
+  pointer-events: auto;
+}
+.vapor__folio button {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  /* ⚠️ **0,65 rem e não 0,5.** A pastilha desenhada tem 24 px; com 0,5 rem de
+     enchimento o alvo ficava em 40 px, quatro abaixo do mínimo a que um dedo
+     acerta sem pensar. O enchimento cresce sem a pastilha crescer: o desenho
+     não muda, o alvo muda. Medido, não estimado. */
+  padding: 0.65rem 0.4rem;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  opacity: 0.4;
+  transition: opacity 240ms var(--sc-ease-out, ease-out);
+}
+.vapor__folio li[data-passado] button {
+  opacity: 0.75;
+}
+.vapor__folio li[data-activo] button,
+.vapor__folio button:hover,
+.vapor__folio button:focus-visible {
+  opacity: 1;
+}
+
+.vapor__numeral {
+  font-family: var(--sc-font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  /* A pastilha assenta em cima do fio, que passa exactamente por ali. Por isso
+     é opaca e leva o numeral na cor do chão. */
+  background: var(--fio);
+  color: var(--chao);
+  width: 1.5rem;
+  height: 1.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+
+/* O título do capítulo só aparece a quem o procura: com o rato em cima, ou com
+   o teclado lá. Sempre visível, seria uma coluna de texto a correr por cima de
+   seis fundos diferentes, e nenhum deles lhe garantia contraste. */
+.vapor__titulo {
+  display: none;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 0.25rem 0.6rem;
+  border-radius: 2px;
+  background: var(--fio);
+  color: var(--chao);
+}
+@media (hover: hover) and (pointer: fine) {
+  .vapor__folio button:hover .vapor__titulo,
+  .vapor__folio button:focus-visible .vapor__titulo {
+    display: block;
+  }
+}
+
+/* ⚠️ **O botão flutuante das encomendas sai desta página.** A gramática de
+   capítulos não admite chrome a pairar, e na verificação ele apareceu por cima
+   da estampa do pico — que é justamente o ecrã que não pode ter nada em cima.
+
+   O caminho para encomendar não se perde: está no cabeçalho de rosto, no fim
+   do capítulo V e no colofão, com o mesmo rótulo nos três. Nas outras duas
+   páginas do sítio o botão continua onde estava. */
+body:has(.cartaz) [data-flutuante="encomendas"] {
+  display: none;
+}
+
+/* ------------------------------------------------------------ telemóvel --
+   O fólio com títulos não cabe num ecrã de 390 px, e o fio numa margem de
+   6 rem comia um sexto da largura útil. Fica o fio, estreito, e os marcadores
+   como pontos. É navegação a menos, e é por isso que o colofão repete todas as
+   ligações em texto corrido: **o que carrega o sentido da página não pode
+   viver só onde há rato.** */
+@media (max-width: 48rem) {
+  .cartaz {
+    /* Larga o suficiente para o fio não encostar à berma do conteúdo, estreita
+       o suficiente para não comer a largura de leitura de um ecrã de 390 px. */
+    --margem-vapor: 2.75rem;
+  }
+  .vapor__titulo {
+    display: none;
+  }
+  .vapor__numeral {
+    width: 1.1rem;
+    height: 1.1rem;
+    font-size: 0;
+  }
+}
+
+/* --------------------------------------------------------- menos movimento --
+   O `taste.md` é claro: menos movimento é **menos e mais suave, não nenhum**.
+   O que se perde é o avanço da câmara no pico, que é posição. O que fica é o
+   fio a desenhar-se, porque é ele que diz onde a pessoa vai, e o fólio, que é
+   navegação. */
+@media (prefers-reduced-motion: reduce) {
+  .pao__estampa {
+    transform: none;
+  }
+  .vapor,
+  .vapor__fio,
+  .vapor__fio path,
+  .vapor__folio button {
+    transition: none;
+  }
+}
+
+/* ===========================================================================
+   AS QUATRO SECÇÕES QUE FAZEM O SÍTIO SERVIR PARA ALGUMA COISA
+
+   A vitrine, os reels, a ementa e as encomendas. São informação e não
+   experiência, e por isso são secções normais com escalonamento curto: o
+   `feel.md` §5 diz que gastar rolagem nelas é gastar a paciência do visitante
+   na parte de que ele não se vai lembrar.
+   =========================================================================== */
+
+.cap--vitrine {
+  background: var(--color-papel);
+  --sc-ink: var(--color-tinta);
+  --sc-ink-soft: var(--color-tinta-suave);
+  color: var(--sc-ink);
+}
+.cap--reels {
+  background: var(--color-tinta);
+  --sc-ink: var(--color-papel);
+  --sc-ink-soft: var(--suave-sobre-tinta);
+  color: var(--sc-ink);
+}
+.cap--provar {
+  background: var(--color-papel-fundo);
+  --sc-ink: var(--color-tinta);
+  --sc-ink-soft: var(--color-tinta-suave);
+  color: var(--sc-ink);
+}
+.cap--encomendar {
+  background: var(--color-papel);
+  --sc-ink: var(--color-tinta);
+  --sc-ink-soft: var(--color-tinta-suave);
+  color: var(--sc-ink);
+}
+
+/* ---------------------------------------------------------- IV · a vitrine --
+   ⚠️ Três larguras e não uma. Catorze células iguais são uma folha de contacto,
+   que é o que o `taste.md` chama grelha de cartões como estrutura de página. */
+.vitrine__grelha {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(0.5rem, 1.2vw, 1rem);
+  margin: clamp(2.5rem, 5vw, 4rem) 0 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 48rem) {
+  .vitrine__grelha {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  /* ⚠️ **A célula larga também muda de proporção, e tem de mudar.** Ocupar duas
+     colunas com a mesma proporção 4:3 duplica a largura **e** a altura: a
+     captura mostrou uma fotografia com o dobro da altura das vizinhas, um
+     buraco branco ao lado dela, e — o pior — a maior imagem da página a não ser
+     a estampa do pão. Uma página com dois picos não tem nenhum.
+
+     8:3 é duas colunas mais a goteira, à altura de uma linha de 4:3. As linhas
+     ficam direitas e nenhuma célula passa à frente do pico. */
+  .vitrine__celula[data-larga] {
+    grid-column: span 2;
+    aspect-ratio: 8 / 3;
+  }
+}
+.vitrine__celula {
+  position: relative;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--color-papel-fundo);
+  aspect-ratio: 4 / 3;
+}
+.vitrine__celula img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* ⚠️ **Nem `width` nem `height` sozinhos.** Os atributos do `<img>` são
+     pistas de proporção; sobrepor só um deixa o outro a resolver para o valor
+     bruto em píxeis, e uma imagem de 1400×875 numa coluna estreita renderiza
+     875 px de altura e empurra meia página para fora do ecrã. Ou os dois, ou
+     nenhum. */
+}
+
+/* ------------------------------------------------------------ V · os reels --
+   O formato é o do reel (9:16) e não o da grelha. Recortar vídeo vertical para
+   paisagem é deitar fora metade de cada plano. */
+.reels__fila {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(0.75rem, 2vw, 1.5rem);
+  margin: clamp(2.5rem, 5vw, 4rem) 0 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 48rem) {
+  .reels__fila {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 72rem) {
+  .reels__fila {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+.reels__cela {
+  aspect-ratio: 9 / 16;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.reels__cela a,
+.reels__espaco {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+}
+.reels__cela a {
+  position: relative;
+}
+.reels__cela img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.reels__cela a .reels__rotulo {
+  position: relative;
+  align-self: end;
+  width: 100%;
+  padding: 0.75rem;
+  background: linear-gradient(to top, rgb(31 29 27 / 0.85), transparent);
+}
+/* Um lugar por encher **diz que está por encher**. O tracejado e o vapor
+   apagado são a diferença entre um espaço reservado e um vídeo que não
+   carregou. */
+.reels__espaco {
+  border: 2px dashed color-mix(in oklab, var(--color-papel) 26%, transparent);
+  border-radius: 3px;
+}
+.reels__marca {
+  width: 1.75rem;
+  height: auto;
+  color: color-mix(in oklab, var(--color-papel) 40%, transparent);
+}
+.reels__marca path {
+  stroke-dasharray: none;
+  stroke-dashoffset: 0;
+}
+.reels__rotulo {
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sc-ink-soft);
+}
+
+/* ----------------------------------------------------------- VII · provar -- */
+.provar__cartas {
+  display: grid;
+  gap: clamp(1rem, 2.5vw, 2rem);
+  margin: clamp(2.5rem, 5vw, 4rem) 0 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 48rem) {
+  .provar__cartas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 72rem) {
+  .provar__cartas {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.provar__carta {
+  border-top: 2px solid var(--color-tinta);
+  padding-top: 0.9rem;
+}
+.provar__carta h3 {
+  font-family: var(--sc-font-display);
+  font-size: clamp(1.3rem, 1.1rem + 0.9vw, 1.8rem);
+  line-height: 1.05;
+  margin: 0;
+}
+.provar__quantos {
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sc-ink-soft);
+  margin: 0.4rem 0 0;
+}
+.provar__exemplo {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin: 1.25rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid color-mix(in oklab, var(--color-tinta) 18%, transparent);
+  font-size: 0.98rem;
+}
+.provar__preco {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.provar__accao {
+  margin: clamp(2rem, 4vw, 3rem) 0 0;
+}
+
+/* ------------------------------------------------------- IX · encomendar --
+   ⚠️ **Blocos inteiros e não palavras sublinhadas.** O cliente pediu que isto
+   se usasse tanto aos vinte como aos setenta anos, e um alvo grande acerta-se
+   com o dedo trémulo, com o rato impreciso e dentro do autocarro. */
+.encomendar__vias {
+  display: grid;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+  margin: clamp(2.5rem, 5vw, 4rem) 0 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 56rem) {
+  .encomendar__vias {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.via {
+  display: grid;
+  gap: 0.35rem;
+  height: 100%;
+  padding: clamp(1.25rem, 2.5vw, 1.75rem);
+  border: 2px solid var(--color-tinta);
+  border-radius: 3px;
+  background: var(--color-papel);
+  color: var(--color-tinta);
+  transition:
+    background-color 160ms var(--sc-ease-out, ease-out),
+    color 160ms var(--sc-ease-out, ease-out),
+    transform 160ms var(--sc-ease-out, ease-out);
+}
+.via:hover,
+.via:focus-visible {
+  background: var(--color-tinta);
+  color: var(--color-papel);
+}
+.via:active {
+  transform: translateY(1px);
+}
+.via__ordem {
+  font-family: var(--sc-font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  opacity: 0.55;
+}
+.via__nome {
+  font-family: var(--sc-font-display);
+  font-size: clamp(1.4rem, 1.1rem + 1.2vw, 2rem);
+  line-height: 1.05;
+}
+.via__detalhe {
+  font-size: 1rem;
+  line-height: 1.5;
+  opacity: 0.82;
+}
+/* A promessa do que vai acontecer a seguir. "Ligar agora" e "Abrir o mapa"
+   dizem-no; "saber mais" não diz nada a ninguém. */
+.via__accao {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.via__accao::after {
+  content: " →";
+}
+
+/* --------------------------------------------------------------- as acções --
+   ⚠️ **44 px de altura mínima, sem excepção.** É o mínimo a que um dedo acerta
+   sem pensar, e é o número que separa um sítio que se usa de um sítio em que
+   se falha o alvo duas vezes antes de acertar. */
+.cap__accao {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.7rem 1.4rem;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  transition:
+    background-color 160ms var(--sc-ease-out, ease-out),
+    color 160ms var(--sc-ease-out, ease-out),
+    transform 160ms var(--sc-ease-out, ease-out);
+}
+.cap__accao:hover,
+.cap__accao:focus-visible {
+  background: var(--sc-ink);
+  color: var(--sc-canvas);
+}
+.cap__accao:active {
+  transform: translateY(1px);
+}
+.cap__accao--claro {
+  background: var(--color-papel);
+  border-color: var(--color-papel);
+  color: var(--color-tinta);
+}
+.cap__accao--claro:hover,
+.cap__accao--claro:focus-visible {
+  background: var(--color-tinta);
+  border-color: var(--color-tinta);
+  color: var(--color-papel);
+}
+.cap__accao--contorno {
+  border-color: var(--color-papel);
+  color: var(--color-papel);
+}
+.cap__accao--contorno:hover,
+.cap__accao--contorno:focus-visible {
+  background: var(--color-papel);
+  color: var(--color-tijolo);
+}
+
+.cap__accao--principal {
+  background: var(--color-tijolo);
+  border-color: var(--color-tijolo);
+  color: var(--color-papel);
+}
+.cap__accao--principal:hover,
+.cap__accao--principal:focus-visible {
+  background: var(--color-tinta);
+  border-color: var(--color-tinta);
+  color: var(--color-papel);
+}
+
+/* As ligações em texto corrido também ganham altura de alvo. Continuam a ler-se
+   como texto — é o que a gramática editorial pede para o fecho — mas deixam de
+   ser uma linha de 16 px de altura no meio de um parágrafo. */
+.cap__ligacao {
+  min-height: 44px;
+  align-items: center;
+  display: inline-flex;
+}
+
+/* ===========================================================================
+   O TELEMÓVEL
+
+   ⚠️ **É onde a maioria das visitas vai acontecer**, e a página foi desenhada
+   num ecrã de 1440. O que segue não é uma adaptação de recurso: são as
+   correcções que a verificação a 390×844 obrigou a fazer.
+   =========================================================================== */
+@media (max-width: 48rem) {
+  /* ⚠️ **O fólio desaparece, e o fio fica.** Dez pastilhas empilhadas na berma
+     de um ecrã de 390 px não são navegação: são dez alvos de toque de 24 px a
+     um centímetro do polegar que está a rolar a página, e leem-se como sujidade
+     sobre o conteúdo. A navegação no telemóvel é o cabeçalho, que lá está, e
+     os atalhos grandes que a página tem de sobra. O fio continua, porque é
+     desenho e não interface. */
+  .vapor__folio {
+    display: none;
+  }
+  .vapor__fio {
+    opacity: 0.35;
+  }
+
+  /* A capa deixa de ser meio ecrã de ar. Num telemóvel o primeiro ecrã é o
+     ecrã, e gastá-lo em espaço vazio é gastá-lo. */
+  .cap--capa {
+    min-height: 78svh;
+    padding-block: clamp(2.5rem, 9vw, 4rem);
+  }
+
+  .cap {
+    padding-block: clamp(3rem, 11vw, 4.5rem);
+  }
+
+  /* Os atalhos ocupam a largura toda: dois botões meio-a-meio num ecrã de
+     390 px dão alvos de 170 px, e um deles apanha sempre o polegar errado. */
+  .capa__atalhos .cap__accao {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  /* ⚠️ O corpo não desce abaixo de 1 rem em lado nenhum. Uma legenda a 13 px
+     num telemóvel lê-se com o braço esticado, e metade de quem vai usar isto
+     não quer esticar o braço. */
+  .cap__texto,
+  .colofao__corrido,
+  .via__detalhe,
+  .provar__exemplo {
+    font-size: 1.05rem;
+  }
+  .cap__nota,
+  .cap__estampa figcaption {
+    font-size: 0.95rem;
+  }
+
+  /* O carril da festa fica com um item por ecrã: dois meios cartões lado a lado
+     num telemóvel são dois cartões ilegíveis. */
+  .festa__kit,
+  .festa__abertura,
+  .festa__fecho {
+    width: 82vw;
+  }
+
+  /* Duas colunas de reels em 390 px dão celas de 175 px de largura por 310 de
+     alto, que é onde um vídeo vertical ainda se percebe. Três seria uma tira de
+     miniaturas. */
+  .reels__fila {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ⚠️ **`svh` e não `vh` em tudo o que ocupa um ecrã.** A barra de endereço do
+   telemóvel entra e sai com a rolagem, e o `vh` conta a janela sem ela: um
+   palco a `100vh` fica sempre com uma faixa cortada por baixo, e é a razão por
+   que tanta página aparece com o fecho a meio. O motor já usa `100svh` nos
+   palcos; isto é para o que é nosso. */
+@supports (height: 100svh) {
+  .cap--capa {
+    min-height: 88svh;
+  }
+  .cap--silencio {
+    min-height: 52svh;
+  }
+}

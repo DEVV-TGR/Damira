@@ -93,27 +93,40 @@ dois sentidos. A Damira não assinala artigos vegan no menu principal; deduzi-lo
 ("não tem carne, logo é vegan") era pôr o site a garantir uma coisa que a casa
 não garantiu.
 
-## Fotografia — o buraco conhecido deste site
+## Fotografia — o buraco fechou-se
 
-**Não há uma única fotografia utilizável da Damira.** Os PDFs em `referencias/`
-são artes finais achatadas: as imagens que lá vivem trazem o texto queimado por
-cima e as maiores têm 1080 px de largura. Recortá-las dá material para uma
-miniatura e mais nada.
+**Havia aqui um aviso a dizer que este site não tinha fotografia nenhuma.**
+Deixou de ser verdade em duas etapas, e o aviso ficou para trás nas duas: vale
+a pena lembrar que um ficheiro de instruções desactualizado engana com mais
+autoridade do que um ficheiro vazio.
 
-Por isso, hoje, **o site não tem fotografia nenhuma** — nem de recurso, nem de
-banco de imagens. O herói é tipografia e cor, e o painel de um artigo mostra
-nome, preço e descrição. É feio? Não: é honesto, e é reversível numa tarde.
+Hoje há **dezanove fotografias**, todas do álbum publicado pela própria casa e
+todas com a marca de água dela — que é o critério de origem, e não a
+composição:
 
-⚠️ **Não preencher isto com imagens de stock.** Um croissant genérico ao lado do
-preço de um croissant é uma promessa que a casa não fez — e é o tipo de decisão
-que ninguém volta a desfazer, porque "já lá está".
+| Onde | Quantas | O que é |
+|---|---|---|
+| `public/fotos/` | 5 | a fachada, a vitrine, as mãos, os bombons, o prato |
+| `public/vitrine/` | 16 | o álbum de gestão, importado inteiro |
 
-O campo `artigo.foto` existe no esquema, exige um caminho que comece por
-`/ementa/` e está a `null` nos 95. Quando houver sessão fotográfica:
+Os originais estão em `originais/fotos`, `originais/heroi` e
+`originais/fotos-gestao`. Importam-se assim:
 
 ```bash
-npm run fotos -- originais/fotos public/fotos   # 1600 px, WebP
+npm run fotos -- originais/fotos-gestao public/vitrine   # 1600 px, WebP
 ```
+
+⚠️ **Continua a valer a proibição de banco de imagens.** O que mudou foi haver
+material da casa; o que não mudou foi a regra. Um croissant genérico ao lado do
+preço de um croissant continua a ser uma promessa que a casa não fez.
+
+⚠️ **A `vitrine/09.webp` mostra dois clientes de frente e reconhecíveis.**
+Levantei o consentimento e o cliente decidiu usá-la. Fica escrito porque é o
+tipo de coisa que ninguém volta a perguntar depois de estar publicada — e
+porque se a autorização não existir, é aquele ficheiro que sai.
+
+O campo `artigo.foto` do `ementa.json` continua a `null` nos 95: há fotografia
+da casa, não há fotografia **por artigo**.
 
 ## A marca
 
@@ -191,11 +204,54 @@ primeiras sete vieram do Santo Burga e continuam a valer — o motor é o mesmo.
 8. **Uma categoria em duas cartas dá duas âncoras iguais.** É a armadilha nova
    deste site, e é a razão de a âncora ser `{carta}-{categoria}`. Ver
    `SeccaoEmenta.tsx`.
+9. **`background: currentColor` resolve para a cor do *próprio* elemento.** Uma
+   pastilha com `background: currentColor` e `color: transparent` fica
+   transparente, não fica da cor herdada. Declarar as duas cores. Ver o fólio em
+   `cartaz.css`.
+10. **O enchimento à direita de um contentor flex não entra no `scrollWidth`.**
+    Quem conta com ele para dar curso a um carril fica com o último item
+    cortado. Usar margem no último filho. Ver `.festa__carril`.
+11. **Um carril de largura fixa morre à medida que o ecrã cresce.** Pode estar
+    correcto no telemóvel e parado num monitor de 1920 ao mesmo tempo, e a
+    verificação automática dá verde nos dois. Amarrar a largura mínima ao ecrã e
+    **medir `scrollWidth - innerWidth` a várias larguras**, à mão.
+12. **Uma célula que ocupa duas colunas com a mesma proporção duplica de
+    altura.** Numa grelha de fotografias isso põe uma imagem a competir com o
+    momento principal da página. A célula larga muda de proporção também.
+13. **Redefinir `--sc-ink` num bloco sem redefinir `color` não repinta nada.** A
+    cor herda-se já resolvida. Vale para qualquer propriedade herdada conduzida
+    por token, e falha em silêncio a 1,15:1.
 
 O que todas têm em comum: `npm run build` passa, o `lint` passa, e só se apanham
 a olhar. **Depois de mexer em desenho, tirar capturas** — há Chromium do
 Playwright em cache nesta máquina, em
 `~/Library/Caches/ms-playwright/chromium-1234/chrome-mac-arm64/`.
+
+## A página inicial é um cartaz em capítulos
+
+Desde setembro de 2026 a página inicial deixou de ser uma sequência de blocos e
+passou a ser uma peça em capítulos com rolagem conduzida, construída com a skill
+`scrollcraft`. O plano inteiro — a entrevista com o cliente, a curva de sentir,
+a partitura de dispositivos, as verificações e os defeitos conhecidos — está em
+`scrollcraft/builds/damira-inicio/BRIEF.md`. **Ler isso antes de lhe mexer**:
+quase todas as decisões que parecem arbitrárias têm lá o número que as motivou.
+
+Três coisas que se desfazem sem querer:
+
+- **O motor em `public/scrollcraft/scrollcraft.js` é da skill e está byte a byte
+  igual.** Não se edita; actualiza-se com um `cp`.
+- **O `src/app/cartaz-motor.css` é uma bifurcação do CSS do motor**, sem o bloco
+  de reset global. O cabeçalho do ficheiro explica porquê e como regerar.
+- **Depois de mexer, correr o arnês**, e não só o `build`:
+
+  ```bash
+  npx next start -p 4500 &
+  node .agents/skills/scrollcraft/scripts/shoot.mjs --url http://localhost:4500/ \
+    --out scrollcraft/builds/damira-inicio/lab/desktop
+  ```
+
+  ⚠️ E **ler as capturas**. Nas quatro passagens verdes desta build havia seis
+  defeitos, e nenhum deles aparecia no relatório.
 
 ## Skills
 

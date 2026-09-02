@@ -10,8 +10,20 @@ import typescript from "eslint-config-next/typescript";
 const eslintConfig = [
   {
     /* As skills são material de terceiros copiado para dentro do projeto (ver
-       `skills-lock.json`). Não é código nosso e não se lhe aplica o nosso estilo. */
-    ignores: [".agents/**", ".claude/**", ".next/**", "node_modules/**"],
+       `skills-lock.json`). Não é código nosso e não se lhe aplica o nosso estilo.
+
+       O `public/scrollcraft/` entra pela mesma razão e com um motivo a mais: é
+       o motor da página inicial, servido de `public/` precisamente para poder
+       ficar **byte a byte igual** ao da skill. Um aviso de estilo sobre ele não
+       é accionável — corrigi-lo era editá-lo, e editá-lo é o que a skill
+       proíbe. Ver `src/components/cartaz/Motor.tsx`. */
+    ignores: [
+      ".agents/**",
+      ".claude/**",
+      ".next/**",
+      "node_modules/**",
+      "public/scrollcraft/**",
+    ],
   },
   ...coreWebVitals,
   ...typescript,

@@ -8,6 +8,10 @@ import { formatarPreco } from "@/lib/preco";
 import { routing, type Locale } from "@/i18n/routing";
 import { metadataDaPagina } from "@/lib/metadata";
 import { TabelaKits } from "@/components/encomendas/TabelaKits";
+import { FormularioPedido } from "@/components/encomendas/FormularioPedido";
+import { CestoProvider } from "@/components/encomendas/CestoProvider";
+import { Cesto } from "@/components/encomendas/Cesto";
+import { BotaoJuntar } from "@/components/encomendas/BotaoJuntar";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -53,7 +57,12 @@ export default async function PaginaEncomendas({
  * 3. *quero um bolo à minha maneira* — o configurador, que **não tem preços** e
  *    por isso acaba num pedido de orçamento e não num total;
  * 4. *e para dois?* — as boxes, que é a encomenda pequena;
- * 5. *como é que peço?* — o bloco de contacto, com o prazo à frente.
+ * 5. *como é que peço?* — o formulário, com o telefone ao lado e o prazo à
+ *    frente.
+ *
+ * ⚠️ **O formulário é o fim da página e não o princípio.** Um pedido de
+ * orçamento no topo é uma pergunta feita a quem ainda não sabe o que quer
+ * pedir; no fim, é a pergunta que a página inteira preparou.
  *
  * ## O prazo é a informação mais importante desta página
  *
@@ -69,14 +78,14 @@ function Encomendas({ locale }: { locale: Locale }) {
   const telefone = telefoneMarcavel();
 
   return (
-    <>
+    <CestoProvider>
       <div className="bloco-tijolo relative overflow-hidden">
         <span
           aria-hidden
           className="traco pointer-events-none absolute -right-[6%] top-1/2 hidden h-[150%] w-[38%] -translate-y-1/2 opacity-[0.13] lg:block"
           style={{
-            maskImage: "url(/marca/ondas.png)",
-            WebkitMaskImage: "url(/marca/ondas.png)",
+            maskImage: "url(/marca/simbolo.svg)",
+            WebkitMaskImage: "url(/marca/simbolo.svg)",
           }}
         />
         <div className="envolvente relative py-[clamp(3.5rem,8vw,6rem)]">
@@ -84,7 +93,7 @@ function Encomendas({ locale }: { locale: Locale }) {
             {t("olho")}
           </p>
           <h1
-            className="titulo-display mt-4 text-[clamp(3rem,11vw,8rem)] uppercase"
+            className="titulo-display titulo-capa mt-4 uppercase"
             style={{ fontVariationSettings: '"wdth" 68, "opsz" 48' }}
           >
             {t("titulo")}
@@ -140,6 +149,21 @@ function Encomendas({ locale }: { locale: Locale }) {
                     </li>
                   ))}
                 </ul>
+                {/* `mt-auto` empurra o botão para o fundo: com cartões de
+                    alturas diferentes, três botões a flutuar a alturas
+                    diferentes leem-se como três coisas diferentes. */}
+                <div className="mt-auto pt-7">
+                  <BotaoJuntar
+                    item={{
+                      id: `bolo:${kit.id}`,
+                      tipo: "bolo",
+                      nome: kit.nome[locale],
+                      variante: null,
+                      preco: kit.preco,
+                      pessoas: null,
+                    }}
+                  />
+                </div>
               </li>
             ))}
           </ul>
@@ -228,6 +252,26 @@ function Encomendas({ locale }: { locale: Locale }) {
           <p className="mt-10 max-w-[60ch] text-sm text-tinta-suave">
             {bolos("semPrecos")}
           </p>
+
+          {/* ⚠️ **Entra no cesto com `preco: null`, que é «sob orçamento» e não
+              zero.** É o artigo que obriga a estimativa a passar a «a partir
+              de» — ver `cesto.ts`. As escolhas concretas (massa, recheio,
+              cobertura) escrevem-se nas notas do pedido: pô-las aqui era montar
+              um configurador de seis passos para um artigo cujo preço tem de ser
+              conversado de qualquer maneira. */}
+          <div className="mt-8">
+            <BotaoJuntar
+              variante="discreta"
+              item={{
+                id: "bolo:por-medida",
+                tipo: "bolo",
+                nome: bolos("titulo"),
+                variante: null,
+                preco: null,
+                pessoas: null,
+              }}
+            />
+          </div>
         </div>
       </section>
 
@@ -263,6 +307,18 @@ function Encomendas({ locale }: { locale: Locale }) {
                     <li key={item.pt}>{item[locale]}</li>
                   ))}
                 </ul>
+                <div className="mt-auto pt-7">
+                  <BotaoJuntar
+                    item={{
+                      id: `box:${box.id}`,
+                      tipo: "box",
+                      nome: box.nome[locale],
+                      variante: null,
+                      preco: box.preco,
+                      pessoas: null,
+                    }}
+                  />
+                </div>
               </li>
             ))}
           </ul>
@@ -270,45 +326,50 @@ function Encomendas({ locale }: { locale: Locale }) {
       </section>
 
       {/* ── Como encomendar ───────────────────────────────────────────── */}
-      <section aria-labelledby="como" className="seccao bg-tinta text-papel">
-        <div className="envolvente">
-          <h2 id="como" className="titulo-display titulo-beta max-w-[14ch]">
-            {t("como.titulo")}
-          </h2>
-          <p className="mt-5 max-w-[48ch] text-lg leading-relaxed text-papel/85">
-            {t("como.texto")}
-          </p>
+      <section id="pedido" aria-labelledby="como" className="scroll-mt-24 seccao bg-tinta text-papel">
+        <div className="envolvente grid gap-12 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-20">
+          <div>
+            <h2 id="como" className="titulo-display titulo-beta max-w-[12ch]">
+              {t("formulario.titulo")}
+            </h2>
+            <p className="mt-5 max-w-[40ch] text-lg leading-relaxed text-papel/85">
+              {t("formulario.texto")}
+            </p>
 
-          {/* ⚠️ O prazo de antecedência ainda não veio da casa. Enquanto não
-              vier, esta linha diz que está por confirmar em vez de inventar um
-              número — alguém a pedir setenta doses para amanhã é o erro que uma
-              página de encomendas não pode cometer. */}
-          <p className="mt-4 max-w-[48ch] text-sm text-papel/70">
-            {t("como.prazo")}
-          </p>
+            {/* ⚠️ O prazo de antecedência ainda não veio da casa. Enquanto não
+                vier, esta linha diz que está por confirmar em vez de inventar um
+                número — alguém a pedir setenta doses para amanhã é o erro que
+                uma página de encomendas não pode cometer. */}
+            <p className="mt-4 max-w-[40ch] text-sm text-papel/65">
+              {t("como.prazo")}
+            </p>
 
-          <div className="mt-9 flex flex-wrap gap-4">
-            {telefone && (
-              <a
-                href={telefone}
-                className="premivel rounded-full bg-tijolo px-7 py-4 text-sm font-semibold uppercase tracking-widest text-papel"
-              >
-                {t("como.telefonar", { numero: casa.telefone ?? "" })}
-              </a>
-            )}
-            {casa.email && (
-              <a
-                href={`mailto:${casa.email}?subject=${encodeURIComponent(
-                  t("como.assunto"),
-                )}`}
-                className="premivel rounded-full border border-papel/40 px-7 py-4 text-sm font-semibold uppercase tracking-widest hover:bg-papel hover:text-tinta"
-              >
-                {t("como.email")}
-              </a>
-            )}
+            {/* O telefone fica ao lado do formulário e não escondido depois
+                dele: para metade das encomendas — e para todas as urgentes — é
+                a via boa, e um formulário que finge ser a única forma de falar
+                com uma pastelaria de bairro está a inventar uma empresa que não
+                existe. */}
+            <div className="mt-8 border-t border-papel/20 pt-6">
+              <p className="text-xs font-semibold uppercase tracking-widest text-papel/60">
+                {t("como.titulo")}
+              </p>
+              {telefone && (
+                <a
+                  href={telefone}
+                  className="premivel titulo-display mt-2 block text-2xl"
+                >
+                  {casa.telefone}
+                </a>
+              )}
+              <p className="mt-2 text-sm text-papel/65">{t("como.texto")}</p>
+            </div>
           </div>
+
+          <FormularioPedido locale={locale} />
         </div>
       </section>
-    </>
+
+      <Cesto locale={locale} />
+    </CestoProvider>
   );
 }

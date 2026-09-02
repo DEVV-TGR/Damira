@@ -62,7 +62,13 @@ export function ArtigoEmenta({
         type="button"
         onClick={() => aoAbrir(artigo)}
         aria-label={`${nomeVisivel(artigo, locale)} — ${t("abrir")}`}
-        className="w-full cursor-pointer py-5 text-left transition-opacity hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+        /* O `active:` responde ao **carregar** e não ao largar. Num telemóvel
+           não há `hover` nenhum (o Tailwind v4 já o fecha atrás de
+           `@media (hover: hover)`), e entre o dedo tocar e a folha começar a
+           subir passava um terço de segundo sem a linha dar sinal de ter
+           ouvido. Não é uma animação: é a confirmação de que se acertou na
+           linha certa. */
+        className="w-full cursor-pointer py-5 text-left transition-opacity hover:opacity-70 active:opacity-55 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
       >
         <div className="flex items-baseline gap-2">
           <h3 className="titulo-display text-lg uppercase tracking-wide">
@@ -72,7 +78,12 @@ export function ArtigoEmenta({
             aria-hidden
             className="min-w-4 flex-1 translate-y-[-0.25em] border-b border-dotted border-current opacity-40"
           />
-          <span className="titulo-display shrink-0 tabular-nums">
+          {/* ⚠️ **O preço é a única coisa colorida do corpo da página.** Antes
+              era tinta como tudo o resto, e numa lista de noventa e cinco linhas
+              iguais o olho não tinha onde pousar: quem procura o preço lia o
+              nome primeiro, linha a linha. O tijolo sobre papel dá 6,87:1 e
+              passa a qualquer tamanho — não é decoração, é o índice da lista. */}
+          <span className="titulo-display shrink-0 tabular-nums text-tijolo">
             <Preco artigo={artigo} locale={locale} />
           </span>
         </div>
@@ -134,7 +145,7 @@ export function ArtigoCompacto({
           aria-hidden
           className="min-w-4 flex-1 translate-y-[-0.25em] border-b border-dotted border-current opacity-40"
         />
-        <span className="shrink-0 text-sm font-semibold tabular-nums">
+        <span className="shrink-0 text-sm font-semibold tabular-nums text-tijolo">
           <Preco artigo={artigo} locale={locale} />
         </span>
       </div>

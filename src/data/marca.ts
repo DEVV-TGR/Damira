@@ -11,7 +11,23 @@ import dados from "./marca.json";
  * uma no JSON e outra nas traduções, e ninguém saber qual é a boa.
  */
 const EsquemaMarca = z.object({
+  /**
+   * O nome completo, como está na placa da porta: "Confeitaria e Pão Quente
+   * Damira". É o que vai para as `metadata`, para os dados estruturados e para
+   * o copyright — os sítios onde o nome é uma identificação legal e não uma
+   * etiqueta.
+   */
   nome: z.string().min(1),
+  /**
+   * Como a casa é tratada por quem lá vai.
+   *
+   * ⚠️ **Existe porque o nome completo tem trinta caracteres** e não cabe em
+   * metade dos sítios onde um nome aparece — um `aria-label`, uma frase de
+   * copy, a assinatura de um email. Escrever "Damira" à mão nesses sítios era o
+   * caminho para o dia em que a casa muda de nome e sobram sete versões
+   * espalhadas pelo código.
+   */
+  nomeCurto: z.string().min(1),
   instagram: z.url().nullable(),
   instagramUtilizador: z.string().startsWith("@").nullable(),
   tiktok: z.url().nullable(),

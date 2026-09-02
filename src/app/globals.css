@@ -78,7 +78,16 @@
    * duração.
    */
   --ease-saida: cubic-bezier(0.23, 1, 0.32, 1);
-  --ease-entrada-saida: cubic-bezier(0.77, 0, 0.175, 1);
+  /* A curva das folhas e dos painéis. É a do Ionic, e é a que a indústria
+     copiou do iOS: arranca quase a direito e trava muito no fim, que é o que
+     faz uma folha grande parecer pousar em vez de bater. Estava escrita à mão
+     no `.painel-artigo`, e uma curva escrita à mão é uma curva que a segunda
+     folha deste site vai ter *ligeiramente* diferente.
+
+     ⚠️ Aqui esteve `--ease-entrada-saida`, um *ease-in-out* forte que nunca
+     ninguém usou. Um token que não é usado não é vocabulário, é uma escolha por
+     fazer à espera de alguém que a copie sem saber para quê. */
+  --ease-folha: cubic-bezier(0.32, 0.72, 0, 1);
   /* Resposta ao toque. Curto de propósito: é confirmação, não animação. */
   --tempo-toque: 160ms;
 }
@@ -209,12 +218,27 @@ body::after {
  * os títulos ficam em caixa normal. Cento e vinte e dois artigos com títulos de
  * secção aos berros é o que separa um menu de um cartaz.
  */
+/**
+ * ⚠️ **O tracking e a entrelinha da base são os do texto pequeno, não os do
+ * título grande.**
+ *
+ * Isto tinha `-0.025em` e `0.95` fixos para toda a gente, e um valor fixo está
+ * errado em algum tamanho — necessariamente. A `.titulo-display` sozinha, sem
+ * degrau, é o que veste as etiquetas, os preços e o texto dos botões, a 12 e
+ * 14 px: a esse corpo, `-0.025em` fecha as letras umas contra as outras e a
+ * entrelinha de `0.95` faz duas linhas tocarem-se.
+ *
+ * Os títulos apertam-se nos degraus abaixo, que é onde se sabe o tamanho. A
+ * regra é a da tipografia impressa e não muda: **quanto maior o corpo, mais
+ * negativo o tracking e mais curta a entrelinha** — as letras parecem afastar-se
+ * à medida que crescem, e as linhas parecem cair.
+ */
 .titulo-display {
   font-family: var(--font-display);
   font-weight: 700;
   font-variation-settings: "wdth" 85, "opsz" 40;
-  letter-spacing: -0.025em;
-  line-height: 0.95;
+  letter-spacing: -0.008em;
+  line-height: 1.15;
   text-wrap: balance;
 }
 
@@ -233,27 +257,80 @@ body::after {
  * O que decide o degrau é o **peso da secção na página**, não o gosto:
  * `alfa` para os dois momentos altos, `gama` para o que é prático.
  */
+/* Cada degrau traz o seu tracking e a sua entrelinha, e não só o corpo. São
+   três propriedades que só fazem sentido decididas em conjunto — mudar o
+   tamanho sem mexer nas outras duas é o que dá um título grande com espaçamento
+   de legenda. */
 .titulo-alfa {
   font-size: clamp(2.75rem, 7vw, 5.5rem);
+  letter-spacing: -0.032em;
+  line-height: 0.94;
 }
 .titulo-beta {
   font-size: clamp(2rem, 4.5vw, 3.5rem);
+  letter-spacing: -0.024em;
+  line-height: 0.98;
 }
 .titulo-gama {
   font-size: clamp(1.5rem, 3vw, 2.25rem);
+  letter-spacing: -0.014em;
+  line-height: 1.06;
+}
+
+/**
+ * O quarto degrau, que não é da escala: é o `<h1>` de uma página — o herói, a
+ * capa da ementa, a das encomendas. Sobe aos 9 rem e é a única tipografia do
+ * site que se lê como cartaz.
+ *
+ * Fica fora dos três degraus de propósito, porque **não compete com eles**:
+ * aparece uma vez por página e no topo, onde não há nada por perto com que se
+ * comparar. Metê-lo na escala obrigava a escolher entre um alfa gigante nas
+ * secções ou uma capa pequena.
+ *
+ * ⚠️ A entrelinha é `1.0` e não menos. A Bricolage tem descendentes longos e a
+ * caixa alta desta capa leva **Ç** — a `0.95`, a cedilha de «ENCOMENDAS» bate na
+ * linha de cima assim que o título parte em duas, o que num telemóvel acontece
+ * sempre.
+ *
+ * ⚠️ **O tamanho vive aqui, e passou a viver.** Estava escrito à mão nas três
+ * páginas, com três valores diferentes — `9rem` na ementa, `8rem` nas
+ * encomendas, `7,5rem` no herói — enquanto este comentário anunciava "sobe aos
+ * 9 rem" como se fosse uma coisa só. Não era: era a mesma classe a valer três
+ * coisas, e o `Hero.tsx` já dizia noutro sítio exactamente porque é que isso é
+ * mau ("um valor de tipografia escrito num componente é o que faz a escala
+ * deixar de ser uma escala"). Ficou a meio: o tracking e a entrelinha vieram
+ * para cá, o corpo não.
+ *
+ * O valor é o do caso pior — o herói, que é a capa com mais palavras e a única
+ * que assenta sobre uma fotografia. Uma capa dimensionada pela palavra mais
+ * curta ("EMENTA") obriga todas as outras a partir a linha, e o que decide o
+ * corpo de uma capa é a largura do ecrã, não quantas letras calhou o título ter.
+ */
+.titulo-capa {
+  font-size: clamp(3rem, 10vw, 7.5rem);
+  letter-spacing: -0.04em;
+  line-height: 1;
 }
 
 /**
  * Etiqueta de secção: pequena, em caixa alta, precedida de um filete tijolo.
  *
- * ⚠️ **Uma por página.** Isto esteve em cinco secções seguidas, e em quatro
- * delas dizia o mesmo que o título logo abaixo ("Onde estamos" sobre "As nossas
- * casas") ou estragava-lhe a piada ("Pão rosa e pão azul" sobre "Nem todos os
- * santos vêm em pão normal"). Uma etiqueta que repete o título não é hierarquia,
- * é ruído — e cinco iguais são a assinatura de uma página montada por reflexo.
+ * ⚠️ **Só quando o olho é o nome que o impresso dá à coisa.** Esta regra estava
+ * aqui escrita como "uma por página" e a explicação falava de secções do Santo
+ * Burga — a Escalada, o pão rosa — que este site não tem: era documentação
+ * herdada a defender um limite que a homepage da Damira já não cumpre, com dois
+ * olhos, e a não dizer nada sobre o critério que ela segue mesmo.
  *
- * Sobra na Escalada, onde **é conteúdo**: "Para os corajosos" é o nome
- * verdadeiro de uma categoria da carta impressa, não uma legenda inventada.
+ * O critério é este, e é o que sobrevive à mudança de casa: um olho vale quando
+ * é **conteúdo** e não legenda. «Combinações perfeitas» é como o menu impresso
+ * chama àquele canto da última coluna; «Kit Festas» é o nome do produto no
+ * folheto das encomendas. Nenhum dos dois repete o título que tem por baixo
+ * («O que a casa recomenda», «De vinte a setenta pessoas»): dizem *como aquilo
+ * se chama*, e o título diz *o que é*.
+ *
+ * ⚠️ O que continua proibido é o olho inventado para a grelha ficar bonita —
+ * uma etiqueta que repete o título logo abaixo não é hierarquia, é ruído, e
+ * várias iguais em fila são a assinatura de uma página montada por reflexo.
  */
 .olho {
   font-family: var(--font-display);
@@ -304,6 +381,29 @@ body::after {
   -webkit-mask-size: contain;
 }
 
+/**
+ * A barra do cabeçalho é vidro: papel a 80 % com desfoque por trás, para deixar
+ * adivinhar o que passa por baixo em vez de o cortar a direito.
+ *
+ * ⚠️ **`prefers-reduced-transparency` não é o mesmo pedido que
+ * `prefers-reduced-motion`**, e a regra global de movimento não cobre isto. Quem
+ * liga a opção do sistema costuma tê-lo feito porque o conteúdo a passar por
+ * baixo de uma barra translúcida lhe dificulta a leitura — devolver-lhe papel
+ * chapado é a resposta, e o desfoque desaparece com ele (mantê-lo sobre um fundo
+ * opaco é gastar uma camada de composição para não se ver nada).
+ *
+ * Esta regra vive **fora de `@layer`** de propósito: é assim que ganha aos
+ * utilitários `bg-papel/80` e `backdrop-blur-md` que o componente escreve, que o
+ * Tailwind v4 põe dentro de camada.
+ */
+@media (prefers-reduced-transparency: reduce) {
+  .barra-vidro {
+    background-color: var(--color-papel);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
 /* ── Interacção ───────────────────────────────────────────────────────── */
 
 /**
@@ -326,12 +426,34 @@ body::after {
  * (Estar fora de camada é de propósito: é o que permite `hover:` funcionar, ao
  * contrário do que acontece com `@layer components`.)
  */
+/**
+ * ⚠️ **`opacity` e `translate` entraram na lista, e o motivo é uma armadilha a
+ * sério.** O botão flutuante das encomendas escrevia
+ * `transition-[opacity,transform] duration-300` em utilitários para aparecer ao
+ * rolar. Essa declaração **nunca chegou a existir**: os utilitários do Tailwind
+ * vivem em `@layer utilities` e esta regra está fora de camada, por isso a
+ * `transition` daqui substitui a de lá por inteiro — e nem `opacity` nem
+ * `translate` estavam nesta lista. O botão saltava para dentro e para fora do
+ * ecrã de um fotograma para o outro, com o código da animação escrito e a não
+ * correr. É a armadilha 6 do AGENTS.md a acontecer outra vez.
+ *
+ * (E `translate` e não `transform`: no Tailwind v4 o utilitário `translate-y-*`
+ * usa a propriedade autónoma `translate`. É o que permite a entrada e a pressão
+ * correrem a velocidades diferentes sem se pisarem — a pressão fica com o
+ * `transform`.)
+ *
+ * As durações são diferentes de propósito: 160 ms a ser carregado, porque é uma
+ * confirmação e ninguém a vê; 300 ms a aparecer, porque é uma chegada e é a
+ * única coisa a mexer-se no ecrã nesse momento.
+ */
 .premivel {
   transition:
     transform var(--tempo-toque) var(--ease-saida),
     background-color var(--tempo-toque) var(--ease-saida),
     border-color var(--tempo-toque) var(--ease-saida),
-    color var(--tempo-toque) var(--ease-saida);
+    color var(--tempo-toque) var(--ease-saida),
+    opacity 0.3s var(--ease-saida),
+    translate 0.3s var(--ease-saida);
 }
 
 .premivel:active {
@@ -345,6 +467,39 @@ body::after {
   .premivel:active {
     transform: scale(0.97);
   }
+}
+
+/**
+ * ## Alvo de toque: cresce para o dedo, não para o olho
+ *
+ * Medidos a 390 px, os controlos de navegação deste site tinham **17 px de
+ * altura** (os links do cabeçalho), 28 px (os separadores das cartas) e 35 px (o
+ * botão de idioma). O mínimo confortável é 44 px, e a diferença não é teórica: é
+ * quem tenta saltar para a carta vegan com o polegar e abre a do chocolate.
+ *
+ * ⚠️ **Não se resolve com `padding`**, e é por isso que isto existe. Estes
+ * controlos têm borda visível ou vivem em barras de altura fixa: engordá-los
+ * mudava o desenho, e no caso da barra da ementa mudava-lhe a **altura**, que é
+ * a medida de que dependem o `top-16` da barra colada, o `scroll-padding-top` do
+ * documento e os `scroll-mt-*` de todas as secções. Uma correção de acessibilidade
+ * não pode desalinhar as âncoras da página.
+ *
+ * A caixa cresce 12 px para cima e para baixo e **zero para os lados**: a
+ * vertical é onde falta espaço, e alargar na horizontal punha os alvos de dois
+ * separadores vizinhos a sobreporem-se — que troca um erro de toque por outro.
+ *
+ * O pseudo-elemento fica por cima do texto do próprio controlo e isso é
+ * inofensivo: vive **dentro** dele, por isso o clique tem na mesma o link como
+ * alvo. Não leva cor nenhuma — só apanha o dedo.
+ */
+.alvo-toque {
+  position: relative;
+}
+
+.alvo-toque::after {
+  content: "";
+  position: absolute;
+  inset: -0.75rem 0;
 }
 
 /* ── Movimento ────────────────────────────────────────────────────────── */
@@ -363,9 +518,15 @@ body::after {
  * e ele ficava a 0,79 de opacidade para sempre. Fechar em `entry 60%` garante
  * que qualquer elemento acaba visível assim que entra, esteja onde estiver.
  *
- * **Uma revelação por secção, não uma por elemento.** A excepção é a Escalada,
- * onde os três blocos entram um a um de propósito — ali o escalonamento *é* a
- * escalada. Em todo o lado o mesmo fade repetido item a item lê-se como reflexo.
+ * **Uma revelação por secção, não uma por elemento.** O mesmo fade repetido
+ * item a item lê-se como reflexo; escalonar só se justifica quando o
+ * escalonamento *é* a informação, e neste site esse caso é o `.escalao` das
+ * encomendas, mais abaixo, onde a direção diz para que lado o número mudou.
+ *
+ * ⚠️ **Hoje nenhum componente usa esta classe.** Fica por decidir, e não por
+ * esquecimento: a página é a de um impresso e a leitura calma é uma escolha.
+ * Quando entrar, entra secção a secção — e o intervalo acima é a razão de não
+ * se dever copiar um `.surgir` de outro sítio qualquer.
  */
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
@@ -403,142 +564,47 @@ body::after {
   }
 }
 
-/* ── Fitas a correr ───────────────────────────────────────────────────── */
+/* ── Troca de escalão ─────────────────────────────────────────────────── */
 
 /**
- * O motor das fitas — as duas do herói e a dos santos, no fundo da página.
+ * A entrada das colunas quando se muda o número de pessoas nas encomendas.
  *
- * O conteúdo é **duplicado** e a animação desloca metade da largura. É o que faz
- * o ciclo não ter costura: quando a primeira cópia sai de cena, a segunda está
- * exactamente onde a primeira começou, e o `translateX` volta a zero sem que se
- * veja o salto. A cópia é `aria-hidden` — quem usa leitor de ecrã ouve a lista
- * uma vez, não duas.
+ * ## Porquê animar de todo
  *
- * `width: max-content` porque a fita tem de ser tão larga quanto o conteúdo
- * pedir; com a largura do pai, o `flex` encolhia os itens e a conta do 50%
- * deixava de fechar.
+ * Porque sem isto três colunas inteiras — preço, dezasseis linhas de salgados,
+ * oito de doces — mudam entre dois quadros. O olho não vê uma transição, vê um
+ * **piscar**, e um piscar não diz o que aconteceu: quem carregou em «40 pessoas»
+ * fica sem saber se a página mudou porque ele mandou ou porque se recarregou.
  *
- * ⚠️ **Três fitas seguidas deixam de ser três gestos e passam a ser fundo.** A
- * dos santos esteve colada ao herói, no mesmo tom, e o que fazia era acabar
- * com a ideia do herói: a fila de baixo deixava de o fechar e passava a ser a
- * primeira de três riscas. Ficaram as duas do herói (que são um gesto só) e a
- * dos santos lá em baixo, a costurar para o rodapé.
+ * ## E porquê com direção
+ *
+ * ⚠️ **A direção não é enfeite: é a informação.** De 20 para 40 o conteúdo entra
+ * de baixo, de 40 para 20 entra de cima — a mesma direção em que o número se
+ * move na escala. Um fade sem direção mostra que algo mudou; com direção, mostra
+ * **para que lado**, e isso é a diferença entre uma animação decorativa e uma que
+ * explica.
+ *
+ * A saída é imediata e a entrada é curta (0,26 s): ninguém está a ver um efeito,
+ * está à espera de um preço. O `--ease-saida` é um *ease-out* forte — começa
+ * depressa, que é o momento em que quem carregou está a olhar.
+ *
+ * Sem `translate` em quem pediu menos movimento: a regra global de
+ * `prefers-reduced-motion` já corta a duração, e o que sobra é uma troca seca,
+ * que é o equivalente honesto.
  */
-.fita {
-  overflow: hidden;
-  /* Sem isto, a fita empurra a largura do documento e o telemóvel ganha scroll
-     horizontal — que é o defeito clássico de um marquee mal contido. */
-  max-width: 100%;
-}
-
-.fita-conteudo {
-  display: flex;
-  width: max-content;
-  animation: correr var(--duracao, 45s) linear infinite;
-}
-
-/* Pausa ao passar o rato: quem quiser ler um nome consegue parar para o ler. */
-.fita:hover .fita-conteudo {
-  animation-play-state: paused;
-}
-
-@keyframes correr {
+@keyframes entrar-escalao {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--direcao, 1) * 0.75rem));
+  }
   to {
-    transform: translateX(-50%);
+    opacity: 1;
+    transform: none;
   }
 }
 
-/**
- * A fila que anda ao contrário.
- *
- * `animation-direction: reverse` e não uma segunda animação: é a mesma regra
- * lida de trás para a frente, e assim as duas filas nunca podem divergir se
- * alguém mexer no `@keyframes`.
- *
- * Duas filas a andar no mesmo sentido leem-se como uma só coisa a deslizar; em
- * sentidos opostos, cada uma dá profundidade à outra — e é o que impede o herói
- * de parecer um banner.
- */
-.fita-inversa .fita-conteudo {
-  animation-direction: reverse;
-}
-
-/**
- * Texto em movimento contínuo é dos piores gatilhos para quem tem sensibilidade
- * a movimento — aqui pára de vez, e a fita passa a ser uma lista normal cortada
- * pela margem.
- */
-@media (prefers-reduced-motion: reduce) {
-  .fita-conteudo {
-    animation: none;
-  }
-}
-
-/* ── Cartões sobre fotografia ─────────────────────────────────────────── */
-
-/**
- * O véu dos cartões: contraste para o nome e o preço por cima da fotografia.
- *
- * Sem isto o texto assenta directamente na imagem e a legibilidade passa a
- * depender do que a fotografia tiver naquele canto — que num cartão de comida é
- * tudo menos previsível. O gradiente é forte em baixo, onde o texto vive, e
- * quase transparente em cima, onde só há imagem.
- *
- * A escala não é linear: sobe depressa nos primeiros 45 % e depois abranda. Um
- * gradiente linear a esta altura deixa uma aresta visível a meio do cartão; com
- * as paragens desencontradas, o olho não a encontra.
- */
-.veu-cartao {
-  background: linear-gradient(
-    to top,
-    rgb(35 31 32 / 0.94) 0%,
-    rgb(35 31 32 / 0.82) 45%,
-    rgb(35 31 32 / 0.45) 75%,
-    rgb(35 31 32 / 0.2) 100%
-  );
-}
-
-/* ── Mosaico da casa cheia ────────────────────────────────────────────── */
-
-/**
- * Colunas, e não grelha.
- *
- * O pedido para esta secção era «menos geometria mas mantém um padrão». Numa
- * grelha isso faz-se a dar a cada célula um número de linhas diferente — e essa
- * conta **não fecha** quando o material tem duas proporções: as fotografias são
- * 4:5 e os reels 9:16, e qualquer altura escolhida corta uma das duas. Com
- * `columns`, cada ladrilho fica com a sua proporção natural, as colunas enchem
- * sozinhas e a irregularidade vem do conteúdo em vez de vir de uma tabela.
- *
- * `break-inside: avoid` é o que impede uma imagem de ser partida entre o fim de
- * uma coluna e o princípio da seguinte.
- *
- * ⚠️ **Aqui só entram `public/fotos/` (1286 px) e `public/reels/` (720 px).** Os
- * recortes de `public/instagram/` têm 356 px — são miniaturas da grelha do
- * perfil (ver `scripts/importar-instagram.mjs`) — e a esta largura de coluna
- * seriam ampliados para o dobro num ecrã de dupla densidade. O sítio deles é o
- * herói, onde o `clamp` os trava nos 240 px. Não os trazer para cá.
- */
-.mosaico {
-  columns: 2;
-  column-gap: clamp(0.25rem, 0.8vw, 0.5rem);
-}
-
-.mosaico > * {
-  break-inside: avoid;
-  margin-bottom: clamp(0.25rem, 0.8vw, 0.5rem);
-}
-
-@media (min-width: 48rem) {
-  .mosaico {
-    columns: 3;
-  }
-}
-
-@media (min-width: 64rem) {
-  .mosaico {
-    columns: 4;
-  }
+.escalao {
+  animation: entrar-escalao 0.26s var(--ease-saida) both;
 }
 
 /* ── Painel do artigo ─────────────────────────────────────────────────── */
@@ -563,16 +629,36 @@ body::after {
 
   translate: 0 100%;
   opacity: 0;
+
+  /**
+   * ⚠️ **A saída é mais rápida do que a entrada, e não é distração.**
+   *
+   * As duas estavam a 0,32 s. A entrada é o sistema a mostrar uma coisa nova, e
+   * aí vale a pena o tempo: a folha sobe, vê-se de onde veio e o que trouxe. A
+   * saída é a resposta a alguém que já decidiu — carregou no ×, no `Esc` ou
+   * fora da caixa — e nesse momento o que se quer é a lista de volta, não a
+   * despedida da folha.
+   *
+   * A regra por trás é sempre a mesma: **devagar onde o utilizador está a
+   * decidir, depressa onde o sistema está a responder.** É por isso que as duas
+   * durações vivem em regras diferentes: numa transição, a que conta é a do
+   * estado de **destino** — abrir vai parar a `[open]`, fechar vai parar aqui.
+   */
   transition:
-    translate 0.32s cubic-bezier(0.32, 0.72, 0, 1),
-    opacity 0.32s ease,
-    display 0.32s allow-discrete,
-    overlay 0.32s allow-discrete;
+    translate 0.22s var(--ease-folha),
+    opacity 0.22s ease,
+    display 0.22s allow-discrete,
+    overlay 0.22s allow-discrete;
 }
 
 .painel-artigo[open] {
   translate: 0 0;
   opacity: 1;
+  transition:
+    translate 0.32s var(--ease-folha),
+    opacity 0.32s ease,
+    display 0.32s allow-discrete,
+    overlay 0.32s allow-discrete;
 }
 
 /* Sem isto a folha aparece de repente: a animação de entrada precisa de um
@@ -584,18 +670,21 @@ body::after {
   }
 }
 
+/* O escurecer do fundo acompanha a folha nas duas velocidades — se ficasse aos
+   0,32 s, ao fechar via-se a sala ainda escura com a folha já fora do ecrã. */
 .painel-artigo::backdrop {
-  background: rgb(35 31 32 / 0);
-  transition: background 0.32s ease;
+  background: rgb(31 29 27 / 0);
+  transition: background 0.22s ease;
 }
 
 .painel-artigo[open]::backdrop {
-  background: rgb(35 31 32 / 0.55);
+  background: rgb(31 29 27 / 0.55);
+  transition: background 0.32s ease;
 }
 
 @starting-style {
   .painel-artigo[open]::backdrop {
-    background: rgb(35 31 32 / 0);
+    background: rgb(31 29 27 / 0);
   }
 }
 

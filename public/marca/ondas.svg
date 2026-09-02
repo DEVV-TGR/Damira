@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 130">
+<!--
+  As tres ondas sozinhas — o vapor, que é o m de "damira".
+
+  PORQUE EXISTE À PARTE DO SÍMBOLO COMPLETO. Porque o pão só se lê a partir de
+  certo tamanho. Num favicon de 16 px, o oval do pão e os dois cortes lá dentro
+  colapsam numa mancha; as três ondas, que são traços verticais separados,
+  aguentam. A regra é a do cliente: o M para o que é pequeno, o pão para o que é
+  grande.
+
+  É o mesmo desenho de simbolo.svg, recortado ao vapor e reenquadrado.
+  Ver esse ficheiro para a origem e as ressalvas.
+-->
+<g fill="none" stroke="#000" stroke-width="13" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M22 116C14 96 32 84 24 64c-5-13 2-24 4-30"/>
+  <path d="M62 116C54 94 72 82 64 60c-5-14 2-26 4-32"/>
+  <path d="M102 116C94 92 112 80 104 56c-5-15 2-28 4-34"/>
+</g>
+</svg>
