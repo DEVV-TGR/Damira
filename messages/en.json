@@ -81,6 +81,128 @@
       "texto": "Over the counter every day, seven to nine. For a party, with a phone call first."
     }
   },
+  "cartaz": {
+    "folio": "Chapters",
+    "capa": {
+      "olho": "Bakery and pastry shop",
+      "lede": "Open at seven every morning, every day. Hot bread at the counter, lunch at the table, and a case of pastries until nine at night.",
+      "credito": "The line is not ours. It is painted on the shop window, beside the door.",
+      "verEmenta": "See the menu",
+      "encomendar": "Order",
+      "atalhos": "Shortcuts"
+    },
+    "porta": {
+      "numeral": "I",
+      "olho": "The door",
+      "titulo": "It is on Rua Dom António Castro Meireles",
+      "texto": "Outside, the sign reads Pão Quente and the plate shows a loaf with three ribbons of steam coming off it. That steam is the m in damira, and it is what draws this page as you go down.",
+      "legenda": "The shopfront, from the street."
+    },
+    "silencio": "Inside, at seven in the morning, the bread is coming out.",
+    "pao": {
+      "numeral": "II",
+      "olho": "The bread",
+      "titulo": "Village loaves",
+      "legenda": "Freshly baked village loaves in the shop counter.",
+      "nota": "It is the trade the house is named for, and the drawing on the plate by the door."
+    },
+    "maos": {
+      "numeral": "III",
+      "olho": "The hands",
+      "titulo": "Made here, by hand, one at a time",
+      "texto": "The strawberry tartlets are glazed with a brush, one tartlet at a time, on the bench in the shop. Nothing arrives in a box to be opened at the counter.",
+      "legenda": "Strawberry tartlets being assembled on a tray."
+    },
+    "vitrine": {
+      "numeral": "IV",
+      "olho": "The counter",
+      "titulo": "The house, photographed by the house",
+      "texto": "Fourteen photographs from Damira's own album. What is in the counter, what comes out of the kitchen, and the room at lunchtime.",
+      "credito": "Photographs by Confeitaria e Pão Quente Damira.",
+      "legendas": {
+        "montra": "Carob bread and other loaves in the shop counter.",
+        "folhados": "Savoury puff pastries on a tray, freshly baked.",
+        "fabrico": "Chocolates made in the house, lined up on a tray.",
+        "caramelo": "Caramel chocolates.",
+        "bombons": "Assorted chocolates on a tray.",
+        "castanhas": "Castanhas de ovos, an egg-yolk sweet.",
+        "duchesse": "Duchesse with fios de ovos.",
+        "hungaros": "Chocolate-covered pastries on a tray.",
+        "boloRei": "Traditional bolo-rei.",
+        "boloReiChila": "Bolo-rei with chila jam.",
+        "boloReiChocolate": "Chocolate bolo-rei.",
+        "peixe": "Grilled fish with cabbage and potato.",
+        "frango": "Grilled chicken with salad.",
+        "sala": "The dining room at lunchtime, soup being served at a table."
+      }
+    },
+    "reels": {
+      "numeral": "V",
+      "olho": "The videos",
+      "titulo": "The house's reels",
+      "texto": "What Damira posts on video, always shot upright. Tap to open on Instagram.",
+      "textoSemConta": "Six places waiting for the house's videos. They are drawn and empty on purpose: they fill in as soon as the reel links arrive.",
+      "espaco": "Place {n}, still empty",
+      "verNoInstagram": "Watch on Instagram",
+      "verTudo": "See them all on Instagram"
+    },
+    "raro": {
+      "numeral": "VI",
+      "olho": "The rare thing",
+      "titulo": "More than half the menu is vegan",
+      "de": "of {total} items",
+      "texto": "Not one item marked with a leaf at the end of a list. A whole menu alongside the other one: savouries, pastries, and whole cakes sold by the kilo.",
+      "ligacao": "See the vegan menu"
+    },
+    "provar": {
+      "numeral": "VII",
+      "olho": "The menu",
+      "titulo": "Four menus, one price from each",
+      "texto": "{total} items in all. Here are the four menus and one real price from each, so you do not have to click anything just to know what it costs.",
+      "quantos": "{n} items",
+      "quilo": "kilo",
+      "semPreco": "on request",
+      "verEmenta": "See the full menu"
+    },
+    "festa": {
+      "numeral": "VIII",
+      "olho": "The party",
+      "titulo": "Up to seventy people",
+      "texto": "Three kits, fixed price per tier. What changes between them is what comes to the table, not the headcount.",
+      "pessoas": "{n} people",
+      "desde": "from {preco}",
+      "nota": "Parties need notice. The quote is settled by phone or through the form.",
+      "ligacao": "See orders and parties"
+    },
+    "encomendar": {
+      "numeral": "IX",
+      "olho": "Ordering",
+      "titulo": "Three ways, all of them fine",
+      "texto": "Cakes with a date, party kits and boxes are ordered through one of these three. Take whichever suits you.",
+      "formulario": {
+        "nome": "Through the form",
+        "detalhe": "Any hour, with your date and what you want.",
+        "accao": "Open the form"
+      },
+      "telefone": {
+        "nome": "By phone",
+        "accao": "Call now"
+      },
+      "balcao": {
+        "nome": "At the counter",
+        "accao": "Open the map"
+      },
+      "nota": "Parties and cakes need notice. The sooner you give the date, the easier everything else is."
+    },
+    "colofao": {
+      "numeral": "X",
+      "olho": "The address",
+      "titulo": "Come by",
+      "horario": "Every day, {abre} to {fecha}",
+      "correr": "It is at <mapa>{morada}</mapa>. To see the menu before you come, <ementa>the menu is here</ementa>. For a party or a cake with a date, <encomendas>orders are here</encomendas>.",
+      "fim": "Confeitaria e Pão Quente Damira, since 1996."
+    }
+  },
   "casa": {
     "titulo": "Where and when",
     "morada": "Address",
@@ -155,7 +277,15 @@
       "precos": "Prices from the 2025 and 2026 menus, to be confirmed."
     },
     "abrir": "See details",
-    "fechar": "Close"
+    "fechar": "Close",
+    "procurar": "Search the menu",
+    "procurarDica": "Type a name: croissant, toastie, vegan…",
+    "soVegan": "Vegan only",
+    "limpar": "Clear",
+    "aMostrar": "{n} of {total} items",
+    "semResultados": "Nothing by that name",
+    "semResultadosTexto": "Try another word, or clear the search to go back to the four menus.",
+    "quantosArtigos": "{n, plural, one {# item} other {# items}}"
   },
   "encomendas": {
     "olho": "To order",
@@ -232,6 +362,37 @@
         "abrir": "Open in my email",
         "verTexto": "Or copy the request text"
       }
+    },
+    "cesto": {
+      "titulo": "Your order",
+      "vazio": "Nothing added yet",
+      "vazioTexto": "Use “add to order” on the kits, cakes or boxes. You can also just write what you want without picking anything.",
+      "juntar": "Add to order",
+      "juntado": "In the order",
+      "verPedido": "View order",
+      "fechar": "Close",
+      "irParaPedido": "Continue",
+      "esvaziar": "Empty",
+      "remover": "Remove {nome} from the order",
+      "mais": "One more",
+      "menos": "One fewer",
+      "unidades": "{n, plural, one {# item} other {# items}}",
+      "estimativa": "Estimate",
+      "aPartirDe": "From",
+      "semPreco": "Quoted on request",
+      "avisoEstimativa": "This is an estimate from list prices, not a bill. Delivery is not included and the final figure comes with our reply.",
+      "avisoOrcamento": "Some items have no list price. The final figure comes with our reply.",
+      "passos": {
+        "leva": "What you want",
+        "quando": "When",
+        "quem": "Who you are"
+      },
+      "seguinte": "Next",
+      "anterior": "Back",
+      "passoDe": "Step {n} of {total}",
+      "resumoTitulo": "What goes in the order",
+      "notas": "Anything to add?",
+      "notasDica": "Filling, colour, the name to write on the cake, allergies."
     }
   },
   "bolos": {

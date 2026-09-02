@@ -81,6 +81,128 @@
       "texto": "Ao balcão todos os dias das sete às nove. Para uma festa, com um telefonema à frente."
     }
   },
+  "cartaz": {
+    "folio": "Capítulos",
+    "capa": {
+      "olho": "Confeitaria e Pão Quente",
+      "lede": "Abre às sete da manhã, todos os dias. Pão quente ao balcão, almoço à mesa, e uma vitrine de doces até às nove da noite.",
+      "credito": "A frase não é nossa. Está pintada no vidro da montra, ao lado da porta.",
+      "verEmenta": "Ver a ementa",
+      "encomendar": "Encomendar",
+      "atalhos": "Atalhos"
+    },
+    "porta": {
+      "numeral": "I",
+      "olho": "A porta",
+      "titulo": "Fica na Rua Dom António Castro Meireles",
+      "texto": "Por fora, o letreiro diz Pão Quente e a placa mostra um pão com três fios de vapor a sair. Esse vapor é o m de damira, e é ele que desenha esta página à medida que desce.",
+      "legenda": "A fachada, vista da rua."
+    },
+    "silencio": "Lá dentro, às sete da manhã, está a sair o pão.",
+    "pao": {
+      "numeral": "II",
+      "olho": "O pão",
+      "titulo": "Pão da aldeia",
+      "legenda": "Pães da aldeia acabados de cozer, na vitrine da loja.",
+      "nota": "É o negócio que dá o nome à casa, e é o desenho que está na placa da porta."
+    },
+    "maos": {
+      "numeral": "III",
+      "olho": "As mãos",
+      "titulo": "Feito aqui, à mão, uma a uma",
+      "texto": "As tarteletes de morango levam o brilho com pincel, tartelete a tartelete, na bancada da loja. Não chega nada numa caixa para ser aberta ao balcão.",
+      "legenda": "Tarteletes de morango a serem montadas, numa bandeja."
+    },
+    "vitrine": {
+      "numeral": "IV",
+      "olho": "A vitrine",
+      "titulo": "A casa, fotografada pela casa",
+      "texto": "Catorze fotografias do álbum da Damira. O que está na montra, o que sai da cozinha, e a sala à hora de almoço.",
+      "credito": "Fotografias da Confeitaria e Pão Quente Damira.",
+      "legendas": {
+        "montra": "Pão de alfarroba e outros pães, na montra da loja.",
+        "folhados": "Folhados salgados numa travessa, acabados de sair.",
+        "fabrico": "Bombons feitos na casa, alinhados em travessa.",
+        "caramelo": "Bombons de caramelo.",
+        "bombons": "Bombons de vários sabores, numa travessa.",
+        "castanhas": "Castanhas de ovos.",
+        "duchesse": "Duchesse de fios de ovos.",
+        "hungaros": "Doces cobertos de chocolate, numa travessa.",
+        "boloRei": "Bolo-rei tradicional.",
+        "boloReiChila": "Bolo-rei de chila.",
+        "boloReiChocolate": "Bolo-rei de chocolate.",
+        "peixe": "Prato de peixe grelhado com couve e batata.",
+        "frango": "Prato de frango grelhado com salada.",
+        "sala": "A sala da casa à hora de almoço, com sopa a ser servida à mesa."
+      }
+    },
+    "reels": {
+      "numeral": "V",
+      "olho": "Os vídeos",
+      "titulo": "Os reels da casa",
+      "texto": "O que a Damira publica em vídeo, sempre em formato vertical. Toque para abrir no Instagram.",
+      "textoSemConta": "Seis lugares à espera dos vídeos da casa. Estão desenhados e vazios de propósito: enchem-se assim que os endereços dos reels chegarem.",
+      "espaco": "Lugar {n}, por encher",
+      "verNoInstagram": "Ver no Instagram",
+      "verTudo": "Ver todos no Instagram"
+    },
+    "raro": {
+      "numeral": "VI",
+      "olho": "O raro",
+      "titulo": "Mais de metade da ementa é vegan",
+      "de": "de {total} artigos",
+      "texto": "Não é um artigo assinalado com uma folha no fim da lista. É uma carta inteira, a par da outra: salgados, doces e bolos inteiros, ao quilo.",
+      "ligacao": "Ver a carta vegan"
+    },
+    "provar": {
+      "numeral": "VII",
+      "olho": "A ementa",
+      "titulo": "Quatro cartas, um preço de cada",
+      "texto": "São {total} artigos ao todo. Aqui ficam as quatro cartas e um preço de cada uma, para não ter de carregar em nada só para saber quanto custa.",
+      "quantos": "{n} artigos",
+      "quilo": "quilo",
+      "semPreco": "sob consulta",
+      "verEmenta": "Ver a ementa completa"
+    },
+    "festa": {
+      "numeral": "VIII",
+      "olho": "A festa",
+      "titulo": "Até setenta pessoas",
+      "texto": "Três kits, com preço fechado por escalão. O que muda entre eles é o que vem na mesa, não o número de pessoas.",
+      "pessoas": "{n} pessoas",
+      "desde": "desde {preco}",
+      "nota": "As festas pedem antecedência. O orçamento fecha-se por telefone ou pelo formulário.",
+      "ligacao": "Ver as encomendas"
+    },
+    "encomendar": {
+      "numeral": "IX",
+      "olho": "Encomendar",
+      "titulo": "Três maneiras, e todas valem",
+      "texto": "Bolos com data, kits de festa e boxes encomendam-se por uma destas três. Escolha a que lhe der mais jeito.",
+      "formulario": {
+        "nome": "Pelo formulário",
+        "detalhe": "A qualquer hora, com a data e o que quer.",
+        "accao": "Abrir o formulário"
+      },
+      "telefone": {
+        "nome": "Por telefone",
+        "accao": "Ligar agora"
+      },
+      "balcao": {
+        "nome": "Ao balcão",
+        "accao": "Abrir o mapa"
+      },
+      "nota": "As festas e os bolos pedem antecedência. Quanto mais cedo disser a data, mais fácil é acertar o resto."
+    },
+    "colofao": {
+      "numeral": "X",
+      "olho": "A morada",
+      "titulo": "Venha cá",
+      "horario": "Todos os dias, das {abre} às {fecha}",
+      "correr": "Fica na <mapa>{morada}</mapa>. Para ver a carta antes de vir, <ementa>a ementa está aqui</ementa>. Para festa ou bolo com data, <encomendas>as encomendas estão aqui</encomendas>.",
+      "fim": "Confeitaria e Pão Quente Damira, desde 1996."
+    }
+  },
   "casa": {
     "titulo": "Onde e a que horas",
     "morada": "Morada",
@@ -155,7 +277,15 @@
       "precos": "Preços das cartas de 2025 e 2026, por confirmar."
     },
     "abrir": "Ver em detalhe",
-    "fechar": "Fechar"
+    "fechar": "Fechar",
+    "procurar": "Procurar na ementa",
+    "procurarDica": "Escreva um nome: croissant, tosta, vegan…",
+    "soVegan": "Só vegan",
+    "limpar": "Limpar",
+    "aMostrar": "{n} de {total} artigos",
+    "semResultados": "Nada com esse nome",
+    "semResultadosTexto": "Tente outra palavra, ou limpe a procura para voltar às quatro cartas.",
+    "quantosArtigos": "{n, plural, one {# artigo} other {# artigos}}"
   },
   "encomendas": {
     "olho": "Por encomenda",
@@ -232,6 +362,37 @@
         "abrir": "Abrir no meu email",
         "verTexto": "Ou copiar o texto do pedido"
       }
+    },
+    "cesto": {
+      "titulo": "O seu pedido",
+      "vazio": "Ainda não juntou nada",
+      "vazioTexto": "Carregue em «juntar ao pedido» nos kits, nos bolos ou nas boxes. Também pode escrever o que quer sem escolher nada.",
+      "juntar": "Juntar ao pedido",
+      "juntado": "No pedido",
+      "verPedido": "Ver o pedido",
+      "fechar": "Fechar",
+      "irParaPedido": "Continuar",
+      "esvaziar": "Esvaziar",
+      "remover": "Tirar {nome} do pedido",
+      "mais": "Mais um",
+      "menos": "Menos um",
+      "unidades": "{n, plural, one {# artigo} other {# artigos}}",
+      "estimativa": "Estimativa",
+      "aPartirDe": "A partir de",
+      "semPreco": "Sob orçamento",
+      "avisoEstimativa": "É uma estimativa pelos preços de tabela, não uma conta a pagar. A entrega não está incluída e o valor final vem na nossa resposta.",
+      "avisoOrcamento": "Há artigos sem preço de tabela. O valor final vem na nossa resposta.",
+      "passos": {
+        "leva": "O que leva",
+        "quando": "Quando é",
+        "quem": "Quem é"
+      },
+      "seguinte": "Seguinte",
+      "anterior": "Voltar",
+      "passoDe": "Passo {n} de {total}",
+      "resumoTitulo": "O que vai no pedido",
+      "notas": "Quer acrescentar alguma coisa?",
+      "notasDica": "Recheio, cor, o nome a escrever no bolo, alergias."
     }
   },
   "bolos": {

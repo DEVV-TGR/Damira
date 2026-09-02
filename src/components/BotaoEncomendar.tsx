@@ -68,6 +68,12 @@ export function BotaoEncomendar() {
          documento. */
       aria-hidden={!visivel}
       tabIndex={visivel ? undefined : -1}
+      /* Gancho para o CSS o poder tirar de uma página. A página inicial é um
+         cartaz em capítulos e a gramática dela não admite chrome flutuante por
+         cima da estampa — ver `cartaz.css`. Um atributo é mais estável do que
+         apanhar isto por uma classe de utilitário, que muda ao primeiro
+         retoque no desenho do botão. */
+      data-flutuante="encomendas"
       className={`premivel fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-full bg-tijolo py-3.5 pl-5 pr-6 text-sm font-semibold uppercase tracking-widest text-papel shadow-lg shadow-tinta/25 ${
         visivel
           ? "translate-y-0 opacity-100"
