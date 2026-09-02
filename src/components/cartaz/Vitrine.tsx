@@ -1,9 +1,5 @@
-"use client";
-
-import { useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { Ampliar, type Ampliavel } from "./Ampliar";
 
 /**
  * # A vitrine: treze fotografias da casa
@@ -41,13 +37,12 @@ import { Ampliar, type Ampliavel } from "./Ampliar";
  * ⚠️ **E nenhuma célula chega ao tamanho da estampa do pico.** Se chegasse,
  * havia dois picos na página, e uma página com dois picos não tem nenhum.
  *
- * ## Cada célula é um botão que amplia
+ * ## ⚠️ As fotografias não ampliam, e já ampliaram
  *
- * Um `<button>` e não um `<a>` nem um `<div>` com `onClick`: é uma acção na
- * própria página (abre o `<dialog>` de `Ampliar.tsx`), recebe foco pelo
- * teclado, e o leitor de ecrã anuncia-o como botão com o nome da fotografia. O
- * `<img>` lá dentro mantém o `alt`, que é o que se lê quando a imagem não
- * carrega.
+ * Houve aqui um `<button>` por célula a abrir um `<dialog>` com a fotografia
+ * em grande. O cliente testou-o no telemóvel, não gostou do resultado e pediu
+ * para o tirar. Ficou a grelha, que é o que uma montra é: vê-se, não se abre.
+ * Se voltar, é um componente à parte e não um botão à volta do `<Image>`.
  */
 const FOTOS = [
   { ficheiro: "01", chave: "montra", largura: 2 },
@@ -68,14 +63,6 @@ const FOTOS = [
 
 export function Vitrine() {
   const t = useTranslations("cartaz.vitrine");
-  const [aberta, setAberta] = useState<number | null>(null);
-
-  const itens: Ampliavel[] = FOTOS.map((foto) => ({
-    src: `/vitrine/${foto.ficheiro}.webp`,
-    alt: t(`legendas.${foto.chave}`),
-    largura: 1400,
-    altura: 875,
-  }));
 
   return (
     <section
@@ -96,18 +83,12 @@ export function Vitrine() {
       </div>
 
       <ul className="vitrine__grelha" data-sc-in data-sc-stagger="40">
-        {FOTOS.map((foto, indice) => (
+        {FOTOS.map((foto) => (
           <li
             key={foto.ficheiro}
             className="vitrine__celula"
             data-larga={foto.largura === 2 ? "" : undefined}
           >
-            <button
-              type="button"
-              className="vitrine__botao"
-              aria-label={t("ampliar", { nome: t(`legendas.${foto.chave}`) })}
-              onClick={() => setAberta(indice)}
-            >
               <Image
                 src={`/vitrine/${foto.ficheiro}.webp`}
                 alt={t(`legendas.${foto.chave}`)}
@@ -122,12 +103,9 @@ export function Vitrine() {
                    nesta página. */
                 sizes="(max-width: 48rem) 46vw, (max-width: 72rem) 45vw, 30vw"
               />
-            </button>
           </li>
         ))}
       </ul>
-
-      <Ampliar itens={itens} indice={aberta} aoFechar={() => setAberta(null)} aoMudar={setAberta} />
 
       {/* Dizer de quem são não é cortesia: é o que distingue estas de
           fotografia de banco de imagens, que é o que este sítio recusa. */}
