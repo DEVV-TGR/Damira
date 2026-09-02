@@ -114,7 +114,13 @@ export function Vitrine() {
                 width={1400}
                 height={875}
                 loading="lazy"
-                sizes="(max-width: 48rem) 90vw, (max-width: 72rem) 45vw, 30vw"
+                /* ⚠️ 46vw e não 90vw no telemóvel: a grelha é de duas colunas, cada
+                   célula tem meio ecrã de largura, e pedir uma imagem de ecrã
+                   inteiro a 3× (1170 px) para uma célula de 170 px era
+                   descodificar catorze fotografias com quatro vezes os píxeis
+                   necessários. É o custo mais pesado que um telemóvel paga
+                   nesta página. */
+                sizes="(max-width: 48rem) 46vw, (max-width: 72rem) 45vw, 30vw"
               />
             </button>
           </li>

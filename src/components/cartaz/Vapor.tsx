@@ -112,6 +112,23 @@ const TRACOS = [traco(30, 0), traco(60, 1), traco(90, 0)];
  * trabalho; a leitura e a escrita acontecem no `requestAnimationFrame`. Ler
  * geometria a cada evento de roda força o browser a recalcular a página em
  * cada notch.
+ *
+ * ## ⚠️ O progresso escreve-se no DOM, não no estado do React
+ *
+ * A primeira versão fazia `setProgresso(p)` em cada quadro de rolagem. Cada
+ * chamada renderizava o componente inteiro — o SVG e os dez marcadores do
+ * fólio — sessenta vezes por segundo, e foi isto que o cliente sentiu como
+ * «travado» no telemóvel. Agora o traçado dos três caminhos escreve-se por
+ * referência, directamente no `style`, e o único estado que muda ao rolar é
+ * o capítulo activo, que muda dez vezes por página e não sessenta por segundo.
+ *
+ * ## No telemóvel o fio não anima de todo
+ *
+ * O fólio já não existe lá, o fio está a 35% de opacidade, e desenhar um SVG
+ * da altura do ecrã a cada quadro é o que um telemóvel de gama média não
+ * aguenta ao mesmo tempo que rola uma página com catorze fotografias. Abaixo
+ * de 48 rem o fio nasce desenhado por inteiro e o ouvinte de rolagem nem se
+ * liga. O que se perde é o desenhar-se; o que se ganha é a página andar.
  */
 export function Vapor({
   capitulos,
@@ -120,10 +137,13 @@ export function Vapor({
   capitulos: CapituloDoFolio[];
   rotuloNavegacao: string;
 }) {
-  const [progresso, setProgresso] = useState(0);
   const [marcas, setMarcas] = useState<number[]>([]);
   const [activo, setActivo] = useState(0);
+  const [passados, setPassados] = useState(0);
   const pendente = useRef(false);
+  const caminhos = useRef<(SVGPathElement | null)[]>([]);
+  const activoRef = useRef(0);
+  const passadosRef = useRef(0);
   /* As marcas vivem **também** numa referência, e não só no estado. Quem as lê
      é o laço de rolagem, que corre a cada quadro: buscá-las ao estado obrigava
      a passar por um actualizador de `setState` só para as ler, e um
@@ -132,6 +152,13 @@ export function Vapor({
   const marcasRef = useRef<number[]>([]);
 
   useEffect(() => {
+    /* No telemóvel o fio é estático: desenhado por inteiro, sem ouvinte. */
+    const telemovel = window.matchMedia("(max-width: 48rem)").matches;
+    if (telemovel) {
+      for (const c of caminhos.current) if (c) c.style.strokeDashoffset = "0";
+      return;
+    }
+
     const cursoTotal = () => document.documentElement.scrollHeight - window.innerHeight;
 
     const medir = () => {
@@ -151,7 +178,9 @@ export function Vapor({
       pendente.current = false;
       const total = cursoTotal();
       const p = total > 0 ? Math.min(1, Math.max(0, window.scrollY / total)) : 0;
-      setProgresso(p);
+      /* O traçado vai direito ao DOM: zero renderizações por quadro. */
+      const desfasamento = String(1 - p);
+      for (const c of caminhos.current) if (c) c.style.strokeDashoffset = desfasamento;
       /* O capítulo activo é o último cuja marca já ficou para trás. Um quarto
          de ecrã de avanço para o fólio mudar quando o capítulo **entra**, e não
          quando já vai a meio. */
@@ -162,8 +191,15 @@ export function Vapor({
          fólio. Sem este estado o fio herdava a cor do capítulo I e desaparecia
          em cima do tijolo, à vista de toda a gente e sem nada a explicá-lo. */
       let i = -1;
-      for (let n = 0; n < m.length; n++) if (p + margem >= m[n]) i = n;
-      setActivo(i);
+      let passou = 0;
+      for (let n = 0; n < m.length; n++) {
+        if (p + margem >= m[n]) i = n;
+        if (p >= m[n]) passou = n + 1;
+      }
+      /* Só se escreve estado quando muda: é o que impede a renderização por
+         quadro. */
+      if (i !== activoRef.current) { activoRef.current = i; setActivo(i); }
+      if (passou !== passadosRef.current) { passadosRef.current = passou; setPassados(passou); }
     };
 
     const aoRolar = () => {
@@ -214,11 +250,14 @@ export function Vapor({
             <path
               key={i}
               d={d}
+              ref={(el) => { caminhos.current[i] = el; }}
               /* `pathLength` normalizado a 1 poupa medir o comprimento real de
                  cada curva: o traçado passa a ser `1 - progresso`, e os três
-                 traços de comprimentos diferentes desenham-se ao mesmo ritmo. */
+                 traços de comprimentos diferentes desenham-se ao mesmo ritmo.
+                 O `strokeDashoffset` inicial é 1 (nada desenhado); a partir daí
+                 é escrito por referência, nunca por estado. */
               pathLength={1}
-              style={{ strokeDasharray: 1, strokeDashoffset: 1 - progresso }}
+              style={{ strokeDasharray: 1, strokeDashoffset: 1 }}
             />
           ))}
         </g>
@@ -230,7 +269,7 @@ export function Vapor({
             <li
               key={c.id}
               style={{ top: `${(marcas[i] ?? 0) * 100}%` }}
-              data-passado={progresso >= (marcas[i] ?? 1) ? "" : undefined}
+              data-passado={i < passados ? "" : undefined}
               data-activo={i === activo ? "" : undefined}
             >
               {/* ⚠️ **O nome do capítulo vai no `aria-label` e não só na
