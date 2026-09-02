@@ -45,7 +45,13 @@ export function Raro() {
       className="cap cap--raro"
       data-capitulo
       data-sc-act="pin"
-      data-sc-span="1.7"
+      /* ⚠️ **3 e não 1,7, e com `dwell`.** O curso de um acto preso é o vão
+         menos um ecrã: com 1,7 sobravam 0,7 ecrãs para cinco deixas e a
+         contagem, e o cliente viu a secção passar a correr — o 49 nem chegava
+         a contar. Com 3 são dois ecrãs de curso, e o `dwell` de 0,35 faz a
+         rolagem assentar a meio, onde o número e o título estão. */
+      data-sc-span="3"
+      data-sc-dwell="0.35"
       aria-labelledby="raro"
     >
       <div data-sc-stage className="raro__palco">
@@ -54,22 +60,22 @@ export function Raro() {
             <span className="cap__numeral">{t("numeral")}</span> {t("olho")}
           </p>
 
-          <p className="raro__conta" data-sc-cue="0.06 1">
-            <span className="raro__numero" data-sc-count={`0 ${VEGAN}`} data-sc-count-at="0.1 0.5">
+          <p className="raro__conta" data-sc-cue="0.05 1">
+            <span className="raro__numero" data-sc-count={`0 ${VEGAN}`} data-sc-count-at="0.12 0.55">
               0
             </span>
             <span className="raro__de">{t("de", { total: TOTAL })}</span>
           </p>
 
-          <h2 id="raro" className="cap__titulo" data-sc-cue="0.2 1" data-sc-kinetic="lines">
+          <h2 id="raro" className="cap__titulo" data-sc-cue="0.22 1" data-sc-kinetic="lines">
             {t("titulo")}
           </h2>
 
-          <p className="cap__texto" data-sc-cue="0.42 1">
+          <p className="cap__texto" data-sc-cue="0.4 1">
             {t("texto")}
           </p>
 
-          <p data-sc-cue="0.54 1">
+          <p data-sc-cue="0.52 1">
             <Link href="/ementa" className="cap__ligacao">
               {t("ligacao")}
             </Link>
