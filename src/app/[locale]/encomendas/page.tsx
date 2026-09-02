@@ -9,6 +9,9 @@ import { routing, type Locale } from "@/i18n/routing";
 import { metadataDaPagina } from "@/lib/metadata";
 import { TabelaKits } from "@/components/encomendas/TabelaKits";
 import { FormularioPedido } from "@/components/encomendas/FormularioPedido";
+import { CestoProvider } from "@/components/encomendas/CestoProvider";
+import { Cesto } from "@/components/encomendas/Cesto";
+import { BotaoJuntar } from "@/components/encomendas/BotaoJuntar";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -75,7 +78,7 @@ function Encomendas({ locale }: { locale: Locale }) {
   const telefone = telefoneMarcavel();
 
   return (
-    <>
+    <CestoProvider>
       <div className="bloco-tijolo relative overflow-hidden">
         <span
           aria-hidden
@@ -146,6 +149,21 @@ function Encomendas({ locale }: { locale: Locale }) {
                     </li>
                   ))}
                 </ul>
+                {/* `mt-auto` empurra o botão para o fundo: com cartões de
+                    alturas diferentes, três botões a flutuar a alturas
+                    diferentes leem-se como três coisas diferentes. */}
+                <div className="mt-auto pt-7">
+                  <BotaoJuntar
+                    item={{
+                      id: `bolo:${kit.id}`,
+                      tipo: "bolo",
+                      nome: kit.nome[locale],
+                      variante: null,
+                      preco: kit.preco,
+                      pessoas: null,
+                    }}
+                  />
+                </div>
               </li>
             ))}
           </ul>
@@ -234,6 +252,26 @@ function Encomendas({ locale }: { locale: Locale }) {
           <p className="mt-10 max-w-[60ch] text-sm text-tinta-suave">
             {bolos("semPrecos")}
           </p>
+
+          {/* ⚠️ **Entra no cesto com `preco: null`, que é «sob orçamento» e não
+              zero.** É o artigo que obriga a estimativa a passar a «a partir
+              de» — ver `cesto.ts`. As escolhas concretas (massa, recheio,
+              cobertura) escrevem-se nas notas do pedido: pô-las aqui era montar
+              um configurador de seis passos para um artigo cujo preço tem de ser
+              conversado de qualquer maneira. */}
+          <div className="mt-8">
+            <BotaoJuntar
+              variante="discreta"
+              item={{
+                id: "bolo:por-medida",
+                tipo: "bolo",
+                nome: bolos("titulo"),
+                variante: null,
+                preco: null,
+                pessoas: null,
+              }}
+            />
+          </div>
         </div>
       </section>
 
@@ -269,6 +307,18 @@ function Encomendas({ locale }: { locale: Locale }) {
                     <li key={item.pt}>{item[locale]}</li>
                   ))}
                 </ul>
+                <div className="mt-auto pt-7">
+                  <BotaoJuntar
+                    item={{
+                      id: `box:${box.id}`,
+                      tipo: "box",
+                      nome: box.nome[locale],
+                      variante: null,
+                      preco: box.preco,
+                      pessoas: null,
+                    }}
+                  />
+                </div>
               </li>
             ))}
           </ul>
@@ -276,7 +326,7 @@ function Encomendas({ locale }: { locale: Locale }) {
       </section>
 
       {/* ── Como encomendar ───────────────────────────────────────────── */}
-      <section aria-labelledby="como" className="seccao bg-tinta text-papel">
+      <section id="pedido" aria-labelledby="como" className="scroll-mt-24 seccao bg-tinta text-papel">
         <div className="envolvente grid gap-12 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-20">
           <div>
             <h2 id="como" className="titulo-display titulo-beta max-w-[12ch]">
@@ -315,10 +365,11 @@ function Encomendas({ locale }: { locale: Locale }) {
             </div>
           </div>
 
-          <FormularioPedido />
+          <FormularioPedido locale={locale} />
         </div>
       </section>
 
-    </>
+      <Cesto locale={locale} />
+    </CestoProvider>
   );
 }

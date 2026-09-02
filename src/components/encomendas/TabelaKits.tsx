@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { encomendas, escaloesDisponiveis, escalaoDe } from "@/data/encomendas";
 import { formatarPreco } from "@/lib/preco";
+import { BotaoJuntar } from "./BotaoJuntar";
 import type { Locale } from "@/i18n/routing";
 
 /**
@@ -142,6 +143,23 @@ export function TabelaKits({ locale }: { locale: Locale }) {
 
               <Bloco titulo={t("salgados")} linhas={escalao.salgados} locale={locale} />
               <Bloco titulo={t("doces")} linhas={escalao.doces} locale={locale} />
+
+              {/* ⚠️ **O `id` inclui o escalão.** «Kit Médio» e «Kit Médio para
+                  setenta» são pedidos diferentes com preços diferentes; um `id`
+                  só com o kit fazia a segunda escolha somar quantidade à
+                  primeira e o email saía a pedir dois kits de vinte. */}
+              <div className="mt-7 pt-1">
+                <BotaoJuntar
+                  item={{
+                    id: `festa:${kit.id}:${escalao.pessoas}`,
+                    tipo: "festa",
+                    nome: kit.nome[locale],
+                    variante: t("paraPessoas", { n: escalao.pessoas }),
+                    preco: escalao.preco,
+                    pessoas: escalao.pessoas,
+                  }}
+                />
+              </div>
             </article>
           );
         })}
