@@ -7,21 +7,28 @@ import { useTranslations } from "next-intl";
 export type Ampliavel = { src: string; alt: string; largura: number; altura: number };
 
 /**
- * A fotografia em grande, num `<dialog>`.
+ * A fotografia em grande. **Foto, duas setas, um X.** Mais nada.
  *
- * ## Porque `<dialog>` e não um `<div>` fixo
+ * ## O que saiu, e porquê
  *
- * O `showModal()` traz de graça o que um lightbox à mão demora uma tarde a
- * acertar e nunca acerta de todo: o foco fica preso lá dentro, o Escape fecha,
- * o resto da página deixa de ser alcançável por leitor de ecrã, e ao fechar o
- * foco volta ao botão que abriu. É por isso que não há aqui gestão de foco
- * nenhuma — é o browser a fazê-la.
+ * A primeira versão tinha legenda e contador por baixo da fotografia, e o
+ * cliente viu-a «toda desformatada»: no telemóvel a legenda empurrava a imagem
+ * para cima, a imagem encolhia para caber, e o conjunto lia-se como um cartão
+ * mal alinhado. Uma fotografia em grande não precisa de dizer o que é — a
+ * pessoa acabou de a ver com legenda na grelha.
  *
- * ## As setas
+ * ## O fundo não rola
  *
- * Esquerda e direita mudam de fotografia; no telemóvel os dois botões estão nas
- * bermas e têm 44 px. O contador diz onde se está, porque catorze fotografias
- * sem contador são um ciclo de que não se sabe o fim.
+ * O `showModal()` torna o resto da página inerte, mas em alguns browsers a
+ * roda do rato e o dedo continuam a rolar o documento por trás. O
+ * `body:has(dialog[open])` no CSS trava-o: enquanto a fotografia está aberta,
+ * o que está por trás não se mexe.
+ *
+ * ## Fecha-se com o X, com Escape, ou tocando fora da fotografia
+ *
+ * O `<dialog>` é o próprio fundo escuro. Um toque cujo alvo não é a imagem
+ * nem um botão é um toque no fundo, e fecha. É o gesto que toda a gente já faz
+ * em todas as aplicações de fotografias.
  */
 export function Ampliar({
   itens,
@@ -30,26 +37,21 @@ export function Ampliar({
   aoMudar,
 }: {
   itens: Ampliavel[];
-  /** `null` fechado. */
   indice: number | null;
   aoFechar: () => void;
   aoMudar: (indice: number) => void;
 }) {
   const t = useTranslations("cartaz.vitrine");
   const ref = useRef<HTMLDialogElement>(null);
-  const aberto = indice !== null;
 
   useEffect(() => {
     const dialogo = ref.current;
     if (!dialogo) return;
-    if (aberto && !dialogo.open) dialogo.showModal();
-    if (!aberto && dialogo.open) dialogo.close();
-  }, [aberto]);
+    if (indice !== null && !dialogo.open) dialogo.showModal();
+    if (indice === null && dialogo.open) dialogo.close();
+  }, [indice]);
 
   useEffect(() => {
-    /* `indice === null` e não `!aberto`: o TypeScript não estreita `indice` a
-       partir de um booleano derivado dele, e o `+ 1` lá em baixo ficava a
-       somar a `number | null`. */
     if (indice === null) return;
     const aoTecla = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight") aoMudar((indice + 1) % itens.length);
@@ -59,60 +61,40 @@ export function Ampliar({
     return () => window.removeEventListener("keydown", aoTecla);
   }, [indice, itens.length, aoMudar]);
 
+  const anterior = () => indice !== null && aoMudar((indice - 1 + itens.length) % itens.length);
+  const seguinte = () => indice !== null && aoMudar((indice + 1) % itens.length);
+
   return (
     <dialog
       ref={ref}
       className="ampliar"
       onClose={aoFechar}
-      /* Carregar no fundo escuro fecha. O `<dialog>` é o próprio fundo, portanto
-         um clique cujo alvo é o dialog e não um filho é um clique fora da
-         fotografia. */
-      onClick={(e) => { if (e.target === e.currentTarget) aoFechar(); }}
+      onClick={(e) => {
+        const alvo = e.target as HTMLElement;
+        if (!alvo.closest("img, button")) aoFechar();
+      }}
     >
       {indice !== null && (
-        <figure className="ampliar__figura">
-          <Image
-            key={itens[indice].src}
-            src={itens[indice].src}
-            alt={itens[indice].alt}
-            width={itens[indice].largura}
-            height={itens[indice].altura}
-            sizes="100vw"
-            priority
-          />
-          <figcaption>
-            <span>{itens[indice].alt}</span>
-            <span className="ampliar__contador">
-              {t("contador", { n: indice + 1, total: itens.length })}
-            </span>
-          </figcaption>
-        </figure>
+        <Image
+          key={itens[indice].src}
+          className="ampliar__foto"
+          src={itens[indice].src}
+          alt={itens[indice].alt}
+          width={itens[indice].largura}
+          height={itens[indice].altura}
+          sizes="100vw"
+          priority
+        />
       )}
 
       {itens.length > 1 && (
         <>
-          <button
-            type="button"
-            className="ampliar__seta ampliar__seta--esq"
-            aria-label={t("anterior")}
-            onClick={() => indice !== null && aoMudar((indice - 1 + itens.length) % itens.length)}
-          >
-            ‹
-          </button>
-          <button
-            type="button"
-            className="ampliar__seta ampliar__seta--dir"
-            aria-label={t("seguinte")}
-            onClick={() => indice !== null && aoMudar((indice + 1) % itens.length)}
-          >
-            ›
-          </button>
+          <button type="button" className="ampliar__seta ampliar__seta--esq" aria-label={t("anterior")} onClick={anterior}>‹</button>
+          <button type="button" className="ampliar__seta ampliar__seta--dir" aria-label={t("seguinte")} onClick={seguinte}>›</button>
         </>
       )}
 
-      <button type="button" className="ampliar__fechar" aria-label={t("fechar")} onClick={aoFechar}>
-        ×
-      </button>
+      <button type="button" className="ampliar__fechar" aria-label={t("fechar")} onClick={aoFechar}>×</button>
     </dialog>
   );
 }
