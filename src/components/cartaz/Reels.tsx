@@ -58,7 +58,9 @@ export function Reels() {
       className="cap cap--reels"
       data-capitulo
       data-sc-act="pan"
-      data-sc-span="3"
+      /* A mesma conta da festa: oito itens no carril (abertura, seis lugares,
+         Instagram) a passar em dois ecrãs era depressa de mais. */
+      data-sc-span="4"
       aria-labelledby="reels"
     >
       <div data-sc-stage>
