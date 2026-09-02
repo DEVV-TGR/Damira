@@ -17,12 +17,15 @@ export type Ampliavel = { src: string; alt: string; largura: number; altura: num
  * mal alinhado. Uma fotografia em grande não precisa de dizer o que é — a
  * pessoa acabou de a ver com legenda na grelha.
  *
- * ## O fundo não rola
+ * ## O fundo não rola — e no iPhone isso obriga a prender o `body`
  *
- * O `showModal()` torna o resto da página inerte, mas em alguns browsers a
- * roda do rato e o dedo continuam a rolar o documento por trás. O
- * `body:has(dialog[open])` no CSS trava-o: enquanto a fotografia está aberta,
- * o que está por trás não se mexe.
+ * ⚠️ **`overflow: hidden` no `body` não trava o dedo no Safari do iOS.** A
+ * primeira versão fazia só isso e o cliente continuava a rolar a página por
+ * trás da fotografia. O que o iOS respeita é `position: fixed` no `body`:
+ * enquanto a fotografia está aberta, o `body` fica preso com `top` negativo
+ * igual à posição de rolagem, para a página não saltar para o topo; ao fechar,
+ * solta-se e repõe-se a posição. É feio, é o que há, e é o que toda a gente
+ * faz.
  *
  * ## Fecha-se com o X, com Escape, ou tocando fora da fotografia
  *
@@ -43,6 +46,7 @@ export function Ampliar({
 }) {
   const t = useTranslations("cartaz.vitrine");
   const ref = useRef<HTMLDialogElement>(null);
+  const aberto = indice !== null;
 
   useEffect(() => {
     const dialogo = ref.current;
@@ -50,6 +54,26 @@ export function Ampliar({
     if (indice !== null && !dialogo.open) dialogo.showModal();
     if (indice === null && dialogo.open) dialogo.close();
   }, [indice]);
+
+  /* O bloqueio da rolagem, à maneira que o iOS respeita. */
+  useEffect(() => {
+    if (!aberto) return;
+    const y = window.scrollY;
+    const { style } = document.body;
+    const anterior = { position: style.position, top: style.top, width: style.width };
+    style.position = "fixed";
+    style.top = `-${y}px`;
+    style.width = "100%";
+    return () => {
+      style.position = anterior.position;
+      style.top = anterior.top;
+      style.width = anterior.width;
+      /* «instant» e não suave: com `scroll-behavior: smooth` no `html`, o
+         regresso à posição anda durante meio segundo e a página parece
+         escorregar depois de a fotografia fechar. */
+      window.scrollTo({ top: y, behavior: "instant" });
+    };
+  }, [aberto]);
 
   useEffect(() => {
     if (indice === null) return;
@@ -89,12 +113,29 @@ export function Ampliar({
 
       {itens.length > 1 && (
         <>
-          <button type="button" className="ampliar__seta ampliar__seta--esq" aria-label={t("anterior")} onClick={anterior}>‹</button>
-          <button type="button" className="ampliar__seta ampliar__seta--dir" aria-label={t("seguinte")} onClick={seguinte}>›</button>
+          <button type="button" className="ampliar__seta ampliar__seta--esq" aria-label={t("anterior")} onClick={anterior}>
+            <Icone d="M15 5 8 12l7 7" />
+          </button>
+          <button type="button" className="ampliar__seta ampliar__seta--dir" aria-label={t("seguinte")} onClick={seguinte}>
+            <Icone d="m9 5 7 7-7 7" />
+          </button>
         </>
       )}
 
-      <button type="button" className="ampliar__fechar" aria-label={t("fechar")} onClick={aoFechar}>×</button>
+      <button type="button" className="ampliar__fechar" aria-label={t("fechar")} onClick={aoFechar}>
+        <Icone d="M6 6l12 12M18 6 6 18" />
+      </button>
     </dialog>
+  );
+}
+
+/* ⚠️ SVG e não os glifos `‹ › ×`: no iPhone cada fonte os desenha a uma altura
+   diferente e os botões saíam com o sinal fora do centro. Um traço de SVG é
+   igual em todo o lado. */
+function Icone({ d }: { d: string }) {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d={d} />
+    </svg>
   );
 }

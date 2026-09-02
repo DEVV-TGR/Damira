@@ -1292,11 +1292,15 @@ body:has(.cartaz) .barra-vidro {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-/* ⚠️ **O fundo não rola enquanto a fotografia está aberta.** O `showModal()`
-   torna a página inerte mas não a prende; a roda e o dedo continuavam a rolar
-   o documento por trás. */
+/* O fundo não rola enquanto a fotografia está aberta. Isto trava a roda do rato
+   nos browsers de secretária; ⚠️ **o iOS ignora-o** e é o `position: fixed` no
+   `body`, posto pelo `Ampliar.tsx`, que trava o dedo. Os dois ficam. */
 body:has(.ampliar[open]) {
   overflow: hidden;
+}
+.ampliar {
+  touch-action: none;
+  overscroll-behavior: contain;
 }
 .ampliar__foto {
   width: auto;
@@ -1318,12 +1322,15 @@ body:has(.ampliar[open]) {
   place-items: center;
   width: 3rem;
   height: 3rem;
+  padding: 0;
+  margin: 0;
   border: 0;
   border-radius: 50%;
+  appearance: none;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
   background: color-mix(in oklab, var(--color-tinta) 55%, transparent);
   color: var(--color-papel);
-  font-size: 2rem;
-  line-height: 1;
   cursor: pointer;
   transition: background-color 160ms var(--sc-ease-out, ease-out);
 }
@@ -1336,7 +1343,7 @@ body:has(.ampliar[open]) {
 .ampliar__seta { top: 50%; translate: 0 -50%; }
 .ampliar__seta--esq { left: 0.75rem; }
 .ampliar__seta--dir { right: 0.75rem; }
-.ampliar__fechar { top: 0.75rem; right: 0.75rem; font-size: 1.6rem; }
+.ampliar__fechar { top: 0.75rem; right: 0.75rem; }
 @media (prefers-reduced-motion: reduce) {
   .ampliar[open], .ampliar__foto { animation: none; }
 }
