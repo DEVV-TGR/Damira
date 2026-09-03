@@ -206,6 +206,19 @@ montra vista da rua é anunciar uma coisa e entregar outra, e é a mesma regra q
 proíbe banco de imagens no resto do site. O `FotoProduto` guarda o espaço e diz
 que a fotografia está por chegar.
 
+**Os 95 artigos da carta também têm página**, em `/ementa/<id>`. ⚠️ Ficam
+debaixo de `/ementa` e não de `/encomendas`: é a mesma separação de sempre. O
+que as mantém do lado certo é dizerem o que o artigo é — os 70 encomendáveis
+mostram o botão de juntar **com a quantidade mínima ao lado do botão**, e os
+outros 25 não têm botão nenhum e dizem que se pedem ao balcão. Um galão com um
+botão de encomendar era prometer um serviço que a casa não tem.
+
+⚠️ **O painel da `/ementa` continua a existir**, e faz bem: quem percorre
+noventa e cinco artigos não quer sair da lista a cada curiosidade. A página é
+para quem quer o **endereço** — partilhar, guardar, ou chegar por uma pesquisa. O
+painel leva lá por um botão; sem ele eram noventa e cinco páginas que ninguém
+visitava.
+
 ⚠️ **O bolo por medida não vem do JSON.** Não é um produto de catálogo, é uma
 conversa: não tem preço e o que se escolhe são massas e recheios. Entra na lista
 para ter página e cartão, com `preco: null`, que é *sob orçamento* e não zero.
@@ -322,7 +335,18 @@ primeiras sete vieram do Santo Burga e continuam a valer — o motor é o mesmo.
     layout. Do mesmo golpe, o botão flutuante «encomendar» escondia-se com
     `caminho === "/encomendas"` e voltava a aparecer nas páginas de produto, por
     cima da barra.
-18. **E volta a partir depois de alguém entrar na conta.** A pastilha do nome é
+18. **Uma secção vazia continua a ocupar o ecrã.** A `<section>` do histórico
+    era escrita no servidor, à volta de uma lista que devolve `null` quando não
+    há pedidos — o fundo e o `padding` ficavam lá na mesma. No telemóvel eram
+    **duzentos e cinquenta píxeis de nada** entre o herói e o primeiro produto,
+    para toda a gente que chegava pela primeira vez. Quem decide se há conteúdo
+    tem de ser quem desenha a moldura.
+19. **`getBoundingClientRect` não vê a área de toque do `.alvo-toque`.** A classe
+    estende o alvo com um `::after` de `-0.75rem`, e uma verificação automática
+    de alvos pequenos acusa **todos** os links do site sem razão. Ao medir alvos,
+    excluir quem tem a classe — senão o ruído esconde os que faltam mesmo, que
+    aqui eram os nomes dos setenta artigos e os dois links de voltar.
+20. **E volta a partir depois de alguém entrar na conta.** A pastilha do nome é
     mais larga do que o botão de entrar, portanto a medição feita sem sessão dá
     verde e a página parte-se só para quem se autenticou. **Medir as duas
     versões do cabeçalho.** Para forjar uma sessão em local, ver a nota do

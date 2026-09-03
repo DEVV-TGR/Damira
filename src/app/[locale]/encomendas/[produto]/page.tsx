@@ -126,7 +126,9 @@ function Detalhe({ produto, locale }: { produto: Produto; locale: Locale }) {
               browser — que quem vem de fora não tem. */}
           <Link
             href="/encomendas"
-            className="text-xs font-semibold uppercase tracking-widest text-tijolo underline underline-offset-4"
+            /* ⚠️ `alvo-toque`: 15 px de altura, e é o único caminho de volta para
+             quem chegou aqui de uma pesquisa. */
+          className="alvo-toque inline-block text-xs font-semibold uppercase tracking-widest text-tijolo underline underline-offset-4"
           >
             {t("voltar")}
           </Link>

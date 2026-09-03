@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
 import { formatarPreco } from "@/lib/preco";
-import { REGRA_SIMPLES, idComNotas } from "@/lib/cesto";
+import { REGRA_SIMPLES, idComNotas, quantidadeEmTexto } from "@/lib/cesto";
 import type { TipoPedido } from "@/lib/pedidos";
 import type { Locale } from "@/i18n/routing";
 import { useCesto } from "./CestoProvider";
@@ -28,6 +28,8 @@ export function ComprarProduto({
   escaloes,
   locale,
   comMensagem,
+  regra = REGRA_SIMPLES,
+  notaDaRegra,
 }: {
   id: string;
   tipo: TipoPedido;
@@ -42,6 +44,16 @@ export function ComprarProduto({
    * pequeno-almoço não, e um campo a mais é gente que hesita sem razão.
    */
   comMensagem: boolean;
+  /**
+   * A unidade, o mínimo e o passo. Por defeito, «uma unidade de cada vez» — que
+   * é o que um kit ou uma box são.
+   *
+   * ⚠️ **Os artigos da carta trazem regra própria**: uma dúzia de natas de 6 em
+   * 6, um bolo ao quilo de meio em meio. Ver `encomendavel.ts`.
+   */
+  regra?: { unidade: "un" | "kg"; minimo: number; passo: number };
+  /** A frase do mínimo, quando há um que não seja «uma unidade». */
+  notaDaRegra?: string;
 }) {
   const t = useTranslations("produto");
   const contexto = useCesto();
@@ -70,7 +82,7 @@ export function ComprarProduto({
 
   const juntar = () => {
     contexto.juntar({
-      ...REGRA_SIMPLES,
+      ...regra,
       /* ⚠️ As notas entram no `id`: dois bolos com mensagens diferentes são duas
          linhas do pedido, e não um com quantidade dois. Ver `idComNotas`. */
       id: idComNotas(escalao ? `${id}:${escalao.pessoas}` : id, notas),
@@ -171,20 +183,44 @@ export function ComprarProduto({
         </div>
       </div>
 
+      {/* ⚠️ **O mínimo aparece ao lado do botão e não em letra pequena no topo.**
+          É aqui que a pessoa decide juntar, e é aqui que precisa de saber que o
+          que vai juntar é uma dúzia e não um pastel. */}
+      {notaDaRegra && (
+        <p className="mt-5 text-sm font-semibold">{notaDaRegra}</p>
+      )}
+
       <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
         <p className="titulo-display text-3xl tabular-nums text-tijolo">
           {precoFinal === null ? (
             <span className="text-base normal-case">{t("sobOrcamento")}</span>
           ) : (
-            formatarPreco(precoFinal, locale)
+            <>
+              {formatarPreco(precoFinal, locale)}
+              {regra.unidade === "kg" && (
+                <span className="ml-1 text-base font-normal text-tinta-suave">
+                  {t("porQuilo")}
+                </span>
+              )}
+            </>
           )}
         </p>
         <button
           type="button"
           onClick={juntar}
-          className="premivel alvo-toque inline-flex min-h-12 items-center rounded-full bg-tijolo px-7 text-sm font-semibold uppercase tracking-widest text-papel"
+          className="premivel alvo-toque inline-flex min-h-12 items-center gap-2 rounded-full bg-tijolo px-7 text-sm font-semibold uppercase tracking-widest text-papel"
         >
           {juntado ? t("juntado") : t("juntar")}
+          {/* Depois de juntar, quanto é que ficou lá: «12×», «1 kg». Um botão
+              que só muda de texto não diz se a quantidade é a que se esperava. */}
+          {juntado && (
+            <span className="rounded-full bg-papel/25 px-2 py-0.5 tabular-nums">
+              {quantidadeEmTexto(
+                { quantidade: regra.minimo, unidade: regra.unidade } as never,
+                locale,
+              )}
+            </span>
+          )}
         </button>
       </div>
 

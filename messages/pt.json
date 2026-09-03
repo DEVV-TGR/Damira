@@ -290,7 +290,8 @@
     "aMostrar": "{n} de {total} artigos",
     "semResultados": "Nada com esse nome",
     "semResultadosTexto": "Tente outra palavra, ou limpe a procura para voltar às quatro cartas.",
-    "quantosArtigos": "{n, plural, one {# artigo} other {# artigos}}"
+    "quantosArtigos": "{n, plural, one {# artigo} other {# artigos}}",
+    "verPagina": "Ver a página deste artigo"
   },
   "encomendas": {
     "olho": "Por encomenda",
@@ -538,6 +539,12 @@
     "juntar": "Juntar ao pedido",
     "juntado": "Juntado ao pedido",
     "avisoPreco": "É o preço de tabela, não uma conta a pagar. A entrega não está incluída e o valor final vem na nossa resposta.",
-    "descricaoGenerica": "{nome}, por encomenda na Confeitaria e Pão Quente Damira, em Ermesinde."
+    "descricaoGenerica": "{nome}, por encomenda na Confeitaria e Pão Quente Damira, em Ermesinde.",
+    "voltarEmenta": "← Toda a carta",
+    "porQuilo": " /kg",
+    "minimoUn": "Mínimo {minimo} unidades, de {passo} em {passo}",
+    "minimoKg": "Mínimo {minimo} kg, vendido ao peso",
+    "soAoBalcao": "Este pede-se ao balcão, na hora — não se encomenda com antecedência.",
+    "prazoDaCarta": "A antecedência mínima está por confirmar. Telefone-nos e dizemos-lhe logo se dá para a data que quer."
   }
 }

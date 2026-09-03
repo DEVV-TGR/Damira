@@ -6,6 +6,8 @@ import type { Artigo } from "@/data/ementa";
 import type { Locale } from "@/i18n/routing";
 import { formatarPreco } from "@/lib/preco";
 import { EtiquetaVegan } from "./Etiquetas";
+import { Link } from "@/i18n/navigation";
+import { caminhoDoArtigo } from "@/lib/produtos";
 
 /**
  * O detalhe de um artigo: **painel encostado ao lado em ecrã largo, folha a subir
@@ -152,6 +154,20 @@ export function PainelArtigo({
             )}
 
             <p className="mt-7 text-xs text-tinta-suave">{t("notas.alergenios")}</p>
+
+            {/* ⚠️ **O painel deixa de ser um beco.** Cada artigo passou a ter
+                página própria (`/ementa/<id>`), com espaço para a fotografia e —
+                nos setenta que a casa faz por encomenda — o botão de juntar ao
+                pedido com a quantidade mínima ao lado. Sem esta ligação, essas
+                páginas existiam e não se chegava lá a partir da carta: só por
+                pesquisa, que é a maneira de construir noventa e cinco páginas
+                que ninguém visita. */}
+            <Link
+              href={caminhoDoArtigo(artigo.id)}
+              className="premivel alvo-toque mt-6 inline-flex min-h-11 items-center rounded-full border-2 border-tinta px-5 text-sm font-semibold hover:bg-tinta hover:text-papel"
+            >
+              {t("verPagina")}
+            </Link>
           </div>
         </div>
       )}

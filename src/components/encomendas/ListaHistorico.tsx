@@ -33,6 +33,7 @@ export function ListaHistorico({
   locale,
   variante = "clara",
   mostrarVazio = false,
+  comoSeccao = false,
 }: {
   locale: Locale;
   /** `escura` para o bloco a tinta da página da conta não ficar ilegível. */
@@ -46,6 +47,18 @@ export function ListaHistorico({
    * kits, para toda a gente que chega pela primeira vez.
    */
   mostrarVazio?: boolean;
+  /**
+   * Envolve-se na sua própria `<section>`.
+   *
+   * ⚠️ **Existe porque uma secção vazia continua a ocupar o ecrã.** Na
+   * `/encomendas` a secção era escrita fora deste componente, no servidor: com o
+   * histórico vazio — que é o caso de toda a gente que chega pela primeira vez —
+   * a lista devolvia `null` mas ficava lá a secção, com o seu fundo e o seu
+   * `padding`. No telemóvel eram **duzentos e cinquenta píxeis de nada** entre o
+   * herói e o primeiro produto. Com a secção aqui dentro, não havendo lista não
+   * há secção nenhuma.
+   */
+  comoSeccao?: boolean;
 }) {
   const t = useTranslations("historico");
   const tf = useTranslations("encomendas.formulario");
@@ -56,15 +69,25 @@ export function ListaHistorico({
 
   if (!historico || !historico.pronto) return null;
 
+  /** A secção à volta, quando quem chama a pediu. */
+  const envolver = (conteudo: React.ReactNode) =>
+    comoSeccao ? (
+      <section className="seccao bg-papel-fundo">
+        <div className="envolvente">{conteudo}</div>
+      </section>
+    ) : (
+      conteudo
+    );
+
   if (historico.pedidos.length === 0) {
     if (!mostrarVazio) return null;
-    return (
+    return envolver(
       <div className="rounded-xl border border-dashed border-tinta/25 p-5">
         <p className="font-semibold">{t("vazio")}</p>
         <p className="mt-2 max-w-[60ch] text-sm text-tinta-suave">
           {t("apenasNesteBrowser")}
         </p>
-      </div>
+      </div>,
     );
   }
 
@@ -85,7 +108,7 @@ export function ListaHistorico({
   const risca = variante === "escura" ? "divide-papel/20" : "divide-tinta/12";
   const contorno = variante === "escura" ? "border-papel/25" : "border-tinta/15";
 
-  return (
+  return envolver(
     <div>
       <h2 className="titulo-display titulo-gama">{t("titulo")}</h2>
       <p className={`mt-2 max-w-[60ch] text-sm ${suave}`}>{t("apenasNesteBrowser")}</p>
@@ -174,7 +197,7 @@ export function ListaHistorico({
       >
         {t("limparTudo")}
       </button>
-    </div>
+    </div>,
   );
 }
 

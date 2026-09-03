@@ -290,7 +290,8 @@
     "aMostrar": "{n} of {total} items",
     "semResultados": "Nothing by that name",
     "semResultadosTexto": "Try another word, or clear the search to go back to the four menus.",
-    "quantosArtigos": "{n, plural, one {# item} other {# items}}"
+    "quantosArtigos": "{n, plural, one {# item} other {# items}}",
+    "verPagina": "View this item's page"
   },
   "encomendas": {
     "olho": "To order",
@@ -538,6 +539,12 @@
     "juntar": "Add to order",
     "juntado": "Added to order",
     "avisoPreco": "This is the list price, not a bill. Delivery is not included and the final amount comes in our reply.",
-    "descricaoGenerica": "{nome}, made to order at Confeitaria e Pão Quente Damira, in Ermesinde."
+    "descricaoGenerica": "{nome}, made to order at Confeitaria e Pão Quente Damira, in Ermesinde.",
+    "voltarEmenta": "← The whole menu",
+    "porQuilo": " /kg",
+    "minimoUn": "Minimum {minimo} units, in steps of {passo}",
+    "minimoKg": "Minimum {minimo} kg, sold by weight",
+    "soAoBalcao": "This one is asked for at the counter, on the spot — it is not ordered in advance.",
+    "prazoDaCarta": "The minimum notice is still to be confirmed. Call us and we will tell you straight away if your date works."
   }
 }

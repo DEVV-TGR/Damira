@@ -141,6 +141,18 @@ export const daFamilia = (familia: Familia): Produto[] =>
 export const caminhoDoProduto = (id: string): string => `/encomendas/${id}`;
 
 /**
+ * O caminho de um artigo da carta.
+ *
+ * ⚠️ **Vive debaixo de `/ementa` e não de `/encomendas`**, mesmo nos setenta que
+ * se podem encomendar. É a separação que o AGENTS.md manda manter: a carta é o
+ * que se pede ao balcão, a encomenda é o que tem data e antecedência. O que a
+ * página de um artigo encomendável faz é dizer a **quantidade mínima** — é isso,
+ * e não o endereço, que impede alguém de aparecer ao sábado à espera de levar
+ * uma dúzia debaixo do braço.
+ */
+export const caminhoDoArtigo = (id: string): string => `/ementa/${id}`;
+
+/**
  * O preço mais baixo de um kit de festa, para o cartão poder dizer «desde».
  *
  * ⚠️ **Nunca escrever o preço de um escalão sem dizer de que escalão é.** «180 €»

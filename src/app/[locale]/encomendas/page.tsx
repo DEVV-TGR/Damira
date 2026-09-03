@@ -127,11 +127,7 @@ function Encomendas({ locale }: { locale: Locale }) {
           repetir, e obrigá-lo a percorrer o catálogo para chegar ao que já sabe
           que quer é fazê-lo trabalhar por nada. Não renderiza nada para quem
           chega pela primeira vez. */}
-      <section className="seccao bg-papel-fundo">
-        <div className="envolvente">
-          <ListaHistorico locale={locale} />
-        </div>
-      </section>
+      <ListaHistorico locale={locale} comoSeccao />
 
       <Familia
         id="festas"

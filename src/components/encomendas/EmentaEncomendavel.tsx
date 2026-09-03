@@ -10,6 +10,8 @@ import {
 import { formatarPreco } from "@/lib/preco";
 import type { Locale } from "@/i18n/routing";
 import { BotaoJuntar } from "./BotaoJuntar";
+import { Link } from "@/i18n/navigation";
+import { caminhoDoArtigo } from "@/lib/produtos";
 
 /**
  * # A carta, por encomenda
@@ -179,7 +181,20 @@ function Linha({ artigo, locale }: { artigo: Artigo; locale: Locale }) {
     <li className="flex items-start justify-between gap-3 py-3">
       <div className="min-w-0">
         <p className="font-semibold">
-          {nome}
+          {/* ⚠️ O nome leva à página do artigo, que é onde há fotografia,
+              descrição e a quantidade mínima explicada. Numa lista de setenta
+              linhas, o nome é o único alvo que a pessoa procura. */}
+          {/* ⚠️ `alvo-toque`: o nome tem 20 px de altura e é o alvo principal de
+              setenta linhas seguidas no telemóvel. A classe estende a área em
+              12 px para cada lado sem mexer um pixel no desenho — ver
+              `globals.css`. Sem ela, errar o toque numa lista densa é a regra e
+              não a excepção. */}
+          <Link
+            href={caminhoDoArtigo(artigo.id)}
+            className="alvo-toque underline decoration-tinta/25 underline-offset-4 hover:decoration-tijolo"
+          >
+            {nome}
+          </Link>
           {artigo.vegan && (
             <span className="bloco-verde-texto ml-2 rounded-full px-2 py-0.5 align-middle text-[0.6rem] font-bold uppercase tracking-wider">
               {te("vegan")}

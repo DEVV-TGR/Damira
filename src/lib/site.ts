@@ -1,5 +1,6 @@
 import { routing } from "@/i18n/routing";
-import { PRODUTOS, caminhoDoProduto } from "./produtos";
+import { PRODUTOS, caminhoDoArtigo, caminhoDoProduto } from "./produtos";
+import { ementa } from "@/data/ementa";
 
 /**
  * Endereço público do site — fonte única.
@@ -83,7 +84,11 @@ export function rotasPublicas(): string[] {
 
      ⚠️ Não há ciclo: o `produtos.ts` lê os dados e os tipos, e nunca este
      ficheiro. Se um dia passar a ler, é aqui que rebenta. */
-  return [...ROTAS_FIXAS, ...PRODUTOS.map((p) => caminhoDoProduto(p.id))];
+  return [
+    ...ROTAS_FIXAS,
+    ...PRODUTOS.map((p) => caminhoDoProduto(p.id)),
+    ...ementa.map((a) => caminhoDoArtigo(a.id)),
+  ];
 }
 
 /**
