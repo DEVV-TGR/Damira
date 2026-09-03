@@ -367,7 +367,8 @@
         "texto": "Automatic sending is not switched on for this site yet. Your request is written and ready: open it in your email app and press send.",
         "abrir": "Open in my email",
         "verTexto": "Or copy the request text"
-      }
+      },
+      "referencia": "Your reference"
     },
     "cesto": {
       "titulo": "Your order",
@@ -474,13 +475,26 @@
     "nome": "Name",
     "email": "Email",
     "paraQueServe": "This is what we fill into your order so you do not have to type it every time. You can change it on the form before sending.",
-    "semHistorico": {
-      "titulo": "We do not store your orders",
-      "texto": "Requests reach us by email and stay between you and the shop — there is no order history to browse here. To check a past order, look for the email you sent, or call us."
-    },
     "encomendar": "Go to orders",
     "sair": "Sign out",
     "preencherDica": "Rather not type this every time?",
     "preencherLigacao": "Sign in to your account"
+  },
+  "historico": {
+    "titulo": "Orders you have placed",
+    "apenasNesteBrowser": "These are the requests sent from this browser, kept only here. Anything you ordered by phone, or on another device, will not show up in this list — and clearing the site data erases it.",
+    "vazio": "You have not placed an order from here yet",
+    "feitoEm": "Placed on {quando}",
+    "para": "for {quando}",
+    "estados": {
+      "enviado": "Sent",
+      "por-enviar": "Not sent yet"
+    },
+    "estimado": "Estimated:",
+    "aPartirDe": "From:",
+    "repetir": "Order the same",
+    "repetirConfirmar": "Replace the basket?",
+    "apagar": "Delete",
+    "limparTudo": "Delete all"
   }
 }

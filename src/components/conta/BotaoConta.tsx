@@ -72,7 +72,13 @@ export function BotaoConta() {
   return (
     <Link
       href="/conta"
-      className="alvo-toque flex items-center gap-2 rounded-full border border-tinta/25 py-1 pl-1 pr-3 transition-colors hover:bg-tinta hover:text-papel"
+      /* ⚠️ **`pr-1` abaixo do `sm`, e não `pr-3`.** O nome está escondido nessa
+         largura, portanto o enchimento à direita ficava a guardar espaço para
+         texto que não existe — e esses 8 px eram o que punha a página com
+         rolagem horizontal a 320 px, mas **só depois de alguém entrar na
+         conta**. É o pior tipo de defeito: não aparece a quem testa sem sessão
+         iniciada. */
+      className="alvo-toque flex items-center gap-2 rounded-full border border-tinta/25 py-1 pl-1 pr-1 transition-colors hover:bg-tinta hover:text-papel sm:gap-2 sm:pr-3"
       aria-label={t("aMinhaConta")}
     >
       {/* ⚠️ `<img>` e não `next/image`: a fotografia vem do Google ou do
@@ -86,13 +92,13 @@ export function BotaoConta() {
           alt=""
           width={28}
           height={28}
-          className="size-7 rounded-full object-cover"
+          className="size-6 rounded-full object-cover sm:size-7"
           referrerPolicy="no-referrer"
         />
       ) : (
         <span
           aria-hidden
-          className="flex size-7 items-center justify-center rounded-full bg-tijolo text-[0.7rem] text-papel"
+          className="flex size-6 items-center justify-center rounded-full bg-tijolo text-[0.7rem] text-papel sm:size-7"
         >
           {primeiro.slice(0, 1).toUpperCase()}
         </span>

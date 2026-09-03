@@ -3,6 +3,8 @@
 import { useTranslations } from "next-intl";
 import { signOut } from "next-auth/react";
 import { Link } from "@/i18n/navigation";
+import { ListaHistorico } from "@/components/encomendas/ListaHistorico";
+import type { Locale } from "@/i18n/routing";
 import { useConta } from "./ProvedorConta";
 
 /**
@@ -24,7 +26,7 @@ import { useConta } from "./ProvedorConta";
  * Para não voltar a escrever o nome e o email a cada pedido, e para o cesto não
  * se misturar com o de outra pessoa no mesmo telemóvel. É pouco, e é verdade.
  */
-export function PainelConta() {
+export function PainelConta({ locale }: { locale: Locale }) {
   const t = useTranslations("conta");
   const { utilizador, aCarregar } = useConta();
 
@@ -74,11 +76,14 @@ export function PainelConta() {
 
       <p className="mt-6 text-sm text-tinta-suave">{t("paraQueServe")}</p>
 
-      {/* ⚠️ A ausência de histórico fica **dentro** da página e não numa nota de
-          rodapé: é a primeira coisa que alguém procura aqui. */}
-      <div className="mt-8 rounded-xl border border-tinta/15 bg-papel-fundo p-5">
-        <p className="font-semibold">{t("semHistorico.titulo")}</p>
-        <p className="mt-2 text-sm text-tinta-suave">{t("semHistorico.texto")}</p>
+      {/* ⚠️ **Aqui esteve um aviso a dizer que não havia histórico nenhum.**
+          Passou a haver — o do browser — e o aviso saiu. O que **não** saiu foi
+          a ressalva: continua dentro da `ListaHistorico`, por cima da lista,
+          porque isto são os pedidos feitos neste browser e não os pedidos que a
+          casa tem. Quando a lista está vazia, a `ListaHistorico` não renderiza
+          nada e fica o convite abaixo. */}
+      <div className="mt-10">
+        <ListaHistorico locale={locale} mostrarVazio />
       </div>
 
       <div className="mt-10 flex flex-wrap gap-3">

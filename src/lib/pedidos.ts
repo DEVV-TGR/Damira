@@ -121,8 +121,15 @@ export const REMETENTE_PEDIDOS =
 /** O corpo do email que a casa recebe. Texto simples e não HTML: é para ser
  *  lido e respondido, não para ser bonito — e um email de texto passa em
  *  qualquer cliente de correio sem se partir. */
-export function corpoDoPedido(pedido: Pedido, rotulos: Record<string, string>) {
+export function corpoDoPedido(
+  pedido: Pedido,
+  rotulos: Record<string, string>,
+  referencia?: string,
+) {
   const linhas = [
+    /* ⚠️ **A referência é a primeira linha.** Quem lê isto no telemóvel ao
+       balcão vê o código sem rolar, que é a única altura em que ele serve. */
+    referencia ? `Referência: ${referencia}` : null,
     `Tipo: ${rotulos[pedido.tipo] ?? pedido.tipo}`,
     `Nome: ${pedido.nome}`,
     pedido.email ? `Email: ${pedido.email}` : null,

@@ -54,11 +54,26 @@ sentidos**, e os dois contam:
    essa é a regra que não se negoceia. Serve para o pedido vir já preenchido e
    para o cesto não se misturar com o de outra pessoa no mesmo telemóvel.
 
-⚠️ **Não há base de dados, e por isso não há histórico de encomendas.** A sessão
-é um JWT assinado num cookie; nada nosso guarda quem entrou nem o que pediu. A
-página da conta diz isto com todas as letras, de propósito — é a primeira coisa
-que alguém lá procura. Histórico é âmbito novo: exige base de dados, adaptador e
-uma conversa de custo.
+### O histórico de pedidos
+
+Cada pedido leva uma **referência** (`DAM-0309-4F7K`), gerada no servidor, que vai
+no assunto do email e serve para falar ao telefone. O pedido fica guardado numa
+lista que aparece na conta **e** no topo de `/encomendas`, com um botão para
+*pedir o mesmo*.
+
+⚠️ **É o histórico deste browser, não o histórico da casa** — e o site diz isso
+por cima da lista, sempre. Não há base de dados: a sessão é um JWT num cookie e
+nada nosso guarda o que foi pedido. Quem encomendou no telemóvel não vê esse
+pedido no computador, e limpar os dados do site apaga a lista.
+
+**Chamar-lhe «as suas encomendas» sem essa ressalva era mentir com uma
+funcionalidade**: quem não encontra lá o pedido conclui que ele se perdeu. Um
+histórico partilhado entre dispositivos exige base de dados e adaptador de
+sessão — é âmbito novo, com custo, e está na #1.
+
+Um pedido que ficou por enviar (sem serviço de email configurado, o pedido volta
+para a pessoa o mandar do seu correio) fica marcado **por enviar**, para não se
+esquecer.
 
 ⚠️ **As chaves são lidas no `build`**, porque as páginas são estáticas. Ligar a
 conta obriga a um novo *deploy*. Configuração e URIs de redirecionamento em

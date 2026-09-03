@@ -10,10 +10,10 @@ import { routing, type Locale } from "@/i18n/routing";
 import { metadataDaPagina } from "@/lib/metadata";
 import { TabelaKits } from "@/components/encomendas/TabelaKits";
 import { FormularioPedido } from "@/components/encomendas/FormularioPedido";
-import { CestoProvider } from "@/components/encomendas/CestoProvider";
 import { Cesto } from "@/components/encomendas/Cesto";
 import { BotaoJuntar } from "@/components/encomendas/BotaoJuntar";
 import { EmentaEncomendavel } from "@/components/encomendas/EmentaEncomendavel";
+import { ListaHistorico } from "@/components/encomendas/ListaHistorico";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -84,7 +84,7 @@ function Encomendas({ locale }: { locale: Locale }) {
   const telefone = telefoneMarcavel();
 
   return (
-    <CestoProvider>
+    <>
       <div className="bloco-tijolo relative overflow-hidden">
         <span
           aria-hidden
@@ -107,6 +107,18 @@ function Encomendas({ locale }: { locale: Locale }) {
           <p className="mt-4 max-w-[46ch] text-lg">{t("intro")}</p>
         </div>
       </div>
+
+      {/* ── Os pedidos que já fez ─────────────────────────────────────── */}
+      {/* ⚠️ **Antes dos kits e não no fim da página.** Quem já encomendou aqui
+          vem repetir, e obrigá-lo a percorrer cinco ecrãs de catálogo para
+          chegar ao que já sabe que quer é fazê-lo trabalhar por nada. Não
+          renderiza nada para quem chega pela primeira vez, portanto não custa
+          um pixel a quem nunca pediu. */}
+      <section className="seccao bg-papel-fundo">
+        <div className="envolvente">
+          <ListaHistorico locale={locale} />
+        </div>
+      </section>
 
       {/* ── Kits de festa ─────────────────────────────────────────────── */}
       <section aria-labelledby="festas" className="seccao">
@@ -385,6 +397,6 @@ function Encomendas({ locale }: { locale: Locale }) {
       </section>
 
       <Cesto locale={locale} />
-    </CestoProvider>
+    </>
   );
 }

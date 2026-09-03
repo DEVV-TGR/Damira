@@ -202,14 +202,28 @@ em `src/lib/autenticacao.ts`). Três decisões que se desfazem sem querer:
    montado. É a mesma regra do `RESEND_API_KEY`. **Nunca importar o
    `autenticacao.ts` num componente de cliente** — o `conta.ts` existe
    justamente para ser o lado seguro dessa fronteira.
-3. ⚠️ **Não há base de dados, logo não há histórico de encomendas.** A sessão é
-   um JWT num cookie. A página da conta **diz isto por escrito**, e esse
-   parágrafo não se apaga sem que passe a haver histórico a sério.
+3. ⚠️ **O histórico é do browser e não da casa, e a lista diz isso por cima de
+   si própria.** Não há base de dados: a sessão é um JWT num cookie e nada nosso
+   guarda o que foi pedido. Quem pediu no telemóvel não vê esse pedido no
+   computador. **Essa ressalva não se apaga** enquanto o histórico não for do
+   servidor — um histórico que parece completo e não é vale menos do que nenhum,
+   porque quem não encontra lá o pedido conclui que ele se perdeu. Ver
+   `historico.ts` e `ListaHistorico.tsx`.
+
+E uma peça que não é da conta mas nasceu com ela: **a referência do pedido**
+(`DAM-0309-4F7K`) é gerada **no servidor**, vai no assunto do email e volta no
+resultado da acção. Gerá-la no cliente dava um código diferente do que foi no
+email — e uma referência que não refere o mesmo não serve para nada.
 
 E uma consequência que não é óbvia: **a sessão lê-se no cliente e não no
 servidor**, para as páginas continuarem todas estáticas. Ler `auth()` num
 componente de servidor troca o cartaz da página inicial — que vive de ser servido
 instantaneamente — por um nome no canto superior direito.
+
+⚠️ **O cesto e o histórico vivem no layout e não na página das encomendas.** A
+conta precisa de os ler, e um provedor montado só em `/encomendas` deixava-a a
+olhar para `null`. A **barra** do cesto continua a aparecer só nas encomendas: o
+que subiu foi o estado, não a interface.
 
 ## As armadilhas que já morderam aqui
 
@@ -267,6 +281,12 @@ primeiras sete vieram do Santo Burga e continuam a valer — o motor é o mesmo.
     para cima não se nota, a 320 a página inteira ganha rolagem horizontal. As
     folgas abaixo do `sm` foram apertadas por causa disso. **Medir à mão a 320,
     340, 360, 375, 390 e 414 px** — e não só no ecrã onde se trabalha.
+16. **E volta a partir depois de alguém entrar na conta.** A pastilha do nome é
+    mais larga do que o botão de entrar, portanto a medição feita sem sessão dá
+    verde e a página parte-se só para quem se autenticou. **Medir as duas
+    versões do cabeçalho.** Para forjar uma sessão em local, ver a nota do
+    `usePorPessoa` e usar o `encode` do `@auth/core/jwt` com o `AUTH_SECRET` e o
+    sal `authjs.session-token`.
 
 O que todas têm em comum: `npm run build` passa, o `lint` passa, e só se apanham
 a olhar. **Depois de mexer em desenho, tirar capturas** — há Chromium do

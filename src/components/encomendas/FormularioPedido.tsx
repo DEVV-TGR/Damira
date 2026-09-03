@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useActionState, useId } from "react";
+import { useEffect, useMemo, useState, useActionState, useId } from "react";
 import { useTranslations } from "next-intl";
 import { TIPOS_PEDIDO } from "@/lib/pedidos";
 import {
@@ -14,6 +14,8 @@ import { formatarPreco } from "@/lib/preco";
 import type { Locale } from "@/i18n/routing";
 import { enviarPedido, type Resultado } from "@/app/[locale]/encomendas/acoes";
 import { useCesto } from "./CestoProvider";
+import { useHistorico } from "./ProvedorHistorico";
+import { itensGuardados } from "@/lib/historico";
 import { useConta } from "@/components/conta/ProvedorConta";
 import { Link } from "@/i18n/navigation";
 
@@ -76,6 +78,7 @@ export function FormularioPedido({ locale }: { locale: Locale }) {
   const { ativa: contaAtiva, utilizador } = useConta();
 
   const contexto = useCesto();
+  const historico = useHistorico();
   const cesto = contexto?.cesto ?? SEM_CESTO;
   const hidratado = contexto?.pronto ?? false;
   const comCesto = hidratado && cesto.length > 0;
@@ -99,11 +102,50 @@ export function FormularioPedido({ locale }: { locale: Locale }) {
     [cesto, locale, tc],
   );
 
+  /**
+   * ⚠️ **O pedido entra no histórico deste browser assim que o servidor
+   * responde** — nos dois desfechos, e não só no bom.
+   *
+   * Sem serviço de email configurado o pedido volta para a pessoa o mandar do
+   * seu correio, e é fácil fechar o separador a meio. Esse fica marcado
+   * `por-enviar`, que é a verdade e é a única forma de ela dar por isso depois.
+   *
+   * O cesto **só se esvazia quando o pedido foi mesmo enviado**: no caminho sem
+   * serviço, quem ainda tem de carregar em enviar no seu email não pode ficar
+   * sem o que escolheu se alguma coisa correr mal a meio.
+   */
+  const registo =
+    resultado.estado === "enviado" || resultado.estado === "sem-servico"
+      ? resultado.registo
+      : null;
+  const enviado = resultado.estado === "enviado";
+
+  useEffect(() => {
+    if (!registo || !historico?.pronto) return;
+    historico.guardar({
+      referencia: registo.referencia,
+      quando: new Date().toISOString(),
+      estado: enviado ? "enviado" : "por-enviar",
+      tipo: registo.tipo,
+      data: registo.data,
+      pessoas: registo.pessoas,
+      itens: itensGuardados(cesto),
+      estimativa: estimativa(cesto).soma,
+      semPreco: estimativa(cesto).semPreco,
+    });
+    if (enviado) contexto?.esvaziar();
+  }, [registo, enviado, historico, cesto, contexto]);
+
   if (resultado.estado === "enviado") {
     return (
       <div className="rounded-2xl border border-papel/25 p-8">
         <p className="titulo-display titulo-gama">{t("sucesso.titulo")}</p>
         <p className="mt-3 max-w-[46ch] text-papel/80">{t("sucesso.texto")}</p>
+        {/* ⚠️ **A referência é a única coisa desta página que a pessoa pode
+            precisar de dizer em voz alta.** Fica em número grande e não em
+            letra pequena — é o que se lê ao telefone quando se liga a perguntar
+            pelo pedido, e é a mesma que foi no assunto do email. */}
+        {registo && <Referencia rotulo={t("referencia")} codigo={registo.referencia} />}
       </div>
     );
   }
@@ -122,6 +164,7 @@ export function FormularioPedido({ locale }: { locale: Locale }) {
         <p className="mt-3 max-w-[52ch] text-papel/80">
           {t("semServico.texto")}
         </p>
+        <Referencia rotulo={t("referencia")} codigo={resultado.registo.referencia} />
         <a
           href={href}
           className="premivel mt-6 inline-block rounded-full bg-tijolo px-7 py-4 text-sm font-semibold uppercase tracking-widest text-papel"
@@ -443,6 +486,25 @@ export function FormularioPedido({ locale }: { locale: Locale }) {
 
       <p className="max-w-[46ch] text-sm text-papel/60">{t("nota")}</p>
     </form>
+  );
+}
+
+/**
+ * A referência do pedido.
+ *
+ * `select-all` para bastar um clique a copiá-la, e `tracking` largo porque um
+ * código lê-se caractere a caractere e não como palavra.
+ */
+function Referencia({ rotulo, codigo }: { rotulo: string; codigo: string }) {
+  return (
+    <p className="mt-6 rounded-xl border border-papel/25 px-5 py-4">
+      <span className="block text-xs font-semibold uppercase tracking-widest text-papel/60">
+        {rotulo}
+      </span>
+      <span className="titulo-display mt-1 block select-all text-2xl tracking-[0.12em]">
+        {codigo}
+      </span>
+    </p>
   );
 }
 

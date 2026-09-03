@@ -9,6 +9,8 @@ import { Rodape } from "@/components/Rodape";
 import { BotaoEncomendar } from "@/components/BotaoEncomendar";
 import { DadosEstruturados } from "@/components/DadosEstruturados";
 import { ProvedorConta } from "@/components/conta/ProvedorConta";
+import { CestoProvider } from "@/components/encomendas/CestoProvider";
+import { ProvedorHistorico } from "@/components/encomendas/ProvedorHistorico";
 import { CONTA_ATIVA } from "@/lib/conta";
 import { routing, type Locale } from "@/i18n/routing";
 import { URL_SITE, urlLocalizado } from "@/lib/site";
@@ -125,6 +127,14 @@ export default async function LayoutIdioma({
             página. Ver `ProvedorConta`. */}
         <NextIntlClientProvider>
         <ProvedorConta ativa={CONTA_ATIVA}>
+        {/* ⚠️ **O cesto e o histórico subiram da página das encomendas para
+            aqui.** Não é arrumação: a página da conta precisa de ler o histórico
+            e de repor um pedido antigo no cesto, e um provedor montado só em
+            `/encomendas` deixava-a a olhar para `null`. A **barra** do cesto
+            continua a aparecer só nas encomendas — é lá que ela faz falta, e o
+            que subiu foi o estado, não a interface. */}
+        <CestoProvider>
+        <ProvedorHistorico>
           {/* Primeiro tabulador da página: quem navega por teclado salta o
               cabeçalho inteiro em vez de o percorrer em todas as páginas. */}
           <a
@@ -140,6 +150,8 @@ export default async function LayoutIdioma({
               página. Ver o componente para as duas regras que o mantêm
               discreto. */}
           <BotaoEncomendar />
+        </ProvedorHistorico>
+        </CestoProvider>
         </ProvedorConta>
         </NextIntlClientProvider>
         <DadosEstruturados descricao={t("descricao")} />

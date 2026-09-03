@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { CONTA_ATIVA } from "@/lib/conta";
-import { routing } from "@/i18n/routing";
+import { routing, type Locale } from "@/i18n/routing";
 import { PainelConta } from "@/components/conta/PainelConta";
 
 export function generateStaticParams() {
@@ -44,5 +44,5 @@ export default async function PaginaConta({
   setRequestLocale(locale);
   if (!CONTA_ATIVA) notFound();
 
-  return <PainelConta />;
+  return <PainelConta locale={locale as Locale} />;
 }
