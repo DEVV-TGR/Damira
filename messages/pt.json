@@ -168,12 +168,31 @@
     },
     "festa": {
       "numeral": "VIII",
-      "olho": "A festa",
-      "titulo": "Até setenta pessoas",
-      "texto": "Três kits, com preço fechado por escalão. O que muda entre eles é o que vem na mesa, não o número de pessoas.",
+      "olho": "As encomendas",
+      "titulo": "Da dúzia à festa de setenta",
+      "texto": "Kits de festa com preço fechado, bolos por medida, boxes para dois — e setenta artigos da carta que se levam à dúzia ou ao quilo.",
       "pessoas": "{n} pessoas",
       "desde": "desde {preco}",
-      "nota": "As festas pedem antecedência. O orçamento fecha-se por telefone ou pelo formulário.",
+      "verFamilia": "Ver",
+      "familias": {
+        "festas": {
+          "nome": "Festas",
+          "detalhe": "{kits} kits com preço fechado, para {escaloes} pessoas."
+        },
+        "bolos": {
+          "nome": "Bolos",
+          "detalhe": "{kits} kits decorados, e o bolo à sua maneira em {opcoes} escolhas de massa, recheio e cobertura."
+        },
+        "boxes": {
+          "nome": "Boxes",
+          "detalhe": "{n} boxes prontas, para um pequeno-almoço ou um dia de anos."
+        },
+        "carta": {
+          "nome": "Da carta",
+          "detalhe": "{n} artigos da ementa por encomenda, à dúzia ou ao quilo."
+        }
+      },
+      "nota": "Tudo isto pede antecedência. O orçamento fecha-se por telefone ou pelo formulário.",
       "ligacao": "Ver as encomendas"
     },
     "encomendar": {

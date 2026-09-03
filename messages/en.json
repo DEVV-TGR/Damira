@@ -168,13 +168,32 @@
     },
     "festa": {
       "numeral": "VIII",
-      "olho": "The party",
-      "titulo": "Up to seventy people",
-      "texto": "Three kits, fixed price per tier. What changes between them is what comes to the table, not the headcount.",
+      "olho": "Orders",
+      "titulo": "From a dozen to a party of seventy",
+      "texto": "Party kits at a fixed price, made-to-order cakes, boxes for two — and seventy menu items you can take by the dozen or by the kilo.",
       "pessoas": "{n} people",
       "desde": "from {preco}",
-      "nota": "Parties need notice. The quote is settled by phone or through the form.",
-      "ligacao": "See orders and parties"
+      "verFamilia": "View",
+      "familias": {
+        "festas": {
+          "nome": "Parties",
+          "detalhe": "{kits} kits at a fixed price, for {escaloes} people."
+        },
+        "bolos": {
+          "nome": "Cakes",
+          "detalhe": "{kits} decorated kits, and a cake your way across {opcoes} choices of sponge, filling and coating."
+        },
+        "boxes": {
+          "nome": "Boxes",
+          "detalhe": "{n} ready boxes, for a breakfast or a birthday."
+        },
+        "carta": {
+          "nome": "From the menu",
+          "detalhe": "{n} menu items to order, by the dozen or by the kilo."
+        }
+      },
+      "nota": "All of this needs notice. The quote is settled by phone or through the form.",
+      "ligacao": "See the orders page"
     },
     "encomendar": {
       "numeral": "IX",
