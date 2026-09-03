@@ -545,6 +545,7 @@
     "minimoUn": "Mínimo {minimo} unidades, de {passo} em {passo}",
     "minimoKg": "Mínimo {minimo} kg, vendido ao peso",
     "soAoBalcao": "Este pede-se ao balcão, na hora — não se encomenda com antecedência.",
-    "prazoDaCarta": "A antecedência mínima está por confirmar. Telefone-nos e dizemos-lhe logo se dá para a data que quer."
+    "prazoDaCarta": "A antecedência mínima está por confirmar. Telefone-nos e dizemos-lhe logo se dá para a data que quer.",
+    "cadaCurto": "un."
   }
 }

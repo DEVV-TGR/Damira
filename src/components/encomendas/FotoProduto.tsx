@@ -23,11 +23,22 @@ export function FotoProduto({
   foto,
   alt,
   proporcao = "4 / 3",
+  discreta = false,
 }: {
   foto: string | null;
   alt: string;
   /** As grelhas usam 4/3; a página de produto usa 3/2, que dá mais altura. */
   proporcao?: string;
+  /**
+   * Sem a frase, só o motivo.
+   *
+   * ⚠️ **Para os setenta cartões da carta por encomenda.** «Fotografia por
+   * chegar da casa» escrito setenta vezes numa grelha ocupa mais espaço do que
+   * o nome do artigo e deixa de se ler à terceira — e num cartão estreito a
+   * frase enche a caixa toda. A explicação fica onde ela conta: nos cartões
+   * grandes e nas páginas de produto, que é onde alguém pára para olhar.
+   */
+  discreta?: boolean;
 }) {
   const t = useTranslations("produto");
 
@@ -58,9 +69,11 @@ export function FotoProduto({
           WebkitMaskImage: "url(/marca/simbolo.svg)",
         }}
       />
-      <p className="relative m-4 max-w-[24ch] text-xs uppercase tracking-widest text-tinta-suave">
-        {t("semFoto")}
-      </p>
+      {!discreta && (
+        <p className="relative m-4 max-w-[24ch] text-xs uppercase tracking-widest text-tinta-suave">
+          {t("semFoto")}
+        </p>
+      )}
     </div>
   );
 }

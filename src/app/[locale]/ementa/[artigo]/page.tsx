@@ -12,6 +12,7 @@ import { caminhoDoArtigo } from "@/lib/produtos";
 import { formatarPreco } from "@/lib/preco";
 import { FotoProduto } from "@/components/encomendas/FotoProduto";
 import { ComprarProduto } from "@/components/encomendas/ComprarProduto";
+import { BotaoJuntar } from "@/components/encomendas/BotaoJuntar";
 
 export function generateStaticParams() {
   return routing.locales.flatMap((locale) =>
@@ -172,13 +173,42 @@ function Detalhe({ artigo, locale }: { artigo: Artigo; locale: Locale }) {
               </p>
             )}
 
+            {/* ⚠️ **Um artigo com variantes tem um botão por variante, e não um
+                `ComprarProduto`.** O chocolate do Dubai tem quatro pesos com
+                quatro preços e `artigo.preco` a `null`: passado ao bloco de
+                compra, aquele `null` saía escrito como **«sob orçamento»** — num
+                produto que tem quatro preços na tabela. É um artigo com preços,
+                não um bolo por medida. */}
             {artigo.variantes && (
               <ul className="mt-6 divide-y divide-tinta/12 border-y border-tinta/12">
                 {artigo.variantes.map((v) => (
-                  <li key={v.chave} className="flex justify-between gap-4 py-2.5">
+                  <li
+                    key={v.chave}
+                    className="flex items-center justify-between gap-4 py-3"
+                  >
                     <span>{v.chave}</span>
-                    <span className="tabular-nums text-tijolo">
-                      {formatarPreco(v.preco, locale)}
+                    <span className="flex items-center gap-3">
+                      <span className="tabular-nums text-tijolo">
+                        {formatarPreco(v.preco, locale)}
+                      </span>
+                      {regra && (
+                        <BotaoJuntar
+                          variante="compacta"
+                          locale={locale}
+                          item={{
+                            id: `ementa:${artigo.id}:${v.chave}`,
+                            tipo: "ementa",
+                            nome: `${nome} (${v.chave})`,
+                            variante: v.chave,
+                            preco: v.preco,
+                            pessoas: null,
+                            notas: null,
+                            unidade: artigo.unidade,
+                            minimo: regra.minimo,
+                            passo: regra.passo,
+                          }}
+                        />
+                      )}
                     </span>
                   </li>
                 ))}
@@ -194,7 +224,7 @@ function Detalhe({ artigo, locale }: { artigo: Artigo; locale: Locale }) {
               </div>
             )}
 
-            {regra ? (
+            {regra && !artigo.variantes ? (
               <>
                 <ComprarProduto
                   id={`ementa:${artigo.id}`}
@@ -218,6 +248,10 @@ function Detalhe({ artigo, locale }: { artigo: Artigo; locale: Locale }) {
                   {t("prazoDaCarta")}
                 </p>
               </>
+            ) : regra ? (
+              /* Com variantes: os botões estão na lista de preços acima, e o que
+                 falta aqui é o prazo. */
+              <p className="mt-8 text-sm text-tinta-suave">{t("prazoDaCarta")}</p>
             ) : (
               /* ⚠️ **Sem botão, e a dizer porquê.** Um galão não se encomenda
                  para sexta-feira: pede-se ao balcão, na hora. Deixar aqui um
