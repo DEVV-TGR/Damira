@@ -56,13 +56,50 @@ export type ItemCesto = {
   minimo: number;
   /** De quanto em quanto a quantidade sobe. Meia dúzia, meio quilo, uma unidade. */
   passo: number;
+  /**
+   * O que a pessoa escreveu na página do produto: a mensagem do bolo, uma
+   * alergia, a cor do laço.
+   *
+   * ⚠️ **Faz parte da identidade da linha e não é um extra.** Dois bolos iguais
+   * com mensagens diferentes são **duas linhas** e não um com quantidade dois —
+   * por isso o `id` leva a marca das notas (ver `idComNotas`). Sem isso, quem
+   * encomendasse dois bolos para dois aniversários recebia os dois com o mesmo
+   * nome escrito por cima.
+   */
+  notas: string | null;
 };
 
 /**
  * O que se escreve num artigo que não traz regra própria — os kits, os bolos
  * decorados e as boxes, que são todos «uma unidade de cada vez».
  */
-export const REGRA_SIMPLES = { unidade: "un", minimo: 1, passo: 1 } as const;
+export const REGRA_SIMPLES = {
+  unidade: "un",
+  minimo: 1,
+  passo: 1,
+  notas: null,
+} as const;
+
+/**
+ * O `id` de uma linha, marcado pelas notas que leva.
+ *
+ * ⚠️ Uma marca curta e **estável**, não um número aleatório: juntar duas vezes o
+ * mesmo bolo com exactamente a mesma mensagem tem de somar quantidade, e não
+ * criar duas linhas iguais que quem lê o pedido tem de somar de cabeça.
+ *
+ * Não é criptografia — é só para distinguir. Colisões entre duas mensagens
+ * diferentes dão uma linha em vez de duas, o que é um incómodo; usar aqui algo
+ * mais forte era pagar por uma garantia que ninguém precisa.
+ */
+export function idComNotas(id: string, notas: string | null): string {
+  const limpo = notas?.trim() ?? "";
+  if (!limpo) return id;
+  let soma = 5381;
+  for (let i = 0; i < limpo.length; i++) {
+    soma = ((soma << 5) + soma + limpo.charCodeAt(i)) | 0;
+  }
+  return `${id}#${(soma >>> 0).toString(36)}`;
+}
 
 /**
  * A chave do armazenamento local, **por pessoa**.
@@ -114,6 +151,7 @@ export function normalizarCesto(lido: unknown): ItemCesto[] {
       unidade: item.unidade === "kg" ? "kg" : "un",
       minimo,
       passo,
+      notas: typeof item.notas === "string" && item.notas.trim() ? item.notas : null,
     });
   }
   return items;
@@ -180,13 +218,17 @@ export function cestoEmTexto(
 ): string {
   if (cesto.length === 0) return "";
 
-  const linhas = cesto.map((item) => {
+  const linhas = cesto.flatMap((item) => {
     const nome = item.variante ? `${item.nome} (${item.variante})` : item.nome;
     const preco =
       item.preco === null
         ? rotulos.semPreco
         : formatarPreco(arredondar(item.preco * item.quantidade), locale);
-    return `- ${quantidadeEmTexto(item, locale)} ${nome} — ${preco}`;
+    const linha = `- ${quantidadeEmTexto(item, locale)} ${nome} — ${preco}`;
+    /* ⚠️ **As notas vão indentadas por baixo do artigo a que pertencem**, e não
+       todas juntas no fim. Num pedido com três bolos, três mensagens em bloco no
+       fim do email obrigam quem lê a adivinhar qual é de qual. */
+    return item.notas ? [linha, `    ${item.notas.replace(/\n/g, "\n    ")}`] : [linha];
   });
 
   const { soma, semPreco } = estimativa(cesto);

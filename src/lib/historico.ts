@@ -51,6 +51,8 @@ export type ItemGuardado = {
   id: string;
   minimo: number;
   passo: number;
+  /** A personalização, para repetir um pedido a trazer também a mensagem. */
+  notas: string | null;
 };
 
 export type PedidoGuardado = {
@@ -119,6 +121,7 @@ export const itensGuardados = (cesto: ItemCesto[]): ItemGuardado[] =>
     tipo: i.tipo,
     minimo: i.minimo,
     passo: i.passo,
+    notas: i.notas,
   }));
 
 /** O caminho de volta: um artigo guardado outra vez no cesto. */
@@ -133,6 +136,7 @@ export const paraOCesto = (item: ItemGuardado): ItemCesto => ({
   unidade: item.unidade,
   minimo: item.minimo,
   passo: item.passo,
+  notas: item.notas ?? null,
 });
 
 /**

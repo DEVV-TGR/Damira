@@ -410,6 +410,14 @@
       "regraUn": "Mínimo {minimo} unidades, de {passo} em {passo}",
       "regraKg": "Mínimo {minimo} kg, vendido ao peso",
       "cada": "cada"
+    },
+    "indice": {
+      "titulo": "Nesta página",
+      "festas": "Festas",
+      "kits-bolo": "Bolos",
+      "boxes": "Boxes",
+      "da-ementa": "Da carta",
+      "pedido": "Encomendar"
     }
   },
   "bolos": {
@@ -501,5 +509,35 @@
     "repetirConfirmar": "Substituir o cesto?",
     "apagar": "Apagar",
     "limparTudo": "Apagar tudo"
+  },
+  "produto": {
+    "voltar": "← Todas as encomendas",
+    "familias": {
+      "festa": "Kit de festa",
+      "bolo": "Kit de bolo",
+      "box": "Box",
+      "medida": "Bolo por medida"
+    },
+    "medida": {
+      "nome": "Bolo por medida",
+      "resumo": "O bolo feito à sua maneira: escolhe a massa, o recheio e a cobertura, e nós dizemos-lhe o preço."
+    },
+    "ver": "Ver o produto",
+    "desde": "desde",
+    "sobOrcamento": "Sob orçamento",
+    "vegan": "Vegan",
+    "semFoto": "Fotografia por chegar da casa",
+    "oQueLeva": "O que leva",
+    "preco": "Preço",
+    "paraQuantas": "Para quantas pessoas?",
+    "paraPessoas": "{n} pessoas",
+    "mensagem": "Mensagem no bolo",
+    "mensagemDica": "Parabéns, Maria!",
+    "observacoes": "Observações",
+    "observacoesDica": "Cor, alergias, hora de levantamento — o que precisarmos de saber.",
+    "juntar": "Juntar ao pedido",
+    "juntado": "Juntado ao pedido",
+    "avisoPreco": "É o preço de tabela, não uma conta a pagar. A entrega não está incluída e o valor final vem na nossa resposta.",
+    "descricaoGenerica": "{nome}, por encomenda na Confeitaria e Pão Quente Damira, em Ermesinde."
   }
 }

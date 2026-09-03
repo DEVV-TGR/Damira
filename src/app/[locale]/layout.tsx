@@ -11,6 +11,7 @@ import { DadosEstruturados } from "@/components/DadosEstruturados";
 import { ProvedorConta } from "@/components/conta/ProvedorConta";
 import { CestoProvider } from "@/components/encomendas/CestoProvider";
 import { ProvedorHistorico } from "@/components/encomendas/ProvedorHistorico";
+import { Cesto } from "@/components/encomendas/Cesto";
 import { MODO_CONTA } from "@/lib/conta";
 import { routing, type Locale } from "@/i18n/routing";
 import { URL_SITE, urlLocalizado } from "@/lib/site";
@@ -150,6 +151,14 @@ export default async function LayoutIdioma({
               página. Ver o componente para as duas regras que o mantêm
               discreto. */}
           <BotaoEncomendar />
+          {/* ⚠️ **A barra do cesto subiu da página das encomendas para aqui.**
+              Com as páginas de produto, juntar deixou de acontecer todo no mesmo
+              sítio: quem juntava um kit em `/encomendas/festa-premium` não via
+              barra nenhuma, ficava sem sinal de que tinha acertado e sem caminho
+              de volta ao pedido. Continua a só aparecer quando tem alguma coisa
+              dentro, portanto não ocupa o fundo do ecrã de quem nunca juntou
+              nada. */}
+          <Cesto locale={locale as Locale} />
         </ProvedorHistorico>
         </CestoProvider>
         </ProvedorConta>

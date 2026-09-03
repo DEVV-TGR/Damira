@@ -410,6 +410,14 @@
       "regraUn": "Minimum {minimo} units, in steps of {passo}",
       "regraKg": "Minimum {minimo} kg, sold by weight",
       "cada": "each"
+    },
+    "indice": {
+      "titulo": "On this page",
+      "festas": "Parties",
+      "kits-bolo": "Cakes",
+      "boxes": "Boxes",
+      "da-ementa": "From the menu",
+      "pedido": "Order"
     }
   },
   "bolos": {
@@ -501,5 +509,35 @@
     "repetirConfirmar": "Replace the basket?",
     "apagar": "Delete",
     "limparTudo": "Delete all"
+  },
+  "produto": {
+    "voltar": "← All orders",
+    "familias": {
+      "festa": "Party kit",
+      "bolo": "Cake kit",
+      "box": "Box",
+      "medida": "Made-to-order cake"
+    },
+    "medida": {
+      "nome": "Made-to-order cake",
+      "resumo": "A cake made your way: pick the sponge, the filling and the coating, and we will quote it."
+    },
+    "ver": "View product",
+    "desde": "from",
+    "sobOrcamento": "Quoted on request",
+    "vegan": "Vegan",
+    "semFoto": "Photograph still to come from the shop",
+    "oQueLeva": "What it includes",
+    "preco": "Price",
+    "paraQuantas": "For how many people?",
+    "paraPessoas": "{n} people",
+    "mensagem": "Message on the cake",
+    "mensagemDica": "Happy birthday, Maria!",
+    "observacoes": "Notes",
+    "observacoesDica": "Colour, allergies, pickup time — anything we should know.",
+    "juntar": "Add to order",
+    "juntado": "Added to order",
+    "avisoPreco": "This is the list price, not a bill. Delivery is not included and the final amount comes in our reply.",
+    "descricaoGenerica": "{nome}, made to order at Confeitaria e Pão Quente Damira, in Ermesinde."
   }
 }

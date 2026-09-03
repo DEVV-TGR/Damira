@@ -57,7 +57,12 @@ export function BotaoEncomendar() {
     };
   }, []);
 
-  if (caminho === "/encomendas") return null;
+  /* ⚠️ **Toda a árvore das encomendas e não só a página de índice.** Era uma
+     igualdade exacta, e com as páginas de produto (`/encomendas/festa-premium`)
+     o botão voltava a aparecer — no mesmo canto onde a barra do cesto vive,
+     tapando-a. Um botão «encomendar» por cima do cesto, na página onde se
+     acabou de juntar alguma coisa, é o pior sítio possível para o pôr. */
+  if (caminho === "/encomendas" || caminho.startsWith("/encomendas/")) return null;
 
   return (
     <Link

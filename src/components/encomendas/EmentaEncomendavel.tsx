@@ -44,7 +44,7 @@ export function EmentaEncomendavel({ locale }: { locale: Locale }) {
   return (
     <section aria-labelledby="da-ementa" className="seccao">
       <div className="envolvente">
-        <h2 id="da-ementa" className="titulo-display titulo-beta max-w-[18ch]">
+        <h2 id="da-ementa" className="scroll-mt-24 titulo-display titulo-beta max-w-[18ch]">
           {t("titulo")}
         </h2>
         <p className="mt-4 max-w-[52ch] text-tinta-suave">{t("texto")}</p>
@@ -136,6 +136,9 @@ function Linha({ artigo, locale }: { artigo: Artigo; locale: Locale }) {
     tipo: "ementa" as const,
     nome,
     pessoas: null,
+    /* Da carta não se personaliza: uma dúzia de natas é uma dúzia de natas. A
+       mensagem e as observações vivem na página de cada produto de encomenda. */
+    notas: null,
     unidade: artigo.unidade,
     minimo: regra.minimo,
     passo: regra.passo,

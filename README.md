@@ -33,7 +33,8 @@ o `build` é o único que valida o conteúdo.
 |---|---|
 | `/` | homepage — herói, combinações, carta vegan, festas, contactos, fecho |
 | `/ementa` | as quatro cartas, 95 artigos, com painel de detalhe por artigo |
-| `/encomendas` | kits de festa, kits de bolo, bolo por medida, boxes, **70 artigos da carta por encomenda**, como pedir |
+| `/encomendas` | índice: cartões dos doze produtos, **70 artigos da carta por encomenda**, cesto, histórico e pedido |
+| `/encomendas/<produto>` | uma página por produto — fotografia, o que leva, escalão, personalização e juntar ao pedido |
 | `/entrar` | entrar com o Google ou o Facebook — **só existe com chaves configuradas** |
 | `/conta` | quem entrou, e o que a conta faz (e não faz) — idem |
 
@@ -63,6 +64,24 @@ lá chega por um link.
 ⚠️ E a regra que não se negoceia: **a conta nunca é obrigatória para
 encomendar.** Serve para o pedido vir já preenchido e para o cesto não se
 misturar com o de outra pessoa no mesmo telemóvel.
+
+### As páginas de produto
+
+Cada um dos doze produtos de encomenda tem página própria: os três kits de festa,
+os três kits de bolo, o bolo por medida e as cinco boxes. É lá que se escolhe o
+escalão, se escreve a mensagem do bolo e se junta ao pedido — a `/encomendas`
+ficou a ser o índice.
+
+O catálogo unificado está em `src/lib/produtos.ts`. ⚠️ **É uma vista e não uma
+segunda fonte de verdade**: não há lá um único dado que não venha do
+`encomendas.json`. Os cartões, as rotas e o `sitemap.xml` saem todos dele, para
+um produto novo não aparecer na grelha e faltar no mapa do site.
+
+⚠️ **`produto.foto` está a `null` em todos, e fica.** Há dezanove fotografias da
+casa em `public/` e **nenhuma é deste kit ou desta box** — numa página de produto
+qualquer imagem se lê como sendo o produto. A página guarda o espaço com o motivo
+da marca e diz que a fotografia está por chegar. Quando ela chegar, é preencher o
+campo: uma linha, sem mexer no desenho.
 
 ### O histórico de pedidos
 

@@ -187,6 +187,29 @@ trazem a cor de texto certa para cada fundo — usar essas em vez de compor `bg-
 `hover:bloco-tijolo` compila-se em silêncio para nada e ninguém dá por isso. Em
 estados, usar utilitários (`hover:bg-tijolo hover:text-papel`).
 
+## As páginas de produto, e a regra da fotografia
+
+Desde setembro de 2026 cada produto de encomenda tem página própria
+(`/encomendas/<id>`) e a `/encomendas` passou a ser um índice de cartões. Antes
+era uma página só com tudo aberto: cinco ecrãs em que a única coisa a distinguir
+dois kits era um preço a meio de vinte linhas de miudezas, e **sem sítio nenhum
+para uma fotografia**.
+
+O catálogo unificado está em `src/lib/produtos.ts`. ⚠️ **É uma vista e não uma
+segunda fonte de verdade** — não há lá um dado que não venha do
+`encomendas.json`. Cartões, rotas e `sitemap.xml` saem todos dele.
+
+⚠️ **`produto.foto` está a `null` em todos, e não se preenche com o que há.**
+Existem dezanove fotografias da casa, e **nenhuma é deste kit ou desta box**.
+Numa página de produto qualquer imagem se lê como sendo o produto: pôr ali a
+montra vista da rua é anunciar uma coisa e entregar outra, e é a mesma regra que
+proíbe banco de imagens no resto do site. O `FotoProduto` guarda o espaço e diz
+que a fotografia está por chegar.
+
+⚠️ **O bolo por medida não vem do JSON.** Não é um produto de catálogo, é uma
+conversa: não tem preço e o que se escolhe são massas e recheios. Entra na lista
+para ter página e cartão, com `preco: null`, que é *sob orçamento* e não zero.
+
 ## A conta de cliente, e as três regras que a seguram
 
 Entrar com o Google ou o Facebook existe desde setembro de 2026 (`next-auth` v5,
@@ -286,7 +309,20 @@ primeiras sete vieram do Santo Burga e continuam a valer — o motor é o mesmo.
     para cima não se nota, a 320 a página inteira ganha rolagem horizontal. As
     folgas abaixo do `sm` foram apertadas por causa disso. **Medir à mão a 320,
     340, 360, 375, 390 e 414 px** — e não só no ecrã onde se trabalha.
-16. **E volta a partir depois de alguém entrar na conta.** A pastilha do nome é
+16. **`min-w-0` num filho de grelha, ou a tabela arrasta a página inteira.** Um
+    filho de grelha tem `min-width: auto` e **recusa-se a encolher abaixo do
+    conteúdo**: a tabela de escalões, com a sua largura mínima, esticava a coluna
+    e punha a página com rolagem horizontal a 320 px — apesar de já viver dentro
+    de um `overflow-x-auto` que era suposto tratar disso. E só na página dos kits
+    de festa: as outras não têm tabela e davam verde.
+17. **Um componente fixo montado numa página só desaparece quando as páginas se
+    multiplicam.** A barra do cesto vivia na `/encomendas`; com as páginas de
+    produto, quem juntava um kit em `/encomendas/festa-premium` ficava sem barra,
+    sem sinal de ter acertado e sem caminho de volta ao pedido. Subiu para o
+    layout. Do mesmo golpe, o botão flutuante «encomendar» escondia-se com
+    `caminho === "/encomendas"` e voltava a aparecer nas páginas de produto, por
+    cima da barra.
+18. **E volta a partir depois de alguém entrar na conta.** A pastilha do nome é
     mais larga do que o botão de entrar, portanto a medição feita sem sessão dá
     verde e a página parte-se só para quem se autenticou. **Medir as duas
     versões do cabeçalho.** Para forjar uma sessão em local, ver a nota do
