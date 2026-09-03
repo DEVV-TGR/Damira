@@ -334,7 +334,8 @@
         "festa": "Party kit",
         "bolo": "Custom cake",
         "box": "Box",
-        "outro": "Something else"
+        "outro": "Something else",
+        "ementa": "From the menu"
       },
       "campos": {
         "tipo": "What would you like to order",
@@ -398,7 +399,16 @@
       "resumoTitulo": "What goes in the order",
       "notas": "Anything to add?",
       "notasDica": "Filling, colour, the name to write on the cake, allergies.",
-      "tipoDoCesto": "Comes from what you added. To change it, edit the order."
+      "tipoDoCesto": "Comes from what you added. To change it, edit the order.",
+      "juntarArtigo": "Add {nome} to your order"
+    },
+    "daEmenta": {
+      "titulo": "From the menu, to order",
+      "texto": "Seventy menu items the shop makes to order, for taking away in quantity: savouries and pastries by the dozen, vegan cakes by the kilo, and the chocolate in all four sizes.",
+      "aviso": "This is not the counter. Every line has a minimum quantity and needs notice — a single pastry is something you ask for in the shop, no booking needed. Cakes are sold by weight, and the final amount is settled at pickup.",
+      "regraUn": "Minimum {minimo} units, in steps of {passo}",
+      "regraKg": "Minimum {minimo} kg, sold by weight",
+      "cada": "each"
     }
   },
   "bolos": {
@@ -443,5 +453,34 @@
     "titulo": "This one does not exist",
     "texto": "The page you are looking for moved or was never here.",
     "voltar": "Back to the start"
+  },
+  "conta": {
+    "olho": "Your account",
+    "entrar": "Sign in",
+    "entrarTitulo": "Sign in and skip the typing",
+    "entrarTexto": "An account does two small things: your order arrives with your name and email already filled in, and what you pick stays yours on a shared phone. You do not need one to order.",
+    "entrarCom": {
+      "google": "Continue with Google",
+      "facebook": "Continue with Facebook"
+    },
+    "aEntrar": "Opening…",
+    "semConta": "Rather not sign in?",
+    "semContaLigacao": "Order anyway",
+    "privacidade": "From Google or Facebook we receive only your name, your email and your photo. We ask for nothing else, we post nothing on your behalf, and we pass it to no one.",
+    "aMinhaConta": "My account",
+    "aCarregar": "Loading…",
+    "naoEntrou": "You have not signed in on this browser yet.",
+    "ola": "Hello, {nome}",
+    "nome": "Name",
+    "email": "Email",
+    "paraQueServe": "This is what we fill into your order so you do not have to type it every time. You can change it on the form before sending.",
+    "semHistorico": {
+      "titulo": "We do not store your orders",
+      "texto": "Requests reach us by email and stay between you and the shop — there is no order history to browse here. To check a past order, look for the email you sent, or call us."
+    },
+    "encomendar": "Go to orders",
+    "sair": "Sign out",
+    "preencherDica": "Rather not type this every time?",
+    "preencherLigacao": "Sign in to your account"
   }
 }

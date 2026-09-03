@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { encomendas, escaloesDisponiveis, escalaoDe } from "@/data/encomendas";
 import { formatarPreco } from "@/lib/preco";
+import { REGRA_SIMPLES } from "@/lib/cesto";
 import { BotaoJuntar } from "./BotaoJuntar";
 import type { Locale } from "@/i18n/routing";
 
@@ -150,6 +151,7 @@ export function TabelaKits({ locale }: { locale: Locale }) {
                   primeira e o email saía a pedir dois kits de vinte. */}
               <div className="mt-7 pt-1">
                 <BotaoJuntar
+                  locale={locale}
                   item={{
                     id: `festa:${kit.id}:${escalao.pessoas}`,
                     tipo: "festa",
@@ -157,6 +159,7 @@ export function TabelaKits({ locale }: { locale: Locale }) {
                     variante: t("paraPessoas", { n: escalao.pessoas }),
                     preco: escalao.preco,
                     pessoas: escalao.pessoas,
+                    ...REGRA_SIMPLES,
                   }}
                 />
               </div>

@@ -33,10 +33,36 @@ o `build` é o único que valida o conteúdo.
 |---|---|
 | `/` | homepage — herói, combinações, carta vegan, festas, contactos, fecho |
 | `/ementa` | as quatro cartas, 95 artigos, com painel de detalhe por artigo |
-| `/encomendas` | kits de festa, kits de bolo, bolo por medida, boxes, como pedir |
+| `/encomendas` | kits de festa, kits de bolo, bolo por medida, boxes, **70 artigos da carta por encomenda**, como pedir |
+| `/entrar` | entrar com o Google ou o Facebook — **só existe com chaves configuradas** |
+| `/conta` | quem entrou, e o que a conta faz (e não faz) — idem |
 
 Em inglês, as mesmas com prefixo `/en`. O português não leva prefixo
 (`localePrefix: "as-needed"`).
+
+## A conta de cliente
+
+Entra-se com o Google ou o Facebook (`next-auth` v5). ⚠️ **É opcional em dois
+sentidos**, e os dois contam:
+
+1. **Para o site.** Sem `AUTH_SECRET` e sem as chaves de pelo menos um
+   fornecedor, a conta desliga-se por inteiro: não aparece botão no cabeçalho,
+   `/entrar` e `/conta` respondem 404, e não se faz um único pedido ao
+   `/api/auth/session`. É a mesma regra do `RESEND_API_KEY` — uma
+   funcionalidade sem chave esconde-se, não avaria. Ver `src/lib/conta.ts`.
+2. **Para quem encomenda.** A conta **nunca é obrigatória para encomendar**, e
+   essa é a regra que não se negoceia. Serve para o pedido vir já preenchido e
+   para o cesto não se misturar com o de outra pessoa no mesmo telemóvel.
+
+⚠️ **Não há base de dados, e por isso não há histórico de encomendas.** A sessão
+é um JWT assinado num cookie; nada nosso guarda quem entrou nem o que pediu. A
+página da conta diz isto com todas as letras, de propósito — é a primeira coisa
+que alguém lá procura. Histórico é âmbito novo: exige base de dados, adaptador e
+uma conversa de custo.
+
+⚠️ **As chaves são lidas no `build`**, porque as páginas são estáticas. Ligar a
+conta obriga a um novo *deploy*. Configuração e URIs de redirecionamento em
+`.env.example`.
 
 ## Onde vive o conteúdo
 
@@ -49,6 +75,12 @@ JSON e mais nada**:
 - **`bolos.json`** — o catálogo do bolo por medida: 62 opções na linha clássica,
   37 na vegan. **Sem preços**, porque o impresso não os tem.
 - **`casa.json`** — morada, telefone, correio, horário, entregas.
+
+E uma regra que **não** é dado e por isso vive em código, em
+`src/lib/encomendavel.ts`: **que artigos da ementa se podem encomendar e em que
+quantidade mínima.** Hoje são 70 dos 95 — doces e salgados à dúzia (de 6 em 6),
+bolos inteiros ao quilo (de meio em meio), o chocolate à unidade. As bebidas, os
+pratos e a pausa ficam de fora: não se encomenda um galão para sexta-feira.
 - **`marca.json`** — nome e redes sociais.
 
 As fontes de tudo isto são os sete PDFs em `referencias/`, que **não estão
@@ -114,6 +146,11 @@ falta, faz o site mentir a alguém:
       espera de confirmação.
 - [ ] **Escalões do Kit Premium.** O de 20 pax (335 €) fica 35 € acima do Médio
       (300 €), mas o de 40 salta de 590 € para 650 €. Confirmar que é mesmo assim.
+
+### Opcional, e só quando a casa quiser
+
+- [ ] **Chaves do Google e do Facebook** para a conta de cliente. Sem elas o site
+      funciona todo, sem conta nenhuma. Ver `.env.example` e a secção acima.
 
 ### A pedir ao cliente
 

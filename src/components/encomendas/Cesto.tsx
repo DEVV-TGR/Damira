@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { estimativa, totalUnidades } from "@/lib/cesto";
+import { estimativa, quantidadeEmTexto, totalArtigos } from "@/lib/cesto";
 import { formatarPreco } from "@/lib/preco";
 import type { Locale } from "@/i18n/routing";
 import { useCesto } from "./CestoProvider";
@@ -41,7 +41,7 @@ export function Cesto({ locale }: { locale: Locale }) {
 
   const { cesto, mudarQuantidade, remover, esvaziar } = contexto;
   const { soma, semPreco } = estimativa(cesto);
-  const unidades = totalUnidades(cesto);
+  const artigos = totalArtigos(cesto);
 
   return (
     <>
@@ -94,8 +94,12 @@ export function Cesto({ locale }: { locale: Locale }) {
                     >
                       −
                     </button>
-                    <span className="w-6 text-center tabular-nums">
-                      {item.quantidade}
+                    {/* ⚠️ **A largura é mínima e não fixa.** Com `w-6` cabia
+                        «2» mas não «1,5 kg», e o texto saltava para cima do
+                        botão do «mais» — só nos bolos, que são justamente os
+                        artigos onde o número é o que interessa. */}
+                    <span className="min-w-8 whitespace-nowrap px-1 text-center text-sm tabular-nums">
+                      {quantidadeEmTexto(item, locale)}
                     </span>
                     <button
                       type="button"
@@ -142,7 +146,7 @@ export function Cesto({ locale }: { locale: Locale }) {
         >
           <span className="flex min-w-0 items-baseline gap-3">
             <span className="shrink-0 rounded-full bg-tijolo px-2.5 py-0.5 text-sm font-bold tabular-nums">
-              {unidades}
+              {artigos}
             </span>
             <span className="truncate text-sm">
               {semPreco > 0 ? t("aPartirDe") : t("estimativa")}{" "}

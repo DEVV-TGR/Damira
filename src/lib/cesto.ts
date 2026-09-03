@@ -12,11 +12,6 @@ import { formatarPreco } from "@/lib/preco";
  * nenhuma das três a partir daqui — um bolo por medida não tem preço até haver
  * conversa, e o catálogo de massas e recheios não traz um único número.
  *
- * O que mudou foi **como se chega ao pedido**, não o que o pedido é. Antes havia
- * uma caixa de texto vazia e a pessoa tinha de escrever de cabeça o que queria,
- * copiando nomes e preços de secções que já tinha rolado para longe. Agora
- * escolhe nos cartões, vê o que juntou, e o pedido escreve-se sozinho.
- *
  * Três regras que isto respeita, e que um carrinho de loja normal não respeitaria:
  *
  * 1. **O total chama-se estimativa e nunca «total».** É a soma dos preços de
@@ -41,13 +36,115 @@ export type ItemCesto = {
   /** Só os kits de festa o têm, e serve para pré-preencher o formulário. */
   pessoas: number | null;
   quantidade: number;
+  /**
+   * ⚠️ **Ao quilo ou à unidade — e isto muda o que o número quer dizer.**
+   *
+   * Num bolo inteiro a quantidade são **quilos**, não bolos: o preço de tabela é
+   * por quilo e um bolo pesa dois. Sem este campo, «2 ×» ao lado de um bolo de
+   * 17 €/kg lia-se como dois bolos por 34 € — quando são dois quilos, que é um
+   * bolo só. É o mesmo erro que o `superRefine` da ementa já apanha nos dados,
+   * a acontecer outra vez na interface.
+   */
+  unidade: "un" | "kg";
+  /**
+   * Quantidade mínima. Descer abaixo dela tira a linha do cesto.
+   *
+   * ⚠️ **É o que separa uma encomenda de uma ida ao balcão.** Um artigo da
+   * ementa só se encomenda à dúzia; um croissant à unidade pede-se ao balcão e
+   * leva-se. Ver `encomendavel.ts`.
+   */
+  minimo: number;
+  /** De quanto em quanto a quantidade sobe. Meia dúzia, meio quilo, uma unidade. */
+  passo: number;
 };
 
-export const CHAVE_CESTO = "damira:cesto";
+/**
+ * O que se escreve num artigo que não traz regra própria — os kits, os bolos
+ * decorados e as boxes, que são todos «uma unidade de cada vez».
+ */
+export const REGRA_SIMPLES = { unidade: "un", minimo: 1, passo: 1 } as const;
 
-/** Quantas unidades ao todo, que é o número que a barra mostra. */
-export const totalUnidades = (cesto: ItemCesto[]): number =>
-  cesto.reduce((soma, item) => soma + item.quantidade, 0);
+/**
+ * A chave do armazenamento local, **por pessoa**.
+ *
+ * ⚠️ Sem o identificador da sessão, duas pessoas que entrem no mesmo telemóvel
+ * partilhavam o cesto, e a segunda encontrava lá dentro o bolo que a primeira
+ * escolheu. Num telemóvel de família isso não é hipótese remota, é terça-feira.
+ *
+ * Quem não tem sessão iniciada continua a ter cesto — na chave anónima, que é a
+ * que sempre existiu. **A conta nunca foi obrigatória para encomendar** e o
+ * cesto é a primeira coisa que teria de a exigir se isto fosse feito ao
+ * contrário.
+ */
+export const chaveDoCesto = (idUtilizador?: string | null): string =>
+  idUtilizador ? `damira:cesto:${idUtilizador}` : "damira:cesto";
+
+/**
+ * Põe em forma o que veio do armazenamento local.
+ *
+ * ⚠️ **O que lá está foi escrito por uma versão anterior deste site.** Os cestos
+ * guardados antes de existirem `unidade`, `minimo` e `passo` não têm esses
+ * campos, e um `item.passo` a `undefined` faz a quantidade subir para `NaN` ao
+ * primeiro toque no «mais» — um cesto partido, sem erro nenhum no ecrã, para
+ * quem estava a meio de encomendar. Preenche-se com a regra simples, que é o que
+ * esses artigos eram.
+ */
+export function normalizarCesto(lido: unknown): ItemCesto[] {
+  if (!Array.isArray(lido)) return [];
+  const items: ItemCesto[] = [];
+  for (const bruto of lido) {
+    if (typeof bruto !== "object" || bruto === null) continue;
+    const item = bruto as Partial<ItemCesto>;
+    if (typeof item.id !== "string" || typeof item.nome !== "string") continue;
+    const passo = typeof item.passo === "number" && item.passo > 0 ? item.passo : 1;
+    const minimo =
+      typeof item.minimo === "number" && item.minimo > 0 ? item.minimo : 1;
+    const quantidade =
+      typeof item.quantidade === "number" && item.quantidade > 0
+        ? item.quantidade
+        : minimo;
+    items.push({
+      id: item.id,
+      tipo: (item.tipo ?? "outro") as TipoPedido,
+      nome: item.nome,
+      variante: typeof item.variante === "string" ? item.variante : null,
+      preco: typeof item.preco === "number" ? item.preco : null,
+      pessoas: typeof item.pessoas === "number" ? item.pessoas : null,
+      quantidade,
+      unidade: item.unidade === "kg" ? "kg" : "un",
+      minimo,
+      passo,
+    });
+  }
+  return items;
+}
+
+/**
+ * ⚠️ **Arredonda ao centésimo antes de comparar.**
+ *
+ * Com o passo de meio quilo, somar 0,5 três vezes dá 1,5000000000000002 em
+ * vírgula flutuante. Sem isto, uma quantidade que devia ser exactamente o mínimo
+ * ficava um fio abaixo dele e a linha desaparecia do cesto sozinha.
+ */
+const arredondar = (n: number): number => Math.round(n * 100) / 100;
+
+/**
+ * Quantos artigos, que é o número que a barra mostra.
+ *
+ * ⚠️ **Conta linhas e não unidades.** Somar as quantidades misturava dúzias de
+ * pastéis com quilos de bolo — «13» para uma dúzia de salgados mais um quilo de
+ * bolo é um número que não quer dizer nada. Três linhas são três artigos, e é
+ * isso que a etiqueta já dizia.
+ */
+export const totalArtigos = (cesto: ItemCesto[]): number => cesto.length;
+
+/** Como a quantidade se lê: «12 un» ou «1,5 kg». */
+export function quantidadeEmTexto(item: ItemCesto, locale: Locale): string {
+  const numero = new Intl.NumberFormat(locale === "pt" ? "pt-PT" : "en-GB", {
+    maximumFractionDigits: 2,
+  }).format(item.quantidade);
+  return item.unidade === "kg" ? `${numero} kg` : `${numero}×`;
+}
 
 /**
  * A estimativa: soma do que tem preço, e a contagem do que não tem.
@@ -63,10 +160,10 @@ export function estimativa(cesto: ItemCesto[]): {
   let soma = 0;
   let semPreco = 0;
   for (const item of cesto) {
-    if (item.preco === null) semPreco += item.quantidade;
+    if (item.preco === null) semPreco += 1;
     else soma += item.preco * item.quantidade;
   }
-  return { soma, semPreco };
+  return { soma: arredondar(soma), semPreco };
 }
 
 /**
@@ -88,8 +185,8 @@ export function cestoEmTexto(
     const preco =
       item.preco === null
         ? rotulos.semPreco
-        : formatarPreco(item.preco * item.quantidade, locale);
-    return `- ${item.quantidade}x ${nome} — ${preco}`;
+        : formatarPreco(arredondar(item.preco * item.quantidade), locale);
+    return `- ${quantidadeEmTexto(item, locale)} ${nome} — ${preco}`;
   });
 
   const { soma, semPreco } = estimativa(cesto);
@@ -119,3 +216,7 @@ export const pessoasSugeridas = (cesto: ItemCesto[]): number | null => {
     .filter((n): n is number => n !== null);
   return numeros.length > 0 ? Math.max(...numeros) : null;
 };
+
+/** A quantidade a seguir, sem descer do mínimo nem passar por valores estranhos. */
+export const proximaQuantidade = (item: ItemCesto, delta: number): number =>
+  arredondar(item.quantidade + delta * item.passo);

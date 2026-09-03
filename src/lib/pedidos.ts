@@ -17,7 +17,22 @@ import { z } from "zod";
  * quantas pessoas, para que dia, e como se responde a quem pediu.
  */
 
-export const TIPOS_PEDIDO = ["festa", "bolo", "box", "outro"] as const;
+/**
+ * ⚠️ **`ementa` é o tipo novo, e não é um kit.**
+ *
+ * É o que se pede a partir da carta — uma dúzia de pastéis de nata, dois quilos
+ * de bolo vegan — e existe separado dos kits porque **é outra conversa na
+ * cozinha**: um kit monta-se de uma receita fechada, uma dúzia de pastéis é
+ * produção do dia a multiplicar. Quem recebe o email precisa de ver a diferença
+ * na primeira linha, sem ler o resto. Ver `encomendavel.ts`.
+ */
+export const TIPOS_PEDIDO = [
+  "festa",
+  "bolo",
+  "box",
+  "ementa",
+  "outro",
+] as const;
 
 export type TipoPedido = (typeof TIPOS_PEDIDO)[number];
 

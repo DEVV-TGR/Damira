@@ -14,6 +14,8 @@ import { formatarPreco } from "@/lib/preco";
 import type { Locale } from "@/i18n/routing";
 import { enviarPedido, type Resultado } from "@/app/[locale]/encomendas/acoes";
 import { useCesto } from "./CestoProvider";
+import { useConta } from "@/components/conta/ProvedorConta";
+import { Link } from "@/i18n/navigation";
 
 /**
  * O pedido, em três passos.
@@ -65,6 +67,13 @@ export function FormularioPedido({ locale }: { locale: Locale }) {
   const tc = useTranslations("encomendas.cesto");
   const [resultado, agir, aPendente] = useActionState(enviarPedido, INICIAL);
   const id = useId();
+
+  const tconta = useTranslations("conta");
+  /* ⚠️ **A sessão chega depois da montagem**, porque é lida no cliente. Por isso
+     o que ela dá entra pelas `key` dos campos e não só pelo `defaultValue`: sem
+     isso, quem entra na conta e volta ao formulário encontra os campos vazios,
+     que é justamente o trabalho que a conta vinha poupar. */
+  const { ativa: contaAtiva, utilizador } = useConta();
 
   const contexto = useCesto();
   const cesto = contexto?.cesto ?? SEM_CESTO;
@@ -332,12 +341,30 @@ export function FormularioPedido({ locale }: { locale: Locale }) {
 
       {/* ── 3 · Quem é ─────────────────────────────────────────────────── */}
       <div className={visivel(2) ? "grid gap-6 sm:grid-cols-2" : "hidden"}>
+        {/* ⚠️ **O convite a entrar fica no passo «quem é» e em mais lado
+            nenhum.** É o único momento em que ter conta poupa alguma coisa a
+            quem está a encomendar; no topo da página seria um balcão à frente da
+            porta. E some assim que a pessoa entra. */}
+        {contaAtiva && !utilizador && (
+          <p className="text-sm text-papel/70 sm:col-span-2">
+            {tconta("preencherDica")}{" "}
+            <Link
+              href={{ pathname: "/entrar", query: { voltar: "/encomendas" } }}
+              className="font-semibold underline underline-offset-4"
+            >
+              {tconta("preencherLigacao")}
+            </Link>
+          </p>
+        )}
+
         <Campo
+          key={`nome-${utilizador?.nome ?? "vazio"}`}
           id={`${id}-nome`}
           nome="nome"
           rotulo={t("campos.nome")}
           erro={erros.nome}
           autoComplete="name"
+          valorInicial={utilizador?.nome ?? undefined}
           obrigatorio
         />
         <Campo
@@ -349,12 +376,14 @@ export function FormularioPedido({ locale }: { locale: Locale }) {
           autoComplete="tel"
         />
         <Campo
+          key={`email-${utilizador?.email ?? "vazio"}`}
           id={`${id}-email`}
           nome="email"
           tipo="email"
           rotulo={t("campos.email")}
           erro={erros.email}
           autoComplete="email"
+          valorInicial={utilizador?.email ?? undefined}
           ajuda={t("campos.umDosDois")}
         />
 

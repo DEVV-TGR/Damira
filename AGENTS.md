@@ -61,6 +61,18 @@ papel:
 croissant é o que leva alguém a aparecer ao sábado à espera de o levar debaixo do
 braço. A separação está no site como duas páginas e aqui como dois ficheiros.
 
+**Isto continua a valer, com uma nuance que passou a existir em setembro de
+2026.** A `/encomendas` tem hoje uma secção — *Da carta, por encomenda* — com 70
+dos 95 artigos da ementa. O que evita o mal-entendido não é escondê-los: é a
+**quantidade mínima**, escrita no cabeçalho de cada categoria. Um artigo que só se
+pede à dúzia, ou ao quilo, nunca se confunde com um que se tira da vitrine — e
+quem quer um pastel continua a entrar na loja e a pedi-lo.
+
+A regra é **do negócio e não do artigo**, por isso vive numa tabela em
+`src/lib/encomendavel.ts` e não num campo repetido nos 95 registos do JSON. As
+bebidas, os pratos e a pausa ficam de fora: não se encomenda um galão para
+sexta-feira.
+
 ### A ementa tem `carta` além de `categoria`
 
 Porque as categorias **repetem-se entre cartas**: há `doces` na carta da casa e
@@ -175,6 +187,30 @@ trazem a cor de texto certa para cada fundo — usar essas em vez de compor `bg-
 `hover:bloco-tijolo` compila-se em silêncio para nada e ninguém dá por isso. Em
 estados, usar utilitários (`hover:bg-tijolo hover:text-papel`).
 
+## A conta de cliente, e as três regras que a seguram
+
+Entrar com o Google ou o Facebook existe desde setembro de 2026 (`next-auth` v5,
+em `src/lib/autenticacao.ts`). Três decisões que se desfazem sem querer:
+
+1. ⚠️ **A conta nunca é obrigatória para encomendar.** Não é preferência, é a
+   linha: obrigar alguém a registar-se para pedir um bolo de anos numa
+   pastelaria de bairro é pôr um balcão à frente da porta. Se algum caminho
+   passar a exigir sessão, está errado.
+2. ⚠️ **Sem chaves, a conta desliga-se — não avaria.** `CONTA_ATIVA` em
+   `src/lib/conta.ts` é `false` sem `AUTH_SECRET` ou sem fornecedor, e então o
+   botão não aparece, `/entrar` e `/conta` dão 404, e o `SessionProvider` nem é
+   montado. É a mesma regra do `RESEND_API_KEY`. **Nunca importar o
+   `autenticacao.ts` num componente de cliente** — o `conta.ts` existe
+   justamente para ser o lado seguro dessa fronteira.
+3. ⚠️ **Não há base de dados, logo não há histórico de encomendas.** A sessão é
+   um JWT num cookie. A página da conta **diz isto por escrito**, e esse
+   parágrafo não se apaga sem que passe a haver histórico a sério.
+
+E uma consequência que não é óbvia: **a sessão lê-se no cliente e não no
+servidor**, para as páginas continuarem todas estáticas. Ler `auth()` num
+componente de servidor troca o cartaz da página inicial — que vive de ser servido
+instantaneamente — por um nome no canto superior direito.
+
 ## As armadilhas que já morderam aqui
 
 Estão documentadas no sítio onde vivem; ficam aqui em lista porque são todas do
@@ -221,6 +257,16 @@ primeiras sete vieram do Santo Burga e continuam a valer — o motor é o mesmo.
 13. **Redefinir `--sc-ink` num bloco sem redefinir `color` não repinta nada.** A
     cor herda-se já resolvida. Vale para qualquer propriedade herdada conduzida
     por token, e falha em silêncio a 1,15:1.
+14. **`max-w-*` escrito ao lado de `.envolvente` não faz nada.** Um
+    `className="envolvente max-w-[34rem]"` resolve para 1248 px e não para 544 —
+    a classe de `@layer components` ganha, sem erro e sem aviso, e a página sai
+    com o dobro da largura que se pediu. A medida tem de viver num `<div>` por
+    dentro. É a nº 6 vista do lado da largura.
+15. **Um elemento novo no cabeçalho parte a página a 320 px e em mais lado
+    nenhum.** O botão da conta somou 38 px a uma barra que já ia cheia: a 360 px
+    para cima não se nota, a 320 a página inteira ganha rolagem horizontal. As
+    folgas abaixo do `sm` foram apertadas por causa disso. **Medir à mão a 320,
+    340, 360, 375, 390 e 414 px** — e não só no ecrã onde se trabalha.
 
 O que todas têm em comum: `npm run build` passa, o `lint` passa, e só se apanham
 a olhar. **Depois de mexer em desenho, tirar capturas** — há Chromium do

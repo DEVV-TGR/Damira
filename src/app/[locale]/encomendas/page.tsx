@@ -5,6 +5,7 @@ import { encomendas } from "@/data/encomendas";
 import { GRUPOS, opcoesDe, quantasOpcoes } from "@/data/bolos";
 import { casa, telefoneMarcavel } from "@/data/casa";
 import { formatarPreco } from "@/lib/preco";
+import { REGRA_SIMPLES } from "@/lib/cesto";
 import { routing, type Locale } from "@/i18n/routing";
 import { metadataDaPagina } from "@/lib/metadata";
 import { TabelaKits } from "@/components/encomendas/TabelaKits";
@@ -12,6 +13,7 @@ import { FormularioPedido } from "@/components/encomendas/FormularioPedido";
 import { CestoProvider } from "@/components/encomendas/CestoProvider";
 import { Cesto } from "@/components/encomendas/Cesto";
 import { BotaoJuntar } from "@/components/encomendas/BotaoJuntar";
+import { EmentaEncomendavel } from "@/components/encomendas/EmentaEncomendavel";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -57,7 +59,11 @@ export default async function PaginaEncomendas({
  * 3. *quero um bolo à minha maneira* — o configurador, que **não tem preços** e
  *    por isso acaba num pedido de orçamento e não num total;
  * 4. *e para dois?* — as boxes, que é a encomenda pequena;
- * 5. *como é que peço?* — o formulário, com o telefone ao lado e o prazo à
+ * 5. *e o resto?* — a carta por encomenda: setenta artigos da ementa que se
+ *    podem pedir à dúzia ou ao quilo. ⚠️ É a secção que encosta ao aviso do
+ *    AGENTS.md sobre não juntar a encomenda à ementa, e o que a mantém do lado
+ *    certo é o **mínimo escrito em cada linha** — ver `EmentaEncomendavel`;
+ * 6. *como é que peço?* — o formulário, com o telefone ao lado e o prazo à
  *    frente.
  *
  * ⚠️ **O formulário é o fim da página e não o princípio.** Um pedido de
@@ -154,6 +160,7 @@ function Encomendas({ locale }: { locale: Locale }) {
                     diferentes leem-se como três coisas diferentes. */}
                 <div className="mt-auto pt-7">
                   <BotaoJuntar
+                    locale={locale}
                     item={{
                       id: `bolo:${kit.id}`,
                       tipo: "bolo",
@@ -161,6 +168,7 @@ function Encomendas({ locale }: { locale: Locale }) {
                       variante: null,
                       preco: kit.preco,
                       pessoas: null,
+                      ...REGRA_SIMPLES,
                     }}
                   />
                 </div>
@@ -262,6 +270,7 @@ function Encomendas({ locale }: { locale: Locale }) {
           <div className="mt-8">
             <BotaoJuntar
               variante="discreta"
+              locale={locale}
               item={{
                 id: "bolo:por-medida",
                 tipo: "bolo",
@@ -269,6 +278,7 @@ function Encomendas({ locale }: { locale: Locale }) {
                 variante: null,
                 preco: null,
                 pessoas: null,
+                ...REGRA_SIMPLES,
               }}
             />
           </div>
@@ -309,6 +319,7 @@ function Encomendas({ locale }: { locale: Locale }) {
                 </ul>
                 <div className="mt-auto pt-7">
                   <BotaoJuntar
+                    locale={locale}
                     item={{
                       id: `box:${box.id}`,
                       tipo: "box",
@@ -316,6 +327,7 @@ function Encomendas({ locale }: { locale: Locale }) {
                       variante: null,
                       preco: box.preco,
                       pessoas: null,
+                      ...REGRA_SIMPLES,
                     }}
                   />
                 </div>
@@ -324,6 +336,9 @@ function Encomendas({ locale }: { locale: Locale }) {
           </ul>
         </div>
       </section>
+
+      {/* ── A carta, por encomenda ────────────────────────────────────── */}
+      <EmentaEncomendavel locale={locale} />
 
       {/* ── Como encomendar ───────────────────────────────────────────── */}
       <section id="pedido" aria-labelledby="como" className="scroll-mt-24 seccao bg-tinta text-papel">
