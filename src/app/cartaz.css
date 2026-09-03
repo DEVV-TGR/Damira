@@ -398,12 +398,20 @@ body:has(.cartaz) .barra-vidro {
   width: min(26rem, 74vw);
   margin-inline-end: 14vw;
 }
-.festa__kit {
-  width: min(23rem, 72vw);
+/* ⚠️ **Era `.festa__kit`, um por kit de festa; passou a `.festa__familia`, uma
+   por família de encomenda.** Ver `Festa.tsx`: a homepage anunciava um terço do
+   que a casa faz. A largura desceu de 23 rem para 19 — são quatro cartões em vez
+   de três, e o carril não podia crescer um ecrã inteiro numa página que já mede
+   dezanove. */
+.festa__familia {
+  display: block;
+  width: min(19rem, 68vw);
   border-top: 2px solid var(--color-papel);
   padding-top: 1rem;
+  color: inherit;
+  text-decoration: none;
 }
-.festa__kit h3 {
+.festa__familia h3 {
   font-family: var(--sc-font-display);
   font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.4rem);
   line-height: 1;
@@ -416,18 +424,33 @@ body:has(.cartaz) .barra-vidro {
   color: var(--sc-ink-soft);
   margin: 0.5rem 0 0;
 }
-.festa__escaloes {
-  list-style: none;
-  margin: 1.5rem 0 0;
-  padding: 0;
+.festa__detalhe {
+  margin: 1.25rem 0 0;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--sc-ink-soft);
 }
-.festa__escaloes li {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.55rem 0;
-  border-top: 1px solid color-mix(in oklab, var(--color-papel) 30%, transparent);
-  font-variant-numeric: tabular-nums;
+
+/* ⚠️ **A seta é um `span` dentro da ligação e não uma segunda ligação.** Dois
+   alvos para o mesmo destino, encostados um ao outro, são dois alvos onde quem
+   navega por teclado carrega duas vezes — e num leitor de ecrã são duas vozes a
+   dizer a mesma coisa. O cartão inteiro é que é a ligação. */
+.festa__ir {
+  display: inline-block;
+  margin-top: 1.25rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-bottom: 2px solid currentColor;
+  padding-bottom: 0.15rem;
+}
+/* ⚠️ **`hover` num utilitário e não numa classe de camada.** Ver a armadilha
+   nº 1 do AGENTS.md — um `hover:` sobre classe de `@layer components` compila-se
+   em silêncio para nada. Aqui é CSS normal, portanto funciona; fica dito porque
+   a tentação de o mover para uma classe de componente é grande. */
+.festa__familia:hover .festa__ir,
+.festa__familia:focus-visible .festa__ir {
+  border-bottom-color: transparent;
 }
 .festa__ate {
   font-family: var(--sc-font-display);
@@ -1142,7 +1165,7 @@ body:has(.cartaz) .barra-vidro {
 
   /* O carril da festa fica com um item por ecrã: dois meios cartões lado a lado
      num telemóvel são dois cartões ilegíveis. */
-  .festa__kit,
+  .festa__familia,
   .festa__abertura,
   .festa__fecho {
     width: 82vw;

@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { Marca } from "./Marca";
+import { BotaoConta } from "./conta/BotaoConta";
 
 /**
  * Cliente por causa do seletor de idioma, que precisa de saber em que página
@@ -41,7 +42,13 @@ export function Cabecalho({ locale }: { locale: Locale }) {
        baixo em vez de a cortar a direito, que é o que a faz parecer pousada
        sobre a página e não colada em cima dela. */
     <header className="barra-vidro sticky top-0 z-50 h-16 border-b border-tinta/10 bg-papel/80 backdrop-blur-md">
-      <div className="envolvente flex h-full items-center justify-between gap-3 sm:gap-6">
+      {/* ⚠️ **As folgas abaixo do `sm` foram apertadas quando a conta entrou.**
+          A barra passou de quatro para cinco elementos e, a 320 px, o conteúdo
+          somava 380 px — a página inteira ganhava rolagem horizontal, que é o
+          defeito nº 11 do AGENTS.md e não aparece em ecrã nenhum de quem
+          desenvolve. Medido à mão a 320, 340, 360, 375, 390 e 414 px. Nada disto
+          muda a partir do `sm`. */}
+      <div className="envolvente flex h-full items-center justify-between gap-2 sm:gap-6">
         {/* O tamanho do logótipo sai daqui: a `Marca` desenha-se a `1em` de
             altura, e a `text-xl` dava 20 px — a palavra "damira" a 52 px de
             largura, que num cabeçalho não se lê, lê-se-lhe a forma. A 1,75 rem
@@ -64,7 +71,7 @@ export function Cabecalho({ locale }: { locale: Locale }) {
             a homepage (tem o `aria-label` a dizê-lo) e dois caminhos para o
             mesmo sítio, lado a lado, gastam a largura que num telemóvel não
             sobra. `gap-4` até ao `sm` pela mesma razão. */}
-        <nav className="flex items-center gap-3 text-[0.7rem] font-semibold uppercase tracking-[0.09em] sm:gap-6 sm:text-xs sm:tracking-widest">
+        <nav className="flex items-center gap-2 text-[0.7rem] font-semibold uppercase tracking-[0.02em] sm:gap-6 sm:text-xs sm:tracking-widest">
           {/* ⚠️ **Nenhuma das duas dizia em que página se estava.** Com uma só
               entrada era quase desculpável; com duas, a barra passa a ser uma
               escolha, e uma escolha que não mostra a opção activa obriga quem
@@ -97,10 +104,17 @@ export function Cabecalho({ locale }: { locale: Locale }) {
               </Link>
             );
           })}
+          {/* ⚠️ **A conta fica antes do idioma e depois das secções.** É
+              navegação pessoal e não navegação do site: pô-la entre a ementa e
+              as encomendas dava-lhe o mesmo peso que às duas páginas que a casa
+              quer que se visitem. Sem conta configurada não renderiza nada e
+              este espaço fecha-se sozinho. */}
+          <BotaoConta />
+
           <Link
             href={caminho}
             locale={outra}
-            className="alvo-toque rounded-full border border-tinta/25 px-3.5 py-2 transition-colors hover:bg-tinta hover:text-papel"
+            className="alvo-toque rounded-full border border-tinta/25 px-2.5 py-2 transition-colors hover:bg-tinta hover:text-papel sm:px-3.5"
             /* `lang` no link diz aos leitores de ecrã para pronunciar "English"
                à inglesa, em vez de o lerem com fonética portuguesa. */
             lang={outra}

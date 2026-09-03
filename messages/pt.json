@@ -168,12 +168,31 @@
     },
     "festa": {
       "numeral": "VIII",
-      "olho": "A festa",
-      "titulo": "Até setenta pessoas",
-      "texto": "Três kits, com preço fechado por escalão. O que muda entre eles é o que vem na mesa, não o número de pessoas.",
+      "olho": "As encomendas",
+      "titulo": "Da dúzia à festa de setenta",
+      "texto": "Kits de festa com preço fechado, bolos por medida, boxes para dois — e setenta artigos da carta que se levam à dúzia ou ao quilo.",
       "pessoas": "{n} pessoas",
       "desde": "desde {preco}",
-      "nota": "As festas pedem antecedência. O orçamento fecha-se por telefone ou pelo formulário.",
+      "verFamilia": "Ver",
+      "familias": {
+        "festas": {
+          "nome": "Festas",
+          "detalhe": "{kits} kits com preço fechado, para {escaloes} pessoas."
+        },
+        "bolos": {
+          "nome": "Bolos",
+          "detalhe": "{kits} kits decorados, e o bolo à sua maneira em {opcoes} escolhas de massa, recheio e cobertura."
+        },
+        "boxes": {
+          "nome": "Boxes",
+          "detalhe": "{n} boxes prontas, para um pequeno-almoço ou um dia de anos."
+        },
+        "carta": {
+          "nome": "Da carta",
+          "detalhe": "{n} artigos da ementa por encomenda, à dúzia ou ao quilo."
+        }
+      },
+      "nota": "Tudo isto pede antecedência. O orçamento fecha-se por telefone ou pelo formulário.",
       "ligacao": "Ver as encomendas"
     },
     "encomendar": {
@@ -290,7 +309,8 @@
     "aMostrar": "{n} de {total} artigos",
     "semResultados": "Nada com esse nome",
     "semResultadosTexto": "Tente outra palavra, ou limpe a procura para voltar às quatro cartas.",
-    "quantosArtigos": "{n, plural, one {# artigo} other {# artigos}}"
+    "quantosArtigos": "{n, plural, one {# artigo} other {# artigos}}",
+    "verPagina": "Ver a página deste artigo"
   },
   "encomendas": {
     "olho": "Por encomenda",
@@ -334,7 +354,8 @@
         "festa": "Kit de festa",
         "bolo": "Bolo por medida",
         "box": "Box",
-        "outro": "Outra coisa"
+        "outro": "Outra coisa",
+        "ementa": "Da carta"
       },
       "campos": {
         "tipo": "O que quer encomendar",
@@ -366,7 +387,8 @@
         "texto": "O envio automático ainda não está ligado neste site. O pedido está escrito e pronto: abra-o no seu email e carregue em enviar.",
         "abrir": "Abrir no meu email",
         "verTexto": "Ou copiar o texto do pedido"
-      }
+      },
+      "referencia": "A sua referência"
     },
     "cesto": {
       "titulo": "O seu pedido",
@@ -398,7 +420,24 @@
       "resumoTitulo": "O que vai no pedido",
       "notas": "Quer acrescentar alguma coisa?",
       "notasDica": "Recheio, cor, o nome a escrever no bolo, alergias.",
-      "tipoDoCesto": "Vem do que juntou ao pedido. Para mudar, altere o cesto."
+      "tipoDoCesto": "Vem do que juntou ao pedido. Para mudar, altere o cesto.",
+      "juntarArtigo": "Juntar {nome} ao pedido"
+    },
+    "daEmenta": {
+      "titulo": "Da carta, por encomenda",
+      "texto": "Setenta artigos da ementa que a casa faz por encomenda, para levar em quantidade: salgados e doces à dúzia, bolos vegan ao quilo, e o chocolate nos quatro formatos.",
+      "aviso": "Isto não é o balcão. Cada linha tem uma quantidade mínima e precisa de antecedência — um pastel avulso pede-se na loja, sem marcar nada. Os bolos vendem-se ao peso, e o valor final acerta-se no levantamento.",
+      "regraUn": "Mínimo {minimo} unidades, de {passo} em {passo}",
+      "regraKg": "Mínimo {minimo} kg, vendido ao peso",
+      "cada": "cada"
+    },
+    "indice": {
+      "titulo": "Nesta página",
+      "festas": "Festas",
+      "kits-bolo": "Bolos",
+      "boxes": "Boxes",
+      "da-ementa": "Da carta",
+      "pedido": "Encomendar"
     }
   },
   "bolos": {
@@ -443,5 +482,89 @@
     "titulo": "Esta não existe",
     "texto": "A página que procura mudou de sítio ou nunca cá esteve.",
     "voltar": "Voltar ao início"
+  },
+  "conta": {
+    "olho": "A sua conta",
+    "entrar": "Entrar",
+    "entrarTitulo": "Entre, e não escreva o nome outra vez",
+    "entrarTexto": "A conta serve para duas coisas pequenas: o pedido vir já com o seu nome e o seu email, e o que escolher não se misturar com o de mais ninguém que use este telemóvel. Não é preciso para encomendar.",
+    "entrarCom": {
+      "google": "Continuar com o Google",
+      "facebook": "Continuar com o Facebook"
+    },
+    "aEntrar": "A abrir…",
+    "semConta": "Não quer conta?",
+    "semContaLigacao": "Encomende à mesma",
+    "privacidade": "Do Google ou do Facebook recebemos apenas o seu nome, o seu email e a sua fotografia. Não pedimos mais nada, não publicamos nada em seu nome e não passamos isto a ninguém.",
+    "aMinhaConta": "A minha conta",
+    "aCarregar": "A carregar…",
+    "naoEntrou": "Ainda não entrou na sua conta neste browser.",
+    "ola": "Olá, {nome}",
+    "nome": "Nome",
+    "email": "Email",
+    "paraQueServe": "É isto que preenchemos no seu pedido, para não o ter de escrever de cada vez. Pode alterá-lo no formulário antes de enviar.",
+    "encomendar": "Ir encomendar",
+    "sair": "Sair",
+    "preencherDica": "Não quer escrever isto de cada vez?",
+    "preencherLigacao": "Entre na sua conta",
+    "demonstracao": {
+      "aviso": "Nesta demonstração a conta funciona só neste browser: não há registo, não há palavra-passe e nada é enviado para lado nenhum. Serve para lhe mostrarmos como fica.",
+      "entrar": "Entrar ou criar conta",
+      "naConta": "Esta conta é de demonstração e vive só neste browser."
+    }
+  },
+  "historico": {
+    "titulo": "Os pedidos que já fez",
+    "apenasNesteBrowser": "São os pedidos enviados a partir deste browser, guardados só aqui. O que pediu ao telefone, ou noutro dispositivo, não aparece nesta lista — e limpar os dados do site apaga-a.",
+    "vazio": "Ainda não fez nenhum pedido daqui",
+    "feitoEm": "Feito a {quando}",
+    "para": "para {quando}",
+    "estados": {
+      "enviado": "Enviado",
+      "por-enviar": "Por enviar"
+    },
+    "estimado": "Estimado:",
+    "aPartirDe": "A partir de:",
+    "repetir": "Pedir o mesmo",
+    "repetirConfirmar": "Substituir o cesto?",
+    "apagar": "Apagar",
+    "limparTudo": "Apagar tudo"
+  },
+  "produto": {
+    "voltar": "← Todas as encomendas",
+    "familias": {
+      "festa": "Kit de festa",
+      "bolo": "Kit de bolo",
+      "box": "Box",
+      "medida": "Bolo por medida"
+    },
+    "medida": {
+      "nome": "Bolo por medida",
+      "resumo": "O bolo feito à sua maneira: escolhe a massa, o recheio e a cobertura, e nós dizemos-lhe o preço."
+    },
+    "ver": "Ver o produto",
+    "desde": "desde",
+    "sobOrcamento": "Sob orçamento",
+    "vegan": "Vegan",
+    "semFoto": "Fotografia por chegar da casa",
+    "oQueLeva": "O que leva",
+    "preco": "Preço",
+    "paraQuantas": "Para quantas pessoas?",
+    "paraPessoas": "{n} pessoas",
+    "mensagem": "Mensagem no bolo",
+    "mensagemDica": "Parabéns, Maria!",
+    "observacoes": "Observações",
+    "observacoesDica": "Cor, alergias, hora de levantamento — o que precisarmos de saber.",
+    "juntar": "Juntar ao pedido",
+    "juntado": "Juntado ao pedido",
+    "avisoPreco": "É o preço de tabela, não uma conta a pagar. A entrega não está incluída e o valor final vem na nossa resposta.",
+    "descricaoGenerica": "{nome}, por encomenda na Confeitaria e Pão Quente Damira, em Ermesinde.",
+    "voltarEmenta": "← Toda a carta",
+    "porQuilo": " /kg",
+    "minimoUn": "Mínimo {minimo} unidades, de {passo} em {passo}",
+    "minimoKg": "Mínimo {minimo} kg, vendido ao peso",
+    "soAoBalcao": "Este pede-se ao balcão, na hora — não se encomenda com antecedência.",
+    "prazoDaCarta": "A antecedência mínima está por confirmar. Telefone-nos e dizemos-lhe logo se dá para a data que quer.",
+    "cadaCurto": "un."
   }
 }

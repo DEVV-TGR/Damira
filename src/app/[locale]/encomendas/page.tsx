@@ -1,17 +1,14 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { useTranslations } from "next-intl";
-import { encomendas } from "@/data/encomendas";
-import { GRUPOS, opcoesDe, quantasOpcoes } from "@/data/bolos";
 import { casa, telefoneMarcavel } from "@/data/casa";
-import { formatarPreco } from "@/lib/preco";
+import { daFamilia, type Produto } from "@/lib/produtos";
 import { routing, type Locale } from "@/i18n/routing";
 import { metadataDaPagina } from "@/lib/metadata";
-import { TabelaKits } from "@/components/encomendas/TabelaKits";
 import { FormularioPedido } from "@/components/encomendas/FormularioPedido";
-import { CestoProvider } from "@/components/encomendas/CestoProvider";
-import { Cesto } from "@/components/encomendas/Cesto";
-import { BotaoJuntar } from "@/components/encomendas/BotaoJuntar";
+import { CartaoProduto } from "@/components/encomendas/CartaoProduto";
+import { EmentaEncomendavel } from "@/components/encomendas/EmentaEncomendavel";
+import { ListaHistorico } from "@/components/encomendas/ListaHistorico";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -43,42 +40,45 @@ export default async function PaginaEncomendas({
  *
  * ## O que esta página é, e o que não é
  *
- * **Não é uma loja.** Não há carrinho, não há pagamento e não há calendário de
- * disponibilidade — e nenhuma dessas coisas se pode fingir: um botão "Encomendar"
- * que abre o cliente de correio é honesto; um que parece um checkout e acaba num
- * email não é.
+ * **Não é uma loja.** Não há carrinho com pagamento, não há reserva e não há
+ * calendário de disponibilidade — e nenhuma dessas coisas se pode fingir: um
+ * botão «juntar ao pedido» que acaba num email é honesto; um que parece um
+ * checkout e acaba num email não é.
  *
- * É um **catálogo que termina num pedido**. A sequência é a da conversa que já
- * acontece ao telefone:
+ * É um **catálogo que termina num pedido**.
  *
- * 1. *quantas pessoas?* — os kits de festa, com a tabela a comparar as três
- *    gamas lado a lado no mesmo escalão;
- * 2. *e o bolo?* — os três kits de bolo decorado, que são preço fechado;
- * 3. *quero um bolo à minha maneira* — o configurador, que **não tem preços** e
- *    por isso acaba num pedido de orçamento e não num total;
- * 4. *e para dois?* — as boxes, que é a encomenda pequena;
- * 5. *como é que peço?* — o formulário, com o telefone ao lado e o prazo à
- *    frente.
+ * ## ⚠️ Isto era uma página só com tudo dentro, e passou a ser um índice
  *
- * ⚠️ **O formulário é o fim da página e não o princípio.** Um pedido de
- * orçamento no topo é uma pergunta feita a quem ainda não sabe o que quer
- * pedir; no fim, é a pergunta que a página inteira preparou.
+ * Até setembro de 2026 esta página trazia os onze produtos **com o conteúdo todo
+ * aberto**: as listas de miudezas de cada kit, as noventa e nove opções do bolo
+ * por medida, e o formulário. Cinco ecrãs de rolagem em que a única coisa que
+ * distinguia dois kits era um preço a meio de vinte linhas — e **sem sítio
+ * nenhum para uma fotografia** sem empurrar o resto para fora do ecrã.
  *
- * ## O prazo é a informação mais importante desta página
+ * Agora cada produto tem página própria (`/encomendas/<id>`) e aqui ficam
+ * cartões: nome, uma frase, preço, e o caminho para lá. As três consequências
+ * que interessam:
  *
- * ⚠️ E **ainda não a temos.** Uma página de encomendas sem prazo de antecedência
- * põe alguém a pedir um kit de setenta pessoas para amanhã. Enquanto a casa não
- * disser quantos dias precisa, o bloco de contacto diz "por confirmar" com todas
- * as letras em vez de adivinhar um número — ver `messages/pt.json` e a lista
- * *Antes de publicar* do README.
+ * 1. **há espaço para fotografia** — na página do produto, que é onde ela conta;
+ * 2. **o escalão e a mensagem do bolo escolhem-se antes de juntar**, em vez de
+ *    se juntar às cegas e corrigir numa caixa de texto no fim;
+ * 3. **o catálogo do bolo saiu daqui.** Ocupava meia página entre as boxes e o
+ *    formulário, a separar duas coisas que se compram.
+ *
+ * A sequência do que fica é a da conversa que já acontece ao telefone: *quantas
+ * pessoas?*, *e o bolo?*, *e para dois?*, *e o resto da carta?*, *como é que
+ * peço?*
+ *
+ * ⚠️ **O formulário é o fim da página e não o princípio.** Um pedido de orçamento
+ * no topo é uma pergunta feita a quem ainda não sabe o que quer pedir; no fim, é
+ * a pergunta que a página inteira preparou.
  */
 function Encomendas({ locale }: { locale: Locale }) {
   const t = useTranslations("encomendas");
-  const bolos = useTranslations("bolos");
   const telefone = telefoneMarcavel();
 
   return (
-    <CestoProvider>
+    <>
       <div className="bloco-tijolo relative overflow-hidden">
         <span
           aria-hidden
@@ -99,233 +99,70 @@ function Encomendas({ locale }: { locale: Locale }) {
             {t("titulo")}
           </h1>
           <p className="mt-4 max-w-[46ch] text-lg">{t("intro")}</p>
+
+          {/* ⚠️ **O índice está dentro do herói e não numa barra colada.**
+              A página tem cinco secções e mede vários ecrãs; sem isto, quem vem
+              buscar uma box tem de percorrer os kits de festa todos. Uma barra
+              fixa era mais uma coisa a tapar conteúdo no telemóvel — aqui vê-se
+              uma vez, no princípio, que é quando se decide para onde ir. */}
+          <nav aria-label={t("indice.titulo")} className="mt-8">
+            <ul className="flex flex-wrap gap-2">
+              {SECCOES.map((seccao) => (
+                <li key={seccao}>
+                  <a
+                    href={`#${seccao}`}
+                    className="premivel alvo-toque inline-flex min-h-11 items-center rounded-full border border-papel/40 px-5 text-sm font-semibold transition-colors hover:bg-papel hover:text-tijolo"
+                  >
+                    {t(`indice.${seccao}`)}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
       </div>
 
-      {/* ── Kits de festa ─────────────────────────────────────────────── */}
-      <section aria-labelledby="festas" className="seccao">
-        <div className="envolvente">
-          <h2 id="festas" className="titulo-display titulo-beta max-w-[16ch]">
-            {t("festas.titulo")}
-          </h2>
-          <p className="mt-4 max-w-[52ch] text-tinta-suave">{t("festas.texto")}</p>
-        </div>
+      {/* ── Os pedidos que já fez ─────────────────────────────────────── */}
+      {/* ⚠️ Antes dos produtos e não no fim: quem já encomendou aqui vem
+          repetir, e obrigá-lo a percorrer o catálogo para chegar ao que já sabe
+          que quer é fazê-lo trabalhar por nada. Não renderiza nada para quem
+          chega pela primeira vez. */}
+      <ListaHistorico locale={locale} comoSeccao />
 
-        {/* Cliente, porque escolher o número de pessoas troca a tabela toda sem
-            recarregar a página. Ver o componente. */}
-        <TabelaKits locale={locale} />
-      </section>
+      <Familia
+        id="festas"
+        titulo={t("festas.titulo")}
+        texto={t("festas.texto")}
+        produtos={daFamilia("festa")}
+        locale={locale}
+      />
 
-      {/* ── Kits de bolo ──────────────────────────────────────────────── */}
-      <section aria-labelledby="kits-bolo" className="seccao bg-papel-fundo">
-        <div className="envolvente">
-          <h2 id="kits-bolo" className="titulo-display titulo-beta max-w-[16ch]">
-            {t("kitsBolo.titulo")}
-          </h2>
-          <p className="mt-4 max-w-[52ch] text-tinta-suave">
-            {t("kitsBolo.texto")}
-          </p>
+      <Familia
+        id="kits-bolo"
+        titulo={t("kitsBolo.titulo")}
+        texto={t("kitsBolo.texto")}
+        /* ⚠️ **O bolo por medida entra na mesma grelha dos kits de bolo.**
+           É a mesma pergunta — *e o bolo?* — e tinha uma secção própria só
+           porque o seu catálogo era enorme. Agora que o catálogo vive na página
+           dele, a secção separada era um degrau a mais entre duas coisas que se
+           comparam uma à outra. */
+        produtos={[...daFamilia("bolo"), ...daFamilia("medida")]}
+        locale={locale}
+        fundo="claro"
+      />
 
-          <ul className="carril-tele mt-12 grid gap-6 lg:grid-cols-3">
-            {encomendas.kitsBolo.map((kit) => (
-              <li
-                key={kit.id}
-                className="flex flex-col rounded-2xl border border-tinta/15 bg-papel p-7"
-              >
-                <h3 className="titulo-display titulo-gama">{kit.nome[locale]}</h3>
-                <p className="mt-2 text-sm text-tinta-suave">
-                  {kit.resumo[locale]}
-                </p>
-                <p className="titulo-display mt-5 text-4xl tabular-nums text-tijolo">
-                  {formatarPreco(kit.preco, locale)}
-                </p>
-                <ul className="mt-6 space-y-1.5 text-sm">
-                  {kit.itens.map((item) => (
-                    <li key={item.nome.pt} className="flex justify-between gap-4">
-                      <span>{item.nome[locale]}</span>
-                      <span className="shrink-0 tabular-nums text-tinta-suave">
-                        {item.quantidade[locale]}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                {/* `mt-auto` empurra o botão para o fundo: com cartões de
-                    alturas diferentes, três botões a flutuar a alturas
-                    diferentes leem-se como três coisas diferentes. */}
-                <div className="mt-auto pt-7">
-                  <BotaoJuntar
-                    item={{
-                      id: `bolo:${kit.id}`,
-                      tipo: "bolo",
-                      nome: kit.nome[locale],
-                      variante: null,
-                      preco: kit.preco,
-                      pessoas: null,
-                    }}
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
+      <Familia
+        id="boxes"
+        titulo={t("boxes.titulo")}
+        texto={t("boxes.texto")}
+        produtos={daFamilia("box")}
+        locale={locale}
+      />
 
-          {/* Está em letra pequena no impresso e é um compromisso com quem paga:
-              o preço do kit não inclui levar aquilo a lado nenhum. */}
-          <p className="mt-8 max-w-[60ch] text-sm text-tinta-suave">
-            {t("kitsBolo.nota")}
-          </p>
-        </div>
-      </section>
+      {/* ── A carta, por encomenda ────────────────────────────────────── */}
+      <EmentaEncomendavel locale={locale} />
 
-      {/* ── Bolo por medida ───────────────────────────────────────────── */}
-      <section aria-labelledby="bolo-medida" className="seccao">
-        <div className="envolvente">
-          <h2 id="bolo-medida" className="titulo-display titulo-beta max-w-[18ch]">
-            {bolos("titulo")}
-          </h2>
-          <p className="mt-4 max-w-[52ch] text-tinta-suave">
-            {bolos("texto", {
-              classica: quantasOpcoes("classica"),
-              vegan: quantasOpcoes("vegan"),
-            })}
-          </p>
-
-          <div className="mt-12 grid gap-x-12 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-            {GRUPOS.map((grupo) => {
-              const classicas = opcoesDe(grupo, "classica");
-              const veganas = opcoesDe(grupo, "vegan");
-
-              return (
-                <div key={grupo}>
-                  <h3 className="titulo-display text-sm uppercase tracking-[0.2em] text-tijolo">
-                    {bolos(`grupos.${grupo}`)}
-                  </h3>
-                  <ul className="mt-3 space-y-1 text-sm">
-                    {classicas.map((opcao) => (
-                      <li key={opcao.nome.pt}>
-                        {opcao.nome[locale]}
-                        {opcao.nota && (
-                          <span className="text-tinta-suave">
-                            {" "}
-                            {opcao.nota[locale]}
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* As opções vegan que a linha clássica não tem. Repetir as
-                      vinte que são iguais nas duas listas dava uma coluna que
-                      ninguém lê e uma correção que só entra numa delas. */}
-                  {veganas.some(
-                    (v) => !classicas.some((c) => c.nome.pt === v.nome.pt),
-                  ) && (
-                    <>
-                      <p className="mt-4 text-xs font-semibold uppercase tracking-widest text-verde-forte">
-                        {bolos("soVegan")}
-                      </p>
-                      <ul className="mt-2 space-y-1 text-sm">
-                        {veganas
-                          .filter(
-                            (v) => !classicas.some((c) => c.nome.pt === v.nome.pt),
-                          )
-                          .map((opcao) => (
-                            <li key={opcao.nome.pt}>
-                              {opcao.nome[locale]}
-                              {opcao.nota && (
-                                <span className="text-tinta-suave">
-                                  {" "}
-                                  {opcao.nota[locale]}
-                                </span>
-                              )}
-                            </li>
-                          ))}
-                      </ul>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* ⚠️ Nenhuma destas escolhas tem preço no impresso, e não se inventa
-              um. Ver o cabeçalho de `bolos.ts`. */}
-          <p className="mt-10 max-w-[60ch] text-sm text-tinta-suave">
-            {bolos("semPrecos")}
-          </p>
-
-          {/* ⚠️ **Entra no cesto com `preco: null`, que é «sob orçamento» e não
-              zero.** É o artigo que obriga a estimativa a passar a «a partir
-              de» — ver `cesto.ts`. As escolhas concretas (massa, recheio,
-              cobertura) escrevem-se nas notas do pedido: pô-las aqui era montar
-              um configurador de seis passos para um artigo cujo preço tem de ser
-              conversado de qualquer maneira. */}
-          <div className="mt-8">
-            <BotaoJuntar
-              variante="discreta"
-              item={{
-                id: "bolo:por-medida",
-                tipo: "bolo",
-                nome: bolos("titulo"),
-                variante: null,
-                preco: null,
-                pessoas: null,
-              }}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* ── Boxes ─────────────────────────────────────────────────────── */}
-      <section aria-labelledby="boxes" className="seccao bg-papel-fundo">
-        <div className="envolvente">
-          <h2 id="boxes" className="titulo-display titulo-beta max-w-[16ch]">
-            {t("boxes.titulo")}
-          </h2>
-          <p className="mt-4 max-w-[52ch] text-tinta-suave">{t("boxes.texto")}</p>
-
-          <ul className="carril-tele mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {encomendas.boxes.map((box) => (
-              <li
-                key={box.id}
-                className="flex flex-col rounded-2xl border border-tinta/15 bg-papel p-7"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <h3 className="titulo-display titulo-gama">
-                    {box.nome[locale]}
-                  </h3>
-                  {box.vegan && (
-                    <span className="bloco-verde-texto shrink-0 rounded-full px-2 py-0.5 text-[0.68rem] font-bold uppercase tracking-wider">
-                      {t("boxes.vegan")}
-                    </span>
-                  )}
-                </div>
-                <p className="titulo-display mt-4 text-4xl tabular-nums text-tijolo">
-                  {formatarPreco(box.preco, locale)}
-                </p>
-                <ul className="mt-6 space-y-1.5 text-sm text-tinta-suave">
-                  {box.itens.map((item) => (
-                    <li key={item.pt}>{item[locale]}</li>
-                  ))}
-                </ul>
-                <div className="mt-auto pt-7">
-                  <BotaoJuntar
-                    item={{
-                      id: `box:${box.id}`,
-                      tipo: "box",
-                      nome: box.nome[locale],
-                      variante: null,
-                      preco: box.preco,
-                      pessoas: null,
-                    }}
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      {/* ── Como encomendar ───────────────────────────────────────────── */}
+      {/* ── Como encomendar ──────────────────────────────────────────── */}
       <section id="pedido" aria-labelledby="como" className="scroll-mt-24 seccao bg-tinta text-papel">
         <div className="envolvente grid gap-12 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-20">
           <div>
@@ -369,7 +206,53 @@ function Encomendas({ locale }: { locale: Locale }) {
         </div>
       </section>
 
-      <Cesto locale={locale} />
-    </CestoProvider>
+    </>
+  );
+}
+
+/** As secções por que o índice do herói navega, pela ordem da página. */
+const SECCOES = ["festas", "kits-bolo", "boxes", "da-ementa", "pedido"] as const;
+
+/**
+ * Uma família de produtos: título, uma frase, e a grelha de cartões.
+ *
+ * Existe para as três famílias saírem iguais. Escritas à mão, a primeira
+ * diferença de espaçamento entre elas entrava sem ninguém dar por isso — e são
+ * três blocos que se leem em sequência, onde uma diferença se nota logo.
+ */
+function Familia({
+  id,
+  titulo,
+  texto,
+  produtos,
+  locale,
+  fundo = "papel",
+}: {
+  id: string;
+  titulo: string;
+  texto: string;
+  produtos: Produto[];
+  locale: Locale;
+  fundo?: "papel" | "claro";
+}) {
+  return (
+    <section
+      id={id}
+      aria-labelledby={`${id}-titulo`}
+      className={`scroll-mt-20 seccao ${fundo === "claro" ? "bg-papel-fundo" : ""}`}
+    >
+      <div className="envolvente">
+        <h2 id={`${id}-titulo`} className="titulo-display titulo-beta max-w-[16ch]">
+          {titulo}
+        </h2>
+        <p className="mt-4 max-w-[52ch] text-tinta-suave">{texto}</p>
+
+        <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {produtos.map((produto) => (
+            <CartaoProduto key={produto.id} produto={produto} locale={locale} />
+          ))}
+        </ul>
+      </div>
+    </section>
   );
 }

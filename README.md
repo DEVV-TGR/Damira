@@ -33,10 +33,88 @@ o `build` é o único que valida o conteúdo.
 |---|---|
 | `/` | homepage — herói, combinações, carta vegan, festas, contactos, fecho |
 | `/ementa` | as quatro cartas, 95 artigos, com painel de detalhe por artigo |
-| `/encomendas` | kits de festa, kits de bolo, bolo por medida, boxes, como pedir |
+| `/ementa/<artigo>` | uma página por artigo — fotografia, descrição, e, nos 70 encomendáveis, o botão de juntar com a quantidade mínima |
+| `/encomendas` | índice: cartões dos doze produtos, **70 artigos da carta por encomenda**, cesto, histórico e pedido |
+| `/encomendas/<produto>` | uma página por produto — fotografia, o que leva, escalão, personalização e juntar ao pedido |
+| `/entrar` | entrar com o Google ou o Facebook — **só existe com chaves configuradas** |
+| `/conta` | quem entrou, e o que a conta faz (e não faz) — idem |
 
 Em inglês, as mesmas com prefixo `/en`. O português não leva prefixo
 (`localePrefix: "as-needed"`).
+
+## A conta de cliente
+
+A conta existe sempre, em **dois modos** que nunca coexistem (ver
+`src/lib/conta.ts`):
+
+| Modo | Quando | O que é |
+|---|---|---|
+| `fornecedores` | há `AUTH_SECRET` e chaves | entra-se com o Google ou o Facebook, sessão em JWT num cookie |
+| `demonstracao` | não há chaves | escreve-se nome e email, e fica **só neste browser** |
+
+⚠️ **O modo de demonstração é um bloqueador de lançamento.** No dia em que o site
+for para o ar, ou entram chaves — e o modo muda sozinho — **ou a conta sai**.
+Publicar uma pastelaria com um ecrã de entrada que não autentica ninguém é pior
+do que não ter conta nenhuma.
+
+O que o impede de ser uma mentira é **dizer o que é, onde alguém escreve os seus
+dados**: a página de entrada, em demonstração, avisa que não há registo nem
+palavra-passe e que aquilo fica no browser. A página da conta repete-o, para quem
+lá chega por um link.
+
+⚠️ E a regra que não se negoceia: **a conta nunca é obrigatória para
+encomendar.** Serve para o pedido vir já preenchido e para o cesto não se
+misturar com o de outra pessoa no mesmo telemóvel.
+
+### As páginas de produto e de artigo
+
+Cada um dos doze produtos de encomenda tem página própria: os três kits de festa,
+os três kits de bolo, o bolo por medida e as cinco boxes. É lá que se escolhe o
+escalão, se escreve a mensagem do bolo e se junta ao pedido — a `/encomendas`
+ficou a ser o índice.
+
+**E os 95 artigos da carta também têm página**, em `/ementa/<id>`. ⚠️ Ficam do
+lado da ementa e não das encomendas, que é a separação que o `AGENTS.md` manda
+manter. O que as segura é dizerem o que o artigo é: os 70 que a casa faz por
+encomenda mostram o botão de juntar **com a quantidade mínima ao lado**; os
+outros 25 — bebidas, pratos, pausa — não têm botão nenhum e dizem que se pedem ao
+balcão.
+
+O catálogo unificado está em `src/lib/produtos.ts`. ⚠️ **É uma vista e não uma
+segunda fonte de verdade**: não há lá um único dado que não venha do
+`encomendas.json`. Os cartões, as rotas e o `sitemap.xml` saem todos dele, para
+um produto novo não aparecer na grelha e faltar no mapa do site.
+
+⚠️ **`produto.foto` está a `null` em todos, e fica.** Há dezanove fotografias da
+casa em `public/` e **nenhuma é deste kit ou desta box** — numa página de produto
+qualquer imagem se lê como sendo o produto. A página guarda o espaço com o motivo
+da marca e diz que a fotografia está por chegar. Quando ela chegar, é preencher o
+campo: uma linha, sem mexer no desenho.
+
+### O histórico de pedidos
+
+Cada pedido leva uma **referência** (`DAM-0309-4F7K`), gerada no servidor, que vai
+no assunto do email e serve para falar ao telefone. O pedido fica guardado numa
+lista que aparece na conta **e** no topo de `/encomendas`, com um botão para
+*pedir o mesmo*.
+
+⚠️ **É o histórico deste browser, não o histórico da casa** — e o site diz isso
+por cima da lista, sempre. Não há base de dados: a sessão é um JWT num cookie e
+nada nosso guarda o que foi pedido. Quem encomendou no telemóvel não vê esse
+pedido no computador, e limpar os dados do site apaga a lista.
+
+**Chamar-lhe «as suas encomendas» sem essa ressalva era mentir com uma
+funcionalidade**: quem não encontra lá o pedido conclui que ele se perdeu. Um
+histórico partilhado entre dispositivos exige base de dados e adaptador de
+sessão — é âmbito novo, com custo, e está na #1.
+
+Um pedido que ficou por enviar (sem serviço de email configurado, o pedido volta
+para a pessoa o mandar do seu correio) fica marcado **por enviar**, para não se
+esquecer.
+
+⚠️ **As chaves são lidas no `build`**, porque as páginas são estáticas. Ligar a
+conta obriga a um novo *deploy*. Configuração e URIs de redirecionamento em
+`.env.example`.
 
 ## Onde vive o conteúdo
 
@@ -49,6 +127,12 @@ JSON e mais nada**:
 - **`bolos.json`** — o catálogo do bolo por medida: 62 opções na linha clássica,
   37 na vegan. **Sem preços**, porque o impresso não os tem.
 - **`casa.json`** — morada, telefone, correio, horário, entregas.
+
+E uma regra que **não** é dado e por isso vive em código, em
+`src/lib/encomendavel.ts`: **que artigos da ementa se podem encomendar e em que
+quantidade mínima.** Hoje são 70 dos 95 — doces e salgados à dúzia (de 6 em 6),
+bolos inteiros ao quilo (de meio em meio), o chocolate à unidade. As bebidas, os
+pratos e a pausa ficam de fora: não se encomenda um galão para sexta-feira.
 - **`marca.json`** — nome e redes sociais.
 
 As fontes de tudo isto são os sete PDFs em `referencias/`, que **não estão
@@ -114,6 +198,11 @@ falta, faz o site mentir a alguém:
       espera de confirmação.
 - [ ] **Escalões do Kit Premium.** O de 20 pax (335 €) fica 35 € acima do Médio
       (300 €), mas o de 40 salta de 590 € para 650 €. Confirmar que é mesmo assim.
+
+- [ ] ⚠️ **A conta está em modo de demonstração.** Sem chaves, o ecrã de entrada
+      aceita qualquer nome e email e guarda-os no browser. É de propósito, para o
+      cliente ver a funcionalidade — e **não pode ir para o ar assim**. Ou entram
+      as chaves do Google/Facebook (`.env.example`), ou a conta sai.
 
 ### A pedir ao cliente
 

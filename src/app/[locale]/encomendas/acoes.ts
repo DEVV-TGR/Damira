@@ -6,8 +6,10 @@ import {
   corpoDoPedido,
   DESTINO_PEDIDOS,
   REMETENTE_PEDIDOS,
+  TIPOS_PEDIDO,
   type Pedido,
 } from "@/lib/pedidos";
+import { gerarReferencia } from "@/lib/historico";
 import { casa } from "@/data/casa";
 
 /**
@@ -17,10 +19,31 @@ import { casa } from "@/data/casa";
  * serviço de email configurado** e devolve o pedido escrito para a pessoa o
  * enviar do seu próprio correio. Ver `enviarPedido`.
  */
+/**
+ * O que o cliente precisa para escrever o pedido no histórico do browser.
+ *
+ * ⚠️ **Vem do servidor e não se remonta no cliente**, porque a referência tem de
+ * ser a mesma que foi no assunto do email — é o código que a pessoa vai dizer ao
+ * telefone. Duas gerações separadas davam dois códigos e a referência deixava de
+ * referir coisa nenhuma. Ver `historico.ts`.
+ */
+export type Registo = {
+  referencia: string;
+  tipo: Pedido["tipo"];
+  data: string;
+  pessoas: number | null;
+};
+
 export type Resultado =
   | { estado: "inicial" }
-  | { estado: "enviado" }
-  | { estado: "sem-servico"; assunto: string; corpo: string; destino: string }
+  | { estado: "enviado"; registo?: Registo }
+  | {
+      estado: "sem-servico";
+      assunto: string;
+      corpo: string;
+      destino: string;
+      registo: Registo;
+    }
   | { estado: "erro"; campos: Record<string, string>; geral?: string };
 
 /**
@@ -78,15 +101,28 @@ export async function enviarPedido(
 
   const pedido: Pedido = validado.data;
 
+  /* ⚠️ **A lista sai de `TIPOS_PEDIDO` e não é escrita à mão.** Estava à mão, e
+     quando o tipo `ementa` entrou ficou de fora sem que nada avisasse: o email
+     saía a dizer «Tipo: ementa» em vez de «Da carta». Um tipo novo entra agora
+     sozinho, e se lhe faltar a tradução é o `build` que se queixa. */
   const rotulos = Object.fromEntries(
-    (["festa", "bolo", "box", "outro"] as const).map((tipo) => [
-      tipo,
-      t(`tipos.${tipo}`),
-    ]),
+    TIPOS_PEDIDO.map((tipo) => [tipo, t(`tipos.${tipo}`)]),
   );
 
+  const referencia = gerarReferencia();
+  const registo: Registo = {
+    referencia,
+    tipo: pedido.tipo,
+    data: pedido.data,
+    pessoas: pedido.pessoas,
+  };
+
   const assunto = t("assunto", { nome: pedido.nome, data: pedido.data });
-  const corpo = corpoDoPedido(pedido, rotulos);
+  /* ⚠️ **A referência vai no assunto e não só no corpo.** É por ela que quem
+     atende procura o email quando o cliente telefona a dizer o código, e uma
+     caixa de correio procura-se pelo assunto. */
+  const assuntoComReferencia = `${assunto} · ${referencia}`;
+  const corpo = corpoDoPedido(pedido, rotulos, referencia);
   const chave = process.env.RESEND_API_KEY?.trim();
 
   /**
@@ -101,7 +137,13 @@ export async function enviarPedido(
    * painel da Vercel, e por isso tem de ser um caminho digno e não uma avaria.
    */
   if (!chave) {
-    return { estado: "sem-servico", assunto, corpo, destino: DESTINO_PEDIDOS };
+    return {
+      estado: "sem-servico",
+      assunto: assuntoComReferencia,
+      corpo,
+      destino: DESTINO_PEDIDOS,
+      registo,
+    };
   }
 
   try {
@@ -118,7 +160,7 @@ export async function enviarPedido(
            o remetente técnico. É uma linha, e é a diferença entre responder e
            ter de copiar o endereço à mão. */
         ...(pedido.email ? { reply_to: pedido.email } : {}),
-        subject: assunto,
+        subject: assuntoComReferencia,
         text: corpo,
       }),
     });
@@ -131,12 +173,24 @@ export async function enviarPedido(
         `[pedidos] o serviço de email recusou (${resposta.status}):`,
         await resposta.text(),
       );
-      return { estado: "sem-servico", assunto, corpo, destino: DESTINO_PEDIDOS };
+      return {
+        estado: "sem-servico",
+        assunto: assuntoComReferencia,
+        corpo,
+        destino: DESTINO_PEDIDOS,
+        registo,
+      };
     }
 
-    return { estado: "enviado" };
+    return { estado: "enviado", registo };
   } catch (erro) {
     console.error("[pedidos] falha a contactar o serviço de email:", erro);
-    return { estado: "sem-servico", assunto, corpo, destino: DESTINO_PEDIDOS };
+    return {
+      estado: "sem-servico",
+      assunto: assuntoComReferencia,
+      corpo,
+      destino: DESTINO_PEDIDOS,
+      registo,
+    };
   }
 }

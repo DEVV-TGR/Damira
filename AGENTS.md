@@ -61,6 +61,18 @@ papel:
 croissant é o que leva alguém a aparecer ao sábado à espera de o levar debaixo do
 braço. A separação está no site como duas páginas e aqui como dois ficheiros.
 
+**Isto continua a valer, com uma nuance que passou a existir em setembro de
+2026.** A `/encomendas` tem hoje uma secção — *Da carta, por encomenda* — com 70
+dos 95 artigos da ementa. O que evita o mal-entendido não é escondê-los: é a
+**quantidade mínima**, escrita no cabeçalho de cada categoria. Um artigo que só se
+pede à dúzia, ou ao quilo, nunca se confunde com um que se tira da vitrine — e
+quem quer um pastel continua a entrar na loja e a pedi-lo.
+
+A regra é **do negócio e não do artigo**, por isso vive numa tabela em
+`src/lib/encomendavel.ts` e não num campo repetido nos 95 registos do JSON. As
+bebidas, os pratos e a pausa ficam de fora: não se encomenda um galão para
+sexta-feira.
+
 ### A ementa tem `carta` além de `categoria`
 
 Porque as categorias **repetem-se entre cartas**: há `doces` na carta da casa e
@@ -175,6 +187,85 @@ trazem a cor de texto certa para cada fundo — usar essas em vez de compor `bg-
 `hover:bloco-tijolo` compila-se em silêncio para nada e ninguém dá por isso. Em
 estados, usar utilitários (`hover:bg-tijolo hover:text-papel`).
 
+## As páginas de produto, e a regra da fotografia
+
+Desde setembro de 2026 cada produto de encomenda tem página própria
+(`/encomendas/<id>`) e a `/encomendas` passou a ser um índice de cartões. Antes
+era uma página só com tudo aberto: cinco ecrãs em que a única coisa a distinguir
+dois kits era um preço a meio de vinte linhas de miudezas, e **sem sítio nenhum
+para uma fotografia**.
+
+O catálogo unificado está em `src/lib/produtos.ts`. ⚠️ **É uma vista e não uma
+segunda fonte de verdade** — não há lá um dado que não venha do
+`encomendas.json`. Cartões, rotas e `sitemap.xml` saem todos dele.
+
+⚠️ **`produto.foto` está a `null` em todos, e não se preenche com o que há.**
+Existem dezanove fotografias da casa, e **nenhuma é deste kit ou desta box**.
+Numa página de produto qualquer imagem se lê como sendo o produto: pôr ali a
+montra vista da rua é anunciar uma coisa e entregar outra, e é a mesma regra que
+proíbe banco de imagens no resto do site. O `FotoProduto` guarda o espaço e diz
+que a fotografia está por chegar.
+
+**Os 95 artigos da carta também têm página**, em `/ementa/<id>`. ⚠️ Ficam
+debaixo de `/ementa` e não de `/encomendas`: é a mesma separação de sempre. O
+que as mantém do lado certo é dizerem o que o artigo é — os 70 encomendáveis
+mostram o botão de juntar **com a quantidade mínima ao lado do botão**, e os
+outros 25 não têm botão nenhum e dizem que se pedem ao balcão. Um galão com um
+botão de encomendar era prometer um serviço que a casa não tem.
+
+⚠️ **O painel da `/ementa` continua a existir**, e faz bem: quem percorre
+noventa e cinco artigos não quer sair da lista a cada curiosidade. A página é
+para quem quer o **endereço** — partilhar, guardar, ou chegar por uma pesquisa. O
+painel leva lá por um botão; sem ele eram noventa e cinco páginas que ninguém
+visitava.
+
+⚠️ **O bolo por medida não vem do JSON.** Não é um produto de catálogo, é uma
+conversa: não tem preço e o que se escolhe são massas e recheios. Entra na lista
+para ter página e cartão, com `preco: null`, que é *sob orçamento* e não zero.
+
+## A conta de cliente, e as três regras que a seguram
+
+Entrar com o Google ou o Facebook existe desde setembro de 2026 (`next-auth` v5,
+em `src/lib/autenticacao.ts`). Três decisões que se desfazem sem querer:
+
+1. ⚠️ **A conta nunca é obrigatória para encomendar.** Não é preferência, é a
+   linha: obrigar alguém a registar-se para pedir um bolo de anos numa
+   pastelaria de bairro é pôr um balcão à frente da porta. Se algum caminho
+   passar a exigir sessão, está errado.
+2. ⚠️ **Sem chaves, a conta não desliga: passa a demonstração.** Isto mudou em
+   setembro de 2026 e é a decisão que mais surpreende quem chega. Antes,
+   `CONTA_ATIVA` era `false` sem chaves e a conta não existia — o que quer dizer
+   que **na única instalação que estava no ar a funcionalidade não existia**, nem
+   para o cliente que a devia avaliar. Hoje o `MODO_CONTA` é `demonstracao`:
+   escreve-se nome e email e fica no `localStorage`.
+   **O que a impede de ser uma mentira é o aviso**, na entrada e na conta. Não se
+   apaga. E é um **bloqueador de lançamento**: ou entram chaves, ou a conta sai.
+   O `SessionProvider` continua a não ser montado nesse modo, e continua a valer
+   **nunca importar o `autenticacao.ts` num componente de cliente** — o
+   `conta.ts` existe para ser o lado seguro dessa fronteira.
+3. ⚠️ **O histórico é do browser e não da casa, e a lista diz isso por cima de
+   si própria.** Não há base de dados: a sessão é um JWT num cookie e nada nosso
+   guarda o que foi pedido. Quem pediu no telemóvel não vê esse pedido no
+   computador. **Essa ressalva não se apaga** enquanto o histórico não for do
+   servidor — um histórico que parece completo e não é vale menos do que nenhum,
+   porque quem não encontra lá o pedido conclui que ele se perdeu. Ver
+   `historico.ts` e `ListaHistorico.tsx`.
+
+E uma peça que não é da conta mas nasceu com ela: **a referência do pedido**
+(`DAM-0309-4F7K`) é gerada **no servidor**, vai no assunto do email e volta no
+resultado da acção. Gerá-la no cliente dava um código diferente do que foi no
+email — e uma referência que não refere o mesmo não serve para nada.
+
+E uma consequência que não é óbvia: **a sessão lê-se no cliente e não no
+servidor**, para as páginas continuarem todas estáticas. Ler `auth()` num
+componente de servidor troca o cartaz da página inicial — que vive de ser servido
+instantaneamente — por um nome no canto superior direito.
+
+⚠️ **O cesto e o histórico vivem no layout e não na página das encomendas.** A
+conta precisa de os ler, e um provedor montado só em `/encomendas` deixava-a a
+olhar para `null`. A **barra** do cesto continua a aparecer só nas encomendas: o
+que subiu foi o estado, não a interface.
+
 ## As armadilhas que já morderam aqui
 
 Estão documentadas no sítio onde vivem; ficam aqui em lista porque são todas do
@@ -221,6 +312,52 @@ primeiras sete vieram do Santo Burga e continuam a valer — o motor é o mesmo.
 13. **Redefinir `--sc-ink` num bloco sem redefinir `color` não repinta nada.** A
     cor herda-se já resolvida. Vale para qualquer propriedade herdada conduzida
     por token, e falha em silêncio a 1,15:1.
+14. **`max-w-*` escrito ao lado de `.envolvente` não faz nada.** Um
+    `className="envolvente max-w-[34rem]"` resolve para 1248 px e não para 544 —
+    a classe de `@layer components` ganha, sem erro e sem aviso, e a página sai
+    com o dobro da largura que se pediu. A medida tem de viver num `<div>` por
+    dentro. É a nº 6 vista do lado da largura.
+15. **Um elemento novo no cabeçalho parte a página a 320 px e em mais lado
+    nenhum.** O botão da conta somou 38 px a uma barra que já ia cheia: a 360 px
+    para cima não se nota, a 320 a página inteira ganha rolagem horizontal. As
+    folgas abaixo do `sm` foram apertadas por causa disso. **Medir à mão a 320,
+    340, 360, 375, 390 e 414 px** — e não só no ecrã onde se trabalha.
+16. **`min-w-0` num filho de grelha, ou a tabela arrasta a página inteira.** Um
+    filho de grelha tem `min-width: auto` e **recusa-se a encolher abaixo do
+    conteúdo**: a tabela de escalões, com a sua largura mínima, esticava a coluna
+    e punha a página com rolagem horizontal a 320 px — apesar de já viver dentro
+    de um `overflow-x-auto` que era suposto tratar disso. E só na página dos kits
+    de festa: as outras não têm tabela e davam verde.
+17. **Um componente fixo montado numa página só desaparece quando as páginas se
+    multiplicam.** A barra do cesto vivia na `/encomendas`; com as páginas de
+    produto, quem juntava um kit em `/encomendas/festa-premium` ficava sem barra,
+    sem sinal de ter acertado e sem caminho de volta ao pedido. Subiu para o
+    layout. Do mesmo golpe, o botão flutuante «encomendar» escondia-se com
+    `caminho === "/encomendas"` e voltava a aparecer nas páginas de produto, por
+    cima da barra.
+18. **Uma fotografia quadrada num cartão é a mais alta que há, não a mais
+    pequena.** A altura de uma imagem quadrada **é** a largura da coluna; a 3/2
+    gasta dois terços disso. Numa grelha de setenta cartões a diferença foram
+    2 300 px de página — a secção passou de 7 075 px para 4 788 px sem se mexer
+    numa única coluna. Ao encolher um cartão, olhar primeiro para a proporção da
+    imagem e só depois para os `padding`.
+19. **Uma secção vazia continua a ocupar o ecrã.** A `<section>` do histórico
+    era escrita no servidor, à volta de uma lista que devolve `null` quando não
+    há pedidos — o fundo e o `padding` ficavam lá na mesma. No telemóvel eram
+    **duzentos e cinquenta píxeis de nada** entre o herói e o primeiro produto,
+    para toda a gente que chegava pela primeira vez. Quem decide se há conteúdo
+    tem de ser quem desenha a moldura.
+20. **`getBoundingClientRect` não vê a área de toque do `.alvo-toque`.** A classe
+    estende o alvo com um `::after` de `-0.75rem`, e uma verificação automática
+    de alvos pequenos acusa **todos** os links do site sem razão. Ao medir alvos,
+    excluir quem tem a classe — senão o ruído esconde os que faltam mesmo, que
+    aqui eram os nomes dos setenta artigos e os dois links de voltar.
+21. **E volta a partir depois de alguém entrar na conta.** A pastilha do nome é
+    mais larga do que o botão de entrar, portanto a medição feita sem sessão dá
+    verde e a página parte-se só para quem se autenticou. **Medir as duas
+    versões do cabeçalho.** Para forjar uma sessão em local, ver a nota do
+    `usePorPessoa` e usar o `encode` do `@auth/core/jwt` com o `AUTH_SECRET` e o
+    sal `authjs.session-token`.
 
 O que todas têm em comum: `npm run build` passa, o `lint` passa, e só se apanham
 a olhar. **Depois de mexer em desenho, tirar capturas** — há Chromium do

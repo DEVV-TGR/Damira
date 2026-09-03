@@ -302,6 +302,44 @@ isso é consentimento por tratar. O cliente respondeu que se pode usar. É do
 ele. **Está incluída**, e a decisão está registada no `Vitrine.tsx` para quem
 vier a seguir saber que a pergunta foi feita.
 
+## 5. "Inserir as encomendas da carta e etc, não só kits"
+
+> «podes tambem agora melhorar a section na homepage para inserir as encomendas
+> da carta e etc, nao so kits»
+
+O capítulo VIII mostrava **três cartões, um por kit de festa**, cada um com a
+sua escada de escalões. Quem só passasse pela homepage saía a saber que a casa
+faz festas — e a não saber que faz bolos por medida, boxes, e setenta artigos da
+carta à dúzia ou ao quilo. A `/encomendas` cobria isso; a homepage, que é o que
+a maior parte das pessoas vê, não.
+
+**Trocaram-se os três kits por quatro famílias:** Festas, Bolos, Boxes, Da carta.
+Cada uma leva à sua âncora em `/encomendas` — quem carrega em «boxes» quer ver
+boxes, e a página é longa.
+
+⚠️ **Foi uma troca e não um acréscimo, e a razão é o orçamento de alturas.**
+Acrescentar quatro cartões aos três levava o carril a nove itens e o capítulo a
+quatro alturas de ecrã a mais. Assim são seis itens contra cinco: o vão passou de
+4,5 para 5,5, **mais uma altura e não quatro**.
+
+O que se perde é a comparação dos três kits lado a lado, que era boa. Passou a
+viver onde tem espaço para ser boa: em `/encomendas`, com uma página por kit e a
+tabela dos três escalões lado a lado.
+
+⚠️ **E o olho do capítulo mudou de «A festa» para «As encomendas».** O sentir da
+curva não muda — continua *confiança*, continua tijolo, e o fecho continua a ser
+o número setenta. O que muda é a promessa deixar de ser de uma família só.
+
+### O número de alturas que este ficheiro dizia estava errado
+
+O plano acima escreve **19,0 no computador e 18,5 no telemóvel**. Medido hoje,
+**antes** desta alteração, a página estava em **21,5 e 21,7**. Cresceu com o que
+entrou depois de o número ter sido escrito, e ninguém o voltou a medir.
+
+Com esta alteração fica em **22,5 e 22,7**. Continua muito acima do tecto de 8 a
+14 que a skill fixa, e a saída continua a ser a que já estava escrita: **juntar a
+vitrine e os reels num capítulo só**. Isso poupa duas alturas e nenhuma função.
+
 ---
 
 # A PARTITURA COMO FICOU
@@ -318,7 +356,7 @@ vier a seguir saber que a pergunta foi feita.
 | V | Os reels | `reveal` por cela | tinta |
 | VI | O raro | `pin` + `count` + `kinetic` | verde-forte |
 | VII | A ementa | `in` | papel-fundo |
-| VIII | A festa | `pan` | tijolo |
+| VIII | As encomendas | `pan` | tijolo |
 | IX | Encomendar | `in` | papel |
 | X | O colofão | `pin` | tinta |
 
@@ -394,7 +432,7 @@ segue é a leitura das folhas de contacto, que é o que resta, e vale menos.
 | V Os reels | — | Espera | Lugares vazios leem-se como promessa |
 | VI O raro | Surpresa | O verde de repente, e o 49 | Bate |
 | VII A ementa | — | Utilidade | Sentir novo |
-| VIII A festa | Confiança | Tijolo, os kits a passar | Bate |
+| VIII As encomendas | Confiança | Tijolo, as quatro famílias a passar | Bate |
 | IX Encomendar | — | Facilidade | Sentir novo |
 | X A morada | Acolhimento | Tudo pára, a marca desenha-se | Bate |
 

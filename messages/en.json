@@ -168,13 +168,32 @@
     },
     "festa": {
       "numeral": "VIII",
-      "olho": "The party",
-      "titulo": "Up to seventy people",
-      "texto": "Three kits, fixed price per tier. What changes between them is what comes to the table, not the headcount.",
+      "olho": "Orders",
+      "titulo": "From a dozen to a party of seventy",
+      "texto": "Party kits at a fixed price, made-to-order cakes, boxes for two — and seventy menu items you can take by the dozen or by the kilo.",
       "pessoas": "{n} people",
       "desde": "from {preco}",
-      "nota": "Parties need notice. The quote is settled by phone or through the form.",
-      "ligacao": "See orders and parties"
+      "verFamilia": "View",
+      "familias": {
+        "festas": {
+          "nome": "Parties",
+          "detalhe": "{kits} kits at a fixed price, for {escaloes} people."
+        },
+        "bolos": {
+          "nome": "Cakes",
+          "detalhe": "{kits} decorated kits, and a cake your way across {opcoes} choices of sponge, filling and coating."
+        },
+        "boxes": {
+          "nome": "Boxes",
+          "detalhe": "{n} ready boxes, for a breakfast or a birthday."
+        },
+        "carta": {
+          "nome": "From the menu",
+          "detalhe": "{n} menu items to order, by the dozen or by the kilo."
+        }
+      },
+      "nota": "All of this needs notice. The quote is settled by phone or through the form.",
+      "ligacao": "See the orders page"
     },
     "encomendar": {
       "numeral": "IX",
@@ -290,7 +309,8 @@
     "aMostrar": "{n} of {total} items",
     "semResultados": "Nothing by that name",
     "semResultadosTexto": "Try another word, or clear the search to go back to the four menus.",
-    "quantosArtigos": "{n, plural, one {# item} other {# items}}"
+    "quantosArtigos": "{n, plural, one {# item} other {# items}}",
+    "verPagina": "View this item's page"
   },
   "encomendas": {
     "olho": "To order",
@@ -334,7 +354,8 @@
         "festa": "Party kit",
         "bolo": "Custom cake",
         "box": "Box",
-        "outro": "Something else"
+        "outro": "Something else",
+        "ementa": "From the menu"
       },
       "campos": {
         "tipo": "What would you like to order",
@@ -366,7 +387,8 @@
         "texto": "Automatic sending is not switched on for this site yet. Your request is written and ready: open it in your email app and press send.",
         "abrir": "Open in my email",
         "verTexto": "Or copy the request text"
-      }
+      },
+      "referencia": "Your reference"
     },
     "cesto": {
       "titulo": "Your order",
@@ -398,7 +420,24 @@
       "resumoTitulo": "What goes in the order",
       "notas": "Anything to add?",
       "notasDica": "Filling, colour, the name to write on the cake, allergies.",
-      "tipoDoCesto": "Comes from what you added. To change it, edit the order."
+      "tipoDoCesto": "Comes from what you added. To change it, edit the order.",
+      "juntarArtigo": "Add {nome} to your order"
+    },
+    "daEmenta": {
+      "titulo": "From the menu, to order",
+      "texto": "Seventy menu items the shop makes to order, for taking away in quantity: savouries and pastries by the dozen, vegan cakes by the kilo, and the chocolate in all four sizes.",
+      "aviso": "This is not the counter. Every line has a minimum quantity and needs notice — a single pastry is something you ask for in the shop, no booking needed. Cakes are sold by weight, and the final amount is settled at pickup.",
+      "regraUn": "Minimum {minimo} units, in steps of {passo}",
+      "regraKg": "Minimum {minimo} kg, sold by weight",
+      "cada": "each"
+    },
+    "indice": {
+      "titulo": "On this page",
+      "festas": "Parties",
+      "kits-bolo": "Cakes",
+      "boxes": "Boxes",
+      "da-ementa": "From the menu",
+      "pedido": "Order"
     }
   },
   "bolos": {
@@ -443,5 +482,89 @@
     "titulo": "This one does not exist",
     "texto": "The page you are looking for moved or was never here.",
     "voltar": "Back to the start"
+  },
+  "conta": {
+    "olho": "Your account",
+    "entrar": "Sign in",
+    "entrarTitulo": "Sign in and skip the typing",
+    "entrarTexto": "An account does two small things: your order arrives with your name and email already filled in, and what you pick stays yours on a shared phone. You do not need one to order.",
+    "entrarCom": {
+      "google": "Continue with Google",
+      "facebook": "Continue with Facebook"
+    },
+    "aEntrar": "Opening…",
+    "semConta": "Rather not sign in?",
+    "semContaLigacao": "Order anyway",
+    "privacidade": "From Google or Facebook we receive only your name, your email and your photo. We ask for nothing else, we post nothing on your behalf, and we pass it to no one.",
+    "aMinhaConta": "My account",
+    "aCarregar": "Loading…",
+    "naoEntrou": "You have not signed in on this browser yet.",
+    "ola": "Hello, {nome}",
+    "nome": "Name",
+    "email": "Email",
+    "paraQueServe": "This is what we fill into your order so you do not have to type it every time. You can change it on the form before sending.",
+    "encomendar": "Go to orders",
+    "sair": "Sign out",
+    "preencherDica": "Rather not type this every time?",
+    "preencherLigacao": "Sign in to your account",
+    "demonstracao": {
+      "aviso": "In this demo the account works only in this browser: there is no sign-up, no password, and nothing is sent anywhere. It is here to show you how it would look.",
+      "entrar": "Sign in or create account",
+      "naConta": "This is a demo account and it lives only in this browser."
+    }
+  },
+  "historico": {
+    "titulo": "Orders you have placed",
+    "apenasNesteBrowser": "These are the requests sent from this browser, kept only here. Anything you ordered by phone, or on another device, will not show up in this list — and clearing the site data erases it.",
+    "vazio": "You have not placed an order from here yet",
+    "feitoEm": "Placed on {quando}",
+    "para": "for {quando}",
+    "estados": {
+      "enviado": "Sent",
+      "por-enviar": "Not sent yet"
+    },
+    "estimado": "Estimated:",
+    "aPartirDe": "From:",
+    "repetir": "Order the same",
+    "repetirConfirmar": "Replace the basket?",
+    "apagar": "Delete",
+    "limparTudo": "Delete all"
+  },
+  "produto": {
+    "voltar": "← All orders",
+    "familias": {
+      "festa": "Party kit",
+      "bolo": "Cake kit",
+      "box": "Box",
+      "medida": "Made-to-order cake"
+    },
+    "medida": {
+      "nome": "Made-to-order cake",
+      "resumo": "A cake made your way: pick the sponge, the filling and the coating, and we will quote it."
+    },
+    "ver": "View product",
+    "desde": "from",
+    "sobOrcamento": "Quoted on request",
+    "vegan": "Vegan",
+    "semFoto": "Photograph still to come from the shop",
+    "oQueLeva": "What it includes",
+    "preco": "Price",
+    "paraQuantas": "For how many people?",
+    "paraPessoas": "{n} people",
+    "mensagem": "Message on the cake",
+    "mensagemDica": "Happy birthday, Maria!",
+    "observacoes": "Notes",
+    "observacoesDica": "Colour, allergies, pickup time — anything we should know.",
+    "juntar": "Add to order",
+    "juntado": "Added to order",
+    "avisoPreco": "This is the list price, not a bill. Delivery is not included and the final amount comes in our reply.",
+    "descricaoGenerica": "{nome}, made to order at Confeitaria e Pão Quente Damira, in Ermesinde.",
+    "voltarEmenta": "← The whole menu",
+    "porQuilo": " /kg",
+    "minimoUn": "Minimum {minimo} units, in steps of {passo}",
+    "minimoKg": "Minimum {minimo} kg, sold by weight",
+    "soAoBalcao": "This one is asked for at the counter, on the spot — it is not ordered in advance.",
+    "prazoDaCarta": "The minimum notice is still to be confirmed. Call us and we will tell you straight away if your date works.",
+    "cadaCurto": "ea."
   }
 }

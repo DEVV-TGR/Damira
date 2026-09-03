@@ -8,6 +8,11 @@ import { Cabecalho } from "@/components/Cabecalho";
 import { Rodape } from "@/components/Rodape";
 import { BotaoEncomendar } from "@/components/BotaoEncomendar";
 import { DadosEstruturados } from "@/components/DadosEstruturados";
+import { ProvedorConta } from "@/components/conta/ProvedorConta";
+import { CestoProvider } from "@/components/encomendas/CestoProvider";
+import { ProvedorHistorico } from "@/components/encomendas/ProvedorHistorico";
+import { Cesto } from "@/components/encomendas/Cesto";
+import { MODO_CONTA } from "@/lib/conta";
 import { routing, type Locale } from "@/i18n/routing";
 import { URL_SITE, urlLocalizado } from "@/lib/site";
 import { imagensDePartilha } from "@/lib/metadata";
@@ -117,7 +122,20 @@ export default async function LayoutIdioma({
   return (
     <html lang={locale} className={`${display.variable} ${corpo.variable}`}>
       <body>
+        {/* ⚠️ **O provedor da conta envolve tudo, mas só monta o `next-auth`
+            quando há chaves.** Sem elas o modo é `demonstracao`, a conta vive no
+            browser e não se faz pedido nenhum ao `/api/auth/session` — nem um,
+            em nenhuma página. Ver `conta.ts` e `ProvedorConta`. */}
         <NextIntlClientProvider>
+        <ProvedorConta modo={MODO_CONTA}>
+        {/* ⚠️ **O cesto e o histórico subiram da página das encomendas para
+            aqui.** Não é arrumação: a página da conta precisa de ler o histórico
+            e de repor um pedido antigo no cesto, e um provedor montado só em
+            `/encomendas` deixava-a a olhar para `null`. A **barra** do cesto
+            continua a aparecer só nas encomendas — é lá que ela faz falta, e o
+            que subiu foi o estado, não a interface. */}
+        <CestoProvider>
+        <ProvedorHistorico>
           {/* Primeiro tabulador da página: quem navega por teclado salta o
               cabeçalho inteiro em vez de o percorrer em todas as páginas. */}
           <a
@@ -133,6 +151,17 @@ export default async function LayoutIdioma({
               página. Ver o componente para as duas regras que o mantêm
               discreto. */}
           <BotaoEncomendar />
+          {/* ⚠️ **A barra do cesto subiu da página das encomendas para aqui.**
+              Com as páginas de produto, juntar deixou de acontecer todo no mesmo
+              sítio: quem juntava um kit em `/encomendas/festa-premium` não via
+              barra nenhuma, ficava sem sinal de que tinha acertado e sem caminho
+              de volta ao pedido. Continua a só aparecer quando tem alguma coisa
+              dentro, portanto não ocupa o fundo do ecrã de quem nunca juntou
+              nada. */}
+          <Cesto locale={locale as Locale} />
+        </ProvedorHistorico>
+        </CestoProvider>
+        </ProvedorConta>
         </NextIntlClientProvider>
         <DadosEstruturados descricao={t("descricao")} />
         <Analytics />
