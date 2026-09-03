@@ -42,17 +42,27 @@ Em inglês, as mesmas com prefixo `/en`. O português não leva prefixo
 
 ## A conta de cliente
 
-Entra-se com o Google ou o Facebook (`next-auth` v5). ⚠️ **É opcional em dois
-sentidos**, e os dois contam:
+A conta existe sempre, em **dois modos** que nunca coexistem (ver
+`src/lib/conta.ts`):
 
-1. **Para o site.** Sem `AUTH_SECRET` e sem as chaves de pelo menos um
-   fornecedor, a conta desliga-se por inteiro: não aparece botão no cabeçalho,
-   `/entrar` e `/conta` respondem 404, e não se faz um único pedido ao
-   `/api/auth/session`. É a mesma regra do `RESEND_API_KEY` — uma
-   funcionalidade sem chave esconde-se, não avaria. Ver `src/lib/conta.ts`.
-2. **Para quem encomenda.** A conta **nunca é obrigatória para encomendar**, e
-   essa é a regra que não se negoceia. Serve para o pedido vir já preenchido e
-   para o cesto não se misturar com o de outra pessoa no mesmo telemóvel.
+| Modo | Quando | O que é |
+|---|---|---|
+| `fornecedores` | há `AUTH_SECRET` e chaves | entra-se com o Google ou o Facebook, sessão em JWT num cookie |
+| `demonstracao` | não há chaves | escreve-se nome e email, e fica **só neste browser** |
+
+⚠️ **O modo de demonstração é um bloqueador de lançamento.** No dia em que o site
+for para o ar, ou entram chaves — e o modo muda sozinho — **ou a conta sai**.
+Publicar uma pastelaria com um ecrã de entrada que não autentica ninguém é pior
+do que não ter conta nenhuma.
+
+O que o impede de ser uma mentira é **dizer o que é, onde alguém escreve os seus
+dados**: a página de entrada, em demonstração, avisa que não há registo nem
+palavra-passe e que aquilo fica no browser. A página da conta repete-o, para quem
+lá chega por um link.
+
+⚠️ E a regra que não se negoceia: **a conta nunca é obrigatória para
+encomendar.** Serve para o pedido vir já preenchido e para o cesto não se
+misturar com o de outra pessoa no mesmo telemóvel.
 
 ### O histórico de pedidos
 
@@ -162,10 +172,10 @@ falta, faz o site mentir a alguém:
 - [ ] **Escalões do Kit Premium.** O de 20 pax (335 €) fica 35 € acima do Médio
       (300 €), mas o de 40 salta de 590 € para 650 €. Confirmar que é mesmo assim.
 
-### Opcional, e só quando a casa quiser
-
-- [ ] **Chaves do Google e do Facebook** para a conta de cliente. Sem elas o site
-      funciona todo, sem conta nenhuma. Ver `.env.example` e a secção acima.
+- [ ] ⚠️ **A conta está em modo de demonstração.** Sem chaves, o ecrã de entrada
+      aceita qualquer nome e email e guarda-os no browser. É de propósito, para o
+      cliente ver a funcionalidade — e **não pode ir para o ar assim**. Ou entram
+      as chaves do Google/Facebook (`.env.example`), ou a conta sai.
 
 ### A pedir ao cliente
 

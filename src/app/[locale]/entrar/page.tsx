@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { useTranslations } from "next-intl";
-import { CONTA_ATIVA, FORNECEDORES } from "@/lib/conta";
+import { FORNECEDORES, MODO_CONTA } from "@/lib/conta";
 import { routing } from "@/i18n/routing";
 import { Entrada } from "@/components/conta/Entrada";
 import { Link } from "@/i18n/navigation";
@@ -35,11 +34,6 @@ export default async function PaginaEntrar({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  /* ⚠️ **Sem conta configurada, a página não existe.** Um 404 é a resposta
-     honesta: mostrar um ecrã de entrada com zero botões é pior do que não ter
-     ecrã nenhum. Ver `conta.ts`. */
-  if (!CONTA_ATIVA) notFound();
-
   return <Entrar />;
 }
 
@@ -63,7 +57,7 @@ function Entrar() {
           <p className="mt-4 text-tinta-suave">{t("entrarTexto")}</p>
 
           <div className="mt-10">
-            <Entrada fornecedores={FORNECEDORES} />
+            <Entrada modo={MODO_CONTA} fornecedores={FORNECEDORES} />
           </div>
 
           {/* ⚠️ **A saída sem conta fica à vista e não em letra pequena.**
@@ -80,7 +74,14 @@ function Entrar() {
             </Link>
           </p>
 
-          <p className="mt-6 text-sm text-tinta-suave">{t("privacidade")}</p>
+          {/* ⚠️ **Só no modo dos fornecedores.** Este parágrafo diz o que
+              recebemos do Google e do Facebook; em demonstração não se recebe
+              nada de ninguém, e deixá-lo aqui era descrever um tratamento de
+              dados que não acontece — que é tão errado como esconder um que
+              acontecesse. */}
+          {MODO_CONTA === "fornecedores" && (
+            <p className="mt-6 text-sm text-tinta-suave">{t("privacidade")}</p>
+          )}
         </div>
       </div>
     </div>

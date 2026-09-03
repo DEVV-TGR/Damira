@@ -196,12 +196,17 @@ em `src/lib/autenticacao.ts`). Três decisões que se desfazem sem querer:
    linha: obrigar alguém a registar-se para pedir um bolo de anos numa
    pastelaria de bairro é pôr um balcão à frente da porta. Se algum caminho
    passar a exigir sessão, está errado.
-2. ⚠️ **Sem chaves, a conta desliga-se — não avaria.** `CONTA_ATIVA` em
-   `src/lib/conta.ts` é `false` sem `AUTH_SECRET` ou sem fornecedor, e então o
-   botão não aparece, `/entrar` e `/conta` dão 404, e o `SessionProvider` nem é
-   montado. É a mesma regra do `RESEND_API_KEY`. **Nunca importar o
-   `autenticacao.ts` num componente de cliente** — o `conta.ts` existe
-   justamente para ser o lado seguro dessa fronteira.
+2. ⚠️ **Sem chaves, a conta não desliga: passa a demonstração.** Isto mudou em
+   setembro de 2026 e é a decisão que mais surpreende quem chega. Antes,
+   `CONTA_ATIVA` era `false` sem chaves e a conta não existia — o que quer dizer
+   que **na única instalação que estava no ar a funcionalidade não existia**, nem
+   para o cliente que a devia avaliar. Hoje o `MODO_CONTA` é `demonstracao`:
+   escreve-se nome e email e fica no `localStorage`.
+   **O que a impede de ser uma mentira é o aviso**, na entrada e na conta. Não se
+   apaga. E é um **bloqueador de lançamento**: ou entram chaves, ou a conta sai.
+   O `SessionProvider` continua a não ser montado nesse modo, e continua a valer
+   **nunca importar o `autenticacao.ts` num componente de cliente** — o
+   `conta.ts` existe para ser o lado seguro dessa fronteira.
 3. ⚠️ **O histórico é do browser e não da casa, e a lista diz isso por cima de
    si própria.** Não há base de dados: a sessão é um JWT num cookie e nada nosso
    guarda o que foi pedido. Quem pediu no telemóvel não vê esse pedido no

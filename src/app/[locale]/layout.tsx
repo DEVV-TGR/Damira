@@ -11,7 +11,7 @@ import { DadosEstruturados } from "@/components/DadosEstruturados";
 import { ProvedorConta } from "@/components/conta/ProvedorConta";
 import { CestoProvider } from "@/components/encomendas/CestoProvider";
 import { ProvedorHistorico } from "@/components/encomendas/ProvedorHistorico";
-import { CONTA_ATIVA } from "@/lib/conta";
+import { MODO_CONTA } from "@/lib/conta";
 import { routing, type Locale } from "@/i18n/routing";
 import { URL_SITE, urlLocalizado } from "@/lib/site";
 import { imagensDePartilha } from "@/lib/metadata";
@@ -122,11 +122,11 @@ export default async function LayoutIdioma({
     <html lang={locale} className={`${display.variable} ${corpo.variable}`}>
       <body>
         {/* ⚠️ **O provedor da conta envolve tudo, mas só monta o `next-auth`
-            quando há conta configurada.** Sem chaves, `CONTA_ATIVA` é `false` e
-            não se faz pedido nenhum ao `/api/auth/session` — nem um, em nenhuma
-            página. Ver `ProvedorConta`. */}
+            quando há chaves.** Sem elas o modo é `demonstracao`, a conta vive no
+            browser e não se faz pedido nenhum ao `/api/auth/session` — nem um,
+            em nenhuma página. Ver `conta.ts` e `ProvedorConta`. */}
         <NextIntlClientProvider>
-        <ProvedorConta ativa={CONTA_ATIVA}>
+        <ProvedorConta modo={MODO_CONTA}>
         {/* ⚠️ **O cesto e o histórico subiram da página das encomendas para
             aqui.** Não é arrumação: a página da conta precisa de ler o histórico
             e de repor um pedido antigo no cesto, e um provedor montado só em

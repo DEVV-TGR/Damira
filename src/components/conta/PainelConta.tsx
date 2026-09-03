@@ -1,7 +1,6 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { signOut } from "next-auth/react";
 import { Link } from "@/i18n/navigation";
 import { ListaHistorico } from "@/components/encomendas/ListaHistorico";
 import type { Locale } from "@/i18n/routing";
@@ -28,7 +27,7 @@ import { useConta } from "./ProvedorConta";
  */
 export function PainelConta({ locale }: { locale: Locale }) {
   const t = useTranslations("conta");
-  const { utilizador, aCarregar } = useConta();
+  const { utilizador, aCarregar, sair, modo } = useConta();
 
   if (aCarregar) return <Caixa>{<p className="text-tinta-suave">{t("aCarregar")}</p>}</Caixa>;
 
@@ -76,6 +75,13 @@ export function PainelConta({ locale }: { locale: Locale }) {
 
       <p className="mt-6 text-sm text-tinta-suave">{t("paraQueServe")}</p>
 
+      {/* ⚠️ **A demonstração diz-se também aqui e não só na entrada.** Quem
+          chega a esta página por um link já não passou pelo aviso da entrada, e
+          o que vê é um perfil com o seu nome — que parece uma conta a sério. */}
+      {modo === "demonstracao" && (
+        <p className="mt-3 text-sm text-tinta-suave">{t("demonstracao.naConta")}</p>
+      )}
+
       {/* ⚠️ **Aqui esteve um aviso a dizer que não havia histórico nenhum.**
           Passou a haver — o do browser — e o aviso saiu. O que **não** saiu foi
           a ressalva: continua dentro da `ListaHistorico`, por cima da lista,
@@ -95,11 +101,13 @@ export function PainelConta({ locale }: { locale: Locale }) {
         </Link>
         <button
           type="button"
-          /* ⚠️ **Sair leva à página inicial e não fica aqui.** Ficar em `/conta`
-             depois de sair mostrava o ecrã de «entre na sua conta» no sítio onde
-             a pessoa acabou de sair — que se lê como se a saída não tivesse
-             funcionado. */
-          onClick={() => void signOut({ callbackUrl: "/" })}
+          /* Nos fornecedores, o `sair` do contexto leva à página inicial: ficar
+             em `/conta` depois de sair mostrava o ecrã de «entre na sua conta»
+             no sítio onde a pessoa acabou de sair, o que se lê como se a saída
+             não tivesse funcionado. Em demonstração fica-se aqui, e o ecrã que
+             aparece é o convite a entrar — que é a leitura certa, porque não
+             houve redirecção nenhuma. */
+          onClick={sair}
           className="premivel alvo-toque inline-flex min-h-12 items-center rounded-full border-2 border-tinta px-7 text-sm font-semibold uppercase tracking-widest hover:bg-tinta hover:text-papel"
         >
           {t("sair")}

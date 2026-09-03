@@ -42,12 +42,49 @@ export const FORNECEDORES: Fornecedor[] = [
 ];
 
 /**
- * Há conta neste site?
+ * # Como é que a conta funciona nesta instalação
  *
- * ⚠️ Exige **também** o `AUTH_SECRET`. Sem ele o `next-auth` não consegue
- * assinar a sessão, e o que se via era um botão de entrar que dava erro depois
- * de a pessoa já ter escolhido a conta do Google — o pior sítio possível para
- * falhar, porque nessa altura ela já confiou.
+ * Duas hipóteses, e nunca as duas ao mesmo tempo:
+ *
+ * - **`fornecedores`** — há `AUTH_SECRET` e pelo menos um par de chaves. Entra-se
+ *   com o Google ou o Facebook a sério, e a sessão é um JWT assinado num cookie;
+ * - **`demonstracao`** — não há chaves. A conta existe na mesma, **só no
+ *   browser**: escreve-se um nome e um email, e fica guardado no `localStorage`
+ *   como o cesto e o histórico.
+ *
+ * ## ⚠️ Porque é que a demonstração existe, e porque é que não é uma mentira
+ *
+ * Porque **o cliente tem de ver a funcionalidade**, e criar um projeto no Google
+ * Cloud e outro no Facebook Developers para mostrar um ecrã numa reunião é
+ * trabalho e é uma conta em nome de alguém. Antes disto, a instalação sem
+ * chaves — que é a que está no ar — escondia a conta por inteiro: ninguém via o
+ * botão, o histórico não tinha onde aparecer, e a funcionalidade não existia
+ * para quem a devia avaliar.
+ *
+ * O que a impede de ser uma mentira é **dizer o que é, no sítio onde alguém
+ * escreve os seus dados**. A página de entrada, em demonstração, diz que não há
+ * registo nem palavra-passe e que aquilo fica só neste browser. Um ecrã de
+ * entrada que finge autenticar e não avisa é outra coisa — e essa não se faz.
+ *
+ * ## ⚠️ E é um bloqueador de lançamento
+ *
+ * No dia em que o site for para o ar a sério, ou entram chaves e o modo passa a
+ * `fornecedores`, **ou a conta sai**. Publicar uma pastelaria com um ecrã de
+ * entrada que não autentica ninguém é pior do que não ter conta nenhuma. Está na
+ * lista do README e na #3.
  */
-export const CONTA_ATIVA =
-  FORNECEDORES.length > 0 && definida(process.env.AUTH_SECRET);
+export type ModoConta = "fornecedores" | "demonstracao";
+
+export const MODO_CONTA: ModoConta =
+  FORNECEDORES.length > 0 && definida(process.env.AUTH_SECRET)
+    ? "fornecedores"
+    : "demonstracao";
+
+/**
+ * A conta existe sempre — o que muda é o modo.
+ *
+ * ⚠️ **Isto era `false` sem chaves e passou a ser sempre `true`.** Fica com o
+ * nome que tinha porque é o que os componentes perguntam, mas quem precisa de
+ * saber *qual* dos dois modos usa o `MODO_CONTA`.
+ */
+export const CONTA_ATIVA = true;

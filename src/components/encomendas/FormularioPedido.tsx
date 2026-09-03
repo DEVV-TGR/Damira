@@ -75,7 +75,7 @@ export function FormularioPedido({ locale }: { locale: Locale }) {
      o que ela dá entra pelas `key` dos campos e não só pelo `defaultValue`: sem
      isso, quem entra na conta e volta ao formulário encontra os campos vazios,
      que é justamente o trabalho que a conta vinha poupar. */
-  const { ativa: contaAtiva, utilizador } = useConta();
+  const { utilizador } = useConta();
 
   const contexto = useCesto();
   const historico = useHistorico();
@@ -388,7 +388,7 @@ export function FormularioPedido({ locale }: { locale: Locale }) {
             nenhum.** É o único momento em que ter conta poupa alguma coisa a
             quem está a encomendar; no topo da página seria um balcão à frente da
             porta. E some assim que a pessoa entra. */}
-        {contaAtiva && !utilizador && (
+        {!utilizador && (
           <p className="text-sm text-papel/70 sm:col-span-2">
             {tconta("preencherDica")}{" "}
             <Link

@@ -7,11 +7,12 @@ import { useConta } from "./ProvedorConta";
 /**
  * A entrada da conta no cabeçalho.
  *
- * ## ⚠️ Não aparece quando não há conta
+ * ## ⚠️ Aparece sempre, porque a conta existe sempre
  *
- * Sem chaves configuradas, `ativa` é `false` e isto não renderiza nada — nem um
- * botão desligado, nem um aviso. Um «Entrar» que dá erro é pior do que não haver
- * «Entrar» nenhum.
+ * Isto **não renderizava nada** sem chaves do Google ou do Facebook, e por isso a
+ * funcionalidade não existia na instalação que está no ar — nem para o cliente
+ * que a devia ver. Hoje, sem chaves, a conta corre em demonstração e o botão
+ * aparece. Ver `conta.ts`.
  *
  * ## ⚠️ E não pisca enquanto a sessão carrega
  *
@@ -22,10 +23,8 @@ import { useConta } from "./ProvedorConta";
  */
 export function BotaoConta() {
   const t = useTranslations("conta");
-  const { ativa, utilizador, aCarregar } = useConta();
+  const { utilizador, aCarregar } = useConta();
   const caminho = usePathname();
-
-  if (!ativa) return null;
 
   if (aCarregar) {
     return <span aria-hidden className="h-9 w-9 rounded-full bg-tinta/8" />;

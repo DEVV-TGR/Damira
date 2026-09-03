@@ -478,7 +478,12 @@
     "encomendar": "Go to orders",
     "sair": "Sign out",
     "preencherDica": "Rather not type this every time?",
-    "preencherLigacao": "Sign in to your account"
+    "preencherLigacao": "Sign in to your account",
+    "demonstracao": {
+      "aviso": "In this demo the account works only in this browser: there is no sign-up, no password, and nothing is sent anywhere. It is here to show you how it would look.",
+      "entrar": "Sign in or create account",
+      "naConta": "This is a demo account and it lives only in this browser."
+    }
   },
   "historico": {
     "titulo": "Orders you have placed",
