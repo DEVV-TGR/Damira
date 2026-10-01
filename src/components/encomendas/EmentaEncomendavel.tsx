@@ -1,13 +1,7 @@
 import { useTranslations } from "next-intl";
-import type { Carta, Categoria } from "@/data/ementa";
-import {
-  artigosEncomendaveis,
-  cartasEncomendaveis,
-  categoriasEncomendaveis,
-  daCartaECategoria,
-  regraDe,
-} from "@/lib/encomendavel";
 import type { Locale } from "@/i18n/routing";
+import type { Produto } from "@/lib/dados/tipos";
+import { porCategoria, regraDe } from "@/lib/vista";
 import { CartaoArtigo } from "./CartaoArtigo";
 
 /**
@@ -39,8 +33,18 @@ import { CartaoArtigo } from "./CartaoArtigo";
  * ⚠️ **A ordem é a das cartas e a do impresso**, e não alfabética nem por preço:
  * é a mesma ordem da página da ementa, e quem vem de lá encontra as coisas onde
  * as deixou.
+ *
+ * Os artigos chegam já filtrados — os da ementa que estão à venda online — e
+ * pela ordem do catálogo. As cartas e as categorias saem da ordem em que
+ * aparecem nessa lista, que é a ordem do impresso.
  */
-export function EmentaEncomendavel({ locale }: { locale: Locale }) {
+export function EmentaEncomendavel({
+  artigos,
+  locale,
+}: {
+  artigos: Produto[];
+  locale: Locale;
+}) {
   const t = useTranslations("encomendas.daEmenta");
   const te = useTranslations("ementa");
 
@@ -64,17 +68,19 @@ export function EmentaEncomendavel({ locale }: { locale: Locale }) {
         </p>
 
         <div className="mt-12 space-y-14">
-          {cartasEncomendaveis().map((carta) => (
+          {porOrdemDeAparecer(artigos.map((a) => a.carta!)).map((carta) => (
             <div key={carta}>
               <h3 className="titulo-display titulo-gama text-tijolo">
-                {te(`cartas.${carta as Carta}.curto`)}
+                {te(`cartas.${carta}.curto`)}
               </h3>
 
               <div className="mt-6 space-y-10">
-                {categoriasEncomendaveis(carta).map((categoria) => (
+                {porOrdemDeAparecer(
+                  artigos.filter((a) => a.carta === carta).map((a) => a.categoria!),
+                ).map((categoria) => (
                   <div key={categoria}>
                     <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-tinta-suave">
-                      {te(`categorias.${categoria as Categoria}`)}
+                      {te(`categorias.${categoria}`)}
                     </h4>
                     {/* ⚠️ **A regra vive aqui e não em cada cartão.** Escrita
                         artigo a artigo, «mínimo 12 unidades» aparecia setenta
@@ -83,13 +89,13 @@ export function EmentaEncomendavel({ locale }: { locale: Locale }) {
                         categoria** (ver `encomendavel.ts`), portanto é no título
                         da categoria que ela é verdadeira uma só vez. */}
                     <p className="mt-1 text-sm text-tinta-suave">
-                      {regraDaCategoria(categoria, t)}
+                      {regraDaCategoria(artigos, categoria, t)}
                     </p>
 
                     {/* Duas colunas no telemóvel e seis num monitor: o cartão é
                         estreito de propósito, e a secção tem setenta deles. */}
                     <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                      {daCartaECategoria(carta, categoria).map((artigo) => (
+                      {porCategoria(artigos, carta, categoria).map((artigo) => (
                         <CartaoArtigo
                           key={artigo.id}
                           artigo={artigo}
@@ -118,13 +124,17 @@ export function EmentaEncomendavel({ locale }: { locale: Locale }) {
  * ar de verdade.
  */
 function regraDaCategoria(
-  categoria: Categoria,
+  artigos: readonly Produto[],
+  categoria: string,
   t: (chave: string, valores?: Record<string, string | number>) => string,
 ): string {
-  const artigo = artigosEncomendaveis().find((a) => a.categoria === categoria);
+  const artigo = artigos.find((a) => a.categoria === categoria);
   const regra = artigo ? regraDe(artigo) : null;
   if (!artigo || !regra) return "";
   return artigo.unidade === "kg"
     ? t("regraKg", { minimo: regra.minimo })
     : t("regraUn", { minimo: regra.minimo, passo: regra.passo });
 }
+
+/** Cada valor uma vez, pela ordem em que aparece. */
+const porOrdemDeAparecer = (valores: readonly string[]): string[] => [...new Set(valores)];

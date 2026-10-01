@@ -2,16 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import {
-  cartasComArtigos,
-  categoriasDaCarta,
-  daCarta,
-  ementa,
-  porCategoria,
-  type Artigo,
-} from "@/data/ementa";
-import { filtrarArtigos, normalizar } from "@/lib/procura";
 import type { Locale } from "@/i18n/routing";
+import type { OrdemEmenta, Produto } from "@/lib/dados/tipos";
+import { filtrarArtigos, normalizar } from "@/lib/procura";
+import { cartasComArtigos, categoriasDaCarta, daCarta, porCategoria } from "@/lib/vista";
 import { NavegacaoEmenta } from "./NavegacaoEmenta";
 import { SeccaoEmenta } from "./SeccaoEmenta";
 import { PainelArtigo } from "./PainelArtigo";
@@ -63,9 +57,22 @@ const COR_DA_CARTA: Record<string, string> = {
  * filtro começa vazio (portanto não esconde nada) e cada artigo tem a sua
  * âncora. Procurar e abrir um artigo são acréscimos, não a única forma de ler a
  * carta.
+ *
+ * ⚠️ **Os artigos chegam por prop, da página.** Este componente corre no
+ * browser; enquanto importava o `@/data/ementa`, levava o JSON inteiro, o zod e
+ * o esquema no bundle de quem só queria ver a carta. A página vai buscá-los a
+ * `@/lib/dados`, no servidor, e passa só o que se mostra.
  */
-export function Carta({ locale }: { locale: Locale }) {
-  const [aberto, setAberto] = useState<Artigo | null>(null);
+export function Carta({
+  artigos,
+  ordem,
+  locale,
+}: {
+  artigos: Produto[];
+  ordem: OrdemEmenta;
+  locale: Locale;
+}) {
+  const [aberto, setAberto] = useState<Produto | null>(null);
   const [procura, setProcura] = useState("");
   const t = useTranslations("ementa");
 
@@ -76,7 +83,7 @@ export function Carta({ locale }: { locale: Locale }) {
      mostrar, com que artigos, e quantos ao todo. */
   const resultado = useMemo(() => {
     const termo = normalizar(procura);
-    const cartas = cartasComArtigos()
+    const cartas = cartasComArtigos(artigos, ordem)
       .map((carta) => {
         /* ⚠️ **O nome da carta e o da secção também contam.** Nenhum artigo se
            chama «vegan» nem «doce» — a carta e a secção é que se chamam — e
@@ -91,15 +98,15 @@ export function Carta({ locale }: { locale: Locale }) {
           );
         return {
           carta,
-          categorias: categoriasDaCarta(carta)
+          categorias: categoriasDaCarta(artigos, ordem, carta)
             .map((categoria) => ({
               categoria,
               artigos:
                 cartaBate ||
                 (termo.length > 0 &&
                   normalizar(t(`categorias.${categoria}`)).includes(termo))
-                  ? porCategoria(carta, categoria)
-                  : filtrarArtigos(porCategoria(carta, categoria), procura),
+                  ? porCategoria(artigos, carta, categoria)
+                  : filtrarArtigos(porCategoria(artigos, carta, categoria), procura),
             }))
             .filter((seccao) => seccao.artigos.length > 0),
         };
@@ -112,18 +119,21 @@ export function Carta({ locale }: { locale: Locale }) {
     );
 
     return { cartas, encontrados };
-  }, [procura, t]);
+  }, [artigos, ordem, procura, t]);
 
   const aFiltrar = procura.trim().length > 0;
 
   return (
     <>
       <NavegacaoEmenta
-        cartas={cartasComArtigos()}
+        cartas={cartasComArtigos(artigos, ordem)}
+        porCarta={Object.fromEntries(
+          ordem.cartas.map((carta) => [carta, daCarta(artigos, carta).length]),
+        )}
         procura={procura}
         aoProcurar={setProcura}
         encontrados={resultado.encontrados}
-        total={ementa.length}
+        total={artigos.length}
       />
 
       {/* ⚠️ **O vazio tem de dizer o que fazer a seguir**, e não só que não há
@@ -169,7 +179,7 @@ export function Carta({ locale }: { locale: Locale }) {
               >
                 <div className="envolvente">
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] opacity-75">
-                    {t("quantosArtigos", { n: daCarta(carta).length })}
+                    {t("quantosArtigos", { n: daCarta(artigos, carta).length })}
                   </p>
                   <h2
                     className="titulo-display titulo-beta mt-3 uppercase"
@@ -190,6 +200,7 @@ export function Carta({ locale }: { locale: Locale }) {
                 carta={carta}
                 categoria={categoria}
                 artigos={artigos}
+                subcategorias={ordem.subcategorias}
                 locale={locale}
                 aoAbrir={setAberto}
               />

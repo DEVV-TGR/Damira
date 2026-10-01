@@ -1,9 +1,16 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import type { Artigo } from "@/data/ementa";
-import { regraDe } from "@/lib/encomendavel";
-import { caminhoDoArtigo } from "@/lib/produtos";
-import { formatarPreco } from "@/lib/preco";
+import type { Produto } from "@/lib/dados/tipos";
+import { formatarCent } from "@/lib/preco";
+import {
+  caminhoDoArtigo,
+  fotoDe,
+  nomeDe,
+  precoMinimoCent,
+  precoUnicoCent,
+  regraDe,
+  variantesVisiveis,
+} from "@/lib/vista";
 import type { Locale } from "@/i18n/routing";
 import { FotoProduto } from "./FotoProduto";
 import { BotaoJuntar } from "./BotaoJuntar";
@@ -41,17 +48,16 @@ export function CartaoArtigo({
   artigo,
   locale,
 }: {
-  artigo: Artigo;
+  artigo: Produto;
   locale: Locale;
 }) {
   const t = useTranslations("produto");
   const te = useTranslations("ementa");
   const regra = regraDe(artigo);
 
-  const nome = locale === "pt" ? artigo.nome : artigo.nomeEn;
-  const precoMostrado =
-    artigo.preco ??
-    (artigo.variantes ? Math.min(...artigo.variantes.map((v) => v.preco)) : null);
+  const nome = nomeDe(artigo, locale);
+  const temVariantes = variantesVisiveis(artigo).length > 0;
+  const precoMostrado = precoMinimoCent(artigo);
 
   return (
     <li className="group flex flex-col rounded-xl border border-tinta/15 bg-papel p-2.5 transition-colors hover:border-tijolo">
@@ -59,7 +65,7 @@ export function CartaoArtigo({
         href={caminhoDoArtigo(artigo.id)}
         className="rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tijolo"
       >
-        <FotoProduto foto={artigo.foto} alt="" proporcao="3 / 2" discreta />
+        <FotoProduto foto={fotoDe(artigo)} alt="" proporcao="3 / 2" discreta />
         <h4 className="mt-2.5 text-sm font-semibold leading-snug group-hover:text-tijolo">
           {nome}
         </h4>
@@ -78,10 +84,10 @@ export function CartaoArtigo({
         <p className="text-sm tabular-nums">
           {precoMostrado !== null && (
             <>
-              {artigo.variantes && (
+              {temVariantes && (
                 <span className="mr-1 text-xs text-tinta-suave">{t("desde")}</span>
               )}
-              {formatarPreco(precoMostrado, locale)}
+              {formatarCent(precoMostrado, locale)}
               <span className="text-xs text-tinta-suave">
                 {artigo.unidade === "kg" ? te("porQuilo") : ` ${t("cadaCurto")}`}
               </span>
@@ -89,7 +95,7 @@ export function CartaoArtigo({
           )}
         </p>
 
-        {regra && !artigo.variantes && (
+        {regra && !temVariantes && (
           <BotaoJuntar
             variante="compacta"
             locale={locale}
@@ -98,7 +104,8 @@ export function CartaoArtigo({
               tipo: "ementa",
               nome,
               variante: null,
-              preco: artigo.preco,
+              /* O cesto ainda guarda euros; passa a ids e cêntimos no PR seguinte. */
+              preco: precoUnicoCent(artigo) === null ? null : precoUnicoCent(artigo)! / 100,
               pessoas: null,
               notas: null,
               unidade: artigo.unidade,

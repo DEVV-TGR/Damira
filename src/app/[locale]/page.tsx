@@ -14,6 +14,7 @@ import { Raro } from "@/components/cartaz/Raro";
 import { Festa } from "@/components/cartaz/Festa";
 import { Colofao } from "@/components/cartaz/Colofao";
 import { routing, type Locale } from "@/i18n/routing";
+import { listarProdutos, ordemDaEmenta } from "@/lib/dados";
 import "../cartaz-motor.css";
 import "../cartaz.css";
 
@@ -112,6 +113,11 @@ export default async function PaginaInicial({
   setRequestLocale(locale);
 
   const t = await getTranslations({ locale, namespace: "cartaz" });
+  const [ementa, encomendas, ordem] = await Promise.all([
+    listarProdutos({ origem: "ementa" }),
+    listarProdutos({ origem: "encomendas" }),
+    ordemDaEmenta(),
+  ]);
 
   /* ⚠️ **A lista é uma função dos capítulos e não uma constante**: os títulos
      são texto traduzido, e uma constante ao lado do componente ficava numa
@@ -142,9 +148,9 @@ export default async function PaginaInicial({
       <Maos />
       <Vitrine />
       <Reels />
-      <Raro />
-      <Provar locale={locale as Locale} />
-      <Festa locale={locale as Locale} />
+      <Raro ementa={ementa} />
+      <Provar ementa={ementa} ordem={ordem} locale={locale as Locale} />
+      <Festa ementa={ementa} encomendas={encomendas} locale={locale as Locale} />
       <Encomendar />
       <Colofao />
     </div>

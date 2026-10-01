@@ -1,7 +1,8 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { formatarPreco } from "@/lib/preco";
-import { caminhoDoProduto, precoMinimo, type Produto } from "@/lib/produtos";
+import type { Produto } from "@/lib/dados/tipos";
+import { formatarCent } from "@/lib/preco";
+import { caminhoDoProduto, descricaoDe, fotoDe, nomeDe, precoMinimoCent } from "@/lib/vista";
 import type { Locale } from "@/i18n/routing";
 import { FotoProduto } from "./FotoProduto";
 
@@ -35,10 +36,9 @@ export function CartaoProduto({
   locale: Locale;
 }) {
   const t = useTranslations("produto");
-  const preco = precoMinimo(produto);
-  const nome = produto.familia === "medida" ? t("medida.nome") : produto.nome(locale);
-  const resumo =
-    produto.familia === "medida" ? t("medida.resumo") : produto.resumo?.(locale);
+  const preco = precoMinimoCent(produto);
+  const nome = nomeDe(produto, locale);
+  const resumo = descricaoDe(produto, locale);
 
   return (
     <li className="group">
@@ -46,7 +46,7 @@ export function CartaoProduto({
         href={caminhoDoProduto(produto.id)}
         className="flex h-full flex-col rounded-2xl border border-tinta/15 bg-papel p-4 transition-colors hover:border-tijolo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tijolo"
       >
-        <FotoProduto foto={produto.foto} alt="" />
+        <FotoProduto foto={fotoDe(produto)} alt="" />
 
         <div className="mt-4 flex items-start justify-between gap-3">
           <h3 className="titulo-display titulo-gama group-hover:text-tijolo">
@@ -75,7 +75,7 @@ export function CartaoProduto({
                   {t("desde")}
                 </span>
               )}
-              {formatarPreco(preco, locale)}
+              {formatarCent(preco, locale)}
             </>
           )}
         </p>

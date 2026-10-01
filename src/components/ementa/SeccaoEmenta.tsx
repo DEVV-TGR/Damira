@@ -1,11 +1,6 @@
 import { useTranslations } from "next-intl";
-import {
-  SUBCATEGORIAS,
-  type Artigo,
-  type Carta,
-  type Categoria,
-} from "@/data/ementa";
 import type { Locale } from "@/i18n/routing";
+import type { Produto } from "@/lib/dados/tipos";
 import { ArtigoCompacto, ArtigoEmenta } from "./ArtigoEmenta";
 
 /**
@@ -14,24 +9,29 @@ import { ArtigoCompacto, ArtigoEmenta } from "./ArtigoEmenta";
  * São as que no impresso são só nome e preço: as bebidas, os doces vegan (que
  * são vinte e três linhas de nome e número) e os bolos inteiros.
  */
-const COMPACTAS: readonly Categoria[] = ["bebidas", "bolos-inteiros"];
+const COMPACTAS: readonly string[] = ["bebidas", "bolos-inteiros"];
 
 export function SeccaoEmenta({
   carta,
   categoria,
   artigos,
+  subcategorias,
   locale,
   aoAbrir,
 }: {
-  carta: Carta;
-  categoria: Categoria;
+  carta: string;
+  categoria: string;
   /* ⚠️ **Já vêm filtrados de cima.** A secção não sabe se há procura activa e
      não tem de saber: recebe a lista que lhe cabe mostrar. Filtrar aqui dentro
      fazia catorze secções repetirem o mesmo trabalho e obrigava cada uma a
      descobrir que estava vazia **depois** de já ter escrito o título. */
-  artigos: Artigo[];
+  artigos: Produto[];
+  /* A ordem dos títulos dentro das bebidas. Vem por prop e não importada do
+     `@/data/ementa`: este componente corre no browser, e o import levava a
+     ementa inteira com ele. */
+  subcategorias: readonly string[];
   locale: Locale;
-  aoAbrir: (artigo: Artigo) => void;
+  aoAbrir: (artigo: Produto) => void;
 }) {
   const t = useTranslations("ementa");
 
@@ -85,7 +85,7 @@ export function SeccaoEmenta({
              conjunto todo voltava a mostrar as bebidas que o filtro tinha
              acabado de excluir. */
           <div className="mt-8 grid gap-x-12 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
-            {SUBCATEGORIAS.filter((sub) =>
+            {subcategorias.filter((sub) =>
               artigos.some((a) => a.subcategoria === sub),
             ).map((sub) => (
               <div key={sub}>
