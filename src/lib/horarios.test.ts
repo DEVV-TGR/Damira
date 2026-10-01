@@ -63,6 +63,11 @@ const lisboa = (texto: string): Date => {
 const emLisboa = (instante: Date | null): string | null =>
   instante && format(instante, "yyyy-MM-dd HH:mm", { in: tz(LISBOA) });
 
+/** O instante em UTC, com `Z`. O `toISOString()` de um `TZDate` escreve com o
+   desvio de Lisboa (`+01:00`), que é o mesmo instante mas não o mesmo texto. */
+const utc = (instante: Date | null | undefined): string | null =>
+  instante ? new Date(instante.getTime()).toISOString() : null;
+
 const horas = (valor: number, esgotadoHoje = false): ArtigoDoCesto => ({
   tempo: { unidade: "horas", valor },
   esgotadoHoje,
@@ -76,6 +81,19 @@ const dias = (valor: number, esgotadoHoje = false): ArtigoDoCesto => ({
 describe("o ambiente de teste", () => {
   it("corre fora de Lisboa e fora de UTC, para a hora local não passar por acaso", () => {
     expect(new Date(2026, 0, 1).getTimezoneOffset()).toBe(-14 * 60);
+  });
+});
+
+describe("os instantes que o módulo devolve", () => {
+  it("são de Lisboa: getHours dá a hora da loja, mesmo com o processo noutro fuso", () => {
+    const levantamento = primeiroLevantamento([horas(6)], lisboa("2026-10-05 15:00"), BASE)!;
+    expect(levantamento.getHours()).toBe(11);
+  });
+
+  it("e o toISOString escreve o desvio de Lisboa, não o Z — mesmo instante, outro texto", () => {
+    const levantamento = primeiroLevantamento([horas(6)], lisboa("2026-10-05 15:00"), BASE)!;
+    expect(levantamento.toISOString()).toBe("2026-10-06T11:00:00.000+01:00");
+    expect(utc(levantamento)).toBe("2026-10-06T10:00:00.000Z");
   });
 });
 
@@ -238,7 +256,7 @@ describe("mudança de hora de 25/10/2026 (a hora recua, o domingo tem 25 horas)"
     const agora = lisboa("2026-10-24 17:00");
     const pronto = prontoEm([horas(6)], agora, BASE);
     expect(emLisboa(pronto)).toBe("2026-10-25 13:00");
-    expect(pronto?.toISOString()).toBe("2026-10-25T13:00:00.000Z");
+    expect(utc(pronto)).toBe("2026-10-25T13:00:00.000Z");
   });
 
   it("as vagas abrem às 7h00 de Lisboa dos dois lados da mudança", () => {
@@ -248,9 +266,9 @@ describe("mudança de hora de 25/10/2026 (a hora recua, o domingo tem 25 horas)"
     const domingo = todas.filter((vaga) => vaga.data === "2026-10-25");
 
     expect(sabado[0].hora).toBe("07:00");
-    expect(sabado[0].inicio.toISOString()).toBe("2026-10-24T06:00:00.000Z");
+    expect(utc(sabado[0].inicio)).toBe("2026-10-24T06:00:00.000Z");
     expect(domingo[0].hora).toBe("07:00");
-    expect(domingo[0].inicio.toISOString()).toBe("2026-10-25T07:00:00.000Z");
+    expect(utc(domingo[0].inicio)).toBe("2026-10-25T07:00:00.000Z");
     // um dia de 25 horas não tem mais vagas: a loja abre as mesmas 14 h
     expect(domingo).toHaveLength(28);
     expect(domingo.at(-1)?.hora).toBe("20:30");
@@ -261,13 +279,13 @@ describe("mudança de hora de 25/10/2026 (a hora recua, o domingo tem 25 horas)"
     const agora = new Date("2026-10-24T23:30:00Z");
     const levantamento = primeiroLevantamento([dias(1)], agora, BASE);
     expect(emLisboa(levantamento)).toBe("2026-10-26 07:00");
-    expect(levantamento?.toISOString()).toBe("2026-10-26T07:00:00.000Z");
+    expect(utc(levantamento)).toBe("2026-10-26T07:00:00.000Z");
   });
 
   it("um bolo de 1 dia pedido no sábado levanta-se no domingo às 7h00 de Lisboa", () => {
     const agora = lisboa("2026-10-24 10:00");
     const levantamento = primeiroLevantamento([dias(1)], agora, BASE);
-    expect(levantamento?.toISOString()).toBe("2026-10-25T07:00:00.000Z");
+    expect(utc(levantamento)).toBe("2026-10-25T07:00:00.000Z");
   });
 });
 
@@ -277,7 +295,7 @@ describe("mudança de hora de 28/03/2027 (a hora avança, o domingo tem 23 horas
     const agora = lisboa("2027-03-27 17:00");
     const pronto = prontoEm([horas(6)], agora, BASE);
     expect(emLisboa(pronto)).toBe("2027-03-28 13:00");
-    expect(pronto?.toISOString()).toBe("2027-03-28T12:00:00.000Z");
+    expect(utc(pronto)).toBe("2027-03-28T12:00:00.000Z");
   });
 
   it("as vagas abrem às 7h00 de Lisboa dos dois lados da mudança", () => {
@@ -286,9 +304,9 @@ describe("mudança de hora de 28/03/2027 (a hora avança, o domingo tem 23 horas
     const sabado = todas.filter((vaga) => vaga.data === "2027-03-27");
     const domingo = todas.filter((vaga) => vaga.data === "2027-03-28");
 
-    expect(sabado[0].inicio.toISOString()).toBe("2027-03-27T07:00:00.000Z");
+    expect(utc(sabado[0].inicio)).toBe("2027-03-27T07:00:00.000Z");
     expect(domingo[0].hora).toBe("07:00");
-    expect(domingo[0].inicio.toISOString()).toBe("2027-03-28T06:00:00.000Z");
+    expect(utc(domingo[0].inicio)).toBe("2027-03-28T06:00:00.000Z");
     expect(domingo).toHaveLength(28);
   });
 
@@ -297,7 +315,7 @@ describe("mudança de hora de 28/03/2027 (a hora avança, o domingo tem 23 horas
     const levantamento = lisboa("2027-03-29 10:00");
     const inicio = inicioDaProducao([horas(6)], levantamento, BASE);
     expect(emLisboa(inicio)).toBe("2027-03-28 14:00");
-    expect(inicio?.toISOString()).toBe("2027-03-28T13:00:00.000Z");
+    expect(utc(inicio)).toBe("2027-03-28T13:00:00.000Z");
   });
 });
 
@@ -494,6 +512,16 @@ describe("configuração inválida rebenta em vez de calcular", () => {
   it("uma hora que não existe", () => {
     const config = com({ loja: todosOsDias({ abre: "07:00", fecha: "25:00" }) });
     expect(() => vagas([horas(0)], agora, config)).toThrow(RangeError);
+  });
+
+  it("dois períodos sobrepostos, que contavam horas a dobrar", () => {
+    const config = com({
+      cozinha: todosOsDias(
+        { abre: "08:00", fecha: "14:00" },
+        { abre: "12:00", fecha: "18:00" },
+      ),
+    });
+    expect(() => prontoEm([horas(1)], agora, config)).toThrow(RangeError);
   });
 
   it("um intervalo que fecha antes de abrir", () => {
