@@ -65,6 +65,12 @@ base de dados não existe, e a migração chega a uma forma que já está decidi
 em vez de a inventar. Se a implementação pedir uma assinatura diferente, muda-se
 pela regra de baixo, não por dentro.
 
+**Onde está.** As funções estão em `src/lib/dados/index.ts` e o contrato em
+`tipos.ts` (a `FonteDeDados`). A implementação provisória é o `json.ts`, e é
+**o único ficheiro que a migração troca**. Os valores que a casa ainda não deu
+ficam `null`; os de exemplo vivem à parte, em `exemplo.ts`, e recusam-se a
+correr em produção.
+
 - Mudar uma função de `src/lib/dados/`, um schema ou o esquema da base de dados
   → **PR próprio, revisto pelo outro** (o `CODEOWNERS` pede-o automaticamente).
 - O pedido é o que está em `pedidos.md`. Ninguém acrescenta um estado ou um
