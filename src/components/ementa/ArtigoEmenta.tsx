@@ -1,7 +1,8 @@
 import { useTranslations } from "next-intl";
-import type { Artigo } from "@/data/ementa";
 import type { Locale } from "@/i18n/routing";
-import { formatarPreco } from "@/lib/preco";
+import type { Produto } from "@/lib/dados/tipos";
+import { formatarCent } from "@/lib/preco";
+import { descricaoDe, emLingua, nomeDe, precoUnicoCent, variantesVisiveis } from "@/lib/vista";
 import { EtiquetaVegan } from "./Etiquetas";
 
 /**
@@ -9,8 +10,7 @@ import { EtiquetaVegan } from "./Etiquetas";
  * Santo Burga, onde metade eram nomes de santos e não se traduziam. Ver o
  * `ementa.ts`.
  */
-const nomeVisivel = (artigo: Artigo, locale: Locale) =>
-  locale === "en" ? artigo.nomeEn : artigo.nome;
+const nomeVisivel = nomeDe;
 
 /**
  * O preço escrito por extenso, já com a unidade quando ela existe.
@@ -20,14 +20,15 @@ const nomeVisivel = (artigo: Artigo, locale: Locale) =>
  * metade do preço, e o erro só aparece ao balcão, com o cliente à frente. Ver
  * `UNIDADES` em `ementa.ts`.
  */
-function Preco({ artigo, locale }: { artigo: Artigo; locale: Locale }) {
+function Preco({ artigo, locale }: { artigo: Produto; locale: Locale }) {
   const t = useTranslations("ementa");
+  const preco = precoUnicoCent(artigo);
 
-  if (artigo.preco === null) return null;
+  if (preco === null) return null;
 
   return (
     <>
-      {formatarPreco(artigo.preco, locale)}
+      {formatarCent(preco, locale)}
       {artigo.unidade === "kg" && (
         <span className="text-xs font-normal opacity-70">
           {t("porQuilo")}
@@ -50,9 +51,9 @@ export function ArtigoEmenta({
   locale,
   aoAbrir,
 }: {
-  artigo: Artigo;
+  artigo: Produto;
   locale: Locale;
-  aoAbrir: (artigo: Artigo) => void;
+  aoAbrir: (artigo: Produto) => void;
 }) {
   const t = useTranslations("ementa");
 
@@ -88,23 +89,28 @@ export function ArtigoEmenta({
           </span>
         </div>
 
-        {artigo.variantes && (
+        {variantesVisiveis(artigo).length > 0 && (
           <p className="mt-1 text-xs tabular-nums opacity-70">
-            {artigo.variantes
-              .map((v) => `${v.chave} · ${formatarPreco(v.preco, locale)}`)
+            {variantesVisiveis(artigo)
+              .map(
+                (v) =>
+                  `${v.rotulo ? emLingua(v.rotulo, locale) : v.id} · ${
+                    v.precoCent === null ? "" : formatarCent(v.precoCent, locale)
+                  }`,
+              )
               .join("   ")}
           </p>
         )}
 
         {artigo.descricao && (
           <p className="mt-1.5 max-w-[46ch] text-sm leading-snug opacity-80">
-            {artigo.descricao[locale]}
+            {descricaoDe(artigo, locale)}
           </p>
         )}
 
-        {artigo.sabores.length > 0 && (
+        {artigo.escolhas.length > 0 && (
           <p className="mt-1.5 max-w-[46ch] text-sm leading-snug opacity-70">
-            {artigo.sabores.join(" · ")}
+            {artigo.escolhas.join(" · ")}
           </p>
         )}
 
@@ -134,7 +140,7 @@ export function ArtigoCompacto({
   artigo,
   locale,
 }: {
-  artigo: Artigo;
+  artigo: Produto;
   locale: Locale;
 }) {
   return (
@@ -149,9 +155,9 @@ export function ArtigoCompacto({
           <Preco artigo={artigo} locale={locale} />
         </span>
       </div>
-      {artigo.sabores.length > 0 && (
+      {artigo.escolhas.length > 0 && (
         <p className="max-w-[40ch] text-xs leading-snug opacity-65">
-          {artigo.sabores.join(" · ")}
+          {artigo.escolhas.join(" · ")}
         </p>
       )}
     </li>

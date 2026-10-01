@@ -2,12 +2,19 @@
 
 import { useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
-import type { Artigo } from "@/data/ementa";
 import type { Locale } from "@/i18n/routing";
-import { formatarPreco } from "@/lib/preco";
+import type { Produto } from "@/lib/dados/tipos";
+import { formatarCent } from "@/lib/preco";
+import {
+  caminhoDoArtigo,
+  descricaoDe,
+  emLingua,
+  nomeDe,
+  precoUnicoCent,
+  variantesVisiveis,
+} from "@/lib/vista";
 import { EtiquetaVegan } from "./Etiquetas";
 import { Link } from "@/i18n/navigation";
-import { caminhoDoArtigo } from "@/lib/produtos";
 
 /**
  * O detalhe de um artigo: **painel encostado ao lado em ecrã largo, folha a subir
@@ -39,7 +46,7 @@ export function PainelArtigo({
   locale,
   aoFechar,
 }: {
-  artigo: Artigo | null;
+  artigo: Produto | null;
   locale: Locale;
   aoFechar: () => void;
 }) {
@@ -63,14 +70,14 @@ export function PainelArtigo({
         if (evento.target === caixa.current) aoFechar();
       }}
       className="painel-artigo bg-papel text-tinta"
-      aria-label={artigo?.nome}
+      aria-label={artigo?.nome.pt}
     >
       {artigo && (
         <div className="flex h-full flex-col">
           <div className="flex items-start justify-between gap-4 border-b border-tinta/15 p-7 pb-5">
             <div className="flex items-baseline gap-4">
               <h2 className="titulo-display text-3xl">
-                {locale === "en" ? artigo.nomeEn : artigo.nome}
+                {nomeDe(artigo, locale)}
               </h2>
             </div>
             <button
@@ -96,9 +103,9 @@ export function PainelArtigo({
           </div>
 
           <div className="flex-1 overflow-y-auto p-7">
-            {artigo.preco !== null && (
+            {precoUnicoCent(artigo) !== null && (
               <p className="titulo-display text-3xl tabular-nums">
-                {formatarPreco(artigo.preco, locale)}
+                {formatarCent(precoUnicoCent(artigo)!, locale)}
                 {artigo.unidade === "kg" && (
                   <span className="text-sm font-normal text-tinta-suave">
                     {t("porQuilo")}
@@ -107,18 +114,18 @@ export function PainelArtigo({
               </p>
             )}
 
-            {artigo.variantes && (
+            {variantesVisiveis(artigo).length > 0 && (
               <ul className="space-y-1">
-                {artigo.variantes.map((v) => (
+                {variantesVisiveis(artigo).map((v) => (
                   <li
-                    key={v.chave}
+                    key={v.id}
                     className="flex items-baseline gap-3 tabular-nums"
                   >
                     <span className="w-16 shrink-0 text-sm text-tinta-suave">
-                      {v.chave}
+                      {v.rotulo ? emLingua(v.rotulo, locale) : v.id}
                     </span>
                     <span className="titulo-display text-xl">
-                      {formatarPreco(v.preco, locale)}
+                      {v.precoCent !== null && formatarCent(v.precoCent, locale)}
                     </span>
                   </li>
                 ))}
@@ -132,16 +139,16 @@ export function PainelArtigo({
             )}
 
             {artigo.descricao && (
-              <p className="mt-5 leading-relaxed">{artigo.descricao[locale]}</p>
+              <p className="mt-5 leading-relaxed">{descricaoDe(artigo, locale)}</p>
             )}
 
-            {artigo.sabores.length > 0 && (
+            {artigo.escolhas.length > 0 && (
               <div className="mt-7 border-t border-tinta/15 pt-5">
                 <p className="text-xs font-semibold uppercase tracking-widest text-tinta-suave">
                   {t("sabores")}
                 </p>
                 <ul className="mt-2 flex flex-wrap gap-x-2 gap-y-1 text-sm">
-                  {artigo.sabores.map((sabor) => (
+                  {artigo.escolhas.map((sabor) => (
                     <li
                       key={sabor}
                       className="rounded-full border border-tinta/20 px-2.5 py-0.5"

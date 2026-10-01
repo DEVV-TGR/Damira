@@ -17,3 +17,11 @@ export function formatarPreco(preco: number, locale: Locale): string {
     currency: "EUR",
   }).format(preco);
 }
+
+/**
+ * O mesmo, a partir de cêntimos — que é como os preços chegam de `@/lib/dados`.
+ * A divisão por cem só acontece aqui, à saída: as contas fazem-se em inteiros.
+ */
+export function formatarCent(cent: number, locale: Locale): string {
+  return formatarPreco(cent / 100, locale);
+}

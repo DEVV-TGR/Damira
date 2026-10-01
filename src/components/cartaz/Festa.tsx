@@ -1,10 +1,14 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { encomendas, escaloesDisponiveis } from "@/data/encomendas";
 import { quantasOpcoes } from "@/data/bolos";
-import { artigosEncomendaveis } from "@/lib/encomendavel";
-import { formatarPreco } from "@/lib/preco";
 import type { Locale } from "@/i18n/routing";
+import type { Produto } from "@/lib/dados/tipos";
+import { formatarCent } from "@/lib/preco";
+import { precoMinimoCent } from "@/lib/vista";
+
+/* O mais barato de uma família, em cêntimos. */
+const desdeDe = (produtos: readonly Produto[]): number =>
+  Math.min(...produtos.map((p) => precoMinimoCent(p) ?? Infinity));
 
 /**
  * Capítulo VIII: **o que se encomenda**. É o argumento que muda o valor de uma
@@ -53,9 +57,22 @@ import type { Locale } from "@/i18n/routing";
  * como último, em vez de estarem por fora: os dois ganham o lugar por mérito e
  * de caminho dão a largura de que o curso precisa.
  */
-export function Festa({ locale }: { locale: Locale }) {
+export function Festa({
+  ementa,
+  encomendas,
+  locale,
+}: {
+  ementa: Produto[];
+  encomendas: Produto[];
+  locale: Locale;
+}) {
   const t = useTranslations("cartaz.festa");
-  const escaloes = escaloesDisponiveis();
+  const kitsFesta = encomendas.filter((p) => p.familia === "festa");
+  const kitsBolo = encomendas.filter((p) => p.familia === "bolo");
+  const boxes = encomendas.filter((p) => p.familia === "box");
+  const escaloes = [
+    ...new Set(kitsFesta.flatMap((kit) => kit.variantes.map((v) => v.pessoas!))),
+  ].sort((a, b) => a - b);
   const maximo = escaloes[escaloes.length - 1];
 
   /**
@@ -68,28 +85,26 @@ export function Festa({ locale }: { locale: Locale }) {
     {
       chave: "festas",
       href: "/encomendas#festas",
-      desde: Math.min(
-        ...encomendas.kitsFesta.flatMap((k) => k.escaloes.map((e) => e.preco)),
-      ),
+      desde: desdeDe(kitsFesta),
       detalhe: t("familias.festas.detalhe", {
-        kits: encomendas.kitsFesta.length,
+        kits: kitsFesta.length,
         escaloes: escaloes.join(" · "),
       }),
     },
     {
       chave: "bolos",
       href: "/encomendas#kits-bolo",
-      desde: Math.min(...encomendas.kitsBolo.map((k) => k.preco)),
+      desde: desdeDe(kitsBolo),
       detalhe: t("familias.bolos.detalhe", {
-        kits: encomendas.kitsBolo.length,
+        kits: kitsBolo.length,
         opcoes: quantasOpcoes("classica") + quantasOpcoes("vegan"),
       }),
     },
     {
       chave: "boxes",
       href: "/encomendas#boxes",
-      desde: Math.min(...encomendas.boxes.map((b) => b.preco)),
-      detalhe: t("familias.boxes.detalhe", { n: encomendas.boxes.length }),
+      desde: desdeDe(boxes),
+      detalhe: t("familias.boxes.detalhe", { n: boxes.length }),
     },
     {
       chave: "carta",
@@ -99,7 +114,7 @@ export function Festa({ locale }: { locale: Locale }) {
          preço. O cartão diz a regra em vez do número. */
       desde: null,
       detalhe: t("familias.carta.detalhe", {
-        n: artigosEncomendaveis().length,
+        n: ementa.filter((artigo) => artigo.aVendaOnline).length,
       }),
     },
   ] as const;
@@ -147,7 +162,7 @@ export function Festa({ locale }: { locale: Locale }) {
               <h3>{t(`familias.${familia.chave}.nome`)}</h3>
               {familia.desde !== null && (
                 <p className="festa__desde">
-                  {t("desde", { preco: formatarPreco(familia.desde, locale) })}
+                  {t("desde", { preco: formatarCent(familia.desde, locale) })}
                 </p>
               )}
               <p className="festa__detalhe">{familia.detalhe}</p>

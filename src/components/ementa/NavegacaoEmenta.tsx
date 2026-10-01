@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { daCarta, type Carta } from "@/data/ementa";
 import { FiltroEmenta } from "./FiltroEmenta";
 
 /* O cabeçalho do sítio (4 rem) mais a barra fixa desta página, que com a caixa
@@ -41,25 +40,29 @@ const ALTURA_FIXA = 190;
  */
 export function NavegacaoEmenta({
   cartas,
+  porCarta,
   procura,
   aoProcurar,
   encontrados,
   total,
 }: {
-  cartas: Carta[];
+  cartas: string[];
+  /* Quantos artigos tem cada carta. Contados em cima e passados por prop: este
+     componente corre no browser e não tem a ementa — nem deve ter. */
+  porCarta: Record<string, number>;
   procura: string;
   aoProcurar: (valor: string) => void;
   encontrados: number;
   total: number;
 }) {
   const t = useTranslations("ementa");
-  const [activa, setActiva] = useState<Carta | null>(null);
+  const [activa, setActiva] = useState<string | null>(null);
 
   useEffect(() => {
     const observador = new IntersectionObserver(
       (entradas) => {
         for (const entrada of entradas) {
-          if (entrada.isIntersecting) setActiva(entrada.target.id as Carta);
+          if (entrada.isIntersecting) setActiva(entrada.target.id);
         }
       },
       {
@@ -132,7 +135,7 @@ export function NavegacaoEmenta({
                   >
                     {t(`cartas.${carta}.curto`)}
                     <span className="ml-2 tabular-nums opacity-60">
-                      {daCarta(carta).length}
+                      {porCarta[carta] ?? 0}
                     </span>
                   </a>
                 </li>

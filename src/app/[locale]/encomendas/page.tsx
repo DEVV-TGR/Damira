@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { useTranslations } from "next-intl";
 import { casa, telefoneMarcavel } from "@/data/casa";
-import { daFamilia, type Produto } from "@/lib/produtos";
+import { listarProdutos } from "@/lib/dados";
+import type { Produto } from "@/lib/dados/tipos";
 import { routing, type Locale } from "@/i18n/routing";
 import { metadataDaPagina } from "@/lib/metadata";
 import { FormularioPedido } from "@/components/encomendas/FormularioPedido";
@@ -31,8 +32,22 @@ export default async function PaginaEncomendas({
   const { locale } = await params;
   setRequestLocale(locale);
   await getTranslations({ locale, namespace: "encomendas" });
+  const [encomendas, daEmenta] = await Promise.all([
+    listarProdutos({ origem: "encomendas" }),
+    listarProdutos({ origem: "ementa", aVendaOnline: true }),
+  ]);
+  const daFamilia = (familia: Produto["familia"]) =>
+    encomendas.filter((produto) => produto.familia === familia);
 
-  return <Encomendas locale={locale as Locale} />;
+  return (
+    <Encomendas
+      festas={daFamilia("festa")}
+      bolos={[...daFamilia("bolo"), ...daFamilia("medida")]}
+      boxes={daFamilia("box")}
+      daEmenta={daEmenta}
+      locale={locale as Locale}
+    />
+  );
 }
 
 /**
@@ -73,7 +88,19 @@ export default async function PaginaEncomendas({
  * no topo é uma pergunta feita a quem ainda não sabe o que quer pedir; no fim, é
  * a pergunta que a página inteira preparou.
  */
-function Encomendas({ locale }: { locale: Locale }) {
+function Encomendas({
+  festas,
+  bolos,
+  boxes,
+  daEmenta,
+  locale,
+}: {
+  festas: Produto[];
+  bolos: Produto[];
+  boxes: Produto[];
+  daEmenta: Produto[];
+  locale: Locale;
+}) {
   const t = useTranslations("encomendas");
   const telefone = telefoneMarcavel();
 
@@ -133,7 +160,7 @@ function Encomendas({ locale }: { locale: Locale }) {
         id="festas"
         titulo={t("festas.titulo")}
         texto={t("festas.texto")}
-        produtos={daFamilia("festa")}
+        produtos={festas}
         locale={locale}
       />
 
@@ -146,7 +173,7 @@ function Encomendas({ locale }: { locale: Locale }) {
            porque o seu catálogo era enorme. Agora que o catálogo vive na página
            dele, a secção separada era um degrau a mais entre duas coisas que se
            comparam uma à outra. */
-        produtos={[...daFamilia("bolo"), ...daFamilia("medida")]}
+        produtos={bolos}
         locale={locale}
         fundo="claro"
       />
@@ -155,12 +182,12 @@ function Encomendas({ locale }: { locale: Locale }) {
         id="boxes"
         titulo={t("boxes.titulo")}
         texto={t("boxes.texto")}
-        produtos={daFamilia("box")}
+        produtos={boxes}
         locale={locale}
       />
 
       {/* ── A carta, por encomenda ────────────────────────────────────── */}
-      <EmentaEncomendavel locale={locale} />
+      <EmentaEncomendavel artigos={daEmenta} locale={locale} />
 
       {/* ── Como encomendar ──────────────────────────────────────────── */}
       <section id="pedido" aria-labelledby="como" className="scroll-mt-24 seccao bg-tinta text-papel">

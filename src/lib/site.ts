@@ -1,6 +1,4 @@
 import { routing } from "@/i18n/routing";
-import { PRODUTOS, caminhoDoArtigo, caminhoDoProduto } from "./produtos";
-import { ementa } from "@/data/ementa";
 
 /**
  * Endereço público do site — fonte única.
@@ -74,22 +72,6 @@ export const ROTAS_FIXAS = ["/", "/ementa", "/encomendas"] as const;
 
 export type RotaFixa = (typeof ROTAS_FIXAS)[number];
 
-/** Todas as rotas públicas. Hoje só as fixas; fica preparado para crescer. */
-export function rotasPublicas(): string[] {
-  /* ⚠️ **As páginas de produto entram aqui e não numa lista à mão.** São doze e
-     saem todas do mesmo sítio de onde saem os cartões e as rotas — um produto
-     novo aparece na grelha, ganha página e entra no mapa do site de uma vez. Uma
-     segunda lista era a maneira garantida de um deles ficar fora do Google sem
-     ninguém dar por isso.
-
-     ⚠️ Não há ciclo: o `produtos.ts` lê os dados e os tipos, e nunca este
-     ficheiro. Se um dia passar a ler, é aqui que rebenta. */
-  return [
-    ...ROTAS_FIXAS,
-    ...PRODUTOS.map((p) => caminhoDoProduto(p.id)),
-    ...ementa.map((a) => caminhoDoArtigo(a.id)),
-  ];
-}
 
 /**
  * O caminho absoluto de uma rota numa língua, já com o prefixo certo.

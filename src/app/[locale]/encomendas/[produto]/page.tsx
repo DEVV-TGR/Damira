@@ -6,19 +6,56 @@ import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { URL_SITE, caminhoLocalizado, urlLocalizado } from "@/lib/site";
 import { imagensDePartilha } from "@/lib/metadata";
-import { PRODUTOS, caminhoDoProduto, produtoPorId, type Produto } from "@/lib/produtos";
 import { GRUPOS, opcoesDe, quantasOpcoes } from "@/data/bolos";
-import type { Box, Escalao, Kit, KitBolo } from "@/data/encomendas";
-import { formatarPreco } from "@/lib/preco";
+import { listarProdutos, produtoPorId } from "@/lib/dados";
+import type { GrupoComposicao, Produto } from "@/lib/dados/tipos";
+import { formatarCent } from "@/lib/preco";
+import {
+  caminhoDoProduto,
+  descricaoDe,
+  emLingua,
+  fotoDe,
+  nomeDe,
+  precoUnicoCent,
+  tipoDoPedido,
+} from "@/lib/vista";
 import { FotoProduto } from "@/components/encomendas/FotoProduto";
 import { ComprarProduto } from "@/components/encomendas/ComprarProduto";
 
 /** Uma página por produto e por língua, todas geradas no `build`. */
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const produtos = await listarProdutos({ origem: "encomendas" });
   return routing.locales.flatMap((locale) =>
-    PRODUTOS.map((produto) => ({ locale, produto: produto.id })),
+    produtos.map((produto) => ({ locale, produto: produto.id })),
   );
 }
+
+/* Um artigo da ementa também é um produto, mas não é desta página: a carta e a
+   encomenda continuam separadas (AGENTS.md). */
+const produtoDeEncomenda = async (id: string): Promise<Produto | null> => {
+  const produto = await produtoPorId(id);
+  return produto?.origem === "encomendas" ? produto : null;
+};
+
+type Linha = GrupoComposicao["linhas"][number];
+
+/** Um escalão de um kit de festa, como a tabela o desenha. */
+type Escalao = { pessoas: number; precoCent: number | null; salgados: Linha[]; doces: Linha[] };
+
+const grupoDe = (composicao: GrupoComposicao[], grupo: GrupoComposicao["grupo"]): Linha[] =>
+  composicao.find((g) => g.grupo === grupo)?.linhas ?? [];
+
+/* Num kit de festa cada variante é um escalão: o número de pessoas, o preço e
+   o que leva. */
+const escaloesDe = (produto: Produto): Escalao[] =>
+  produto.familia === "festa"
+    ? produto.variantes.map((variante) => ({
+        pessoas: variante.pessoas!,
+        precoCent: variante.precoCent,
+        salgados: grupoDe(variante.composicao, "salgados"),
+        doces: grupoDe(variante.composicao, "doces"),
+      }))
+    : [];
 
 export async function generateMetadata({
   params,
@@ -26,7 +63,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string; produto: string }>;
 }): Promise<Metadata> {
   const { locale, produto: id } = await params;
-  const produto = produtoPorId(id);
+  const produto = await produtoDeEncomenda(id);
   if (!produto) return {};
 
   const t = await getTranslations({ locale, namespace: "produto" });
@@ -34,11 +71,8 @@ export async function generateMetadata({
   const meta = await getTranslations({ locale, namespace: "metadata" });
 
   const l = locale as Locale;
-  const titulo = produto.familia === "medida" ? t("medida.nome") : produto.nome(l);
-  const descricao =
-    produto.familia === "medida"
-      ? t("medida.resumo")
-      : (produto.resumo?.(l) ?? t("descricaoGenerica", { nome: titulo }));
+  const titulo = nomeDe(produto, l);
+  const descricao = descricaoDe(produto, l) ?? t("descricaoGenerica", { nome: titulo });
   const rota = caminhoDoProduto(produto.id);
   const imagens = imagensDePartilha(meta("imagemAlt"));
 
@@ -72,7 +106,7 @@ export default async function PaginaProduto({
 }) {
   const { locale, produto: id } = await params;
   setRequestLocale(locale);
-  const produto = produtoPorId(id);
+  const produto = await produtoDeEncomenda(id);
   if (!produto) notFound();
 
   return <Detalhe produto={produto} locale={locale as Locale} />;
@@ -104,17 +138,16 @@ function Detalhe({ produto, locale }: { produto: Produto; locale: Locale }) {
   const t = useTranslations("produto");
   const te = useTranslations("encomendas");
 
-  const nome = produto.familia === "medida" ? t("medida.nome") : produto.nome(locale);
-  const resumo =
-    produto.familia === "medida" ? t("medida.resumo") : produto.resumo?.(locale);
+  const nome = nomeDe(produto, locale);
+  const resumo = descricaoDe(produto, locale);
 
-  const escaloes =
-    produto.familia === "festa"
-      ? (produto.fonte as Kit).escaloes.map((e) => ({
-          pessoas: e.pessoas,
-          preco: e.preco,
-        }))
-      : [];
+  /* O bloco de compra e o cesto ainda falam em euros; passam a ids e cêntimos
+     no PR seguinte. A divisão por cem dá o mesmo número do JSON. */
+  const escaloes = escaloesDe(produto).map((e) => ({
+    pessoas: e.pessoas,
+    preco: e.precoCent! / 100,
+  }));
+  const preco = precoUnicoCent(produto);
 
   return (
     <>
@@ -149,7 +182,7 @@ function Detalhe({ produto, locale }: { produto: Produto; locale: Locale }) {
                   baixo, e quem chegasse ao preço já não via o produto. Só a
                   partir do `lg`, que é onde há duas colunas. */}
               <div className="lg:sticky lg:top-20">
-                <FotoProduto foto={produto.foto} alt={nome} proporcao="3 / 2" />
+                <FotoProduto foto={fotoDe(produto)} alt={nome} proporcao="3 / 2" />
               </div>
             </div>
 
@@ -169,9 +202,9 @@ function Detalhe({ produto, locale }: { produto: Produto; locale: Locale }) {
 
               <ComprarProduto
                 id={produto.id}
-                tipo={produto.tipo}
+                tipo={tipoDoPedido(produto)}
                 nome={nome}
-                preco={produto.preco}
+                preco={preco === null ? null : preco / 100}
                 escaloes={escaloes}
                 locale={locale}
                 /* Mensagem por cima só faz sentido onde há bolo. Numa box de
@@ -199,7 +232,6 @@ function Conteudo({ produto, locale }: { produto: Produto; locale: Locale }) {
   const te = useTranslations("encomendas");
 
   if (produto.familia === "festa") {
-    const kit = produto.fonte as Kit;
     return (
       <div className="mt-8">
         <h2 className="text-xs font-semibold uppercase tracking-widest text-tinta-suave">
@@ -210,25 +242,25 @@ function Conteudo({ produto, locale }: { produto: Produto; locale: Locale }) {
             correr uma linha com o olho — três listas em coluna obrigam a saltar
             de um lado para o outro a contar tarteletes. */}
         <div className="mt-3 overflow-x-auto">
-          <TabelaEscaloes escaloes={kit.escaloes} locale={locale} />
+          <TabelaEscaloes escaloes={escaloesDe(produto)} locale={locale} />
         </div>
       </div>
     );
   }
 
   if (produto.familia === "bolo") {
-    const kit = produto.fonte as KitBolo;
+    const itens = grupoDe(produto.variantes[0].composicao, "itens");
     return (
       <div className="mt-8">
         <h2 className="text-xs font-semibold uppercase tracking-widest text-tinta-suave">
           {t("oQueLeva")}
         </h2>
         <ul className="mt-3 divide-y divide-tinta/12 border-y border-tinta/12">
-          {kit.itens.map((item) => (
+          {itens.map((item) => (
             <li key={item.nome.pt} className="flex justify-between gap-4 py-2.5">
-              <span>{item.nome[locale]}</span>
+              <span>{emLingua(item.nome, locale)}</span>
               <span className="shrink-0 tabular-nums text-tinta-suave">
-                {item.quantidade[locale]}
+                {item.quantidade && emLingua(item.quantidade, locale)}
               </span>
             </li>
           ))}
@@ -239,16 +271,16 @@ function Conteudo({ produto, locale }: { produto: Produto; locale: Locale }) {
   }
 
   if (produto.familia === "box") {
-    const box = produto.fonte as Box;
+    const itens = grupoDe(produto.variantes[0].composicao, "itens");
     return (
       <div className="mt-8">
         <h2 className="text-xs font-semibold uppercase tracking-widest text-tinta-suave">
           {t("oQueLeva")}
         </h2>
         <ul className="mt-3 space-y-1.5 divide-y divide-tinta/12 border-y border-tinta/12 text-tinta-suave">
-          {box.itens.map((item) => (
-            <li key={item.pt} className="py-2.5">
-              {item[locale]}
+          {itens.map((item) => (
+            <li key={item.nome.pt} className="py-2.5">
+              {emLingua(item.nome, locale)}
             </li>
           ))}
         </ul>
@@ -320,7 +352,7 @@ function TabelaEscaloes({
               key={e.pessoas}
               className="titulo-display py-3 text-right text-lg tabular-nums text-tijolo"
             >
-              {formatarPreco(e.preco, locale)}
+              {e.precoCent !== null && formatarCent(e.precoCent, locale)}
             </td>
           ))}
         </tr>
@@ -358,11 +390,15 @@ function Grupo({
           <td className="py-2">
             {escaloes
               .flatMap((e) => e[grupo])
-              .find((l) => l.nome.pt === nome)?.nome[locale] ?? nome}
+              .map((l) => (l.nome.pt === nome ? emLingua(l.nome, locale) : null))
+              .find((texto) => texto !== null) ?? nome}
           </td>
           {escaloes.map((e) => (
             <td key={e.pessoas} className="py-2 text-right tabular-nums text-tinta-suave">
-              {e[grupo].find((l) => l.nome.pt === nome)?.quantidade[locale] ?? "—"}
+              {(() => {
+                const quantidade = e[grupo].find((l) => l.nome.pt === nome)?.quantidade;
+                return quantidade ? emLingua(quantidade, locale) : "—";
+              })()}
             </td>
           ))}
         </tr>

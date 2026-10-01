@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { useTranslations } from "next-intl";
-import { ementa } from "@/data/ementa";
 import { Carta } from "@/components/ementa/Carta";
 import { routing, type Locale } from "@/i18n/routing";
+import { listarProdutos, ordemDaEmenta } from "@/lib/dados";
+import type { OrdemEmenta, Produto } from "@/lib/dados/tipos";
 import { metadataDaPagina } from "@/lib/metadata";
 
 export function generateStaticParams() {
@@ -27,11 +28,23 @@ export default async function PaginaEmenta({
   const { locale } = await params;
   setRequestLocale(locale);
   await getTranslations({ locale, namespace: "ementa" });
+  const [artigos, ordem] = await Promise.all([
+    listarProdutos({ origem: "ementa" }),
+    ordemDaEmenta(),
+  ]);
 
-  return <Ementa locale={locale as Locale} />;
+  return <Ementa artigos={artigos} ordem={ordem} locale={locale as Locale} />;
 }
 
-function Ementa({ locale }: { locale: Locale }) {
+function Ementa({
+  artigos,
+  ordem,
+  locale,
+}: {
+  artigos: Produto[];
+  ordem: OrdemEmenta;
+  locale: Locale;
+}) {
   const t = useTranslations("ementa");
 
   return (
@@ -48,7 +61,7 @@ function Ementa({ locale }: { locale: Locale }) {
       <div className="relative overflow-hidden bg-tinta text-papel">
         <div className="envolvente relative py-[clamp(3.5rem,8vw,6rem)]">
           <p className="titulo-display text-xs uppercase tracking-[0.3em] opacity-80">
-            {t("quantosArtigos", { n: ementa.length })}
+            {t("quantosArtigos", { n: artigos.length })}
           </p>
           <h1
             className="titulo-display titulo-capa mt-4 uppercase"
@@ -69,7 +82,7 @@ function Ementa({ locale }: { locale: Locale }) {
         />
       </div>
 
-      <Carta locale={locale} />
+      <Carta artigos={artigos} ordem={ordem} locale={locale} />
 
       {/* As notas que valem para a ementa toda. As que pertencem a uma secção
           — a batata, os sabores do dia, as palhinhas — ficam coladas a essa

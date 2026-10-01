@@ -6,22 +6,36 @@ import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { URL_SITE, caminhoLocalizado, urlLocalizado } from "@/lib/site";
 import { imagensDePartilha } from "@/lib/metadata";
-import { ementa, porId, type Artigo } from "@/data/ementa";
-import { regraDe } from "@/lib/encomendavel";
-import { caminhoDoArtigo } from "@/lib/produtos";
-import { formatarPreco } from "@/lib/preco";
+import { listarProdutos, produtoPorId } from "@/lib/dados";
+import type { Produto } from "@/lib/dados/tipos";
+import { formatarCent } from "@/lib/preco";
+import {
+  caminhoDoArtigo,
+  descricaoDe,
+  emLingua,
+  fotoDe,
+  nomeDe,
+  precoUnicoCent,
+  regraDe,
+  variantesVisiveis,
+} from "@/lib/vista";
 import { FotoProduto } from "@/components/encomendas/FotoProduto";
 import { ComprarProduto } from "@/components/encomendas/ComprarProduto";
 import { BotaoJuntar } from "@/components/encomendas/BotaoJuntar";
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const ementa = await listarProdutos({ origem: "ementa" });
   return routing.locales.flatMap((locale) =>
     ementa.map((artigo) => ({ locale, artigo: artigo.id })),
   );
 }
 
-const nomeDe = (artigo: Artigo, locale: Locale) =>
-  locale === "en" ? artigo.nomeEn : artigo.nome;
+/* Um id de encomenda (`festa-premium`) também é um produto, mas não é desta
+   página: a carta e a encomenda continuam separadas (AGENTS.md). */
+const artigoDaEmenta = async (id: string): Promise<Produto | null> => {
+  const produto = await produtoPorId(id);
+  return produto?.origem === "ementa" ? produto : null;
+};
 
 export async function generateMetadata({
   params,
@@ -29,7 +43,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string; artigo: string }>;
 }): Promise<Metadata> {
   const { locale, artigo: id } = await params;
-  const artigo = porId(id);
+  const artigo = await artigoDaEmenta(id);
   if (!artigo) return {};
 
   const t = await getTranslations({ locale, namespace: "produto" });
@@ -39,7 +53,7 @@ export async function generateMetadata({
   const l = locale as Locale;
   const titulo = nomeDe(artigo, l);
   const descricao =
-    artigo.descricao?.[l] ?? t("descricaoGenerica", { nome: titulo });
+    descricaoDe(artigo, l) ?? t("descricaoGenerica", { nome: titulo });
   const rota = caminhoDoArtigo(artigo.id);
   const imagens = imagensDePartilha(meta("imagemAlt"));
 
@@ -73,7 +87,7 @@ export default async function PaginaArtigo({
 }) {
   const { locale, artigo: id } = await params;
   setRequestLocale(locale);
-  const artigo = porId(id);
+  const artigo = await artigoDaEmenta(id);
   if (!artigo) notFound();
 
   return <Detalhe artigo={artigo} locale={locale as Locale} />;
@@ -105,7 +119,7 @@ export default async function PaginaArtigo({
  * curiosidade. A página é para quem quer **o endereço** — partilhar, guardar,
  * ou chegar por uma pesquisa a um artigo concreto.
  */
-function Detalhe({ artigo, locale }: { artigo: Artigo; locale: Locale }) {
+function Detalhe({ artigo, locale }: { artigo: Produto; locale: Locale }) {
   const t = useTranslations("produto");
   const te = useTranslations("ementa");
 
@@ -132,7 +146,7 @@ function Detalhe({ artigo, locale }: { artigo: Artigo; locale: Locale }) {
         <div className="mt-8 grid gap-10 lg:grid-cols-2 lg:gap-16">
           <div className="min-w-0">
             <div className="lg:sticky lg:top-20">
-              <FotoProduto foto={artigo.foto} alt={nome} proporcao="3 / 2" />
+              <FotoProduto foto={fotoDe(artigo)} alt={nome} proporcao="3 / 2" />
             </div>
           </div>
 
@@ -151,7 +165,7 @@ function Detalhe({ artigo, locale }: { artigo: Artigo; locale: Locale }) {
 
             {artigo.descricao && (
               <p className="mt-5 text-lg text-tinta-suave">
-                {artigo.descricao[locale]}
+                {descricaoDe(artigo, locale)}
               </p>
             )}
 
@@ -162,9 +176,9 @@ function Detalhe({ artigo, locale }: { artigo: Artigo; locale: Locale }) {
                 é onde ele decide alguma coisa — mostrá-lo nos dois sítios dava
                 dois números iguais a trezentos píxeis um do outro, e um número
                 repetido lê-se como dois preços diferentes até se comparar. */}
-            {artigo.preco !== null && !regra && (
+            {precoUnicoCent(artigo) !== null && !regra && (
               <p className="titulo-display mt-6 text-4xl tabular-nums text-tijolo">
-                {formatarPreco(artigo.preco, locale)}
+                {formatarCent(precoUnicoCent(artigo)!, locale)}
                 {artigo.unidade === "kg" && (
                   <span className="ml-1 text-lg font-normal text-tinta-suave">
                     {te("porQuilo")}
@@ -179,28 +193,30 @@ function Detalhe({ artigo, locale }: { artigo: Artigo; locale: Locale }) {
                 compra, aquele `null` saía escrito como **«sob orçamento»** — num
                 produto que tem quatro preços na tabela. É um artigo com preços,
                 não um bolo por medida. */}
-            {artigo.variantes && (
+            {variantesVisiveis(artigo).length > 0 && (
               <ul className="mt-6 divide-y divide-tinta/12 border-y border-tinta/12">
-                {artigo.variantes.map((v) => (
+                {variantesVisiveis(artigo).map((v) => (
                   <li
-                    key={v.chave}
+                    key={v.id}
                     className="flex items-center justify-between gap-4 py-3"
                   >
-                    <span>{v.chave}</span>
+                    <span>{v.rotulo ? emLingua(v.rotulo, locale) : v.id}</span>
                     <span className="flex items-center gap-3">
                       <span className="tabular-nums text-tijolo">
-                        {formatarPreco(v.preco, locale)}
+                        {v.precoCent !== null && formatarCent(v.precoCent, locale)}
                       </span>
                       {regra && (
                         <BotaoJuntar
                           variante="compacta"
                           locale={locale}
                           item={{
-                            id: `ementa:${artigo.id}:${v.chave}`,
+                            id: `ementa:${artigo.id}:${v.id}`,
                             tipo: "ementa",
-                            nome: `${nome} (${v.chave})`,
-                            variante: v.chave,
-                            preco: v.preco,
+                            nome: `${nome} (${v.id})`,
+                            variante: v.id,
+                            /* O cesto ainda guarda euros; passa a ids e
+                               cêntimos no PR seguinte. */
+                            preco: v.precoCent === null ? null : v.precoCent / 100,
                             pessoas: null,
                             notas: null,
                             unidade: artigo.unidade,
@@ -215,22 +231,22 @@ function Detalhe({ artigo, locale }: { artigo: Artigo; locale: Locale }) {
               </ul>
             )}
 
-            {artigo.sabores.length > 0 && (
+            {artigo.escolhas.length > 0 && (
               <div className="mt-8">
                 <h2 className="text-xs font-semibold uppercase tracking-widest text-tinta-suave">
                   {te("sabores")}
                 </h2>
-                <p className="mt-2">{artigo.sabores.join(" · ")}</p>
+                <p className="mt-2">{artigo.escolhas.join(" · ")}</p>
               </div>
             )}
 
-            {regra && !artigo.variantes ? (
+            {regra && variantesVisiveis(artigo).length === 0 ? (
               <>
                 <ComprarProduto
                   id={`ementa:${artigo.id}`}
                   tipo="ementa"
                   nome={nome}
-                  preco={artigo.preco}
+                  preco={precoUnicoCent(artigo) === null ? null : precoUnicoCent(artigo)! / 100}
                   escaloes={[]}
                   locale={locale}
                   comMensagem={artigo.categoria === "bolos-inteiros"}
