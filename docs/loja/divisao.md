@@ -38,6 +38,7 @@ design vem deles. O painel é nosso.
 | Gonçalo | Sobral |
 |---|---|
 | Todo o frontend: loja (cesto, variantes, calendário, checkout, conta), painel (as duas vistas), configurador dos bolos personalizados | Base de dados e migração do catálogo (JSON → BD, euros → cêntimos, horários do `casa.json` → BD) |
+| Interface de `src/lib/dados/`: assinaturas e tipos que o frontend consome (os do pedido saem do `pedidos.md`), com implementação provisória a ler os JSON | Implementação de `src/lib/dados/` sobre a base de dados — troca o que está lá dentro sem mudar as assinaturas |
 | Motor de horários (`src/lib/horarios.ts`) e os testes (Vitest) | Backend: produtos, pedidos, fotos (Vercel Blob), histórico da conta no servidor |
 | Stripe: checkout, webhook, verificação periódica, reembolsos, sinal, cancelamento | Entrada no painel: PIN, código por email da gerente, sessões e dispositivos |
 | Regras das combinações dos bolos personalizados | Impressão e talão |
@@ -54,6 +55,15 @@ acrescentarem para pedidos, variantes e horários.
 
 As funções auxiliares que não tocam em dados (formatar um preço, por exemplo)
 ficam em `src/lib/`, fora da fronteira.
+
+**Quem a constrói.** A fronteira é dos dois, mas cada lado tem dono. O Gonçalo
+escreve a **interface** — as assinaturas e os tipos — com uma implementação
+provisória a ler os JSON; o Sobral revê-a e escreve depois a **implementação**
+sobre a base de dados. A ordem é esta porque o frontend é o primeiro a ficar
+parado sem ela: o cesto e o calendário avançam com dados de exemplo enquanto a
+base de dados não existe, e a migração chega a uma forma que já está decidida
+em vez de a inventar. Se a implementação pedir uma assinatura diferente, muda-se
+pela regra de baixo, não por dentro.
 
 - Mudar uma função de `src/lib/dados/`, um schema ou o esquema da base de dados
   → **PR próprio, revisto pelo outro** (o `CODEOWNERS` pede-o automaticamente).
@@ -100,7 +110,7 @@ outro onde ela é obrigatória; apanha o básico onde não é.
 
 | Até | O quê | Critério |
 |---|---|---|
-| 14/10 | Base partilhada, frontend com dados de exemplo, motor de horários, Stripe em modo de teste, migração para a BD, **edição de produtos no painel da gerente** | a casa pode começar a preencher produtos |
+| 14/10 | Base partilhada (interface: Gonçalo; implementação na BD: Sobral), frontend com dados de exemplo, motor de horários, Stripe em modo de teste, migração para a BD, **edição de produtos no painel da gerente** | a casa pode começar a preencher produtos |
 | 28/10 | Painel ligado à BD, impressão | **testes físicos**: um pedido pago em modo de teste imprime o talão na loja e aparece no painel |
 | 11/11 | Bolos personalizados, cancelamento, textos legais aprovados, formação | **loja no ar** com pagamentos reais |
 
