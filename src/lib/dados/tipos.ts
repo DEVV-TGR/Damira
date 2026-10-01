@@ -42,6 +42,18 @@ const EsquemaTempoProducao = z.object({
   valor: z.number().nonnegative(),
 }) satisfies z.ZodType<TempoProducao>;
 
+/**
+ * O que um produto leva: os salgados e os doces de um escalão, os itens de um
+ * kit de bolo ou de uma box. Vive na **variante** e não no produto porque nos
+ * kits de festa muda com ela — 20 pessoas não levam o mesmo que 70.
+ *
+ * A quantidade pode faltar: nas boxes vem colada ao nome («2 Croissants»).
+ */
+export const EsquemaGrupoComposicao = z.object({
+  grupo: z.enum(["salgados", "doces", "itens"]),
+  linhas: z.array(z.object({ nome: Texto, quantidade: Texto.nullable() })).min(1),
+});
+
 export const EsquemaVariante = z.object({
   /** `"unica"` num produto sem variantes; `"20"` no escalão de 20 pessoas. */
   id: z.string().min(1),
@@ -51,6 +63,8 @@ export const EsquemaVariante = z.object({
   pessoas: z.number().int().positive().nullable(),
   /** ⚠️ `null` é **sob orçamento**, nunca zero. O bolo por medida é assim. */
   precoCent: Cent.nullable(),
+  /** Vazio quando o produto não se descreve por partes (um artigo da carta). */
+  composicao: z.array(EsquemaGrupoComposicao),
 });
 
 export const EsquemaProduto = z.object({
@@ -62,6 +76,8 @@ export const EsquemaProduto = z.object({
   descricao: Texto.nullable(),
   carta: z.string().nullable(),
   categoria: z.string().nullable(),
+  /** Os títulos dentro de uma categoria da ementa (`SeccaoEmenta`). */
+  subcategoria: z.string().nullable(),
   /** ⚠️ Em `kg`, o preço é ao quilo e a quantidade são quilos. */
   unidade: z.enum(["un", "kg"]),
   /** Sempre pelo menos uma: um produto sem variantes tem a `"unica"`. */
@@ -94,6 +110,7 @@ export const EsquemaProduto = z.object({
     .nullable(),
 });
 
+export type GrupoComposicao = z.infer<typeof EsquemaGrupoComposicao>;
 export type Variante = z.infer<typeof EsquemaVariante>;
 export type Produto = z.infer<typeof EsquemaProduto>;
 

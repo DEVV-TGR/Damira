@@ -3,6 +3,7 @@ import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
 import { casa, DIAS_DA_SEMANA } from "@/data/casa";
 import { ementa, type Artigo } from "@/data/ementa";
+import type { Box, KitBolo, Linha } from "@/data/encomendas";
 import { regraDe } from "@/lib/encomendavel";
 import {
   FUSO,
@@ -23,6 +24,7 @@ import {
   type Cotacao,
   type DefinicoesLoja,
   type FonteDeDados,
+  type GrupoComposicao,
   type LinhaCotada,
   type Pedido,
   type Produto,
@@ -75,6 +77,7 @@ const daEmenta = (artigo: Artigo): Produto => {
     descricao: artigo.descricao,
     carta: artigo.carta,
     categoria: artigo.categoria,
+    subcategoria: artigo.subcategoria,
     unidade: artigo.unidade,
     variantes: artigo.variantes
       ? artigo.variantes.map((variante) => ({
@@ -82,6 +85,7 @@ const daEmenta = (artigo: Artigo): Produto => {
           rotulo: { pt: variante.chave, en: variante.chave },
           pessoas: null,
           precoCent: emCent(variante.preco, `${artigo.id} (${variante.chave})`),
+          composicao: [],
         }))
       : [
           {
@@ -89,6 +93,7 @@ const daEmenta = (artigo: Artigo): Produto => {
             rotulo: null,
             pessoas: null,
             precoCent: artigo.preco === null ? null : emCent(artigo.preco, artigo.id),
+            composicao: [],
           },
         ],
     escolhas: artigo.sabores,
@@ -112,6 +117,22 @@ const paraPessoas = (n: number) => ({
   en: mensagensEn.produto.paraPessoas.replace("{n}", String(n)),
 });
 
+const linhas = (itens: readonly Linha[]) =>
+  itens.map((item) => ({ nome: item.nome, quantidade: item.quantidade }));
+
+/* O que um produto de variante única leva, por família. A box escreve a
+   quantidade colada ao nome; o kit de bolo tem-na em coluna própria. */
+const composicaoDe = (produto: ProdutoDasEncomendas): GrupoComposicao[] => {
+  if (produto.familia === "bolo") {
+    return [{ grupo: "itens", linhas: linhas((produto.fonte as KitBolo).itens) }];
+  }
+  if (produto.familia === "box") {
+    const itens = (produto.fonte as Box).itens;
+    return [{ grupo: "itens", linhas: itens.map((nome) => ({ nome, quantidade: null })) }];
+  }
+  return [];
+};
+
 const daEncomenda = (produto: ProdutoDasEncomendas): Produto => {
   const fonte = produto.fonte;
   const variantes =
@@ -121,6 +142,10 @@ const daEncomenda = (produto: ProdutoDasEncomendas): Produto => {
           rotulo: paraPessoas(escalao.pessoas),
           pessoas: escalao.pessoas,
           precoCent: emCent(escalao.preco, `${produto.id} (${escalao.pessoas} pessoas)`),
+          composicao: [
+            { grupo: "salgados" as const, linhas: linhas(escalao.salgados) },
+            { grupo: "doces" as const, linhas: linhas(escalao.doces) },
+          ],
         }))
       : [
           {
@@ -128,6 +153,7 @@ const daEncomenda = (produto: ProdutoDasEncomendas): Produto => {
             rotulo: null,
             pessoas: null,
             precoCent: produto.preco === null ? null : emCent(produto.preco, produto.id),
+            composicao: composicaoDe(produto),
           },
         ];
 
@@ -147,6 +173,7 @@ const daEncomenda = (produto: ProdutoDasEncomendas): Produto => {
         : null,
     carta: null,
     categoria: null,
+    subcategoria: null,
     unidade: "un",
     variantes,
     escolhas: [],

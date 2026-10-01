@@ -74,6 +74,33 @@ describe("o catálogo, tal como sai dos JSON", () => {
     expect(premium.variantes[0].rotulo).toEqual({ pt: "20 pessoas", en: "20 people" });
   });
 
+  it("cada escalão leva a sua composição, e o de 70 não é o de 20", () => {
+    const kit = encomendasJson.kitsFesta.find((k) => k.id === "premium")!;
+    const premium = CATALOGO_JSON.find((p) => p.id === "festa-premium")!;
+    premium.variantes.forEach((variante, i) => {
+      expect(variante.composicao.map((g) => g.grupo)).toEqual(["salgados", "doces"]);
+      expect(variante.composicao[0].linhas).toEqual(kit.escaloes[i].salgados);
+      expect(variante.composicao[1].linhas).toEqual(kit.escaloes[i].doces);
+    });
+  });
+
+  it("o kit de bolo traz quantidade por item, a box traz-la no nome", () => {
+    const kitBolo = CATALOGO_JSON.find((p) => p.id === "bolo-bolo-premium")!;
+    const box = CATALOGO_JSON.find((p) => p.id === "box-aniversario")!;
+    const jsonBox = encomendasJson.boxes.find((b) => b.id === "aniversario")!;
+    expect(kitBolo.variantes[0].composicao[0].linhas[0].quantidade).not.toBeNull();
+    expect(box.variantes[0].composicao).toEqual([
+      { grupo: "itens", linhas: jsonBox.itens.map((nome) => ({ nome, quantidade: null })) },
+    ]);
+  });
+
+  it("a subcategoria da ementa passa tal e qual", () => {
+    for (const artigo of ementaJson) {
+      const produto = CATALOGO_JSON.find((p) => p.id === artigo.id)!;
+      expect(produto.subcategoria).toBe(artigo.subcategoria ?? null);
+    }
+  });
+
   it("o bolo inteiro é ao quilo, e o bolo por medida é sob orçamento — não zero", () => {
     expect(CATALOGO_JSON.find((p) => p.id === "vegan-tarte-de-nata")).toMatchObject({
       unidade: "kg",
@@ -81,7 +108,9 @@ describe("o catálogo, tal como sai dos JSON", () => {
       multiplo: 0.5,
     });
     const medida = CATALOGO_JSON.find((p) => p.id === "bolo-por-medida")!;
-    expect(medida.variantes).toEqual([{ id: "unica", rotulo: null, pessoas: null, precoCent: null }]);
+    expect(medida.variantes).toEqual([
+      { id: "unica", rotulo: null, pessoas: null, precoCent: null, composicao: [] },
+    ]);
     expect(medida.nome.pt).toBe("Bolo por medida");
   });
 
