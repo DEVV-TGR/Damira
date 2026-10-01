@@ -49,8 +49,8 @@ design vem deles. O painel é nosso.
 
 O frontend lê e escreve **só** através das funções de `src/lib/dados/`. Do outro
 lado dessas funções está a base de dados. Hoje leem os JSON; a migração troca o
-que está lá dentro sem mexer nos componentes. O `produtos.ts` atual muda-se para
-lá. Os tipos partilhados são os schemas zod de `src/data/*.ts` e os que se
+que está lá dentro sem mexer nos componentes. O `produtos.ts` ficou por trás
+dela: só o `json.ts` o lê. Os tipos partilhados são os schemas zod de `src/data/*.ts` e os que se
 acrescentarem para pedidos, variantes e horários.
 
 As funções auxiliares que não tocam em dados (formatar um preço, por exemplo)
