@@ -1,3 +1,12 @@
 {
-  "worktree": { "bgIsolation": "none" }
+  "worktree": { "bgIsolation": "none" },
+  "permissions": {
+    "deny": [
+      "EnterWorktree",
+      "Bash(git worktree add *)",
+      "Bash(git push * main)",
+      "Read(.env*)",
+      "Read(!.env.example)"
+    ]
+  }
 }

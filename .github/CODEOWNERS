@@ -1,0 +1,19 @@
+# Revisão obrigatória do outro só nestas três áreas (ver docs/loja/divisao.md).
+# Os dois são donos; quem abre o PR não se pode aprovar a si próprio, logo revê
+# o outro. Tudo o resto: merge pelo próprio, depois de lint, build e test.
+#
+# Para isto valer, o main precisa de: PR obrigatório, 0 aprovações exigidas e
+# "Require review from Code Owners" ligado.
+
+# 1. Pagamentos
+/src/app/api/stripe/   @gncalo @tomasfsobra
+/src/lib/pagamentos/   @gncalo @tomasfsobra
+
+# 2. Base de dados — esquema e migrações
+/src/db/               @gncalo @tomasfsobra
+
+# 3. A fronteira entre frontend e dados
+/src/lib/dados/        @gncalo @tomasfsobra
+
+# O contrato do pedido
+/docs/loja/pedidos.md  @gncalo @tomasfsobra
