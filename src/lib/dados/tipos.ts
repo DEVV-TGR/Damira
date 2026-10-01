@@ -317,6 +317,18 @@ export type DefinicoesLoja = {
   pausaAte: Date | null;
 };
 
+/**
+ * A ordem por que a ementa se lê: as cartas, as categorias dentro de cada uma,
+ * os títulos dentro das bebidas. É um dado e não uma regra — a gerente vai
+ * poder criar categorias — e não sai da ordem do catálogo, que é outra: o
+ * impresso põe os pratos antes dos doces, o JSON não.
+ */
+export type OrdemEmenta = {
+  cartas: string[];
+  categorias: string[];
+  subcategorias: string[];
+};
+
 // ——— A fronteira ———
 
 /**
@@ -329,6 +341,7 @@ export type DefinicoesLoja = {
 export type FonteDeDados = {
   listarProdutos(filtro?: FiltroProdutos): Promise<Produto[]>;
   produtoPorId(id: string): Promise<Produto | null>;
+  ordemDaEmenta(): Promise<OrdemEmenta>;
   configuracaoDaCasa(): Promise<ConfiguracaoDaCasa>;
   definicoesLoja(): Promise<DefinicoesLoja>;
   /** ⚠️ **Nunca em cache** (`robustez.md`): uma vaga em cache vende-se duas vezes. */

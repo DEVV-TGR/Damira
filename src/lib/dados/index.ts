@@ -31,6 +31,8 @@ export const listarProdutos: FonteDeDados["listarProdutos"] = (filtro) =>
 
 export const produtoPorId: FonteDeDados["produtoPorId"] = (id) => fonte.produtoPorId(id);
 
+export const ordemDaEmenta: FonteDeDados["ordemDaEmenta"] = () => fonte.ordemDaEmenta();
+
 export const configuracaoDaCasa: FonteDeDados["configuracaoDaCasa"] = () =>
   fonte.configuracaoDaCasa();
 

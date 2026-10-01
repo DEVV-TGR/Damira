@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
 import { casa, DIAS_DA_SEMANA } from "@/data/casa";
-import { ementa, type Artigo } from "@/data/ementa";
+import { CARTAS, CATEGORIAS, ementa, SUBCATEGORIAS, type Artigo } from "@/data/ementa";
 import type { Box, KitBolo, Linha } from "@/data/encomendas";
 import { regraDe } from "@/lib/encomendavel";
 import {
@@ -345,6 +345,10 @@ export function criarFonteJson(opcoes: OpcoesFonteJson = {}): FonteDeDados {
 
     async produtoPorId(id) {
       return porId.get(id) ?? null;
+    },
+
+    async ordemDaEmenta() {
+      return { cartas: [...CARTAS], categorias: [...CATEGORIAS], subcategorias: [...SUBCATEGORIAS] };
     },
 
     async configuracaoDaCasa() {

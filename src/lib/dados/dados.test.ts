@@ -145,6 +145,17 @@ describe("as leituras", () => {
     expect(await fonte.listarProdutos({ origem: "ementa", aVendaOnline: true })).toHaveLength(70);
     expect(await fonte.produtoPorId("nao-existe")).toBeNull();
   });
+
+  it("dão a ordem da ementa, que não é a do catálogo, e cobre todas as cartas e categorias", async () => {
+    const ordem = await criarFonteJson().ordemDaEmenta();
+    expect(ordem.categorias.slice(0, 4)).toEqual(["pausa", "salgados", "pratos", "doces"]);
+    const ementa = await criarFonteJson().listarProdutos({ origem: "ementa" });
+    for (const produto of ementa) {
+      expect(ordem.cartas).toContain(produto.carta);
+      expect(ordem.categorias).toContain(produto.categoria);
+      if (produto.subcategoria) expect(ordem.subcategorias).toContain(produto.subcategoria);
+    }
+  });
 });
 
 describe("cotar o cesto: o preço calcula-se no servidor", () => {
