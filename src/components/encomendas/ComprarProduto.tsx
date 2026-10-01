@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
-import { formatarPreco } from "@/lib/preco";
+import { formatarCent } from "@/lib/preco";
 import { REGRA_SIMPLES, idComNotas, quantidadeEmTexto } from "@/lib/cesto";
 import type { TipoPedido } from "@/lib/pedidos";
 import type { Locale } from "@/i18n/routing";
@@ -18,24 +18,28 @@ import { useCesto } from "./CestoProvider";
  * nome nesta língua, o preço, os escalões. Passar o objecto inteiro rebentava no
  * `build` com um erro sobre serialização que não diz onde está o problema.
  */
-export type EscalaoSimples = { pessoas: number; preco: number };
+export type EscalaoSimples = { pessoas: number; precoCent: number };
 
 export function ComprarProduto({
   id,
+  produtoId,
   tipo,
   nome,
-  preco,
+  precoCent,
   escaloes,
   locale,
   comMensagem,
   regra = REGRA_SIMPLES,
   notaDaRegra,
 }: {
+  /** A base do `id` da linha do cesto: `festa-premium`, `ementa:nata`. */
   id: string;
+  /** O produto no catálogo de `@/lib/dados`. É o que o servidor vai cotar. */
+  produtoId: string;
   tipo: TipoPedido;
   nome: string;
-  /** `null` é **sob orçamento** e não zero. Ver `cesto.ts`. */
-  preco: number | null;
+  /** Em cêntimos. `null` é **sob orçamento** e não zero. Ver `cesto.ts`. */
+  precoCent: number | null;
   /** Só os kits de festa os têm. Vazio nos outros. */
   escaloes: EscalaoSimples[];
   locale: Locale;
@@ -70,7 +74,7 @@ export function ComprarProduto({
   if (!contexto) return null;
 
   const escalao = escaloes[escolhido] ?? null;
-  const precoFinal = escalao ? escalao.preco : preco;
+  const precoFinal = escalao ? escalao.precoCent : precoCent;
 
   const notas =
     [
@@ -86,10 +90,14 @@ export function ComprarProduto({
       /* ⚠️ As notas entram no `id`: dois bolos com mensagens diferentes são duas
          linhas do pedido, e não um com quantidade dois. Ver `idComNotas`. */
       id: idComNotas(escalao ? `${id}:${escalao.pessoas}` : id, notas),
+      produtoId,
+      /* Num kit de festa a variante é o escalão, e o id dela é o número de
+         pessoas — o mesmo que `@/lib/dados` lhe dá. */
+      varianteId: escalao ? String(escalao.pessoas) : "unica",
       tipo,
       nome,
       variante: escalao ? t("paraPessoas", { n: escalao.pessoas }) : null,
-      preco: precoFinal,
+      precoCent: precoFinal,
       pessoas: escalao?.pessoas ?? null,
       notas,
     });
@@ -130,7 +138,7 @@ export function ComprarProduto({
                   {t("paraPessoas", { n: e.pessoas })}
                 </span>
                 <span className="tabular-nums opacity-80">
-                  {formatarPreco(e.preco, locale)}
+                  {formatarCent(e.precoCent, locale)}
                 </span>
               </label>
             ))}
@@ -196,7 +204,7 @@ export function ComprarProduto({
             <span className="text-base normal-case">{t("sobOrcamento")}</span>
           ) : (
             <>
-              {formatarPreco(precoFinal, locale)}
+              {formatarCent(precoFinal, locale)}
               {regra.unidade === "kg" && (
                 <span className="ml-1 text-base font-normal text-tinta-suave">
                   {t("porQuilo")}

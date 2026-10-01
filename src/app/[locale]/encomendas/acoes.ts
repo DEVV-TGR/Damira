@@ -1,6 +1,10 @@
 "use server";
 
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import type { Locale } from "@/i18n/routing";
+import { cestoEmTexto, estimativa } from "@/lib/cesto";
+import { cotarCesto, produtoPorId } from "@/lib/dados";
+import { itensDoServidor } from "@/lib/pedido-servidor";
 import {
   EsquemaPedido,
   corpoDoPedido,
@@ -32,6 +36,9 @@ export type Registo = {
   tipo: Pedido["tipo"];
   data: string;
   pessoas: number | null;
+  /** O total que **o servidor** calculou, em cêntimos. É o que o histórico guarda. */
+  totalCent: number;
+  semPreco: number;
 };
 
 export type Resultado =
@@ -68,6 +75,42 @@ export async function enviarPedido(
   dados: FormData,
 ): Promise<Resultado> {
   const t = await getTranslations("encomendas.formulario");
+  const tc = await getTranslations("encomendas.cesto");
+  const locale = (await getLocale()) as Locale;
+
+  /* A armadilha primeiro: um robô não pode aprender nada com o resto das
+     validações, nem sequer que o cesto dele estava errado. */
+  if (String(dados.get("armadilha") ?? "").length > 0) return { estado: "enviado" };
+
+  /* ⚠️ **Com cesto, o texto do pedido escreve-se aqui, e não no browser.** O
+     browser manda as linhas — ids e quantidades — e o servidor monta o cesto a
+     partir do catálogo, com os preços dele. Antes vinha o texto já escrito, com
+     os preços do `localStorage`, e quem os mudasse mudava o total do email. */
+  let detalhe = dados.get("detalhe");
+  let totais = { totalCent: 0, semPreco: 0 };
+  const linhas = dados.get("linhas");
+  if (typeof linhas === "string" && linhas.length > 0) {
+    let lidas: unknown = null;
+    try {
+      lidas = JSON.parse(linhas);
+    } catch {
+      /* Fica `null`, e o `itensDoServidor` recusa-o como qualquer outro cesto
+         que não se percebe. */
+    }
+    const refeito = await itensDoServidor(lidas, { cotarCesto, produtoPorId }, locale);
+    if (!refeito.ok) {
+      return { estado: "erro", campos: { detalhe: t("erros.cesto-invalido") } };
+    }
+    const texto = cestoEmTexto(refeito.itens, locale, {
+      semPreco: tc("semPreco"),
+      estimativa: tc("estimativa"),
+      aPartirDe: tc("aPartirDe"),
+    });
+    const notas = String(dados.get("notas") ?? "").trim();
+    detalhe = notas ? `${texto}\n\n${notas}` : texto;
+    const { somaCent, semPreco } = estimativa(refeito.itens);
+    totais = { totalCent: somaCent, semPreco };
+  }
 
   const bruto = {
     tipo: dados.get("tipo"),
@@ -76,7 +119,7 @@ export async function enviarPedido(
     telefone: dados.get("telefone") ?? "",
     data: dados.get("data"),
     pessoas: dados.get("pessoas") || null,
-    detalhe: dados.get("detalhe"),
+    detalhe,
     consentimento: dados.get("consentimento") === "sim",
     armadilha: dados.get("armadilha") ?? "",
   };
@@ -109,12 +152,13 @@ export async function enviarPedido(
     TIPOS_PEDIDO.map((tipo) => [tipo, t(`tipos.${tipo}`)]),
   );
 
-  const referencia = gerarReferencia();
+  const referencia = gerarReferencia(new Date());
   const registo: Registo = {
     referencia,
     tipo: pedido.tipo,
     data: pedido.data,
     pessoas: pedido.pessoas,
+    ...totais,
   };
 
   const assunto = t("assunto", { nome: pedido.nome, data: pedido.data });

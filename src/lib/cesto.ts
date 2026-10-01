@@ -1,6 +1,6 @@
 import type { TipoPedido } from "@/lib/pedidos";
 import type { Locale } from "@/i18n/routing";
-import { formatarPreco } from "@/lib/preco";
+import { formatarCent } from "@/lib/preco";
 
 /**
  * # O cesto
@@ -22,17 +22,37 @@ import { formatarPreco } from "@/lib/preco";
  *    a um bolo era anunciar que ele é grátis.
  * 3. **O botão do fim diz «enviar o pedido» e não «pagar» nem «finalizar».**
  *    O que acontece a seguir é alguém ler e responder.
+ *
+ * ## ⚠️ O preço que o cesto guarda é para mostrar, não para cobrar
+ *
+ * O cesto vive no `localStorage`, e qualquer pessoa o edita. O que vai para o
+ * pedido são o `produtoId`, o `varianteId` e a quantidade; **o preço calcula-o
+ * o servidor**, a partir do catálogo (`cotarCesto`, em `@/lib/dados`). O
+ * `precoCent` daqui serve para a barra e o resumo mostrarem um número antes de
+ * enviar — e, um dia, para o checkout avisar que o preço mudou.
  */
 export type ItemCesto = {
-  /** Único por linha. Junta o tipo, o produto e a variante: `festa:medio:40`. */
+  /**
+   * Único por linha: o produto, a variante e a marca das notas
+   * (`festa-premium:40#k3x`). É a **identidade da linha** — duas mensagens
+   * diferentes são duas linhas —, e não serve para encontrar o produto: para
+   * isso há o `produtoId` e o `varianteId`.
+   */
   id: string;
+  /** O produto no catálogo de `@/lib/dados`. É isto que vai para o servidor. */
+  produtoId: string;
+  /** A variante desse produto: `"unica"`, `"40"`, `"470g"`. */
+  varianteId: string;
   tipo: TipoPedido;
   /** Já traduzido: o cesto guarda o que se vai escrever, não uma chave. */
   nome: string;
   /** Detalhe da variante, quando existe: «40 pessoas», «vegan». */
   variante: string | null;
-  /** ⚠️ `null` é **sob orçamento** e não zero. Ver a regra 2 acima. */
-  preco: number | null;
+  /**
+   * Em cêntimos, inteiros. ⚠️ `null` é **sob orçamento** e não zero (regra 2
+   * acima). **Só para mostrar**: o servidor não o lê.
+   */
+  precoCent: number | null;
   /** Só os kits de festa o têm, e serve para pré-preencher o formulário. */
   pessoas: number | null;
   quantidade: number;
@@ -117,6 +137,25 @@ export const chaveDoCesto = (idUtilizador?: string | null): string =>
   idUtilizador ? `damira:cesto:${idUtilizador}` : "damira:cesto";
 
 /**
+ * O produto e a variante de uma linha **guardada antes de existirem estes
+ * campos**, lidos do `id` composto.
+ *
+ * ⚠️ Os formatos são os que o site escreveu até outubro de 2026, e só esses:
+ * `ementa:<artigo>`, `ementa:<artigo>:<variante>`, `<produto>:<pessoas>` e
+ * `<produto>`, todos com um `#marca` opcional das notas. Um cesto antigo que
+ * perdesse os ids deixava de se poder enviar — e quem o tinha estava a meio de
+ * encomendar.
+ */
+export function idsDoItem(id: string): { produtoId: string; varianteId: string } {
+  const [semMarca] = id.split("#");
+  const partes = semMarca.split(":");
+  if (partes[0] === "ementa") {
+    return { produtoId: partes[1] ?? "", varianteId: partes[2] ?? "unica" };
+  }
+  return { produtoId: partes[0], varianteId: partes[1] ?? "unica" };
+}
+
+/**
  * Põe em forma o que veio do armazenamento local.
  *
  * ⚠️ **O que lá está foi escrito por uma versão anterior deste site.** Os cestos
@@ -140,12 +179,15 @@ export function normalizarCesto(lido: unknown): ItemCesto[] {
       typeof item.quantidade === "number" && item.quantidade > 0
         ? item.quantidade
         : minimo;
+    const antigos = idsDoItem(item.id);
     items.push({
       id: item.id,
+      produtoId: typeof item.produtoId === "string" ? item.produtoId : antigos.produtoId,
+      varianteId: typeof item.varianteId === "string" ? item.varianteId : antigos.varianteId,
       tipo: (item.tipo ?? "outro") as TipoPedido,
       nome: item.nome,
       variante: typeof item.variante === "string" ? item.variante : null,
-      preco: typeof item.preco === "number" ? item.preco : null,
+      precoCent: precoGuardado(item),
       pessoas: typeof item.pessoas === "number" ? item.pessoas : null,
       quantidade,
       unidade: item.unidade === "kg" ? "kg" : "un",
@@ -155,6 +197,14 @@ export function normalizarCesto(lido: unknown): ItemCesto[] {
     });
   }
   return items;
+}
+
+/* Os cestos de antes de outubro de 2026 guardavam euros em `preco`. Lê-se um
+   ou outro; nunca os dois, para um número não ser convertido duas vezes. */
+function precoGuardado(item: Partial<ItemCesto> & { preco?: unknown }): number | null {
+  if (typeof item.precoCent === "number") return Math.round(item.precoCent);
+  if (typeof item.preco === "number") return Math.round(item.preco * 100);
+  return null;
 }
 
 /**
@@ -192,17 +242,22 @@ export function quantidadeEmTexto(item: ItemCesto, locale: Locale): string {
  * número fechado.
  */
 export function estimativa(cesto: ItemCesto[]): {
-  soma: number;
+  somaCent: number;
   semPreco: number;
 } {
-  let soma = 0;
+  let somaCent = 0;
   let semPreco = 0;
   for (const item of cesto) {
-    if (item.preco === null) semPreco += 1;
-    else soma += item.preco * item.quantidade;
+    if (item.precoCent === null) semPreco += 1;
+    else somaCent += totalDaLinha(item.precoCent, item.quantidade);
   }
-  return { soma: arredondar(soma), semPreco };
+  return { somaCent, semPreco };
 }
+
+/* Ao quilo, 1,5 kg a 1700 cêntimos são 2550: arredonda-se uma vez por linha, e
+   é a mesma conta que o `cotarCesto` faz no servidor. */
+export const totalDaLinha = (precoCent: number, quantidade: number): number =>
+  Math.round(precoCent * quantidade);
 
 /**
  * O cesto escrito em texto, que é o que vai dentro do email.
@@ -221,9 +276,9 @@ export function cestoEmTexto(
   const linhas = cesto.flatMap((item) => {
     const nome = item.variante ? `${item.nome} (${item.variante})` : item.nome;
     const preco =
-      item.preco === null
+      item.precoCent === null
         ? rotulos.semPreco
-        : formatarPreco(arredondar(item.preco * item.quantidade), locale);
+        : formatarCent(totalDaLinha(item.precoCent, item.quantidade), locale);
     const linha = `- ${quantidadeEmTexto(item, locale)} ${nome} — ${preco}`;
     /* ⚠️ **As notas vão indentadas por baixo do artigo a que pertencem**, e não
        todas juntas no fim. Num pedido com três bolos, três mensagens em bloco no
@@ -231,9 +286,9 @@ export function cestoEmTexto(
     return item.notas ? [linha, `    ${item.notas.replace(/\n/g, "\n    ")}`] : [linha];
   });
 
-  const { soma, semPreco } = estimativa(cesto);
+  const { somaCent, semPreco } = estimativa(cesto);
   const rotulo = semPreco > 0 ? rotulos.aPartirDe : rotulos.estimativa;
-  linhas.push("", `${rotulo}: ${formatarPreco(soma, locale)}`);
+  linhas.push("", `${rotulo}: ${formatarCent(somaCent, locale)}`);
 
   return linhas.join("\n");
 }

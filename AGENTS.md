@@ -359,7 +359,16 @@ em `src/lib/autenticacao.ts`). Três decisões que se desfazem sem querer:
 E uma peça que não é da conta mas nasceu com ela: **a referência do pedido**
 (`DAM-0309-4F7K`) é gerada **no servidor**, vai no assunto do email e volta no
 resultado da acção. Gerá-la no cliente dava um código diferente do que foi no
-email — e uma referência que não refere o mesmo não serve para nada.
+email — e uma referência que não refere o mesmo não serve para nada. O dia que
+leva é o **de Lisboa** (lia o de UTC, e entre a meia-noite e a uma de verão
+saía com o dia anterior).
+
+⚠️ **O resumo do cesto que vai no email também é escrito no servidor**, desde
+outubro de 2026. O browser manda as `linhas` — ids e quantidades, sem preços — e
+a acção refaz o cesto a partir do catálogo (`src/lib/pedido-servidor.ts`). Antes
+o texto chegava escrito pelo browser, com os preços do `localStorage`, e quem os
+mudasse mudava o total do email. O `precoCent` que o cesto guarda é só para
+mostrar.
 
 E uma consequência que não é óbvia: **a sessão lê-se no cliente e não no
 servidor**, para as páginas continuarem todas estáticas. Ler `auth()` num

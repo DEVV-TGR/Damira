@@ -141,13 +141,10 @@ function Detalhe({ produto, locale }: { produto: Produto; locale: Locale }) {
   const nome = nomeDe(produto, locale);
   const resumo = descricaoDe(produto, locale);
 
-  /* O bloco de compra e o cesto ainda falam em euros; passam a ids e cêntimos
-     no PR seguinte. A divisão por cem dá o mesmo número do JSON. */
   const escaloes = escaloesDe(produto).map((e) => ({
     pessoas: e.pessoas,
-    preco: e.precoCent! / 100,
+    precoCent: e.precoCent!,
   }));
-  const preco = precoUnicoCent(produto);
 
   return (
     <>
@@ -202,9 +199,10 @@ function Detalhe({ produto, locale }: { produto: Produto; locale: Locale }) {
 
               <ComprarProduto
                 id={produto.id}
+                produtoId={produto.id}
                 tipo={tipoDoPedido(produto)}
                 nome={nome}
-                preco={preco === null ? null : preco / 100}
+                precoCent={precoUnicoCent(produto)}
                 escaloes={escaloes}
                 locale={locale}
                 /* Mensagem por cima só faz sentido onde há bolo. Numa box de

@@ -4,13 +4,13 @@ import { useEffect, useMemo, useState, useActionState, useId } from "react";
 import { useTranslations } from "next-intl";
 import { TIPOS_PEDIDO } from "@/lib/pedidos";
 import {
-  cestoEmTexto,
   estimativa,
   pessoasSugeridas,
   tipoSugerido,
+  totalDaLinha,
   type ItemCesto,
 } from "@/lib/cesto";
-import { formatarPreco } from "@/lib/preco";
+import { formatarCent } from "@/lib/preco";
 import type { Locale } from "@/i18n/routing";
 import { enviarPedido, type Resultado } from "@/app/[locale]/encomendas/acoes";
 import { useCesto } from "./CestoProvider";
@@ -54,8 +54,9 @@ import { Link } from "@/i18n/navigation";
  *   como um POST normal.
  *
  * É por isso que o campo de texto **muda de nome** conforme haja cesto ou não:
- * com cesto, o que vai no email é o resumo mais as notas, e o texto livre passa
- * a ser um extra chamado `notas`; sem cesto, ele **é** o pedido.
+ * com cesto, o que vai para o servidor são as linhas do cesto mais as notas, e
+ * o texto livre passa a ser um extra chamado `notas`; sem cesto, ele **é** o
+ * pedido.
  */
 const INICIAL: Resultado = { estado: "inicial" };
 
@@ -92,14 +93,21 @@ export function FormularioPedido({ locale }: { locale: Locale }) {
   const [tipoManual, setTipoManual] = useState<string | null>(null);
   const tipo = tipoManual ?? tipoSugerido(cesto) ?? TIPOS_PEDIDO[0];
 
-  const resumo = useMemo(
+  /* ⚠️ **O que vai para o servidor são as linhas, sem preços.** Ids e
+     quantidades: o servidor refaz o cesto a partir do catálogo e escreve o texto
+     do pedido com os preços dele (`pedido-servidor.ts`). Os preços que o cesto
+     mostra são do `localStorage` e podem ter sido mexidos. */
+  const linhas = useMemo(
     () =>
-      cestoEmTexto(cesto, locale, {
-        semPreco: tc("semPreco"),
-        estimativa: tc("estimativa"),
-        aPartirDe: tc("aPartirDe"),
-      }),
-    [cesto, locale, tc],
+      JSON.stringify(
+        cesto.map((item) => ({
+          produtoId: item.produtoId,
+          varianteId: item.varianteId,
+          quantidade: item.quantidade,
+          notas: item.notas,
+        })),
+      ),
+    [cesto],
   );
 
   /**
@@ -130,8 +138,9 @@ export function FormularioPedido({ locale }: { locale: Locale }) {
       data: registo.data,
       pessoas: registo.pessoas,
       itens: itensGuardados(cesto),
-      estimativa: estimativa(cesto).soma,
-      semPreco: estimativa(cesto).semPreco,
+      /* O total do servidor, e não o do browser: é o que foi no email. */
+      estimativaCent: registo.totalCent,
+      semPreco: registo.semPreco,
     });
     if (enviado) contexto?.esvaziar();
   }, [registo, enviado, historico, cesto, contexto]);
@@ -193,7 +202,7 @@ export function FormularioPedido({ locale }: { locale: Locale }) {
   const emPassos = hidratado && Object.keys(erros).length === 0;
   const PASSOS = ["leva", "quando", "quem"] as const;
   const visivel = (n: number) => !emPassos || passo === n;
-  const { soma, semPreco } = estimativa(cesto);
+  const { somaCent, semPreco } = estimativa(cesto);
 
   return (
     <form action={agir} className="grid gap-6">
@@ -236,16 +245,16 @@ export function FormularioPedido({ locale }: { locale: Locale }) {
                     )}
                   </span>
                   <span className="shrink-0 tabular-nums text-papel/80">
-                    {item.preco === null
+                    {item.precoCent === null
                       ? tc("semPreco")
-                      : formatarPreco(item.preco * item.quantidade, locale)}
+                      : formatarCent(totalDaLinha(item.precoCent, item.quantidade), locale)}
                   </span>
                 </li>
               ))}
             </ul>
             <p className="mt-4 flex justify-between gap-4 border-t border-papel/20 pt-3 text-sm font-semibold">
               <span>{semPreco > 0 ? tc("aPartirDe") : tc("estimativa")}</span>
-              <span className="tabular-nums">{formatarPreco(soma, locale)}</span>
+              <span className="tabular-nums">{formatarCent(somaCent, locale)}</span>
             </p>
             {/* ⚠️ O aviso fica **colado ao número** e não no fundo da página: é
                 aqui que alguém pode ler aquilo como uma conta a pagar. */}
@@ -330,8 +339,8 @@ export function FormularioPedido({ locale }: { locale: Locale }) {
             id={`${id}-detalhe`}
             /* ⚠️ **Muda de nome com o cesto**, e é isso que mantém o caminho sem
                JavaScript. Sem cesto isto **é** o pedido e chama-se `detalhe`;
-               com cesto é um extra chamado `notas`, e o `detalhe` que vai para o
-               servidor é o resumo mais estas linhas. */
+               com cesto é um extra chamado `notas`, e o servidor escreve o
+               pedido a partir das `linhas` mais estas notas. */
             name={comCesto ? "notas" : "detalhe"}
             rows={comCesto ? 3 : 5}
             required={!comCesto}
@@ -347,13 +356,7 @@ export function FormularioPedido({ locale }: { locale: Locale }) {
           {erros.detalhe && <Erro id={`${id}-detalhe-erro`}>{erros.detalhe}</Erro>}
         </div>
 
-        {comCesto && (
-          <input
-            type="hidden"
-            name="detalhe"
-            value={notas.trim() ? `${resumo}\n\n${notas.trim()}` : resumo}
-          />
-        )}
+        {comCesto && <input type="hidden" name="linhas" value={linhas} />}
       </div>
 
       {/* ── 2 · Quando é ───────────────────────────────────────────────── */}
