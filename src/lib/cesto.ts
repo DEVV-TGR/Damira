@@ -294,6 +294,22 @@ export function cestoEmTexto(
 }
 
 /**
+ * O que vai para o servidor: as linhas do cesto **sem preços**.
+ *
+ * ⚠️ É uma lista de campos escolhidos e não o item inteiro com o preço tirado:
+ * um campo novo no `ItemCesto` não vai para o servidor por acaso. O servidor
+ * refaz o cesto a partir do catálogo (`pedido-servidor.ts`), e o preço que o
+ * `localStorage` guarda — que qualquer pessoa edita — nunca sai do browser.
+ */
+export const linhasDoCesto = (cesto: ItemCesto[]) =>
+  cesto.map((item) => ({
+    produtoId: item.produtoId,
+    varianteId: item.varianteId,
+    quantidade: item.quantidade,
+    notas: item.notas,
+  }));
+
+/**
  * O tipo de pedido que o cesto sugere.
  *
  * Se tudo o que lá está é do mesmo tipo, é esse. Se há mistura, é `outro` — e

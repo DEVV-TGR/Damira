@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { TIPOS_PEDIDO } from "@/lib/pedidos";
 import {
   estimativa,
+  linhasDoCesto,
   pessoasSugeridas,
   tipoSugerido,
   totalDaLinha,
@@ -97,18 +98,7 @@ export function FormularioPedido({ locale }: { locale: Locale }) {
      quantidades: o servidor refaz o cesto a partir do catálogo e escreve o texto
      do pedido com os preços dele (`pedido-servidor.ts`). Os preços que o cesto
      mostra são do `localStorage` e podem ter sido mexidos. */
-  const linhas = useMemo(
-    () =>
-      JSON.stringify(
-        cesto.map((item) => ({
-          produtoId: item.produtoId,
-          varianteId: item.varianteId,
-          quantidade: item.quantidade,
-          notas: item.notas,
-        })),
-      ),
-    [cesto],
-  );
+  const linhas = useMemo(() => JSON.stringify(linhasDoCesto(cesto)), [cesto]);
 
   /**
    * ⚠️ **O pedido entra no histórico deste browser assim que o servidor
