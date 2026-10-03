@@ -1,31 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
+import type { Locale } from "@/i18n/routing";
 import { estimativa, quantidadeEmTexto, totalArtigos, totalDaLinha } from "@/lib/cesto";
 import { formatarCent } from "@/lib/preco";
-import type { Locale } from "@/i18n/routing";
 import { useCesto } from "./CestoProvider";
 
 /**
- * A barra do cesto: **o que já escolheu, sempre à vista**.
+ * # O cesto: um botão no canto e um cartão no centro
  *
- * ## Porque é uma barra em baixo e não um ícone no cabeçalho
+ * ## ⚠️ Era uma barra no fundo do ecrã, e deixou de ser
  *
- * Porque a maior parte das visitas é de telemóvel, e no telemóvel o canto
- * superior direito é o sítio mais longe do polegar que há no ecrã. Um carrinho
- * que se toca com o dedo sem mudar a pega vale mais do que um que segue a
- * convenção das lojas grandes.
+ * Até outubro de 2026 o cesto era uma barra a toda a largura, colada ao fundo.
+ * Tinha duas razões — o polegar chega ao fundo e não ao canto de cima, e uma
+ * página longa precisava de um sinal de que se tinha juntado alguma coisa — e
+ * as duas continuam a valer: o botão está em baixo, à mão do polegar, e aparece
+ * logo que há alguma coisa no cesto.
  *
- * E porque esta página é longa: os kits, os bolos, o configurador e as boxes são
- * cinco ecrãs de rolagem. Sem a barra, quem juntou um kit no primeiro ecrã não
- * tem sinal nenhum de que o fez até chegar ao fim.
+ * Saiu por um defeito que só se via com as duas peças juntas: o botão flutuante
+ * «Encomendas» e a barra viviam os dois no fundo, e na ementa, com o cesto
+ * cheio, o botão ficava por baixo da barra. Agora **os dois ocupam o mesmo sítio
+ * e trocam-se**: com o cesto vazio, «Encomendas» (ver `BotaoEncomendar`); com
+ * alguma coisa dentro, o carrinho — em todas as páginas. Nunca os dois.
  *
- * ## ⚠️ Só aparece com alguma coisa dentro
+ * ## O cartão
  *
- * Uma barra permanentemente a dizer «0 artigos, 0,00 €» ocupa o fundo do ecrã
- * de toda a gente para não informar ninguém. Aparece quando há o que mostrar, e
- * some quando se esvazia.
+ * Abre centrado, por cima de tudo, com o que se escolheu: quantidades, tirar,
+ * esvaziar e a estimativa. É um `<dialog>` com `showModal()`: o `Esc`, o foco
+ * preso lá dentro e o fundo inerte vêm do browser, e não de código nosso.
+ * «Continuar» leva ao pedido.
  *
  * ## A estimativa nunca se chama total
  *
@@ -36,28 +41,164 @@ export function Cesto({ locale }: { locale: Locale }) {
   const t = useTranslations("encomendas.cesto");
   const contexto = useCesto();
   const [aberto, setAberto] = useState(false);
+  const caixa = useRef<HTMLDialogElement>(null);
 
-  if (!contexto || !contexto.pronto || contexto.cesto.length === 0) return null;
+  const vazio = !contexto?.pronto || contexto.cesto.length === 0;
+  /* Esvaziar o cesto com o cartão aberto fecha-o: um cartão vazio no centro do
+     ecrã é um beco, e o botão que o abriu já desapareceu. */
+  const mostrar = aberto && !vazio;
+
+  useEffect(() => {
+    const dialogo = caixa.current;
+    if (!dialogo) return;
+    if (mostrar && !dialogo.open) dialogo.showModal();
+    if (!mostrar && dialogo.open) dialogo.close();
+  }, [mostrar]);
+
+  /* ⚠️ **A página de trás não rola enquanto o cartão está aberto.** O fundo do
+     `<dialog>` é inerte para cliques, mas não para o dedo: no telemóvel, quem
+     arrastava o cartão rolava a ementa por baixo dele. */
+  useEffect(() => {
+    if (!mostrar) return;
+    const raiz = document.documentElement;
+    const antes = raiz.style.overflow;
+    raiz.style.overflow = "hidden";
+    return () => {
+      raiz.style.overflow = antes;
+    };
+  }, [mostrar]);
+
+  if (!contexto || vazio) return null;
 
   const { cesto, mudarQuantidade, remover, esvaziar } = contexto;
   const { somaCent, semPreco } = estimativa(cesto);
   const artigos = totalArtigos(cesto);
+  const valor = formatarCent(somaCent, locale);
 
   return (
     <>
-      {/* ⚠️ **O calço não é enfeite.** A barra é `fixed`, portanto sai do fluxo
-          e fica por cima do que estiver no fundo da página — na verificação
-          tapava a caixa do consentimento, que é o campo sem o qual o pedido não
-          segue. Este `<div>` está no fluxo, no fim da página, e devolve à
-          página a altura que a barra lhe tirou. */}
-      <div aria-hidden className="h-16" />
+      {/* ⚠️ **O calço não é enfeite**, e vem da barra que isto substituiu. O
+          botão é `fixed`: no fim da página fica por cima do que lá estiver, e a
+          barra chegou a tapar a caixa do consentimento, sem a qual o pedido não
+          segue. Este `<div>` está no fluxo e devolve à página a altura que o
+          botão lhe tira. */}
+      <div aria-hidden className="h-20" />
 
-      <div className="fixed inset-x-0 bottom-0 z-50 print:hidden">
-      {aberto && (
-        <div className="mx-auto max-w-[42rem] px-3">
-          <div className="max-h-[60svh] overflow-y-auto rounded-t-2xl border-2 border-b-0 border-tinta bg-papel p-4 shadow-lg shadow-tinta/25">
-            <div className="flex items-baseline justify-between gap-4">
-              <h2 className="titulo-display titulo-gama">{t("titulo")}</h2>
+      <button
+        type="button"
+        onClick={() => setAberto(true)}
+        aria-haspopup="dialog"
+        aria-label={`${t("verPedido")} · ${t("unidades", { n: artigos })} · ${
+          semPreco > 0 ? t("aPartirDe") : t("estimativa")
+        } ${valor}`}
+        /* O mesmo sítio, o mesmo tamanho e a mesma cor do «Encomendas»: é o
+           mesmo botão a mudar de função, e é isso que ele tem de parecer. */
+        data-flutuante="cesto"
+        className="premivel fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-full bg-tijolo py-3 pl-4 pr-5 text-sm font-semibold text-papel shadow-lg shadow-tinta/25 print:hidden"
+      >
+        <span className="relative">
+          <IconeCesto />
+          <span className="absolute -right-2 -top-2 grid min-w-5 place-items-center rounded-full bg-papel px-1 text-[0.7rem] font-bold leading-5 tabular-nums text-tijolo">
+            {artigos}
+          </span>
+        </span>
+        <span className="tabular-nums">{valor}</span>
+      </button>
+
+      <dialog
+        ref={caixa}
+        onClose={() => setAberto(false)}
+        /* Um toque fora fecha: o `::backdrop` não recebe eventos, mas um clique
+           nele tem como alvo o próprio `<dialog>`, e o conteúdo vive num filho. */
+        onClick={(evento) => {
+          if (evento.target === caixa.current) setAberto(false);
+        }}
+        aria-labelledby="titulo-cesto"
+        className="cartao-cesto bg-papel text-tinta"
+      >
+        <div className="flex max-h-[inherit] flex-col">
+          <div className="flex items-start justify-between gap-4 border-b border-tinta/15 p-5 pb-4">
+            <div>
+              <h2 id="titulo-cesto" className="titulo-display titulo-gama">
+                {t("titulo")}
+              </h2>
+              <p className="mt-1 text-sm text-tinta-suave">{t("unidades", { n: artigos })}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAberto(false)}
+              aria-label={t("fechar")}
+              className="premivel grid size-11 shrink-0 place-items-center rounded-full border border-tinta/20 hover:bg-tinta hover:text-papel"
+            >
+              <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+
+          <ul className="flex-1 divide-y divide-tinta/12 overflow-y-auto px-5">
+            {cesto.map((item) => (
+              <li key={item.id} className="flex items-start gap-3 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold">{item.nome}</p>
+                  {item.variante && <p className="text-sm text-tinta-suave">{item.variante}</p>}
+                  <p className="mt-1 text-sm tabular-nums text-tijolo">
+                    {item.precoCent === null
+                      ? t("semPreco")
+                      : formatarCent(totalDaLinha(item.precoCent, item.quantidade), locale)}
+                  </p>
+                </div>
+
+                {/* Três alvos de 44 px em vez de um campo numérico: mexer numa
+                    quantidade com o polegar é carregar em «mais» e «menos», e
+                    não abrir o teclado numérico para escrever «2». */}
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    type="button"
+                    aria-label={t("menos")}
+                    onClick={() => mudarQuantidade(item.id, -1)}
+                    className="premivel size-11 rounded-full border border-tinta/25 text-lg leading-none"
+                  >
+                    −
+                  </button>
+                  {/* ⚠️ **A largura é mínima e não fixa.** Com `w-6` cabia «2»
+                      mas não «1,5 kg», e o texto saltava para cima do botão do
+                      «mais» — só nos bolos, que são justamente os artigos onde o
+                      número é o que interessa. */}
+                  <span className="min-w-8 whitespace-nowrap px-1 text-center text-sm tabular-nums">
+                    {quantidadeEmTexto(item, locale)}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={t("mais")}
+                    onClick={() => mudarQuantidade(item.id, 1)}
+                    className="premivel size-11 rounded-full border border-tinta/25 text-lg leading-none"
+                  >
+                    +
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={t("remover", { nome: item.nome })}
+                    onClick={() => remover(item.id)}
+                    className="premivel size-11 rounded-full text-tinta-suave hover:text-tijolo"
+                  >
+                    ×
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <div className="border-t border-tinta/15 p-5 pt-4">
+            <p className="flex items-baseline justify-between gap-4 font-semibold">
+              <span>{semPreco > 0 ? t("aPartirDe") : t("estimativa")}</span>
+              <span className="titulo-display text-2xl tabular-nums text-tijolo">{valor}</span>
+            </p>
+            <p className="mt-2 text-sm text-tinta-suave">
+              {semPreco > 0 ? t("avisoOrcamento") : t("avisoEstimativa")}
+            </p>
+
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
               <button
                 type="button"
                 onClick={esvaziar}
@@ -65,102 +206,30 @@ export function Cesto({ locale }: { locale: Locale }) {
               >
                 {t("esvaziar")}
               </button>
+              {/* Por agora leva ao formulário das encomendas; com a página de
+                  compra (#37) passa a levar a ela. */}
+              <Link
+                href="/encomendas#pedido"
+                onClick={() => setAberto(false)}
+                className="premivel flex min-h-12 flex-1 items-center justify-center rounded-full bg-tijolo px-6 text-sm font-semibold uppercase tracking-widest text-papel sm:flex-none"
+              >
+                {t("irParaPedido")}
+              </Link>
             </div>
-
-            <ul className="mt-4 divide-y divide-tinta/12">
-              {cesto.map((item) => (
-                <li key={item.id} className="flex items-start gap-3 py-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold">{item.nome}</p>
-                    {item.variante && (
-                      <p className="text-sm text-tinta-suave">{item.variante}</p>
-                    )}
-                    <p className="mt-1 text-sm tabular-nums text-tijolo">
-                      {item.precoCent === null
-                        ? t("semPreco")
-                        : formatarCent(totalDaLinha(item.precoCent, item.quantidade), locale)}
-                    </p>
-                  </div>
-
-                  {/* Três alvos de 44 px em vez de um campo numérico: mexer numa
-                      quantidade com o polegar é carregar em «mais» e «menos», e
-                      não abrir o teclado numérico para escrever «2». */}
-                  <div className="flex shrink-0 items-center gap-1">
-                    <button
-                      type="button"
-                      aria-label={t("menos")}
-                      onClick={() => mudarQuantidade(item.id, -1)}
-                      className="premivel size-11 rounded-full border border-tinta/25 text-lg leading-none"
-                    >
-                      −
-                    </button>
-                    {/* ⚠️ **A largura é mínima e não fixa.** Com `w-6` cabia
-                        «2» mas não «1,5 kg», e o texto saltava para cima do
-                        botão do «mais» — só nos bolos, que são justamente os
-                        artigos onde o número é o que interessa. */}
-                    <span className="min-w-8 whitespace-nowrap px-1 text-center text-sm tabular-nums">
-                      {quantidadeEmTexto(item, locale)}
-                    </span>
-                    <button
-                      type="button"
-                      aria-label={t("mais")}
-                      onClick={() => mudarQuantidade(item.id, 1)}
-                      className="premivel size-11 rounded-full border border-tinta/25 text-lg leading-none"
-                    >
-                      +
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={t("remover", { nome: item.nome })}
-                      onClick={() => remover(item.id)}
-                      className="premivel size-11 rounded-full text-tinta-suave hover:text-tijolo"
-                    >
-                      ×
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-
-            <p className="mt-4 text-sm text-tinta-suave">
-              {semPreco > 0 ? t("avisoOrcamento") : t("avisoEstimativa")}
-            </p>
-
-            <a
-              href="#pedido"
-              onClick={() => setAberto(false)}
-              className="premivel mt-4 flex min-h-12 items-center justify-center rounded-full bg-tijolo px-6 text-sm font-semibold uppercase tracking-widest text-papel"
-            >
-              {t("irParaPedido")}
-            </a>
           </div>
         </div>
-      )}
-
-      <div className="border-t-2 border-tinta bg-tinta text-papel">
-        <button
-          type="button"
-          onClick={() => setAberto((v) => !v)}
-          aria-expanded={aberto}
-          className="envolvente flex min-h-14 w-full items-center justify-between gap-4 py-2 text-left"
-        >
-          <span className="flex min-w-0 items-baseline gap-3">
-            <span className="shrink-0 rounded-full bg-tijolo px-2.5 py-0.5 text-sm font-bold tabular-nums">
-              {artigos}
-            </span>
-            <span className="truncate text-sm">
-              {semPreco > 0 ? t("aPartirDe") : t("estimativa")}{" "}
-              <strong className="tabular-nums">
-                {formatarCent(somaCent, locale)}
-              </strong>
-            </span>
-          </span>
-          <span className="shrink-0 text-xs font-semibold uppercase tracking-widest">
-            {aberto ? t("fechar") : t("verPedido")}
-          </span>
-        </button>
-      </div>
-      </div>
+      </dialog>
     </>
+  );
+}
+
+/* Um cesto de compras, desenhado a traço para viver ao lado do texto do botão
+   sem pesar mais do que ele. */
+function IconeCesto() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path d="M5 9h14l-1.4 9.1a2 2 0 0 1-2 1.7H8.4a2 2 0 0 1-2-1.7L5 9Z" strokeLinejoin="round" />
+      <path d="M9 9V7a3 3 0 0 1 6 0v2" strokeLinecap="round" />
+    </svg>
   );
 }
