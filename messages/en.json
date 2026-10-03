@@ -377,7 +377,8 @@
         "sem-contacto": "Leave an email or a phone number — without one we cannot reply.",
         "detalhe-curto": "Tell us a little more about what you need.",
         "cesto-invalido": "Something in your basket has changed or is no longer available. Please check your basket and send it again — or give us a call.",
-        "consentimento": "We need this permission in order to reply to you."
+        "consentimento": "We need this permission in order to reply to you.",
+        "vaga-indisponivel": "That time is no longer available. Please choose another."
       },
       "sucesso": {
         "titulo": "Request sent.",
@@ -439,6 +440,15 @@
       "boxes": "Boxes",
       "da-ementa": "From the menu",
       "pedido": "Order"
+    },
+    "calendario": {
+      "titulo": "When would you like to collect?",
+      "escolha": "Choose the day and the time.",
+      "escolhido": "Collect at the shop: {quando}.",
+      "horaDeLisboa": "Times are Portugal time.",
+      "cheia": "full",
+      "aCarregar": "Checking the times…",
+      "semVagas": "No times available in the next few days — call us:"
     }
   },
   "bolos": {

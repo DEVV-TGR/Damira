@@ -3,8 +3,12 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
 import { cestoEmTexto, estimativa } from "@/lib/cesto";
-import { cotarCesto, produtoPorId } from "@/lib/dados";
+import { tz } from "@date-fns/tz";
+import { format } from "date-fns";
+import { pt } from "date-fns/locale/pt";
+import { configuracaoDaCasa, cotarCesto, ocupacao, produtoPorId } from "@/lib/dados";
 import { itensDoServidor } from "@/lib/pedido-servidor";
+import { confirmarLevantamento } from "@/lib/vagas-servidor";
 import {
   EsquemaPedido,
   corpoDoPedido,
@@ -87,6 +91,7 @@ export async function enviarPedido(
      partir do catálogo, com os preços dele. Antes vinha o texto já escrito, com
      os preços do `localStorage`, e quem os mudasse mudava o total do email. */
   let detalhe = dados.get("detalhe");
+  let data = dados.get("data");
   let totais = { totalCent: 0, semPreco: 0 };
   const linhas = dados.get("linhas");
   if (typeof linhas === "string" && linhas.length > 0) {
@@ -108,6 +113,33 @@ export async function enviarPedido(
     });
     const notas = String(dados.get("notas") ?? "").trim();
     detalhe = notas ? `${texto}\n\n${notas}` : texto;
+
+    /* ⚠️ **A hora do calendário confirma-se aqui, com o mesmo motor.** O
+       calendário do browser é uma ajuda e não uma garantia (`pedidos.md` › O
+       levantamento): entre escolher e enviar, a vaga pode ter enchido. E a data
+       do pedido passa a ser a da hora confirmada, em Lisboa — não a que o
+       browser mandou ao lado. */
+    const levantamento = String(dados.get("levantamento") ?? "");
+    if (levantamento) {
+      const quando = new Date(levantamento);
+      const confirmado = Number.isNaN(quando.getTime())
+        ? ({ ok: false } as const)
+        : await confirmarLevantamento(
+            lidas,
+            quando,
+            { configuracaoDaCasa, cotarCesto, ocupacao, produtoPorId },
+            new Date(),
+          );
+      if (!confirmado.ok) {
+        return { estado: "erro", campos: { data: t("erros.vaga-indisponivel") } };
+      }
+      const lisboa = { in: tz("Europe/Lisbon") };
+      data = format(quando, "yyyy-MM-dd", lisboa);
+      /* O email é para a casa, e por isso sempre em português e em hora de
+         Lisboa, seja qual for a língua de quem encomendou. */
+      const porExtenso = format(quando, "EEEE, d 'de' MMMM 'às' HH:mm", { ...lisboa, locale: pt });
+      detalhe = `Levantamento: ${porExtenso} (hora de Lisboa)\n\n${detalhe}`;
+    }
     const { somaCent, semPreco } = estimativa(refeito.itens);
     totais = { totalCent: somaCent, semPreco };
   }
@@ -117,7 +149,7 @@ export async function enviarPedido(
     nome: dados.get("nome"),
     email: dados.get("email") ?? "",
     telefone: dados.get("telefone") ?? "",
-    data: dados.get("data"),
+    data,
     pessoas: dados.get("pessoas") || null,
     detalhe,
     consentimento: dados.get("consentimento") === "sim",
