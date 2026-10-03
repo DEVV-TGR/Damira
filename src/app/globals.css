@@ -709,6 +709,72 @@ body::after {
   }
 }
 
+/* ── O cartão do cesto ────────────────────────────────────────────────── */
+
+/**
+ * O cesto aberto: **um cartão no centro do ecrã, por cima de tudo.** Ao
+ * contrário do painel do artigo, não se encosta a lado nenhum — é a pausa
+ * entre escolher e pedir, e o centro é onde se lê isso.
+ *
+ * ⚠️ **O `margin: auto` é declarado, e não herdado do browser.** O `<dialog>`
+ * com `showModal()` centra-se por essa margem, mas o *preflight* do Tailwind
+ * põe `margin: 0` em tudo: sem a linha, o cartão colava-se ao canto superior
+ * esquerdo.
+ *
+ * As velocidades são as do painel do artigo pela mesma razão: devagar a abrir,
+ * depressa a fechar.
+ */
+.cartao-cesto {
+  margin: auto;
+  width: min(34rem, calc(100% - 2rem));
+  max-height: min(85svh, 46rem);
+  padding: 0;
+  border: 0;
+  border-radius: 1.25rem;
+  overflow: hidden;
+
+  scale: 0.96;
+  opacity: 0;
+  transition:
+    scale 0.18s var(--ease-saida),
+    opacity 0.18s ease,
+    display 0.18s allow-discrete,
+    overlay 0.18s allow-discrete;
+}
+
+.cartao-cesto[open] {
+  scale: 1;
+  opacity: 1;
+  transition:
+    scale 0.26s var(--ease-saida),
+    opacity 0.26s ease,
+    display 0.26s allow-discrete,
+    overlay 0.26s allow-discrete;
+}
+
+@starting-style {
+  .cartao-cesto[open] {
+    scale: 0.96;
+    opacity: 0;
+  }
+}
+
+.cartao-cesto::backdrop {
+  background: rgb(31 29 27 / 0);
+  transition: background 0.18s ease;
+}
+
+.cartao-cesto[open]::backdrop {
+  background: rgb(31 29 27 / 0.55);
+  transition: background 0.26s ease;
+}
+
+@starting-style {
+  .cartao-cesto[open]::backdrop {
+    background: rgb(31 29 27 / 0);
+  }
+}
+
 
 /* ── Cartões de lado no telemóvel ───────────────────────────────────────── */
 

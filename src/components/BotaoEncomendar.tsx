@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
+import { useCesto } from "@/components/encomendas/CestoProvider";
 
 /**
  * O atalho para as encomendas, flutuante no canto.
@@ -25,6 +26,10 @@ import { Link, usePathname } from "@/i18n/navigation";
  * página onde já se está não é atalho, é ruído — e é o erro que faz um site
  * parecer montado por peças em vez de composto.
  *
+ * ⚠️ **E dá o lugar ao carrinho quando o cesto tem alguma coisa.** Os dois vivem
+ * no mesmo canto e trocam-se, em todas as páginas: quem já juntou alguma coisa
+ * quer ver o que juntou, e não um atalho para onde ir juntar. Ver `Cesto.tsx`.
+ *
  * ## Como decide que o herói saiu
  *
  * Por posição de scroll e não por `IntersectionObserver` sobre o herói: este
@@ -39,6 +44,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 export function BotaoEncomendar() {
   const t = useTranslations("nav");
   const caminho = usePathname();
+  const contexto = useCesto();
   const [visivel, setVisivel] = useState(false);
 
   useEffect(() => {
@@ -58,11 +64,11 @@ export function BotaoEncomendar() {
   }, []);
 
   /* ⚠️ **Toda a árvore das encomendas e não só a página de índice.** Era uma
-     igualdade exacta, e com as páginas de produto (`/encomendas/festa-premium`)
-     o botão voltava a aparecer — no mesmo canto onde a barra do cesto vive,
-     tapando-a. Um botão «encomendar» por cima do cesto, na página onde se
-     acabou de juntar alguma coisa, é o pior sítio possível para o pôr. */
+     igualdade exacta, e o botão voltava a aparecer em
+     `/encomendas/festa-premium` — uma página de encomendas a apontar para as
+     encomendas. */
   if (caminho === "/encomendas" || caminho.startsWith("/encomendas/")) return null;
+  if (contexto?.pronto && contexto.cesto.length > 0) return null;
 
   return (
     <Link
