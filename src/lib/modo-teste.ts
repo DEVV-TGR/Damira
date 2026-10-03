@@ -25,5 +25,9 @@
  * Recebe o ambiente por argumento para os testes poderem experimentar as duas
  * posições sem mexer no `process.env` de todos.
  */
-export const emModoDeTeste = (ambiente: NodeJS.ProcessEnv = process.env): boolean =>
+/* Um ambiente qualquer, e não `NodeJS.ProcessEnv`: o tipo do Next exige o
+   `NODE_ENV`, e os testes passam ambientes com uma ou duas variáveis. */
+export type Ambiente = Record<string, string | undefined>;
+
+export const emModoDeTeste = (ambiente: Ambiente = process.env): boolean =>
   ambiente.LOJA_EM_TESTE === "1";

@@ -1,5 +1,5 @@
 import type { HorarioSemanal, TempoProducao } from "@/lib/horarios";
-import { emModoDeTeste } from "@/lib/modo-teste";
+import { emModoDeTeste, type Ambiente } from "@/lib/modo-teste";
 import { CATALOGO_JSON, CONFIGURACAO_JSON, criarFonteJson, type OpcoesFonteJson } from "./json";
 import type { FonteDeDados, Produto } from "./tipos";
 
@@ -49,7 +49,7 @@ export const COZINHA_DE_EXEMPLO: HorarioSemanal = {
   domingo: oitoAsDezoito,
 };
 
-const recusarEmProducao = (ambiente: NodeJS.ProcessEnv) => {
+const recusarEmProducao = (ambiente: Ambiente) => {
   if (ambiente.VERCEL_ENV === "production" && !emModoDeTeste(ambiente)) {
     throw new Error(
       "src/lib/dados/exemplo.ts: os valores de exemplo só correm no ar com o modo " +
@@ -65,7 +65,7 @@ const recusarEmProducao = (ambiente: NodeJS.ProcessEnv) => {
  */
 export function fonteDeExemplo(
   opcoes: OpcoesFonteJson = {},
-  ambiente: NodeJS.ProcessEnv = process.env,
+  ambiente: Ambiente = process.env,
 ): FonteDeDados {
   recusarEmProducao(ambiente);
   const catalogo = (opcoes.catalogo ?? CATALOGO_JSON).map((produto) => ({
@@ -85,5 +85,5 @@ export function fonteDeExemplo(
  * JSON com os buracos tapados pelo exemplo; sem ele, a dos JSON como estão —
  * e o calendário diz «indisponível» até haver dados.
  */
-export const fonteDoAmbiente = (ambiente: NodeJS.ProcessEnv = process.env): FonteDeDados =>
+export const fonteDoAmbiente = (ambiente: Ambiente = process.env): FonteDeDados =>
   emModoDeTeste(ambiente) ? fonteDeExemplo({}, ambiente) : criarFonteJson();
