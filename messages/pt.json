@@ -376,6 +376,7 @@
         "data-passada": "Essa data já passou.",
         "sem-contacto": "Deixe um email ou um telefone — sem isso não conseguimos responder.",
         "detalhe-curto": "Diga-nos um pouco mais sobre o que precisa.",
+        "cesto-invalido": "Há no cesto um artigo que mudou ou deixou de existir. Reveja o cesto e volte a enviar — ou telefone-nos.",
         "consentimento": "Precisamos desta autorização para lhe poder responder."
       },
       "sucesso": {

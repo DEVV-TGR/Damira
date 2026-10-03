@@ -1,5 +1,7 @@
+import { tz } from "@date-fns/tz";
+import { format } from "date-fns";
+import { normalizarCesto, type ItemCesto } from "@/lib/cesto";
 import type { TipoPedido } from "@/lib/pedidos";
-import type { ItemCesto } from "@/lib/cesto";
 
 /**
  * # O histórico de pedidos
@@ -38,22 +40,14 @@ import type { ItemCesto } from "@/lib/cesto";
  */
 export type EstadoPedido = "enviado" | "por-enviar";
 
-export type ItemGuardado = {
-  nome: string;
-  variante: string | null;
-  quantidade: number;
-  unidade: "un" | "kg";
-  preco: number | null;
-  /* ⚠️ Guardados para o botão de repetir poder devolver o artigo ao cesto com a
-     regra certa. Sem eles, repetir um pedido de bolo punha 2 «unidades» de bolo
-     em vez de 2 kg. */
-  tipo: TipoPedido;
-  id: string;
-  minimo: number;
-  passo: number;
-  /** A personalização, para repetir um pedido a trazer também a mensagem. */
-  notas: string | null;
-};
+/**
+ * Um artigo de um pedido feito. É a linha do cesto sem as pessoas: o `tipo`, o
+ * `minimo`, o `passo` e a `unidade` ficam para o botão de repetir devolver o
+ * artigo com a regra certa — sem eles, repetir um pedido de bolo punha 2
+ * «unidades» em vez de 2 kg —, e o `produtoId`/`varianteId` para o servidor o
+ * voltar a cotar.
+ */
+export type ItemGuardado = Omit<ItemCesto, "pessoas">;
 
 export type PedidoGuardado = {
   /** `DAM-0309-4F7K`. Vai no assunto do email e serve para falar ao telefone. */
@@ -66,8 +60,11 @@ export type PedidoGuardado = {
   data: string;
   pessoas: number | null;
   itens: ItemGuardado[];
-  /** A estimativa no momento do pedido — os preços de hoje podem já ser outros. */
-  estimativa: number;
+  /**
+   * A estimativa no momento do pedido, em cêntimos, **calculada pelo servidor**
+   * — os preços de hoje podem já ser outros.
+   */
+  estimativaCent: number;
   semPreco: number;
 };
 
@@ -99,44 +96,32 @@ export const chaveDoHistorico = (idUtilizador?: string | null): string =>
  */
 const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-export function gerarReferencia(agora = new Date()): string {
-  const dia = String(agora.getUTCDate()).padStart(2, "0");
-  const mes = String(agora.getUTCMonth() + 1).padStart(2, "0");
+/* ⚠️ O dia é o **de Lisboa**, e o `agora` entra por argumento. Lia o dia UTC,
+   e entre a meia-noite e a uma da manhã de verão um pedido feito a 6 saía com
+   a referência do dia 5 — a regra 3 do AGENTS.md, vista do lado do código que
+   se diz ao telefone. */
+export function gerarReferencia(agora: Date): string {
   let sufixo = "";
   for (let i = 0; i < 4; i++) {
     sufixo += ALFABETO[Math.floor(Math.random() * ALFABETO.length)];
   }
-  return `DAM-${dia}${mes}-${sufixo}`;
+  return `DAM-${format(agora, "ddMM", { in: tz("Europe/Lisbon") })}-${sufixo}`;
 }
 
 /** O cesto, transformado no que fica guardado. */
-export const itensGuardados = (cesto: ItemCesto[]): ItemGuardado[] =>
-  cesto.map((i) => ({
-    id: i.id,
-    nome: i.nome,
-    variante: i.variante,
-    quantidade: i.quantidade,
-    unidade: i.unidade,
-    preco: i.preco,
-    tipo: i.tipo,
-    minimo: i.minimo,
-    passo: i.passo,
-    notas: i.notas,
-  }));
+const semPessoas = (item: ItemCesto): ItemGuardado => {
+  const { pessoas, ...guardado } = item;
+  void pessoas;
+  return guardado;
+};
+
+export const itensGuardados = (cesto: ItemCesto[]): ItemGuardado[] => cesto.map(semPessoas);
 
 /** O caminho de volta: um artigo guardado outra vez no cesto. */
 export const paraOCesto = (item: ItemGuardado): ItemCesto => ({
-  id: item.id,
-  tipo: item.tipo,
-  nome: item.nome,
-  variante: item.variante,
-  preco: item.preco,
-  pessoas: null,
-  quantidade: item.quantidade,
-  unidade: item.unidade,
-  minimo: item.minimo,
-  passo: item.passo,
+  ...item,
   notas: item.notas ?? null,
+  pessoas: null,
 });
 
 /**
@@ -151,7 +136,7 @@ export function normalizarHistorico(lido: unknown): PedidoGuardado[] {
   const pedidos: PedidoGuardado[] = [];
   for (const bruto of lido) {
     if (typeof bruto !== "object" || bruto === null) continue;
-    const p = bruto as Partial<PedidoGuardado>;
+    const p = bruto as Partial<PedidoGuardado> & { estimativa?: unknown };
     if (typeof p.referencia !== "string" || typeof p.quando !== "string") continue;
     pedidos.push({
       referencia: p.referencia,
@@ -160,8 +145,16 @@ export function normalizarHistorico(lido: unknown): PedidoGuardado[] {
       tipo: (p.tipo ?? "outro") as TipoPedido,
       data: typeof p.data === "string" ? p.data : "",
       pessoas: typeof p.pessoas === "number" ? p.pessoas : null,
-      itens: Array.isArray(p.itens) ? (p.itens as ItemGuardado[]) : [],
-      estimativa: typeof p.estimativa === "number" ? p.estimativa : 0,
+      /* Os artigos passam pela mesma normalização do cesto: um pedido guardado
+         antes de outubro de 2026 não tem ids nem cêntimos, e é ali que se
+         recuperam. */
+      itens: normalizarCesto(p.itens).map(semPessoas),
+      estimativaCent:
+        typeof p.estimativaCent === "number"
+          ? p.estimativaCent
+          : typeof p.estimativa === "number"
+            ? Math.round(p.estimativa * 100)
+            : 0,
       semPreco: typeof p.semPreco === "number" ? p.semPreco : 0,
     });
   }
