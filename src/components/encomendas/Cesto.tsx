@@ -91,18 +91,23 @@ export function Cesto({ locale }: { locale: Locale }) {
         aria-label={`${t("verPedido")} · ${t("unidades", { n: artigos })} · ${
           semPreco > 0 ? t("aPartirDe") : t("estimativa")
         } ${valor}`}
-        /* O mesmo sítio, o mesmo tamanho e a mesma cor do «Encomendas»: é o
-           mesmo botão a mudar de função, e é isso que ele tem de parecer. */
+        /* O mesmo sítio e a mesma cor do «Encomendas»: é o mesmo botão a mudar
+           de função. Só o ícone, e grande: o valor esteve aqui ao lado e
+           competia com o carrinho — a estimativa está no cartão, e no nome do
+           botão para quem usa leitor de ecrã. */
         data-flutuante="cesto"
-        className="premivel fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-full bg-tijolo py-3 pl-4 pr-5 text-sm font-semibold text-papel shadow-lg shadow-tinta/25 print:hidden"
+        className="premivel fixed bottom-5 right-5 z-50 grid size-16 place-items-center rounded-full bg-tijolo text-papel shadow-lg shadow-tinta/25 print:hidden"
       >
-        <span className="relative">
-          <IconeCesto />
-          <span className="absolute -right-2 -top-2 grid min-w-5 place-items-center rounded-full bg-papel px-1 text-[0.7rem] font-bold leading-5 tabular-nums text-tijolo">
-            {artigos}
-          </span>
+        <IconeCesto />
+        {/* A contagem fica no canto, **fora** do desenho do cesto: pequena, para
+            não lhe tapar a forma, e a sair da borda do botão, que é onde o olho
+            procura um número destes. */}
+        <span
+          aria-hidden
+          className="absolute -right-0.5 -top-0.5 grid min-w-[1.375rem] place-items-center rounded-full border-2 border-tijolo bg-papel px-1 text-[0.68rem] font-bold leading-[1.125rem] tabular-nums text-tijolo"
+        >
+          {artigos}
         </span>
-        <span className="tabular-nums">{valor}</span>
       </button>
 
       <dialog
@@ -227,7 +232,7 @@ export function Cesto({ locale }: { locale: Locale }) {
    sem pesar mais do que ele. */
 function IconeCesto() {
   return (
-    <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+    <svg viewBox="0 0 24 24" className="size-8" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
       <path d="M5 9h14l-1.4 9.1a2 2 0 0 1-2 1.7H8.4a2 2 0 0 1-2-1.7L5 9Z" strokeLinejoin="round" />
       <path d="M9 9V7a3 3 0 0 1 6 0v2" strokeLinecap="round" />
     </svg>
