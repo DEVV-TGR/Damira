@@ -4,7 +4,7 @@ import { TZDate } from "@date-fns/tz";
 import { afterEach, describe, expect, it } from "vitest";
 import ementaJson from "@/data/ementa.json";
 import encomendasJson from "@/data/encomendas.json";
-import { fonteDeExemplo } from "./exemplo";
+import { fonteDeExemplo, fonteDoAmbiente } from "./exemplo";
 import { CATALOGO_JSON, CONFIGURACAO_JSON, criarFonteJson } from "./json";
 import { FORMATO_REFERENCIA, type EntradaPedido } from "./tipos";
 
@@ -312,9 +312,15 @@ describe("os valores de exemplo", () => {
     process.env.VERCEL_ENV = original;
   });
 
-  it("recusam-se a correr em produção", () => {
-    process.env.VERCEL_ENV = "production";
-    expect(() => fonteDeExemplo()).toThrow(/produção/);
+  it("no ar, recusam-se a correr sem o modo de teste", () => {
+    expect(() => fonteDeExemplo({}, { VERCEL_ENV: "production" })).toThrow(/modo de teste/);
+    expect(() => fonteDeExemplo({}, { VERCEL_ENV: "production", LOJA_EM_TESTE: "0" })).toThrow(
+      /modo de teste/,
+    );
+  });
+
+  it("no ar, com o modo de teste ligado, correm", () => {
+    expect(() => fonteDeExemplo({}, { VERCEL_ENV: "production", LOJA_EM_TESTE: "1" })).not.toThrow();
   });
 
   it("nunca trocam um tempo que a casa já tenha dado", async () => {
@@ -333,6 +339,27 @@ describe("os tipos não trazem dados para o browser", () => {
     expect(imports.length).toBeGreaterThan(1);
     for (const [linha, soTipo, modulo] of imports) {
       expect(soTipo === "type " || modulo === "zod", linha).toBe(true);
+    }
+  });
+});
+
+describe("o interruptor LOJA_EM_TESTE escolhe a fonte", () => {
+  it("desligado, a cozinha e os tempos ficam por preencher, e o calendário não se calcula", async () => {
+    const fonte = fonteDoAmbiente({ VERCEL_ENV: "production" });
+    expect((await fonte.configuracaoDaCasa()).cozinha).toBeNull();
+    expect((await fonte.produtoPorId("festa-premium"))?.tempoProducao).toBeNull();
+  });
+
+  it("ligado, entram o horário e os tempos de exemplo, também no ar", async () => {
+    const fonte = fonteDoAmbiente({ VERCEL_ENV: "production", LOJA_EM_TESTE: "1" });
+    expect((await fonte.configuracaoDaCasa()).cozinha).not.toBeNull();
+    expect((await fonte.produtoPorId("festa-premium"))?.tempoProducao).toEqual({ unidade: "dias", valor: 2 });
+  });
+
+  it("só o valor 1 liga — «true», «sim» ou vazio não ligam por engano", async () => {
+    for (const valor of ["true", "sim", "", "0"]) {
+      const fonte = fonteDoAmbiente({ VERCEL_ENV: "production", LOJA_EM_TESTE: valor });
+      expect((await fonte.configuracaoDaCasa()).cozinha).toBeNull();
     }
   });
 });

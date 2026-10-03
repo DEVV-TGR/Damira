@@ -567,5 +567,9 @@
     "soAoBalcao": "This one is asked for at the counter, on the spot — it is not ordered in advance.",
     "prazoDaCarta": "The minimum notice is still to be confirmed. Call us and we will tell you straight away if your date works.",
     "cadaCurto": "ea."
+  },
+  "modoTeste": {
+    "etiqueta": "Test mode",
+    "aviso": "Nothing is charged and pick-up times are examples."
   }
 }

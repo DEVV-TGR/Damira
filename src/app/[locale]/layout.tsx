@@ -7,6 +7,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { Cabecalho } from "@/components/Cabecalho";
 import { Rodape } from "@/components/Rodape";
 import { BotaoEncomendar } from "@/components/BotaoEncomendar";
+import { FaixaModoTeste } from "@/components/FaixaModoTeste";
 import { DadosEstruturados } from "@/components/DadosEstruturados";
 import { ProvedorConta } from "@/components/conta/ProvedorConta";
 import { CestoProvider } from "@/components/encomendas/CestoProvider";
@@ -142,6 +143,9 @@ export default async function LayoutIdioma({
           >
             {nav("saltarParaConteudo")}
           </a>
+          {/* O modo de teste diz-se em voz alta, no topo de todas as páginas.
+              Ver `src/lib/modo-teste.ts`. */}
+          <FaixaModoTeste />
           <Cabecalho locale={locale as Locale} />
           <main id="conteudo">{children}</main>
           <Rodape />

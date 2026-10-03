@@ -1,6 +1,5 @@
 import "server-only";
-import { fonteDeExemplo } from "./exemplo";
-import { criarFonteJson } from "./json";
+import { fonteDoAmbiente } from "./exemplo";
 import type { FonteDeDados } from "./tipos";
 
 /**
@@ -20,11 +19,10 @@ import type { FonteDeDados } from "./tipos";
  * `CODEOWNERS` pede-o.
  */
 
-/* `DADOS_DE_EXEMPLO=1` no `.env.local` liga os tempos e a cozinha de exemplo,
-   para trabalhar no calendário antes de a casa os dar. Em produção o
-   `exemplo.ts` recusa-se a correr. */
-const fonte: FonteDeDados =
-  process.env.DADOS_DE_EXEMPLO === "1" ? fonteDeExemplo() : criarFonteJson();
+/* O modo de teste (`LOJA_EM_TESTE=1`, ver `src/lib/modo-teste.ts`) liga os
+   tempos e a cozinha de exemplo, para o calendário funcionar antes de a casa os
+   dar. Quando vier a base de dados, é aqui que ela entra no lugar dos JSON. */
+const fonte: FonteDeDados = fonteDoAmbiente();
 
 export const listarProdutos: FonteDeDados["listarProdutos"] = (filtro) =>
   fonte.listarProdutos(filtro);
