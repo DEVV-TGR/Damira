@@ -91,12 +91,13 @@ export function Cesto({ locale }: { locale: Locale }) {
         aria-label={`${t("verPedido")} · ${t("unidades", { n: artigos })} · ${
           semPreco > 0 ? t("aPartirDe") : t("estimativa")
         } ${valor}`}
-        /* O mesmo sítio e a mesma cor do «Encomendas»: é o mesmo botão a mudar
-           de função. Só o ícone, e grande: o valor esteve aqui ao lado e
+        /* O mesmo sítio, a mesma altura (48 px) e a mesma cor do «Encomendas»:
+           é o mesmo botão a mudar de função, e um círculo maior do que ele
+           lia-se como outra coisa. Só o ícone: o valor esteve aqui ao lado e
            competia com o carrinho — a estimativa está no cartão, e no nome do
            botão para quem usa leitor de ecrã. */
         data-flutuante="cesto"
-        className="premivel fixed bottom-5 right-5 z-50 grid size-16 place-items-center rounded-full bg-tijolo text-papel shadow-lg shadow-tinta/25 print:hidden"
+        className="premivel fixed bottom-5 right-5 z-50 grid size-12 place-items-center rounded-full bg-tijolo text-papel shadow-lg shadow-tinta/25 print:hidden"
       >
         <IconeCesto />
         {/* A contagem fica no canto, **fora** do desenho do cesto: pequena, para
@@ -104,7 +105,7 @@ export function Cesto({ locale }: { locale: Locale }) {
             procura um número destes. */}
         <span
           aria-hidden
-          className="absolute -right-0.5 -top-0.5 grid min-w-[1.375rem] place-items-center rounded-full border-2 border-tijolo bg-papel px-1 text-[0.68rem] font-bold leading-[1.125rem] tabular-nums text-tijolo"
+          className="absolute -right-1.5 -top-1.5 grid min-w-[1.375rem] place-items-center rounded-full border-2 border-tijolo bg-papel px-1 text-[0.68rem] font-bold leading-[1.125rem] tabular-nums text-tijolo"
         >
           {artigos}
         </span>
@@ -232,7 +233,7 @@ export function Cesto({ locale }: { locale: Locale }) {
    sem pesar mais do que ele. */
 function IconeCesto() {
   return (
-    <svg viewBox="0 0 24 24" className="size-8" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+    <svg viewBox="0 0 24 24" className="size-7" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
       <path d="M5 9h14l-1.4 9.1a2 2 0 0 1-2 1.7H8.4a2 2 0 0 1-2-1.7L5 9Z" strokeLinejoin="round" />
       <path d="M9 9V7a3 3 0 0 1 6 0v2" strokeLinecap="round" />
     </svg>
