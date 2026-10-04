@@ -112,9 +112,18 @@ A página e as ações só falam com `src/lib/sessao-painel/` (o contrato está 
 base de dados. A verdadeira é a #33: troca-se uma linha no `index.ts`, e os
 ecrãs não mudam.
 
-- **Só liga em local ou com o modo de teste**, e só com `PAINEL_PIN_TESTE` e
-  `PAINEL_SEGREDO`. No ar sem o modo de teste, o painel diz que a entrada ainda
-  não está ligada.
+- **Liga com o modo de teste (`LOJA_EM_TESTE=1`), e só com ele**, em local e no
+  ar: é o mesmo interruptor de todos os dados provisórios. Sem ele, o painel diz
+  que a entrada ainda não está ligada.
+- ⚠️ **Valores por defeito no código** (decidido a 04/10): PIN `123456`, o email
+  da equipa (`developerplusteam@gmail.com`) como gerente e um segredo fixo, que
+  não é segredo nenhum. O repositório é público, por isso quem o lê entra no
+  painel do site de teste — onde só há pedidos de exemplo em memória. É a troca
+  aceite para não haver nada a configurar. `PAINEL_PIN_TESTE`, `PAINEL_SEGREDO` e
+  `EMAILS_GERENTE` sobrepõem-se.
+- **Os pedidos que o painel mostra são de exemplo** (`pedidosDoPainelDeExemplo`,
+  em `src/lib/dados/exemplo.ts`), relativos ao dia de hoje: só o Stripe paga um
+  pedido, e sem eles o balcão e a gerente abriam vazios.
 - ⚠️ **Enquanto estiver ligada, há um aviso no topo** («Entrada de teste»), que
   não se apaga — a mesma regra da faixa do modo de teste.
 - **O que não faz**, porque pede a base de dados: limitar tentativas, terminar

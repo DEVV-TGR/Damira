@@ -59,8 +59,9 @@ export default async function Painel({ searchParams }: { searchParams: Promise<{
 
 /**
  * ⚠️ **Não se apaga enquanto a entrada provisória estiver ligada.** É ela que
- * torna aceitável haver um PIN de teste: sem ela, alguém tomava esta entrada
- * pela verdadeira. Sai quando a entrada da #33 entrar (`painel.md`).
+ * torna aceitável haver um PIN de teste e pedidos inventados: sem ela, alguém
+ * tomava esta entrada pela verdadeira e um pedido de exemplo por um pedido.
+ * Liga e desliga com o modo de teste; sai de vez com a entrada da #33 (`painel.md`).
  */
 function AvisoEntradaProvisoria() {
   return (
@@ -68,7 +69,8 @@ function AvisoEntradaProvisoria() {
       <span className="mr-2 inline-block rounded-full bg-tijolo px-2 py-0.5 uppercase tracking-widest">
         Entrada de teste
       </span>
-      O PIN e o código não são os definitivos. A entrada a sério chega com a base de dados.
+      Os pedidos são de exemplo, e o PIN e o código não são os definitivos. A entrada a sério chega com a
+      base de dados.
     </div>
   );
 }

@@ -71,19 +71,31 @@ esquecerem:
 
 ### O modo de teste — e é um bloqueador de lançamento
 
-Até a casa dar o horário da cozinha e os tempos de produção, e até a conta
-Stripe dela estar verificada, a loja corre no ar em **modo de teste**:
-`LOJA_EM_TESTE=1` na Vercel liga os prazos de exemplo, **pedidos de exemplo** que
-enchem o calendário (`src/lib/dados/exemplo.ts` — ao acaso mas sempre os mesmos,
-e contam como verdadeiros para as vagas) e o Stripe de teste, e **uma faixa no
-topo de todas as páginas** diz que não se cobra nada e que os prazos e as vagas
-ocupadas são de exemplo (`src/components/FaixaModoTeste.tsx`).
+Até a casa dar o horário da cozinha e os tempos de produção, até a conta
+Stripe dela estar verificada e até haver base de dados, a loja corre no ar em
+**modo de teste**. ⚠️ **`LOJA_EM_TESTE=1` é o único interruptor de tudo o que é
+provisório** — em local e na Vercel, sem uma segunda variável para ligar
+(decidido a 04/10; a lista vive em `src/lib/modo-teste.ts`):
+
+- os **prazos e o horário de exemplo** e os **pedidos de exemplo** que enchem o
+  calendário (`src/lib/dados/exemplo.ts` — ao acaso mas sempre os mesmos, e
+  contam como verdadeiros para as vagas);
+- os **pedidos de exemplo no painel** — pagos, entregues, um cancelado, um com
+  dinheiro em falta, um que chegou tarde, um duplicado —, relativos ao dia de hoje;
+- a **entrada provisória do painel**, com o PIN `123456` e o email da equipa como
+  gerente. ⚠️ Estão escritos no código, num repositório público: é a troca
+  aceite para o modo de teste ligar com uma variável só, e só há dados de
+  exemplo do outro lado. Sai com a entrada verdadeira (#33);
+- o Stripe de teste;
+- e os avisos que o dizem: **uma faixa no topo de todas as páginas** da loja
+  (`src/components/FaixaModoTeste.tsx`) e outra no topo do painel.
 
 ⚠️ **A faixa não se apaga** enquanto o interruptor estiver ligado — é ela que
 impede o site de afirmar um prazo que a casa não deu. E ⚠️ **desligar o
 interruptor faz parte do lançamento** (#55): sem os dados verdadeiros, o
-calendário volta a «indisponível», nunca a um prazo inventado. Lê-se no build:
-mudar o interruptor obriga a um novo deploy.
+calendário volta a «indisponível», nunca a um prazo inventado, e o painel diz
+que a entrada ainda não está ligada. Lê-se no build: mudar o interruptor obriga
+a um novo deploy.
 
 ### A página de compra — e, até ao Stripe, acaba num email
 

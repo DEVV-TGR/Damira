@@ -3,11 +3,22 @@
  *
  * Um interruptor só, **`LOJA_EM_TESTE=1`** nas variáveis de ambiente da Vercel
  * (ou no `.env.local`). Ligado, o site no ar pode ser testado de ponta a ponta
- * antes de a casa dar os dados verdadeiros:
+ * antes de a casa dar os dados verdadeiros e antes de haver base de dados.
  *
- * - o calendário usa os prazos e o horário de exemplo (`src/lib/dados/exemplo.ts`);
- * - o pagamento usa as chaves de teste do Stripe — não se cobra nada;
- * - e **uma faixa no topo de todas as páginas diz as duas coisas**.
+ * ⚠️ **É o único interruptor de tudo o que é provisório** (decidido a 04/10):
+ * nada do que está abaixo pede uma segunda variável para se ver. Ligado:
+ *
+ * - **prazos e horário de exemplo** no calendário (`src/lib/dados/exemplo.ts`);
+ * - **pedidos de exemplo no calendário**, que dão cor aos dias e enchem horas
+ *   (`pedidosDeExemplo`, no mesmo ficheiro);
+ * - **pedidos de exemplo no painel**: pagos, entregues, um cancelado, um com
+ *   dinheiro em falta, um que chegou tarde, um duplicado (`pedidosDoPainelDeExemplo`);
+ * - **a entrada provisória do painel**, com o PIN `123456` e o email da equipa
+ *   como gerente (`src/lib/sessao-painel/provisoria.ts`);
+ * - o pagamento com as chaves de teste do Stripe, quando chegar (#38) — não se
+ *   cobra nada;
+ * - e **os avisos que dizem tudo isto**: a faixa no topo de todas as páginas da
+ *   loja, e o aviso no topo do painel.
  *
  * ⚠️ **A faixa é o que impede isto de ser uma mentira, e não se apaga.** É a
  * mesma regra da conta em demonstração (`AGENTS.md` › A conta de cliente): uma

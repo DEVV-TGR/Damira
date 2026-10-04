@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { criarSessaoProvisoria } from "./provisoria";
+import { criarSessaoProvisoria, GERENTE_DE_TESTE, PIN_DE_TESTE } from "./provisoria";
 import type { LojaDeCookies, OpcoesCookie } from "./tipos";
 
 /*
@@ -12,8 +12,10 @@ const AGORA = new Date("2026-10-07T09:00:00Z");
 const CTX = { agora: AGORA, ip: "203.0.113.1" };
 const minutosDepois = (m: number) => ({ ...CTX, agora: new Date(AGORA.getTime() + m * 60_000) });
 
+/* O site em modo de teste, com os valores do ambiente — como no `.env.local`. */
 const LOCAL = {
   NODE_ENV: "development",
+  LOJA_EM_TESTE: "1",
   PAINEL_PIN_TESTE: "246810",
   PAINEL_SEGREDO: "um-segredo-com-mais-de-16",
   EMAILS_GERENTE: "Ana@Example.com, andreia@example.com",
@@ -35,22 +37,38 @@ const criar = (ambiente: Record<string, string | undefined> = LOCAL, b = browser
   sessao: criarSessaoProvisoria({ ambiente, cookies: b.cookies }),
 });
 
-describe("quando liga", () => {
-  it("em local, com PIN e segredo", () => {
-    expect(criar().sessao.ligada).toBe(true);
+describe("quando liga: com o modo de teste, e só com ele", () => {
+  it("sem LOJA_EM_TESTE não liga, nem em local, nem com PIN e segredo", async () => {
+    const semModo = criar({ ...LOCAL, LOJA_EM_TESTE: undefined }).sessao;
+    expect(semModo.ligada).toBe(false);
+    expect(await semModo.entrarComPin("246810", CTX)).toEqual({ ok: false, erro: "indisponivel" });
+    expect(await semModo.pedirCodigo("ana@example.com", CTX)).toEqual({ ok: false, erro: "indisponivel" });
   });
 
-  it("no ar, só com o modo de teste", async () => {
-    const noAr = criar({ ...LOCAL, NODE_ENV: "production" }).sessao;
-    expect(noAr.ligada).toBe(false);
-    expect(await noAr.entrarComPin("246810", CTX)).toEqual({ ok: false, erro: "indisponivel" });
-    expect(criar({ ...LOCAL, NODE_ENV: "production", LOJA_EM_TESTE: "1" }).sessao.ligada).toBe(true);
+  it("só com LOJA_EM_TESTE=1, no ar, liga com o PIN 123456 e o email da equipa como gerente", async () => {
+    const { sessao } = criar({ NODE_ENV: "production", LOJA_EM_TESTE: "1" });
+    expect(sessao.ligada).toBe(true);
+    expect(await sessao.entrarComPin(PIN_DE_TESTE, CTX)).toEqual({ ok: true, papel: "funcionario" });
+    const pedido = await sessao.pedirCodigo(GERENTE_DE_TESTE, CTX);
+    if (!pedido.ok || !pedido.codigoDeTeste) throw new Error("devia haver código");
+    expect(await sessao.entrarComCodigo(GERENTE_DE_TESTE, pedido.codigoDeTeste, true, CTX)).toEqual({
+      ok: true,
+      papel: "gerente",
+    });
   });
 
-  it("sem PIN de seis dígitos ou sem um segredo a sério, não liga", () => {
-    expect(criar({ ...LOCAL, PAINEL_PIN_TESTE: undefined }).sessao.ligada).toBe(false);
-    expect(criar({ ...LOCAL, PAINEL_PIN_TESTE: "1234" }).sessao.ligada).toBe(false);
-    expect(criar({ ...LOCAL, PAINEL_SEGREDO: "curto" }).sessao.ligada).toBe(false);
+  it("o PIN, o segredo e os emails do ambiente sobrepõem-se aos de defeito", async () => {
+    const { sessao } = criar();
+    expect(await sessao.entrarComPin(PIN_DE_TESTE, CTX)).toEqual({ ok: false, erro: "pin-errado" });
+    expect((await sessao.entrarComPin("246810", CTX)).ok).toBe(true);
+    const pedido = await sessao.pedirCodigo(GERENTE_DE_TESTE, CTX);
+    if (!pedido.ok || !pedido.codigoDeTeste) throw new Error("devia haver código");
+    expect((await sessao.entrarComCodigo(GERENTE_DE_TESTE, pedido.codigoDeTeste, true, CTX)).ok).toBe(false);
+  });
+
+  it("um PIN do ambiente que não tem seis dígitos cai no de defeito", async () => {
+    const { sessao } = criar({ ...LOCAL, PAINEL_PIN_TESTE: "1234" });
+    expect((await sessao.entrarComPin(PIN_DE_TESTE, CTX)).ok).toBe(true);
   });
 });
 

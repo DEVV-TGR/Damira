@@ -365,8 +365,15 @@ export function criarFonteJson(opcoes: OpcoesFonteJson = {}): FonteDeDados {
       if (!ATIVOS.has(pedido.estado) || quando < desde.getTime() || quando > ate.getTime()) continue;
       contagem.set(quando, (contagem.get(quando) ?? 0) + 1);
     }
+    /* Os de exemplo enchem **até** ao limite, e nunca para lá dele: somados aos
+       verdadeiros (os pedidos de exemplo do painel, ou um feito agora no site),
+       uma hora já cheia ficava com 5 de 4, e o calendário mostrava uma vaga que
+       não pode existir. */
+    const limite = estado.configuracao.limitePorVaga;
     for (const { inicio, pedidos: n } of opcoes.ocupacaoExtra?.(desde, ate) ?? []) {
-      contagem.set(inicio.getTime(), (contagem.get(inicio.getTime()) ?? 0) + n);
+      const reais = contagem.get(inicio.getTime()) ?? 0;
+      const extra = limite === null ? n : Math.max(0, Math.min(n, limite - reais));
+      if (reais + extra > 0) contagem.set(inicio.getTime(), reais + extra);
     }
     return [...contagem].map(([quando, n]) => ({ inicio: new Date(quando), pedidos: n }));
   };

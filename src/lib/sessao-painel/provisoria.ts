@@ -11,11 +11,19 @@ import type { FonteSessao, LojaDeCookies, OpcoesCookie, SessaoPainel } from "./t
  * limitadas na base de dados, código da gerente enviado por email, sessões que
  * a gerente vê e termina.
  *
- * ⚠️ **Só liga em local ou com o modo de teste** (`LOJA_EM_TESTE=1`), e só com
- * `PAINEL_PIN_TESTE` e `PAINEL_SEGREDO` definidos. No ar sem o modo de teste,
- * fica desligada — e o painel diz que a entrada ainda não existe, em vez de
- * abrir a porta. Enquanto estiver ligada, a página mostra um aviso que não se
- * apaga, como a faixa do modo de teste.
+ * ⚠️ **Liga com o modo de teste (`LOJA_EM_TESTE=1`), e só com ele** — em local
+ * e no ar. É o mesmo interruptor de todos os dados provisórios
+ * (`src/lib/modo-teste.ts`): não há uma segunda coisa a ligar para ver o painel.
+ * Sem ele fica desligada, e o painel diz que a entrada ainda não existe em vez
+ * de abrir a porta. Ligada, a página mostra um aviso que não se apaga.
+ *
+ * ⚠️ **Os valores por defeito estão escritos aqui, num repositório público**
+ * (decidido a 04/10): o PIN `123456`, o email da equipa como gerente e um
+ * segredo que **não é segredo nenhum**. Quem lê o código entra no painel de um
+ * site em modo de teste — onde só há pedidos de exemplo, em memória. Foi a troca
+ * aceite para o modo de teste ligar com uma variável só. `PAINEL_PIN_TESTE`,
+ * `PAINEL_SEGREDO` e `EMAILS_GERENTE` sobrepõem-se a estes, e a entrada
+ * verdadeira (#33) não tem nada disto.
  *
  * O que fica de fora, porque pede a base de dados:
  * - **Sem limite de tentativas.** Seis dígitos sem limite adivinham-se. Por
@@ -38,6 +46,11 @@ const TRINTA_DIAS_S = 30 * 24 * 60 * 60;
 const SEM_LEMBRAR_MS = 14 * 60 * 60 * 1000;
 const DEZ_MINUTOS_MS = 10 * 60 * 1000;
 
+/* Os valores do modo de teste. Ver o cabeçalho: são públicos de propósito. */
+export const PIN_DE_TESTE = "123456";
+export const GERENTE_DE_TESTE = "developerplusteam@gmail.com";
+const SEGREDO_DE_TESTE = "damira-modo-de-teste-nao-e-segredo-nenhum";
+
 type Opcoes = { ambiente: Ambiente; cookies: () => Promise<LojaDeCookies> };
 
 /* O que vai dentro do cookie, assinado. O `x` é o fim, verificado no servidor:
@@ -54,11 +67,12 @@ const iguais = (a: string, b: string): boolean => {
 };
 
 export function criarSessaoProvisoria({ ambiente, cookies }: Opcoes): FonteSessao {
-  const pin = ambiente.PAINEL_PIN_TESTE ?? "";
-  const segredo = ambiente.PAINEL_SEGREDO ?? "";
-  const ambienteDeTeste = emModoDeTeste(ambiente) || ambiente.NODE_ENV !== "production";
-  const ligada = ambienteDeTeste && /^\d{6}$/.test(pin) && segredo.length >= 16;
-  const gerentes = (ambiente.EMAILS_GERENTE ?? "")
+  const ligada = emModoDeTeste(ambiente);
+  /* Um PIN do ambiente que não seja de seis dígitos cai no de defeito, em vez
+     de deixar o painel sem entrada. */
+  const pin = /^\d{6}$/.test(ambiente.PAINEL_PIN_TESTE ?? "") ? ambiente.PAINEL_PIN_TESTE! : PIN_DE_TESTE;
+  const segredo = (ambiente.PAINEL_SEGREDO ?? "").length >= 16 ? ambiente.PAINEL_SEGREDO! : SEGREDO_DE_TESTE;
+  const gerentes = (ambiente.EMAILS_GERENTE || GERENTE_DE_TESTE)
     .split(",")
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean);
