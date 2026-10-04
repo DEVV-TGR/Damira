@@ -1,19 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import type { AvisoAtencao, ConfiguracaoDaCasa, DefinicoesLoja, Pedido } from "@/lib/dados/tipos";
+import type { AvisoAtencao, ConfiguracaoDaCasa, DefinicoesLoja, OrdemEmenta, Pedido, Produto } from "@/lib/dados/tipos";
 import type { contarPorPreencher } from "@/lib/painel";
 import { Atencao } from "./Atencao";
 import { Definicoes } from "./Definicoes";
 import { DetalhePedido } from "./DetalhePedido";
 import { Horarios } from "./Horarios";
 import { PedidosGestao } from "./PedidosGestao";
+import { Produtos } from "./Produtos";
 
 /**
  * # A gestão — o que a gerente vê por cima do balcão (`painel-gerente.md`)
  *
- * Precisa de atenção, pedidos, horários, definições e equipa. Os produtos são a
- * próxima etapa (#40). Tudo tem de funcionar num telemóvel.
+ * Precisa de atenção, pedidos, produtos, horários, definições e equipa. Tudo
+ * tem de funcionar num telemóvel — é lá que a gerente vai preencher os produtos.
  *
  * Só é desenhada para a gerente — e as ações recusam-na a quem não é, no
  * servidor: esconder isto ao balcão não é o que protege (regra 8).
@@ -26,9 +27,12 @@ export type DadosGestao = {
   porPreencher: ReturnType<typeof contarPorPreencher>;
   casa: ConfiguracaoDaCasa;
   definicoes: DefinicoesLoja;
+  /** Todos, arquivados incluídos, para a edição de produtos. */
+  produtos: Produto[];
+  ordem: OrdemEmenta;
 };
 
-type Secao = "atencao" | "pedidos" | "horarios" | "definicoes" | "equipa";
+type Secao = "atencao" | "pedidos" | "produtos" | "horarios" | "definicoes" | "equipa";
 
 export function Gestao({ dados }: { dados: DadosGestao }) {
   const atencao = dados.avisos.length;
@@ -43,6 +47,7 @@ export function Gestao({ dados }: { dados: DadosGestao }) {
   const secoes: { id: Secao; rotulo: string }[] = [
     { id: "atencao", rotulo: atencao > 0 ? `Precisa de atenção · ${atencao}` : "Precisa de atenção" },
     { id: "pedidos", rotulo: "Pedidos" },
+    { id: "produtos", rotulo: "Produtos" },
     { id: "horarios", rotulo: "Horários" },
     { id: "definicoes", rotulo: "Definições" },
     { id: "equipa", rotulo: "Equipa" },
@@ -74,6 +79,7 @@ export function Gestao({ dados }: { dados: DadosGestao }) {
         {secao === "atencao" && <Atencao avisos={dados.avisos} pedidos={dados.pedidosDosAvisos} porPreencher={dados.porPreencher} onAbrir={abrir} />}
         {secao === "pedidos" &&
           (aberto ? <DetalhePedido id={aberto} onVoltar={() => setAberto(null)} /> : <PedidosGestao onAbrir={setAberto} />)}
+        {secao === "produtos" && <Produtos produtos={dados.produtos} ordem={dados.ordem} />}
         {secao === "horarios" && <Horarios casa={dados.casa} />}
         {secao === "definicoes" && <Definicoes definicoes={dados.definicoes} />}
         {secao === "equipa" && (

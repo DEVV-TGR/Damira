@@ -11,6 +11,8 @@ import {
   faltaPagarCent,
   fimDaPausa,
   diaPorExtenso,
+  entradaDoProduto,
+  filtrarProdutos,
   historicoDe,
   intervaloDeDias,
   novidades,
@@ -381,6 +383,31 @@ describe("avisos tratados", () => {
     const eventos = historicoDe(p);
     expect(eventos.map((e) => e.o)).toEqual(["criado", "pago", "reagendado", "reembolso"]);
     expect(eventos.at(-1)?.detalhe?.replace(/\s/g, " ")).toBe("12,50 € · concluído");
+  });
+});
+
+describe("os produtos, na gestão", () => {
+  it("a entrada do formulário passa no esquema, sem o id nem o que tem função própria", async () => {
+    const { EsquemaEntradaProduto } = await import("@/lib/dados/tipos");
+    const kit = CATALOGO_JSON.find((p) => p.familia === "festa")!;
+    const entrada = entradaDoProduto({ ...kit, alergenios: [] });
+    expect(entrada).not.toHaveProperty("id");
+    expect(entrada).not.toHaveProperty("arquivado");
+    expect(EsquemaEntradaProduto.safeParse(entrada).success).toBe(true);
+  });
+
+  it("filtra por nome sem acentos, por família e pelo que falta preencher", () => {
+    const todos = CATALOGO_JSON;
+    expect(filtrarProdutos(todos, { procura: "pao", vista: "todos", familia: "todas" }).every((p) => /p[ãa]o/i.test(p.nome.pt))).toBe(true);
+    expect(filtrarProdutos(todos, { procura: "", vista: "todos", familia: "festa" })).toHaveLength(3);
+    expect(filtrarProdutos(todos, { procura: "", vista: "por-preencher", familia: "todas" })).toHaveLength(107);
+  });
+
+  it("os arquivados só aparecem na vista deles", () => {
+    const [a, ...resto] = CATALOGO_JSON;
+    const lista = [{ ...a, arquivado: true }, ...resto];
+    expect(filtrarProdutos(lista, { procura: "", vista: "todos", familia: "todas" })).toHaveLength(106);
+    expect(filtrarProdutos(lista, { procura: "", vista: "arquivados", familia: "todas" }).map((p) => p.id)).toEqual([a.id]);
   });
 });
 

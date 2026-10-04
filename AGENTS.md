@@ -125,9 +125,8 @@ que as torna falsas:
   base de dados.
 - **«A conta de cliente», regras 2 e 3** — no PR que liga as chaves e no que
   passa o histórico para o servidor.
-- **O `vegan: true` só na carta vegan** e **os mínimos por categoria em
-  `encomendavel.ts`** — no PR da edição de produtos no painel
-  (ver `painel-gerente.md`).
+- ~~O `vegan: true` só na carta vegan e os mínimos por categoria em
+  `encomendavel.ts`~~ — reescritas no PR da edição de produtos (#40, no #66).
 
 ### Base de dados
 
@@ -209,10 +208,12 @@ dos 95 artigos da ementa. O que evita o mal-entendido não é escondê-los: é a
 pede à dúzia, ou ao quilo, nunca se confunde com um que se tira da vitrine — e
 quem quer um pastel continua a entrar na loja e a pedi-lo.
 
-A regra é **do negócio e não do artigo**, por isso vive numa tabela em
-`src/lib/encomendavel.ts` e não num campo repetido nos 95 registos do JSON. As
-bebidas, os pratos e a pausa ficam de fora: não se encomenda um galão para
-sexta-feira.
+**O mínimo é do produto**, desde outubro de 2026 (#40): `quantidadeMinima` e
+`multiplo` na `FonteDeDados`, e a gerente muda-os no painel, que é o que ela
+percebe quando abre um artigo. A tabela por categoria de `src/lib/encomendavel.ts`
+**só preenche o JSON** até à migração — é de onde a migração tira os 70 mínimos,
+para ninguém os ter de escrever. As bebidas, os pratos e a pausa continuam de
+fora (`aVendaOnline: false`): não se encomenda um galão para sexta-feira.
 
 ### A ementa tem `carta` além de `categoria`
 
@@ -241,10 +242,12 @@ descrição ("tem queijo, logo tem lactose") é pior do que nenhuma, porque pare
 autoridade. Numa casa com carta vegan isto pesa a dobrar: quem procura a folha
 verde costuma ter uma razão para a procurar.
 
-⚠️ **O `vegan: true` só existe na carta vegan**, e o `superRefine` rebenta nos
-dois sentidos. A Damira não assinala artigos vegan no menu principal; deduzi-lo
-("não tem carne, logo é vegan") era pôr o site a garantir uma coisa que a casa
-não garantiu.
+⚠️ **O vegan marca-o a casa, nunca o site.** Desde a edição de produtos (#40) a
+gerente marca «vegan» em qualquer artigo, e por isso saiu a regra que recusava
+`vegan: true` fora da carta vegan. Fica a do outro sentido — tudo o que está na
+carta vegan é vegan —, que continua a ser verdade no JSON. O que **não** muda:
+deduzi-lo ("não tem carne, logo é vegan") era pôr o site a garantir uma coisa
+que a casa não garantiu.
 
 ## Fotografia — o buraco fechou-se
 

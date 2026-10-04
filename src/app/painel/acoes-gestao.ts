@@ -1,8 +1,12 @@
 "use server";
 
 import * as dados from "@/lib/dados";
+import { revalidatePath } from "next/cache";
 import {
+  arquivarProduto,
   cancelarPedido,
+  criarProduto,
+  editarProduto,
   guardarDefinicoes,
   guardarHorarios,
   listarPedidos,
@@ -93,4 +97,25 @@ export async function horasParaMudar(data: string) {
   const ctx = await contextoDoPainel();
   if (ctx?.papel !== "gerente") return [];
   return horasDaLoja(data, dados, ctx.agora);
+}
+
+// ——— Produtos (#40) ———
+
+/**
+ * ⚠️ **Mudar um produto tem efeito em três sítios** (`painel-gerente.md`): as
+ * páginas são estáticas, e sem revalidar o site mostrava o preço antigo durante
+ * horas. O checkout já cobra o novo (lê sempre da fonte), e o cesto de quem já
+ * o tinha avisa que o preço mudou.
+ */
+export async function gravarProduto(id: string | null, entrada: unknown) {
+  const resultado = await comSessao((ctx) => (id ? editarProduto(id, entrada, ctx) : criarProduto(entrada, ctx)));
+  if (resultado.ok) revalidatePath("/", "layout");
+  return resultado;
+}
+
+/** «Apagar» no painel. Os pedidos antigos continuam a apontar para ele. */
+export async function arquivar(id: string, arquivado: boolean) {
+  const resultado = await comSessao((ctx) => arquivarProduto(id, arquivado, ctx));
+  if (resultado.ok) revalidatePath("/", "layout");
+  return resultado;
 }

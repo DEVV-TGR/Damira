@@ -1,6 +1,6 @@
 import { TZDate, tz } from "@date-fns/tz";
 import { addDays, format, getDay } from "date-fns";
-import type { AvisoAtencao, ConfiguracaoDaCasa, Pedido, Produto } from "@/lib/dados/tipos";
+import type { AvisoAtencao, ConfiguracaoDaCasa, EntradaProduto, Pedido, Produto } from "@/lib/dados/tipos";
 import { FUSO, inicioDaProducao } from "@/lib/horarios";
 import { formatarCent } from "@/lib/preco";
 
@@ -379,4 +379,67 @@ export function intervaloDeDias(desde: string | null, ate: string | null): { des
     ...(desde && DATA.test(desde) ? { desde: instante(desde, 0) } : {}),
     ...(ate && DATA.test(ate) ? { ate: new Date(instante(ate, 1).getTime() - 1) } : {}),
   };
+}
+
+// ——— Os produtos, na gestão (#40) ———
+
+/**
+ * Os 14 alergénios de declaração obrigatória na UE (Regulamento 1169/2011,
+ * anexo II). É a lista que a gerente marca; um alergénio que já esteja escrito
+ * no produto e não seja destes continua lá — não se apaga o que a casa escreveu.
+ */
+export const ALERGENIOS_UE = [
+  "Glúten",
+  "Crustáceos",
+  "Ovos",
+  "Peixe",
+  "Amendoins",
+  "Soja",
+  "Leite",
+  "Frutos de casca rija",
+  "Aipo",
+  "Mostarda",
+  "Sésamo",
+  "Sulfitos",
+  "Tremoço",
+  "Moluscos",
+] as const;
+
+/**
+ * O produto como o formulário o grava (`EsquemaEntradaProduto`): sem o id, o
+ * arquivado, o fora de venda e o esgotado, que têm funções próprias. As
+ * variantes levam o seu id — é o que não as deixa trocar nos cestos de quem já
+ * as juntou.
+ */
+export function entradaDoProduto(produto: Produto): EntradaProduto {
+  const { id: _id, arquivado: _a, foraDeVenda: _f, esgotadoNoDia: _e, ...entrada } = produto;
+  void [_id, _a, _f, _e];
+  return entrada;
+}
+
+export type VistaProdutos = "todos" | "por-preencher" | "a-venda" | "fora" | "arquivados";
+
+const semAcentos = (texto: string) => texto.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+
+/** Falta foto, alergénios ou tempo de produção — o que a casa tem de preencher. */
+export const porPreencher = (p: Produto) => p.fotos.length === 0 || p.alergenios === null || p.tempoProducao === null;
+
+/**
+ * A lista de produtos da gestão, filtrada. Os arquivados só aparecem na vista
+ * deles: um produto apagado no meio da lista era um produto que alguém voltava
+ * a pôr à venda sem querer.
+ */
+export function filtrarProdutos(
+  produtos: readonly Produto[],
+  { procura, vista, familia }: { procura: string; vista: VistaProdutos; familia: Produto["familia"] | "todas" },
+): Produto[] {
+  const termo = semAcentos(procura.trim());
+  return produtos.filter((p) => {
+    if (vista === "arquivados" ? !p.arquivado : p.arquivado) return false;
+    if (vista === "por-preencher" && !porPreencher(p)) return false;
+    if (vista === "a-venda" && !(p.aVendaOnline && !p.foraDeVenda)) return false;
+    if (vista === "fora" && p.aVendaOnline && !p.foraDeVenda) return false;
+    if (familia !== "todas" && p.familia !== familia) return false;
+    return termo === "" || semAcentos(`${p.nome.pt} ${p.id}`).includes(termo);
+  });
 }

@@ -7,6 +7,7 @@ import {
   configuracaoDaCasa,
   definicoesLoja,
   listarPedidos,
+  ordemDaEmenta,
   pedidoDoPainel,
   precisaDeAtencao,
   produtosDoPainel,
@@ -106,7 +107,15 @@ export default async function Painel({ searchParams }: { searchParams: Promise<{
           modoTeste={simularPedidoDeTeste !== null}
           gestao={
             atencao?.ok
-              ? { avisos: atencao.valor, pedidosDosAvisos, porPreencher: contarPorPreencher(produtos), casa, definicoes }
+              ? {
+                  avisos: atencao.valor,
+                  pedidosDosAvisos,
+                  porPreencher: contarPorPreencher(produtos),
+                  casa,
+                  definicoes,
+                  produtos,
+                  ordem: await ordemDaEmenta(),
+                }
               : null
           }
         />
