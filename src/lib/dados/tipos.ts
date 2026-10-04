@@ -306,6 +306,13 @@ export type ResultadoCriarPedido =
  */
 export type ConfiguracaoDaCasa = Omit<ConfiguracaoHorarios, "cozinha"> & {
   cozinha: HorarioSemanal | null;
+  /**
+   * As cores da afluência no calendário, em **percentagem do limite por vaga**:
+   * até `pouca` é verde, até `media` amarelo, até `muita` laranja, acima disso
+   * vermelho. Sem limite por vaga (`limitePorVaga: null`) não há cores —
+   * percentagem de nada não quer dizer nada. A gerente afina no painel (#45).
+   */
+  limiaresAfluencia: { pouca: number; media: number; muita: number };
 };
 
 export type DefinicoesLoja = {

@@ -377,7 +377,8 @@
         "sem-contacto": "Deixe um email ou um telefone — sem isso não conseguimos responder.",
         "detalhe-curto": "Diga-nos um pouco mais sobre o que precisa.",
         "cesto-invalido": "Há no cesto um artigo que mudou ou deixou de existir. Reveja o cesto e volte a enviar — ou telefone-nos.",
-        "consentimento": "Precisamos desta autorização para lhe poder responder."
+        "consentimento": "Precisamos desta autorização para lhe poder responder.",
+        "vaga-indisponivel": "Essa hora já não está disponível. Escolha outra."
       },
       "sucesso": {
         "titulo": "Pedido enviado.",
@@ -439,6 +440,25 @@
       "boxes": "Boxes",
       "da-ementa": "Da carta",
       "pedido": "Encomendar"
+    },
+    "calendario": {
+      "titulo": "Quando quer levantar?",
+      "escolha": "Escolha o dia e a hora.",
+      "escolhido": "Levanta na loja: {quando}.",
+      "horaDeLisboa": "Horas de Portugal.",
+      "cheia": "cheia",
+      "aCarregar": "A ver as vagas…",
+      "semVagas": "Sem vagas nos próximos dias — ligue-nos:",
+      "mesAnterior": "Mês anterior",
+      "mesSeguinte": "Mês seguinte",
+      "legenda": "O que querem dizer as cores",
+      "afluencia": {
+        "livre": "Livre",
+        "pouca": "Pouca procura",
+        "media": "Procura média",
+        "muita": "Muita procura",
+        "cheia": "Cheio"
+      }
     }
   },
   "bolos": {
