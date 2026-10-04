@@ -344,8 +344,8 @@
       "assunto": "Pedido de encomenda"
     },
     "formulario": {
-      "titulo": "Pedir um orçamento",
-      "texto": "Diga-nos o que quer, para quantas pessoas e para que dia. Respondemos com o preço e a confirmação — não há pagamento nesta página.",
+      "titulo": "Encomendar",
+      "texto": "Junte ao pedido o que quiser e, no fim, escolha quando levanta e deixe os seus dados. Ou telefone-nos.",
       "assunto": "Pedido de encomenda — {nome}, {data}",
       "enviar": "Enviar pedido",
       "aEnviar": "A enviar…",
@@ -378,7 +378,10 @@
         "detalhe-curto": "Diga-nos um pouco mais sobre o que precisa.",
         "cesto-invalido": "Há no cesto um artigo que mudou ou deixou de existir. Reveja o cesto e volte a enviar — ou telefone-nos.",
         "consentimento": "Precisamos desta autorização para lhe poder responder.",
-        "vaga-indisponivel": "Essa hora já não está disponível. Escolha outra."
+        "vaga-indisponivel": "Essa hora já não está disponível. Escolha outra.",
+        "email-invalido": "Escreva um email válido — é para lá que vai a referência.",
+        "telefone-curto": "Escreva um telefone — ligamos se for preciso acertar alguma coisa.",
+        "nif-invalido": "O NIF tem nove algarismos."
       },
       "sucesso": {
         "titulo": "Pedido enviado.",
@@ -409,7 +412,7 @@
       "estimativa": "Estimativa",
       "aPartirDe": "A partir de",
       "semPreco": "Sob orçamento",
-      "avisoEstimativa": "É uma estimativa pelos preços de tabela, não uma conta a pagar. A entrega não está incluída e o valor final vem na nossa resposta.",
+      "avisoEstimativa": "É uma estimativa pelos preços de tabela. Confirmamos o valor consigo depois de enviar o pedido.",
       "avisoOrcamento": "Há artigos sem preço de tabela. O valor final vem na nossa resposta.",
       "passos": {
         "leva": "O que leva",
@@ -454,11 +457,33 @@
       "legenda": "O que querem dizer as cores",
       "afluencia": {
         "livre": "Livre",
-        "pouca": "Pouca procura",
-        "media": "Procura média",
+        "media": "Alguma procura",
         "muita": "Muita procura",
         "cheia": "Cheio"
-      }
+      },
+      "escolhidoAConfirmar": "Hora pretendida: {quando}. Confirmamos consigo.",
+      "escolhaAConfirmar": "Escolha o dia e a hora em que gostaria de levantar — confirmamos consigo."
+    },
+    "compra": {
+      "titulo": "Finalizar o pedido",
+      "intro": "Escolha quando levanta, deixe os seus dados e envie. Respondemos a confirmar.",
+      "quando": "Quando levanta",
+      "dados": "Os seus dados",
+      "resumo": "O seu pedido",
+      "alterar": "Alterar o pedido",
+      "precoMudou": "O preço mudou: era {antes}, agora {agora}.",
+      "sobOrcamento": "Sob orçamento — dizemos-lhe o valor.",
+      "semPagamento": "Ainda não há pagamento online: depois de enviar, confirmamos consigo o valor e a hora.",
+      "nif": "NIF (opcional)",
+      "nifAjuda": "Só se quiser fatura com contribuinte.",
+      "observacoes": "Observações (opcional)",
+      "observacoesDica": "Alergias, o nome a escrever no bolo, a cor do laço…",
+      "telefoneAjuda": "Ligamos só se for preciso acertar alguma coisa.",
+      "vazio": "O seu pedido está vazio.",
+      "vazioTexto": "Junte ao pedido o que quiser, nas encomendas ou na ementa, e volte aqui.",
+      "irEncomendas": "Ver as encomendas",
+      "rever": "Rever e encomendar",
+      "reverTexto": "Já tem artigos no pedido. Escolhe a hora de levantamento e os seus dados no passo seguinte."
     }
   },
   "bolos": {
@@ -590,6 +615,6 @@
   },
   "modoTeste": {
     "etiqueta": "Modo de teste",
-    "aviso": "Não se cobra nada e os prazos de levantamento são de exemplo."
+    "aviso": "Não se cobra nada, e os prazos e as vagas ocupadas são de exemplo."
   }
 }

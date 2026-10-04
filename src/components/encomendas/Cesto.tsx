@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { estimativa, quantidadeEmTexto, totalArtigos, totalDaLinha } from "@/lib/cesto";
 import { formatarCent } from "@/lib/preco";
@@ -42,6 +42,7 @@ export function Cesto({ locale }: { locale: Locale }) {
   const contexto = useCesto();
   const [aberto, setAberto] = useState(false);
   const caixa = useRef<HTMLDialogElement>(null);
+  const caminho = usePathname();
 
   const vazio = !contexto?.pronto || contexto.cesto.length === 0;
   /* Esvaziar o cesto com o cartão aberto fecha-o: um cartão vazio no centro do
@@ -69,6 +70,9 @@ export function Cesto({ locale }: { locale: Locale }) {
   }, [mostrar]);
 
   if (!contexto || vazio) return null;
+  /* Na página de compra o pedido já está à vista, ao lado: um botão para o
+     abrir outra vez por cima era o mesmo pedido mostrado duas vezes. */
+  if (caminho === "/encomendas/pedido") return null;
 
   const { cesto, mudarQuantidade, remover, esvaziar } = contexto;
   const { somaCent, semPreco } = estimativa(cesto);
@@ -212,10 +216,8 @@ export function Cesto({ locale }: { locale: Locale }) {
               >
                 {t("esvaziar")}
               </button>
-              {/* Por agora leva ao formulário das encomendas; com a página de
-                  compra (#37) passa a levar a ela. */}
               <Link
-                href="/encomendas#pedido"
+                href="/encomendas/pedido"
                 onClick={() => setAberto(false)}
                 className="premivel flex min-h-12 flex-1 items-center justify-center rounded-full bg-tijolo px-6 text-sm font-semibold uppercase tracking-widest text-papel sm:flex-none"
               >
