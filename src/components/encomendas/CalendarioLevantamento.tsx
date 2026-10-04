@@ -107,7 +107,11 @@ export function CalendarioLevantamento({
   aoEscolher,
   locale,
   telefone,
+  comTitulo = true,
 }: {
+  /* A página de compra já tem o título do passo («1 · Quando levanta») por
+     cima, e dois títulos seguidos a dizer o mesmo leem-se como um erro. */
+  comTitulo?: boolean;
   vagas: VagaDoCalendario[];
   escolhida: string | null;
   aoEscolher: (vaga: VagaDoCalendario) => void;
@@ -224,7 +228,7 @@ export function CalendarioLevantamento({
 
   return (
     <div className="grid gap-5 rounded-2xl bg-papel p-4 text-tinta sm:col-span-2 sm:p-5">
-      <h3 className="text-sm font-semibold">{t("titulo")}</h3>
+      {comTitulo && <h3 className="text-sm font-semibold">{t("titulo")}</h3>}
 
       {/* No computador o mês fica à esquerda e as horas à direita: com o mês a
           toda a largura, as células passavam dos 180 px e um calendário de

@@ -83,6 +83,17 @@ interruptor faz parte do lançamento** (#55): sem os dados verdadeiros, o
 calendário volta a «indisponível», nunca a um prazo inventado. Lê-se no build:
 mudar o interruptor obriga a um novo deploy.
 
+### A página de compra — e, até ao Stripe, acaba num email
+
+O cesto leva a **`/encomendas/pedido`** (#37): o resumo com o total do servidor,
+o calendário de levantamento e os dados da pessoa. O formulário que vivia no
+fundo das encomendas saiu. ⚠️ **Até ao pagamento online (#38) o pedido acaba num
+email à casa**, por secções e com todos os dados (os opcionais vazios
+escrevem-se «—»); com o Stripe, o botão do fim passa a «Pagar» e o resto da
+página fica. ⚠️ Os campos são controlados e o envio é feito à mão, sem o
+reinício automático do `<form action>` do React 19: um erro do servidor nunca
+apaga o que a pessoa escreveu (`robustez.md` › Erros).
+
 ### A documentação muda no mesmo PR que o código
 
 Se um PR faz o código contradizer um ficheiro de `docs/loja/` ou uma secção deste

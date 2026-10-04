@@ -1,20 +1,16 @@
 import { z } from "zod";
 
+import { tz } from "@date-fns/tz";
+import { format } from "date-fns";
+import { pt } from "date-fns/locale/pt";
+
 /**
- * O pedido de encomenda: o que se valida e para onde vai.
+ * O pedido que sai da página de compra (`/encomendas/pedido`): o que se valida
+ * e como se escreve o email que a casa recebe.
  *
- * ## Isto não é um checkout, e o modelo diz isso
- *
- * Não há carrinho, não há total e não há pagamento — **e nenhuma dessas coisas
- * se podia fingir**. O preço de um bolo por medida não existe até haver
- * conversa: o catálogo da casa não traz um único número (ver `bolos.ts`). Um
- * formulário que cobrasse antes disso vendia uma coisa que a casa não pode
- * cumprir.
- *
- * O que isto é: **a conversa que já acontece ao telefone, escrita de uma vez.**
- * Hoje a Damira recebe "quanto custa um bolo?" no Instagram e responde vinte
- * vezes ao mesmo; com isto recebe o pedido completo à primeira — o que, para
- * quantas pessoas, para que dia, e como se responde a quem pediu.
+ * ⚠️ **Até haver pagamento online (#38), o pedido acaba num email** — a casa
+ * confirma o valor e a hora com o cliente. A página de compra já é a final; o
+ * que muda com o Stripe é o botão do fim, que passa a «Pagar».
  */
 
 /**
@@ -36,63 +32,52 @@ export const TIPOS_PEDIDO = [
 
 export type TipoPedido = (typeof TIPOS_PEDIDO)[number];
 
-/**
- * ⚠️ **A data é validada contra hoje, e não contra um prazo.**
- *
- * A casa ainda não disse de quantos dias precisa para um kit de setenta — está
- * na lista *Antes de publicar* do README. Enquanto não disser, o formulário
- * recusa **datas passadas** e mais nada: inventar aqui um mínimo de três dias
- * seria o site a comprometer a cozinha com um prazo que ninguém confirmou, e
- * pior do que não ter prazo é ter o errado.
- *
- * Quando o prazo chegar, é aqui que entra — uma linha — e o texto de erro já
- * existe nas mensagens.
- */
-const dataFutura = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "data-invalida")
-  .refine((valor) => {
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-    return new Date(`${valor}T12:00:00`) >= hoje;
-  }, "data-passada");
+const LISBOA = { in: tz("Europe/Lisbon") };
 
-export const EsquemaPedido = z
-  .object({
-    tipo: z.enum(TIPOS_PEDIDO),
+/**
+ * ⚠️ **A data não pode ser passada — em Lisboa.** Lia «hoje» pela hora local do
+ * servidor, que na Vercel é UTC: entre a meia-noite e a uma da manhã de verão
+ * aceitava a data de ontem. O `agora` entra por argumento (regra 3 do
+ * `AGENTS.md`), e as datas comparam-se como texto («2026-10-06»), que é como os
+ * dias civis se ordenam.
+ *
+ * Quando o calendário funciona, a data nem vem do browser: sai da hora
+ * confirmada no servidor. Isto vale para quando não há calendário e a pessoa
+ * escreve a data pretendida.
+ */
+const dataNaoPassada = (agora: Date) =>
+  z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "data-invalida")
+    .refine((valor) => valor >= format(agora, "yyyy-MM-dd", LISBOA), "data-passada");
+
+/**
+ * Os dados da página de compra. As mensagens de erro são chaves de
+ * `encomendas.formulario.erros`, em PT e EN.
+ */
+export const esquemaCompra = (agora: Date) =>
+  z.object({
     nome: z.string().trim().min(2, "nome-curto").max(120),
-    /* Um dos dois chega, e a regra está no `superRefine`. Obrigar aos dois é
-       pedir um dado que não é preciso — e cada campo obrigatório a mais é gente
-       que desiste a meio. */
-    email: z.union([z.email(), z.literal("")]).default(""),
-    telefone: z.string().trim().max(40).default(""),
-    data: dataFutura,
-    pessoas: z.coerce.number().int().positive().max(500).nullable().default(null),
-    detalhe: z.string().trim().min(10, "detalhe-curto").max(2000),
+    /* Obrigatório: é para lá que vai a confirmação com a referência
+       (`pedidos.md` › O cliente). */
+    email: z.email("email-invalido").max(200),
+    /* Obrigatório também: é por ele que o balcão liga quando alguma coisa muda,
+       e o talão leva-o. */
+    telefone: z.string().trim().min(9, "telefone-curto").max(40),
+    nif: z
+      .union([z.string().trim().regex(/^\d{9}$/, "nif-invalido"), z.literal("")])
+      .default(""),
+    observacoes: z.string().trim().max(1000).default(""),
+    data: dataNaoPassada(agora),
     /**
      * O RGPD exige consentimento **explícito e informado** para tratar os dados
      * de contacto. Uma caixa pré-marcada não vale, e um "ao enviar aceita" em
      * letra pequena também não — por isso é um campo obrigatório e não um aviso.
      */
     consentimento: z.literal(true, { message: "consentimento" }),
-    /**
-     * Campo-armadilha, invisível para pessoas e irresistível para robôs de
-     * preenchimento automático. Preenchido, o pedido é descartado **em
-     * silêncio**: responder "detectámos spam" ensina o robô a contornar.
-     */
-    armadilha: z.string().max(0).default(""),
-  })
-  .superRefine((pedido, ctx) => {
-    if (!pedido.email && !pedido.telefone) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["email"],
-        message: "sem-contacto",
-      });
-    }
   });
 
-export type Pedido = z.infer<typeof EsquemaPedido>;
+export type DadosCompra = z.infer<ReturnType<typeof esquemaCompra>>;
 
 /**
  * Para onde vão os pedidos.
@@ -118,28 +103,55 @@ export const DESTINO_PEDIDOS =
 export const REMETENTE_PEDIDOS =
   process.env.EMAIL_REMETENTE?.trim() || "onboarding@resend.dev";
 
-/** O corpo do email que a casa recebe. Texto simples e não HTML: é para ser
- *  lido e respondido, não para ser bonito — e um email de texto passa em
- *  qualquer cliente de correio sem se partir. */
-export function corpoDoPedido(
-  pedido: Pedido,
-  rotulos: Record<string, string>,
-  referencia?: string,
-) {
-  const linhas = [
-    /* ⚠️ **A referência é a primeira linha.** Quem lê isto no telemóvel ao
-       balcão vê o código sem rolar, que é a única altura em que ele serve. */
-    referencia ? `Referência: ${referencia}` : null,
-    `Tipo: ${rotulos[pedido.tipo] ?? pedido.tipo}`,
-    `Nome: ${pedido.nome}`,
-    pedido.email ? `Email: ${pedido.email}` : null,
-    pedido.telefone ? `Telefone: ${pedido.telefone}` : null,
-    `Data pretendida: ${pedido.data}`,
-    pedido.pessoas ? `Pessoas: ${pedido.pessoas}` : null,
-    "",
-    "Pedido:",
-    pedido.detalhe,
-  ];
+/**
+ * O email que a casa recebe, **por secções**: o pedido, quando se levanta, quem
+ * é, o que leva, as observações e o pagamento. Pedido do cliente a 04/10: todos
+ * os dados, obrigatórios e opcionais — **um opcional vazio escreve-se «—»**, e
+ * não desaparece, para quem lê saber que não foi preenchido e não ficar a
+ * pensar que se perdeu.
+ *
+ * Texto simples e não HTML: é para ser lido e respondido no telemóvel de quem
+ * atende, e um email de texto abre em qualquer cliente de correio sem se
+ * partir. Sempre em português e em hora de Lisboa — é para a casa, seja qual
+ * for a língua de quem encomendou.
+ */
+export function corpoDaCompra(pedido: {
+  referencia: string;
+  enviadoEm: Date;
+  modoDeTeste: boolean;
+  levantamento: Date | null;
+  data: string;
+  dados: DadosCompra;
+  cesto: string;
+}): string {
+  const { dados } = pedido;
+  const porExtenso = (quando: Date) => format(quando, "EEEE, d 'de' MMMM 'às' HH:mm", { ...LISBOA, locale: pt });
+  const ou = (valor: string) => valor || "— (não indicado)";
+  const seccao = (titulo: string, linhas: string[]) => ["", titulo.toUpperCase(), ...linhas];
 
-  return linhas.filter((linha) => linha !== null).join("\n");
+  return [
+    /* ⚠️ **A referência é a primeira linha.** Quem lê isto no telemóvel ao balcão
+       vê o código sem rolar, que é a única altura em que ele serve. */
+    `PEDIDO ${pedido.referencia}`,
+    `Enviado pelo site: ${porExtenso(pedido.enviadoEm)} (hora de Lisboa)`,
+    ...(pedido.modoDeTeste
+      ? ["⚠️ MODO DE TESTE — os prazos são de exemplo e não se cobrou nada."]
+      : []),
+    ...seccao("Levantamento na loja", [
+      pedido.levantamento
+        ? `${porExtenso(pedido.levantamento)} (hora de Lisboa)`
+        : `${pedido.data} — hora a combinar com o cliente`,
+    ]),
+    ...seccao("Cliente", [
+      `Nome:      ${dados.nome}`,
+      `Email:     ${dados.email}`,
+      `Telefone:  ${dados.telefone}`,
+      `NIF:       ${ou(dados.nif)}`,
+    ]),
+    ...seccao("O que leva", [pedido.cesto]),
+    ...seccao("Observações", [ou(dados.observacoes)]),
+    ...seccao("Pagamento", [
+      "Ainda sem pagamento online: o valor confirma-se com o cliente.",
+    ]),
+  ].join("\n");
 }

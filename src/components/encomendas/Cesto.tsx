@@ -212,10 +212,8 @@ export function Cesto({ locale }: { locale: Locale }) {
               >
                 {t("esvaziar")}
               </button>
-              {/* Por agora leva ao formulário das encomendas; com a página de
-                  compra (#37) passa a levar a ela. */}
               <Link
-                href="/encomendas#pedido"
+                href="/encomendas/pedido"
                 onClick={() => setAberto(false)}
                 className="premivel flex min-h-12 flex-1 items-center justify-center rounded-full bg-tijolo px-6 text-sm font-semibold uppercase tracking-widest text-papel sm:flex-none"
               >
