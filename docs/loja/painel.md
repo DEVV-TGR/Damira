@@ -8,7 +8,8 @@ quem entra, como entra, e como a página se aguenta aberta o dia inteiro.
 ## Onde vive
 
 - `src/app/painel/`, **fora de `[locale]`**. O painel é para a equipa e é só em
-  português; não passa pelo `next-intl`.
+  português; não passa pelo `next-intl`. ⚠️ Tem layout raiz próprio, e o
+  `matcher` do `src/proxy.ts` exclui-o — sem isso, `/painel` ia para `/pt/painel`.
 - `noindex` e fora do `sitemap.xml`.
 - Pensado primeiro para o **tablet do balcão**: alvos de toque grandes, nada que
   dependa de *hover*. A gerente também o usa no telemóvel.
@@ -102,6 +103,40 @@ O tablet fica com o painel aberto do abrir ao fechar da loja.
    sozinho no primeiro momento em que não houver nada a meio.
 4. O ecrã não se apaga e o som tem de estar desbloqueado — ver
    `painel-balcao.md`.
+
+## A entrada provisória — e é um bloqueador de lançamento
+
+A página e as ações só falam com `src/lib/sessao-painel/` (o contrato está em
+`tipos.ts`, a `FonteSessao`). Do outro lado está hoje uma **entrada provisória**
+(`provisoria.ts`), para o painel poder ser construído e mostrado antes de haver
+base de dados. A verdadeira é a #33: troca-se uma linha no `index.ts`, e os
+ecrãs não mudam.
+
+- **Só liga em local ou com o modo de teste**, e só com `PAINEL_PIN_TESTE` e
+  `PAINEL_SEGREDO`. No ar sem o modo de teste, o painel diz que a entrada ainda
+  não está ligada.
+- ⚠️ **Enquanto estiver ligada, há um aviso no topo** («Entrada de teste»), que
+  não se apaga — a mesma regra da faixa do modo de teste.
+- **O que não faz**, porque pede a base de dados: limitar tentativas, terminar
+  sessões à distância (nem quando o PIN muda), renovar a cada uso e listar os
+  dispositivos. A sessão é um cookie assinado; o código da gerente aparece no
+  ecrã em vez de ir por email (para qualquer email, com e sem acesso — só o da
+  lista abre).
+- **Duas sessões no mesmo tablet:** a da equipa e a da gerente, em cookies
+  separados. A gerente que sai deixa o tablet no balcão; «esquecer este
+  dispositivo» tira as duas.
+
+**No lançamento (#55):** a entrada provisória sai, e com ela o aviso.
+
+## A versão do polling
+
+`/api/painel/versao` devolve `{ versao, site }`. A `versao` vem do
+`versaoPedidos` através de um `unstable_cache` com a etiqueta `pedidos`
+(`src/lib/painel-versao.ts`); quem muda um pedido chama `avisarQuePedidosMudaram()`
+(`revalidateTag` com `expire: 0`, para o próximo polling já a ver). O `site` é o
+id do deploy: quando muda, o painel recarrega-se assim que não houver nada a
+meio (o `ocupado()` do `usePainel`). Sem resposta durante 25 segundos, ou com o
+browser offline, aparece o aviso vermelho (`src/lib/painel-ligacao.ts`).
 
 ## Em aberto
 

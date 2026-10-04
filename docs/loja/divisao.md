@@ -85,6 +85,10 @@ dos pedidos, o «por preencher», o fim da pausa, o dia de Lisboa) estão em
 `src/lib/painel.ts`, fora da fronteira: a base de dados só tem de devolver os
 pedidos certos.
 
+**A entrada no painel tem a mesma forma.** O contrato (`src/lib/sessao-painel/tipos.ts`)
+e uma entrada provisória são do Gonçalo (#39); a entrada verdadeira, com PIN e
+código na base de dados, é do Sobral (#33), e troca só o `index.ts` dessa pasta.
+
 - Mudar uma função de `src/lib/dados/`, um schema ou o esquema da base de dados
   → **PR próprio, revisto pelo outro** (o `CODEOWNERS` pede-o automaticamente).
 - O pedido é o que está em `pedidos.md`. Ninguém acrescenta um estado ou um
