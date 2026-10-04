@@ -12,7 +12,8 @@
  * - **pedidos de exemplo no calendário**, que dão cor aos dias e enchem horas
  *   (`pedidosDeExemplo`, no mesmo ficheiro);
  * - **pedidos de exemplo no painel**: pagos, entregues, um cancelado, um com
- *   dinheiro em falta, um que chegou tarde, um duplicado (`pedidosDoPainelDeExemplo`);
+ *   dinheiro em falta, um que chegou tarde, um duplicado (`pedidosDoPainelDeExemplo`),
+ *   e o **«Simular pedido novo»** do balcão (`simularPedidoDeTeste`);
  * - **a entrada provisória do painel**, com o PIN `123456` e o email da equipa
  *   como gerente (`src/lib/sessao-painel/provisoria.ts`);
  * - o pagamento com as chaves de teste do Stripe, quando chegar (#38) — não se

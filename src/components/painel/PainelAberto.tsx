@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { sair } from "@/app/painel/acoes";
 import type { Papel } from "@/lib/dados/tipos";
+import { diaDeLisboa } from "@/lib/painel";
 import { horaDeLisboa, INTERVALO_POLLING_MS, semLigacao, textoSemLigacao } from "@/lib/painel-ligacao";
 
 /**
@@ -22,9 +23,9 @@ import { horaDeLisboa, INTERVALO_POLLING_MS, semLigacao, textoSemLigacao } from 
  * 4. **O som tem de estar desbloqueado e o ecrã acordado.** O browser bloqueia
  *    o som até alguém tocar no ecrã, por isso, até lá, um aviso por cima de tudo.
  *
- * As vistas do balcão e da gerente entram aqui dentro (#44, #45), e usam o
- * `usePainel()`: `tocar()` para o som de um pedido novo, e `ocupado()` para o
- * painel não se recarregar a meio de um toque.
+ * As vistas (o balcão, e a gestão da gerente) entram como `children` e usam o
+ * `usePainel()`: `tocar()` para o som de um pedido novo, `ocupado()` para o
+ * painel não se recarregar a meio de um toque, e `atualizadoEm` para os vazios.
  */
 
 type ContextoPainel = {
@@ -44,9 +45,9 @@ export function usePainel(): ContextoPainel {
   return contexto;
 }
 
-type Props = { papel: Papel; versaoInicial: number; site: string };
+type Props = { papel: Papel; versaoInicial: number; site: string; children: React.ReactNode };
 
-export function PainelAberto({ papel, versaoInicial, site }: Props) {
+export function PainelAberto({ papel, versaoInicial, site, children }: Props) {
   const ocupacoes = useRef(0);
   const ocupado = useCallback(() => {
     ocupacoes.current++;
@@ -71,9 +72,7 @@ export function PainelAberto({ papel, versaoInicial, site }: Props) {
         </div>
       )}
       <Cabecalho papel={papel} atualizadoEm={atualizadoEm} ligado={ligado} />
-      <main className="mx-auto w-full max-w-5xl px-4 pb-16 sm:px-6">
-        <Separadores papel={papel} />
-      </main>
+      <main className="mx-auto w-full max-w-5xl px-4 pb-16 sm:px-6">{children}</main>
       {!somAtivo && <AtivarSom onAtivar={ativarSom} />}
     </Contexto.Provider>
   );
@@ -91,6 +90,9 @@ function useVersao(versaoInicial: number, site: string, ocupacoes: React.RefObje
   useEffect(() => {
     let ultimoSucesso = new Date();
     let vivo = true;
+    /* À meia-noite de Lisboa, «hoje» muda sem nenhum pedido mudar: a versão é a
+       mesma, mas as listas não. Pede-se outra vez. */
+    let dia = diaDeLisboa(new Date());
 
     const perguntar = async () => {
       try {
@@ -110,7 +112,12 @@ function useVersao(versaoInicial: number, site: string, ocupacoes: React.RefObje
            tolerância. A próxima volta tenta outra vez. */
       }
       if (!vivo) return;
-      setLigado(!semLigacao(ultimoSucesso, new Date(), navigator.onLine));
+      const agora = new Date();
+      setLigado(!semLigacao(ultimoSucesso, agora, navigator.onLine));
+      if (diaDeLisboa(agora) !== dia) {
+        dia = diaDeLisboa(agora);
+        router.refresh();
+      }
       /* Uma versão nova do site, e nada a meio: recarrega. Com alguma coisa a
          meio, espera pela próxima volta. */
       if (recarregar.current && ocupacoes.current === 0) window.location.reload();
@@ -284,47 +291,5 @@ function Cabecalho({ papel, atualizadoEm, ligado }: { papel: Papel; atualizadoEm
         </button>
       </div>
     </header>
-  );
-}
-
-// ——— As vistas (#44, #45) ———
-
-const SEPARADORES_BALCAO = ["Levantam hoje", "Produzir hoje", "Próximos", "Arquivo"];
-
-function Separadores({ papel }: { papel: Papel }) {
-  const { atualizadoEm } = usePainel();
-  const separadores = papel === "gerente" ? [...SEPARADORES_BALCAO, "Gestão"] : SEPARADORES_BALCAO;
-  const [ativo, setAtivo] = useState(separadores[0]);
-
-  return (
-    <>
-      <nav aria-label="Vistas" className="-mx-4 mt-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-        <div role="tablist" className="flex min-w-max gap-2">
-          {separadores.map((nome) => (
-            <button
-              key={nome}
-              type="button"
-              role="tab"
-              aria-selected={ativo === nome}
-              onClick={() => setAtivo(nome)}
-              className={`min-h-12 rounded-full px-5 text-sm font-semibold uppercase tracking-widest ${
-                ativo === nome ? "bg-tinta text-papel" : "border border-tinta/15 bg-papel"
-              }`}
-            >
-              {nome}
-            </button>
-          ))}
-        </div>
-      </nav>
-      <section role="tabpanel" aria-label={ativo} className="mt-6 rounded-2xl border border-tinta/15 bg-papel p-8">
-        <h2 className="titulo-display text-2xl">{ativo}</h2>
-        <p className="mt-2 text-tinta-suave">
-          Esta vista está em construção: chega na próxima etapa do painel.
-        </p>
-        {/* ⚠️ Vazio leva sempre a hora: uma lista vazia sem hora não distingue um
-            dia calmo de um tablet desligado (`robustez.md`). */}
-        <p className="mt-4 text-sm text-tinta-suave">Atualizado às {horaDeLisboa(atualizadoEm)}</p>
-      </section>
-    </>
   );
 }

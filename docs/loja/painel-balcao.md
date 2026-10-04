@@ -42,6 +42,12 @@ texto claro), como no talão.
 
 ## Um pedido novo
 
+⚠️ **No modo de teste, «Simular pedido novo»** (e «com o talão a falhar»), ao
+fundo do balcão: sem pagamentos (#42) não chega nenhum pedido, e o som, o aviso
+e o alarme ficavam por experimentar. Só existe com `LOJA_EM_TESTE=1`
+(`simularPedidoDeTeste`, em `src/lib/dados/`), e não é da `FonteDeDados`: na
+base de dados só o `marcarPago` põe um pedido a `pago`.
+
 1. O som toca **uma vez**.
 2. Aparece um aviso no canto: «Novo pedido DAM-… · 14:30 · talão impresso ✓».
    **Fica até alguém lhe tocar** — o som é uma vez só, e o aviso é o que resta

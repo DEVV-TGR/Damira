@@ -84,4 +84,24 @@ describe("os pedidos de exemplo do painel", () => {
     expect(dias).not.toContain("2026-10-11");
     expect(dias).toContain("2026-10-12");
   });
+
+  it("simular um pedido pago só existe no modo de teste", () => {
+    expect(fonteDoAmbiente({ LOJA_EM_TESTE: "1" }, AGORA).simularPedidoPago).toBeTypeOf("function");
+    expect(fonteDoAmbiente({}, AGORA).simularPedidoPago).toBeUndefined();
+  });
+
+  it("um pedido simulado chega pago, sobe a versão e aparece na lista — com ou sem talão", async () => {
+    const fonte = fonteDoAmbiente({ LOJA_EM_TESTE: "1" }, AGORA);
+    const antes = await fonte.versaoPedidos();
+    const comTalao = fonte.simularPedidoPago!(AGORA, { talaoFalhou: false });
+    const semTalao = fonte.simularPedidoPago!(AGORA, { talaoFalhou: true });
+    expect(await fonte.versaoPedidos()).toBe(antes + 2);
+    expect(comTalao.impressoEm).not.toBeNull();
+    expect(semTalao.impressoEm).toBeNull();
+    expect(() => EsquemaPedido.parse(semTalao)).not.toThrow();
+    expect(comTalao.referencia).not.toBe(semTalao.referencia);
+    const resultado = await protegerPainel(fonte).pedidoDoPainel(semTalao.id, GERENTE);
+    expect(resultado.ok && resultado.valor.estado).toBe("pago");
+  });
 });
+

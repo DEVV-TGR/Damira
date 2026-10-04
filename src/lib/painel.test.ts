@@ -10,8 +10,11 @@ import {
   esgotadoHoje,
   faltaPagarCent,
   fimDaPausa,
+  diaPorExtenso,
   historicoDe,
+  novidades,
   organizarBalcao,
+  rotuloPagamento,
 } from "./painel";
 
 const seteAsVinteUma = [{ abre: "07:00", fecha: "21:00" }];
@@ -284,5 +287,37 @@ describe("o detalhe do pedido", () => {
       entregueEm: lisboa(10, 8, 15, 2),
     });
     expect(historicoDe(p).map((e) => e.o)).toEqual(["criado", "pago", "impresso", "entregue"]);
+  });
+});
+
+describe("o que o balcão mostra", () => {
+  it("o pagamento lê-se em grande: PAGO, ou o que falta", () => {
+    expect(rotuloPagamento({ totalCent: 4000, pagoOnlineCent: 4000 })).toBe("PAGO");
+    expect(rotuloPagamento({ totalCent: 4000, pagoOnlineCent: 2750 }).replace(/\s/g, " ")).toBe(
+      "SINAL PAGO · FALTA 12,50 €",
+    );
+  });
+
+  it("o dia por extenso é o de Lisboa", () => {
+    expect(diaPorExtenso(new Date("2026-07-15T23:30:00Z"))).toBe("quinta-feira, 16 de julho");
+  });
+
+  it("na primeira leitura não há novidades — abrir o painel não é receber os pedidos todos", () => {
+    expect(novidades(null, [pedido("aaaa")])).toEqual({ novos: [], cancelados: [] });
+  });
+
+  it("um pago que não estava lá é novo; um pago que passou a cancelado é cancelado", () => {
+    const antes = new Map<string, Pedido["estado"]>([
+      ["aaaa", "pago"],
+      ["bbbb", "pago"],
+    ]);
+    const resultado = novidades(antes, [
+      pedido("aaaa"),
+      pedido("bbbb", { estado: "cancelado" }),
+      pedido("cccc"),
+      pedido("dddd", { estado: "entregue" }),
+    ]);
+    expect(resultado.novos.map((p) => p.id)).toEqual(["cccc"]);
+    expect(resultado.cancelados.map((p) => p.id)).toEqual(["bbbb"]);
   });
 });

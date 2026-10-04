@@ -299,6 +299,15 @@ export type OpcoesFonteJson = {
  * é o que deixa os testes não se pisarem uns aos outros.
  */
 export function criarFonteJson(opcoes: OpcoesFonteJson = {}): FonteDeDados {
+  return criarFonteJsonComEstado(opcoes).fonte;
+}
+
+/**
+ * A mesma fonte, com o estado à mão. Só o `exemplo.ts` a usa, para o modo de
+ * teste poder **simular um pedido pago** — o que de outra forma só o Stripe faz.
+ * Nada do site lhe chega: o estado não sai daqui para as páginas.
+ */
+export function criarFonteJsonComEstado(opcoes: OpcoesFonteJson = {}): { fonte: FonteDeDados; estado: EstadoJson } {
   /* O catálogo, a configuração e as definições num estado que o painel
      (`json-painel.ts`) também escreve: o que a gerente grava é o que a loja lê
      a seguir. A ordem do `Map` é a do catálogo, com os produtos novos no fim. */
@@ -516,5 +525,5 @@ export function criarFonteJson(opcoes: OpcoesFonteJson = {}): FonteDeDados {
     },
   };
 
-  return { ...loja, ...criarPainelJson(estado) };
+  return { fonte: { ...loja, ...criarPainelJson(estado) }, estado };
 }

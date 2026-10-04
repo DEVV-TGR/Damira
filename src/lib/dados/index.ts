@@ -1,5 +1,5 @@
 import "server-only";
-import { fonteDoAmbiente } from "./exemplo";
+import { fonteDoAmbiente, type FonteDeExemplo } from "./exemplo";
 import { protegerPainel } from "./papeis";
 import type { FonteDeDados } from "./tipos";
 
@@ -23,7 +23,7 @@ import type { FonteDeDados } from "./tipos";
 /* O modo de teste (`LOJA_EM_TESTE=1`, ver `src/lib/modo-teste.ts`) liga os
    tempos e a cozinha de exemplo, para o calendário funcionar antes de a casa os
    dar. Quando vier a base de dados, é aqui que ela entra no lugar dos JSON. */
-const fonte: FonteDeDados = fonteDoAmbiente();
+const fonte: FonteDeExemplo = fonteDoAmbiente();
 
 export const listarProdutos: FonteDeDados["listarProdutos"] = (filtro) =>
   fonte.listarProdutos(filtro);
@@ -91,3 +91,11 @@ export const precisaDeAtencao = painel.precisaDeAtencao;
  * é o que deixa a base de dados dormir com o tablet aberto o dia inteiro.
  */
 export const versaoPedidos = painel.versaoPedidos;
+
+/**
+ * ⚠️ **Só no modo de teste** (`null` sem ele): um pedido pago a chegar agora,
+ * como se o Stripe o tivesse confirmado, para o balcão poder ser experimentado
+ * sem pagamentos. Não é da `FonteDeDados` — na base de dados, só o `marcarPago`
+ * (#42) põe um pedido a `pago` (regra 4).
+ */
+export const simularPedidoDeTeste = fonte.simularPedidoPago ?? null;

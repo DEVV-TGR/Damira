@@ -2,6 +2,7 @@ import { TZDate, tz } from "@date-fns/tz";
 import { addDays, format, getDay } from "date-fns";
 import type { AvisoAtencao, ConfiguracaoDaCasa, Pedido, Produto } from "@/lib/dados/tipos";
 import { FUSO, inicioDaProducao } from "@/lib/horarios";
+import { formatarCent } from "@/lib/preco";
 
 /**
  * # As contas do painel que não precisam de dados
@@ -274,4 +275,44 @@ export function avisosDosPedidos(
     }
   }
   return avisos;
+}
+
+// ——— O que o balcão mostra ———
+
+/**
+ * O estado do pagamento, em grande no cartão e no talão (`painel-balcao.md`):
+ * `PAGO`, ou `SINAL PAGO · FALTA 12,50 €`.
+ */
+export const rotuloPagamento = (pedido: Pick<Pedido, "totalCent" | "pagoOnlineCent">): string => {
+  const falta = faltaPagarCent(pedido);
+  return falta === 0 ? "PAGO" : `SINAL PAGO · FALTA ${formatarCent(falta, "pt")}`;
+};
+
+const DIA_DE_LISBOA = new Intl.DateTimeFormat("pt-PT", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  timeZone: FUSO,
+});
+
+/** «quinta-feira, 8 de outubro», em Lisboa. */
+export const diaPorExtenso = (instante: Date): string => DIA_DE_LISBOA.format(instante);
+
+/**
+ * O que mudou entre a leitura anterior e esta: **pedidos novos** (som e aviso)
+ * e **cancelados** (som e aviso vermelho). Na primeira leitura não há nada de
+ * novo — abrir o painel de manhã não é receber trinta pedidos.
+ *
+ * Um pedido novo é um `pago` que não estava lá antes; um cancelado é um que
+ * estava `pago` e passou a `cancelado`.
+ */
+export function novidades(
+  anteriores: ReadonlyMap<string, Pedido["estado"]> | null,
+  atuais: readonly Pedido[],
+): { novos: Pedido[]; cancelados: Pedido[] } {
+  if (anteriores === null) return { novos: [], cancelados: [] };
+  return {
+    novos: atuais.filter((p) => p.estado === "pago" && !anteriores.has(p.id)),
+    cancelados: atuais.filter((p) => p.estado === "cancelado" && anteriores.get(p.id) === "pago"),
+  };
 }

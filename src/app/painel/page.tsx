@@ -1,5 +1,18 @@
+import { tz } from "@date-fns/tz";
+import { addDays, startOfDay } from "date-fns";
+import { Balcao, type ProdutoDoBalcao } from "@/components/painel/balcao/Balcao";
 import { EntradaPainel } from "@/components/painel/EntradaPainel";
 import { PainelAberto } from "@/components/painel/PainelAberto";
+import {
+  configuracaoDaCasa,
+  definicoesLoja,
+  listarPedidos,
+  produtosDoPainel,
+  simularPedidoDeTeste,
+} from "@/lib/dados";
+import type { ContextoPainel, Pedido } from "@/lib/dados/tipos";
+import { FUSO } from "@/lib/horarios";
+import { esgotadoHoje, organizarBalcao } from "@/lib/painel";
 import { VERSAO_DO_SITE, versaoEmCache } from "@/lib/painel-versao";
 import { sessao } from "@/lib/sessao-painel";
 
@@ -49,12 +62,64 @@ export default async function Painel({ searchParams }: { searchParams: Promise<{
     );
   }
 
+  const ctx: ContextoPainel = { papel: atual.papel, agora };
+  const [casa, definicoes, produtos, pedidos] = await Promise.all([
+    configuracaoDaCasa(),
+    definicoesLoja(),
+    produtosDoPainel(ctx),
+    pedidosDoBalcao(ctx),
+  ]);
+
   return (
     <>
       {aviso}
-      <PainelAberto papel={atual.papel} versaoInicial={await versaoEmCache()} site={VERSAO_DO_SITE} />
+      <PainelAberto papel={atual.papel} versaoInicial={await versaoEmCache()} site={VERSAO_DO_SITE}>
+        <Balcao
+          papel={atual.papel}
+          pedidos={pedidos}
+          balcao={organizarBalcao(pedidos, produtos, casa, agora)}
+          produtos={produtos
+            .filter((p) => !p.arquivado && (p.aVendaOnline || p.foraDeVenda))
+            .map(
+              (p): ProdutoDoBalcao => ({
+                id: p.id,
+                nome: p.nome.pt,
+                esgotadoHoje: esgotadoHoje(p, agora),
+                foraDeVenda: p.foraDeVenda,
+              }),
+            )}
+          pausaAte={definicoes.pausaAte}
+          modoTeste={simularPedidoDeTeste !== null}
+        />
+      </PainelAberto>
     </>
   );
+}
+
+/**
+ * Os pedidos de hoje em diante, até onde o calendário vai: é daqui que saem os
+ * três separadores e as novidades (pedido novo, cancelado). Os entregues de
+ * hoje vêm também, para o balcão saber que já não são novos. Página a página,
+ * com um teto: a casa não tem mil pedidos à frente, e um ciclo sem fim é pior
+ * do que uma lista cortada.
+ */
+async function pedidosDoBalcao(ctx: ContextoPainel): Promise<Pedido[]> {
+  const casa = await configuracaoDaCasa();
+  const desde = startOfDay(ctx.agora, { in: tz(FUSO) });
+  const ate = addDays(desde, casa.diasAFrente + 1, { in: tz(FUSO) });
+  const todos: Pedido[] = [];
+  let cursor: string | null = null;
+  for (let pagina = 0; pagina < 10; pagina++) {
+    const resultado = await listarPedidos(
+      { estados: ["pago", "cancelado", "entregue"], levantamentoDesde: desde, levantamentoAte: ate, cursor, limite: 100 },
+      ctx,
+    );
+    if (!resultado.ok) break;
+    todos.push(...resultado.valor.pedidos);
+    cursor = resultado.valor.seguinte;
+    if (cursor === null) break;
+  }
+  return todos;
 }
 
 /**

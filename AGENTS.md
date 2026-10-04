@@ -81,7 +81,9 @@ provisório** — em local e na Vercel, sem uma segunda variável para ligar
   calendário (`src/lib/dados/exemplo.ts` — ao acaso mas sempre os mesmos, e
   contam como verdadeiros para as vagas);
 - os **pedidos de exemplo no painel** — pagos, entregues, um cancelado, um com
-  dinheiro em falta, um que chegou tarde, um duplicado —, relativos ao dia de hoje;
+  dinheiro em falta, um que chegou tarde, um duplicado —, relativos ao dia de hoje,
+  e o botão **«Simular pedido novo»** no balcão, para ouvir o som e ver o alarme
+  do talão sem haver pagamentos;
 - a **entrada provisória do painel**, com o PIN `123456` e o email da equipa como
   gerente. ⚠️ Estão escritos no código, num repositório público: é a troca
   aceite para o modo de teste ligar com uma variável só, e só há dados de

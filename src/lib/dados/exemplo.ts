@@ -2,7 +2,7 @@ import { TZDate, tz } from "@date-fns/tz";
 import { addDays, format, getDay } from "date-fns";
 import type { HorarioSemanal, TempoProducao, VagaOcupada } from "@/lib/horarios";
 import { emModoDeTeste, type Ambiente } from "@/lib/modo-teste";
-import { CATALOGO_JSON, CONFIGURACAO_JSON, criarFonteJson, type OpcoesFonteJson } from "./json";
+import { CATALOGO_JSON, CONFIGURACAO_JSON, criarFonteJson, criarFonteJsonComEstado, type OpcoesFonteJson } from "./json";
 import { diaDeLisboa } from "@/lib/painel";
 import type { ConfiguracaoDaCasa, FonteDeDados, Pedido, Produto } from "./tipos";
 
@@ -73,11 +73,20 @@ const recusarEmProducao = (ambiente: Ambiente) => {
  * está `null` — um tempo que a casa já tenha dado nunca é trocado pelo de
  * exemplo.
  */
+/**
+ * Um pedido pago a chegar agora, como se o Stripe o tivesse confirmado. **Só
+ * existe no modo de teste**, e não é da `FonteDeDados`: a base de dados nunca o
+ * terá, porque a única porta para `pago` é o `marcarPago` (#42, regra 4).
+ */
+export type SimularPedidoPago = (agora: Date, opcoes: { talaoFalhou: boolean }) => Pedido;
+
+export type FonteDeExemplo = FonteDeDados & { simularPedidoPago?: SimularPedidoPago };
+
 export function fonteDeExemplo(
   opcoes: OpcoesFonteJson & { pedidosDeExemplo?: boolean; pedidosDoPainel?: boolean } = {},
   ambiente: Ambiente = process.env,
   agora: Date = new Date(),
-): FonteDeDados {
+): FonteDeExemplo {
   recusarEmProducao(ambiente);
   const catalogo = (opcoes.catalogo ?? CATALOGO_JSON).map((produto) => ({
     ...produto,
@@ -89,7 +98,7 @@ export function fonteDeExemplo(
     cozinha: base.cozinha ?? COZINHA_DE_EXEMPLO,
     limitePorVaga: base.limitePorVaga ?? LIMITE_POR_VAGA_DE_EXEMPLO,
   };
-  return criarFonteJson({
+  const { fonte, estado } = criarFonteJsonComEstado({
     ...opcoes,
     catalogo,
     configuracao,
@@ -98,6 +107,49 @@ export function fonteDeExemplo(
       ? { pedidos: [...(opcoes.pedidos ?? []), ...pedidosDoPainelDeExemplo(agora, catalogo, configuracao)] }
       : {}),
   });
+  if (!opcoes.pedidosDoPainel) return fonte;
+
+  let simulados = 0;
+  const simularPedidoPago: SimularPedidoPago = (quando, { talaoFalhou }) => {
+    simulados++;
+    const carta = [...estado.porId.values()].find(
+      (p) => p.origem === "ementa" && p.aVendaOnline && !p.arquivado && p.unidade === "un" && p.variantes[0].precoCent !== null,
+    )!;
+    /* Para daqui a uma hora, arredondado à meia hora: chega a «levantam hoje» se
+       a loja ainda estiver aberta, a «próximos» se não. */
+    const levantamentoEm = new Date(Math.ceil((quando.getTime() + 60 * 60_000) / 1_800_000) * 1_800_000);
+    const linhas = [linhaDoPedido(carta)];
+    const totalCent = linhas.reduce((soma, l) => soma + l.totalCent, 0);
+    const pagoEm = new Date(quando.getTime());
+    const nome = `Cliente Simulado ${simulados}`;
+    const pedido: Pedido = {
+      id: `simulado-${quando.getTime()}-${simulados}`,
+      referencia: referenciaUnica(`simulado ${quando.getTime()} ${simulados}`, quando, (r) =>
+        estado.porReferencia.has(r),
+      ),
+      estado: "pago",
+      criadoEm: new Date(quando.getTime() - 3 * 60_000),
+      levantamentoEm,
+      cliente: { nome, email: paraEmail(nome), telefone: "910009999", nif: null, contaId: null },
+      linhas,
+      observacoes: talaoFalhou ? "Simulado com o talão a falhar." : null,
+      totalCent,
+      modoPagamento: "total",
+      pagoOnlineCent: totalCent,
+      reembolsadoCent: 0,
+      chegouTarde: false,
+      pagoEm,
+      impressoEm: talaoFalhou ? null : new Date(pagoEm.getTime() + 5_000),
+      entregueEm: null,
+      canceladoEm: null,
+      canceladoPor: null,
+    };
+    estado.pedidos.set(pedido.id, pedido);
+    estado.porReferencia.set(pedido.referencia, pedido.id);
+    estado.versao++;
+    return pedido;
+  };
+  return { ...fonte, simularPedidoPago };
 }
 
 // ——— Pedidos de exemplo ———
@@ -169,6 +221,38 @@ const CLIENTES = [
 
 const paraEmail = (nome: string) =>
   `${nome.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().replace(/\s+/g, ".")}@example.com`;
+
+/* A linha como o pedido a guarda: a fotografia do momento, com o preço do
+   catálogo (`pedidos.md`). Um pedido de exemplo nunca cobra o que o site não
+   cobraria. */
+const linhaDoPedido = (produto: Produto, quantidade?: number): Pedido["linhas"][number] => {
+  const variante = produto.variantes[0];
+  const qtd = quantidade ?? produto.quantidadeMinima;
+  const preco = variante.precoCent!;
+  return {
+    produtoId: produto.id,
+    varianteId: variante.id,
+    nome: produto.nome.pt,
+    variante: variante.rotulo?.pt ?? null,
+    escolhas: [],
+    unidade: produto.unidade,
+    quantidade: qtd,
+    precoUnitarioCent: preco,
+    totalCent: Math.round(preco * qtd),
+    notas: null,
+  };
+};
+
+/* `DAM-DDMM-XXXX` a partir de uma semente: a mesma semente dá a mesma
+   referência. Tenta outra se essa já existir. */
+const referenciaUnica = (semente: string, criadoEm: Date, existe: (referencia: string) => boolean): string => {
+  for (let tentativa = 0; ; tentativa++) {
+    let sufixo = "";
+    for (let i = 0; i < 4; i++) sufixo += ALFABETO[Math.floor(sorteio(`${semente} ${i} ${tentativa}`) * ALFABETO.length)];
+    const referencia = `DAM-${format(criadoEm, "ddMM", LISBOA)}-${sufixo}`;
+    if (!existe(referencia)) return referencia;
+  }
+};
 
 type Pedir = {
   /** Dias a partir de hoje (Lisboa). Negativo é passado. */
@@ -283,31 +367,9 @@ export function pedidosDoPainelDeExemplo(
         : instante(dataEm(Math.min(p.dia - 2, -1)), "10:00");
     const pagoEm = new Date(criadoEm.getTime() + (p.chegouTarde ? 35 : 3) * 60_000);
 
-    const linhas = p.produtos.map(({ produto, quantidade }) => {
-      const variante = produto.variantes[0];
-      const qtd = quantidade ?? produto.quantidadeMinima;
-      const preco = variante.precoCent!;
-      return {
-        produtoId: produto.id,
-        varianteId: variante.id,
-        nome: produto.nome.pt,
-        variante: variante.rotulo?.pt ?? null,
-        escolhas: [],
-        unidade: produto.unidade,
-        quantidade: qtd,
-        precoUnitarioCent: preco,
-        totalCent: Math.round(preco * qtd),
-        notas: null,
-      };
-    });
+    const linhas = p.produtos.map(({ produto, quantidade }) => linhaDoPedido(produto, quantidade));
     const totalCent = linhas.reduce((soma, l) => soma + l.totalCent, 0);
-
-    let referencia = "";
-    for (let tentativa = 0; referencia === "" || referencias.has(referencia); tentativa++) {
-      let sufixo = "";
-      for (let i = 0; i < 4; i++) sufixo += ALFABETO[Math.floor(sorteio(`${hoje} ${n} ${i} ${tentativa}`) * ALFABETO.length)];
-      referencia = `DAM-${format(criadoEm, "ddMM", LISBOA)}-${sufixo}`;
-    }
+    const referencia = referenciaUnica(`${hoje} ${n}`, criadoEm, (r) => referencias.has(r));
     referencias.add(referencia);
 
     const estado = p.estado ?? "pago";
@@ -353,7 +415,7 @@ export function pedidosDoPainelDeExemplo(
  * esse dia, e um processo que atravesse a meia-noite mostra-os um dia atrás até
  * arrancar outra vez. Em modo de teste, chega.
  */
-export const fonteDoAmbiente = (ambiente: Ambiente = process.env, agora: Date = new Date()): FonteDeDados =>
+export const fonteDoAmbiente = (ambiente: Ambiente = process.env, agora: Date = new Date()): FonteDeExemplo =>
   emModoDeTeste(ambiente)
     ? fonteDeExemplo({ pedidosDeExemplo: true, pedidosDoPainel: true }, ambiente, agora)
     : criarFonteJson();
