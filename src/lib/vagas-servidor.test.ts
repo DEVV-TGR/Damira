@@ -1,7 +1,7 @@
 import { TZDate } from "@date-fns/tz";
 import { describe, expect, it } from "vitest";
 import { fonteDeExemplo } from "./dados/exemplo";
-import { CONFIGURACAO_JSON, criarFonteJson } from "./dados/json";
+import { CATALOGO_JSON, CONFIGURACAO_JSON, criarFonteJson } from "./dados/json";
 import { afluenciaDe, confirmarLevantamento, vagasDoCesto } from "./vagas-servidor";
 
 /* Segunda, 5 de outubro de 2026, às 10h00 de Lisboa. Com a cozinha de exemplo
@@ -60,6 +60,24 @@ describe("as vagas de um cesto", () => {
     );
     expect(soCarta.ok && `${soCarta.vagas[0].data} ${soCarta.vagas[0].hora}`).toBe("2026-10-07 14:00");
     expect(misto.ok && `${misto.vagas[0].data} ${misto.vagas[0].hora}`).toBe("2026-10-07 14:00");
+  });
+
+  it("o «esgotado hoje» do balcão tira as horas de hoje ao calendário, e a confirmação recusa-as", async () => {
+    /* Um artigo de uma hora, para haver horas no próprio dia. */
+    const catalogo = CATALOGO_JSON.map((p) =>
+      p.id === "bolo-de-cenoura" ? { ...p, tempoProducao: { unidade: "horas" as const, valor: 1 } } : p,
+    );
+    const fonte = fonteDeExemplo({ catalogo });
+    const cesto = [{ produtoId: "bolo-de-cenoura", varianteId: "unica", quantidade: 12 }];
+    const antes = await vagasDoCesto(cesto, fonte, AGORA);
+    expect(antes.ok && antes.vagas.some((v) => v.data === "2026-10-05")).toBe(true);
+
+    await fonte.marcarEsgotadoHoje("bolo-de-cenoura", true, { papel: "funcionario", agora: AGORA });
+    const depois = await vagasDoCesto(cesto, fonte, AGORA);
+    expect(depois.ok && depois.vagas.some((v) => v.data === "2026-10-05")).toBe(false);
+    expect(depois.ok && depois.vagas[0].data).toBe("2026-10-06");
+    const hoje15h = new TZDate(2026, 9, 5, 15, 0, "Europe/Lisbon");
+    expect((await confirmarLevantamento(cesto, hoje15h, fonte, AGORA)).ok).toBe(false);
   });
 
   it("um cesto que não se cota não tem vagas", async () => {

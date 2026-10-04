@@ -1,5 +1,6 @@
 import "server-only";
 import { fonteDoAmbiente } from "./exemplo";
+import { protegerPainel } from "./papeis";
 import type { FonteDeDados } from "./tipos";
 
 /**
@@ -51,3 +52,29 @@ export const criarPedido: FonteDeDados["criarPedido"] = (entrada, contexto) =>
 
 export const pedidoPorReferencia: FonteDeDados["pedidoPorReferencia"] = (referencia) =>
   fonte.pedidoPorReferencia(referencia);
+
+// ——— O painel ———
+
+/*
+ * O papel verifica-se no `protegerPainel` (`papeis.ts`), antes de a fonte ser
+ * chamada. Depois de gravar um produto, quem chama (a ação do servidor, #40)
+ * revalida as páginas onde ele aparece: são estáticas, e sem isso o site mostra
+ * o preço antigo durante horas (`painel-gerente.md` › Mudar um preço). A fonte
+ * não sabe que páginas há; a ação sabe.
+ */
+const painel = protegerPainel(fonte);
+
+/** Todos os produtos, arquivados incluídos. O balcão também os vê, para os esgotar. */
+export const produtosDoPainel = painel.produtosDoPainel;
+export const criarProduto = painel.criarProduto;
+export const editarProduto = painel.editarProduto;
+/** «Apagar» no painel. Nunca se apaga a sério: os pedidos antigos apontam para ele. */
+export const arquivarProduto = painel.arquivarProduto;
+/** Do balcão. Volta sozinho amanhã. */
+export const marcarEsgotadoHoje = painel.marcarEsgotadoHoje;
+/** Do balcão. Fica fora até alguém o voltar a pôr. */
+export const tirarDeVenda = painel.tirarDeVenda;
+export const guardarHorarios = painel.guardarHorarios;
+export const guardarDefinicoes = painel.guardarDefinicoes;
+/** Do balcão, para quando a cozinha está cheia. O fim calcula-o o `fimDaPausa` (`src/lib/painel.ts`). */
+export const pausarLoja = painel.pausarLoja;

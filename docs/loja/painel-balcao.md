@@ -73,6 +73,17 @@ Um toque num produto tira-o de venda, com duas opções:
   à abertura. É o caso normal.
 - **Tirar de venda** — fica fora até alguém o voltar a pôr.
 
+São dois campos do produto, e nenhum é o «à venda online» da gerente
+(`src/lib/dados/tipos.ts`):
+
+- `esgotadoNoDia` guarda **o dia de Lisboa** em que se esgotou, e não um
+  sim/não. Só vale enquanto esse dia for hoje — é isso que o faz voltar sozinho,
+  sem nenhuma tarefa agendada a acordar a base de dados para o repor
+  (`robustez.md`). Tira as vagas de hoje ao cesto inteiro, no calendário e na
+  confirmação ao enviar.
+- `foraDeVenda` é à parte do `aVendaOnline`: senão o balcão, ao «voltar a pôr»,
+  ligava um produto que a gerente tinha deixado desligado de propósito.
+
 **Os pedidos que já existem não são tocados.** Esgotar um produto trava pedidos
 novos, não cancela os pagos.
 

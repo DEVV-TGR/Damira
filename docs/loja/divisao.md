@@ -72,6 +72,15 @@ ficam `null`; os de exemplo vivem à parte, em `exemplo.ts`, e só correm no ar
 com o modo de teste ligado (`LOJA_EM_TESTE=1`, ver `src/lib/modo-teste.ts`), que
 mostra uma faixa a dizê-lo.
 
+O contrato tem duas metades: a **loja** (`FonteLoja`) e o **painel**
+(`FontePainel`, #30) — produtos, esgotados, horários, definições e pausa. A
+metade do painel está em memória em `json-painel.ts`, sobre o mesmo estado da
+loja, e não persiste. ⚠️ **O papel verifica-se em `papeis.ts`**, antes de a fonte
+ser chamada: a implementação sobre a base de dados recebe só as chamadas que já
+passaram, e não tem de o repetir. As contas que não precisam de dados (o «por
+preencher», o fim da pausa, o dia de Lisboa) estão em `src/lib/painel.ts`, fora
+da fronteira.
+
 - Mudar uma função de `src/lib/dados/`, um schema ou o esquema da base de dados
   → **PR próprio, revisto pelo outro** (o `CODEOWNERS` pede-o automaticamente).
 - O pedido é o que está em `pedidos.md`. Ninguém acrescenta um estado ou um

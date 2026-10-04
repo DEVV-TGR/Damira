@@ -13,9 +13,11 @@ import {
   type HorarioSemanal,
   type VagaOcupada,
 } from "@/lib/horarios";
+import { esgotadoHoje } from "@/lib/painel";
 import { PRODUTOS, type Produto as ProdutoDasEncomendas } from "@/lib/produtos";
 import mensagensEn from "../../../messages/en.json";
 import mensagensPt from "../../../messages/pt.json";
+import { criarPainelJson, type EstadoJson } from "./json-painel";
 import {
   EsquemaEntradaPedido,
   EsquemaLinhaCesto,
@@ -24,6 +26,7 @@ import {
   type Cotacao,
   type DefinicoesLoja,
   type FonteDeDados,
+  type FonteLoja,
   type GrupoComposicao,
   type LinhaCotada,
   type Pedido,
@@ -109,6 +112,10 @@ const daEmenta = (artigo: Artigo): Produto => {
     fotos: artigo.foto ? [artigo.foto] : [],
     sinalPercent: null,
     limite: null,
+    semGluten: false,
+    arquivado: false,
+    foraDeVenda: false,
+    esgotadoNoDia: null,
   };
 };
 
@@ -187,6 +194,10 @@ const daEncomenda = (produto: ProdutoDasEncomendas): Produto => {
     fotos: produto.foto ? [produto.foto] : [],
     sinalPercent: null,
     limite: null,
+    semGluten: false,
+    arquivado: false,
+    foraDeVenda: false,
+    esgotadoNoDia: null,
   };
 };
 
@@ -283,10 +294,15 @@ export type OpcoesFonteJson = {
  * é o que deixa os testes não se pisarem uns aos outros.
  */
 export function criarFonteJson(opcoes: OpcoesFonteJson = {}): FonteDeDados {
-  const catalogo = opcoes.catalogo ?? CATALOGO_JSON;
-  const configuracao = opcoes.configuracao ?? CONFIGURACAO_JSON;
-  const definicoes = opcoes.definicoes ?? DEFINICOES_JSON;
-  const porId = new Map(catalogo.map((produto) => [produto.id, produto]));
+  /* O catálogo, a configuração e as definições num estado que o painel
+     (`json-painel.ts`) também escreve: o que a gerente grava é o que a loja lê
+     a seguir. A ordem do `Map` é a do catálogo, com os produtos novos no fim. */
+  const estado: EstadoJson = {
+    porId: new Map((opcoes.catalogo ?? CATALOGO_JSON).map((produto) => [produto.id, produto])),
+    configuracao: opcoes.configuracao ?? CONFIGURACAO_JSON,
+    definicoes: opcoes.definicoes ?? DEFINICOES_JSON,
+  };
+  const { porId } = estado;
 
   const pedidos = new Map<string, Pedido>();
   const porReferencia = new Map<string, Pedido>();
@@ -306,7 +322,7 @@ export function criarFonteJson(opcoes: OpcoesFonteJson = {}): FonteDeDados {
       if (!produto) return falha("produto-desconhecido");
       const variante = produto.variantes.find((v) => v.id === linha.varianteId);
       if (!variante) return falha("variante-desconhecida");
-      if (!produto.aVendaOnline) return falha("fora-de-venda");
+      if (!produto.aVendaOnline || produto.arquivado || produto.foraDeVenda) return falha("fora-de-venda");
       if (linha.quantidade < produto.quantidadeMinima - EPSILON) return falha("abaixo-do-minimo");
       if (!noMultiplo(linha.quantidade, produto.quantidadeMinima, produto.multiplo)) {
         return falha("fora-do-multiplo");
@@ -345,10 +361,11 @@ export function criarFonteJson(opcoes: OpcoesFonteJson = {}): FonteDeDados {
     return [...contagem].map(([quando, n]) => ({ inicio: new Date(quando), pedidos: n }));
   };
 
-  return {
+  const loja: FonteLoja = {
     async listarProdutos(filtro = {}) {
-      return catalogo.filter(
+      return [...porId.values()].filter(
         (produto) =>
+          (filtro.incluirArquivados || !produto.arquivado) &&
           (filtro.origem === undefined || produto.origem === filtro.origem) &&
           (filtro.familia === undefined || produto.familia === filtro.familia) &&
           (filtro.aVendaOnline === undefined || produto.aVendaOnline === filtro.aVendaOnline) &&
@@ -357,7 +374,8 @@ export function criarFonteJson(opcoes: OpcoesFonteJson = {}): FonteDeDados {
     },
 
     async produtoPorId(id) {
-      return porId.get(id) ?? null;
+      const produto = porId.get(id);
+      return produto && !produto.arquivado ? produto : null;
     },
 
     async ordemDaEmenta() {
@@ -365,11 +383,11 @@ export function criarFonteJson(opcoes: OpcoesFonteJson = {}): FonteDeDados {
     },
 
     async configuracaoDaCasa() {
-      return configuracao;
+      return estado.configuracao;
     },
 
     async definicoesLoja() {
-      return definicoes;
+      return estado.definicoes;
     },
 
     async ocupacao(desde, ate) {
@@ -383,6 +401,7 @@ export function criarFonteJson(opcoes: OpcoesFonteJson = {}): FonteDeDados {
     },
 
     async criarPedido(entrada, { agora, contaId }): Promise<ResultadoCriarPedido> {
+      const { configuracao, definicoes } = estado;
       const lido = EsquemaEntradaPedido.safeParse(entrada);
       if (!lido.success) return { ok: false, erro: "dados-invalidos" };
       const dados = lido.data;
@@ -410,7 +429,10 @@ export function criarFonteJson(opcoes: OpcoesFonteJson = {}): FonteDeDados {
       if (configuracao.cozinha === null || produtos.some((p) => p.tempoProducao === null)) {
         return { ok: false, erro: "indisponivel" };
       }
-      const cesto: ArtigoDoCesto[] = produtos.map((p) => ({ tempo: p.tempoProducao! }));
+      const cesto: ArtigoDoCesto[] = produtos.map((p) => ({
+        tempo: p.tempoProducao!,
+        esgotadoHoje: esgotadoHoje(p, agora),
+      }));
       const levantamentoEm = new Date(dados.levantamentoEm);
       const validacao = validarLevantamento(
         cesto,
@@ -475,4 +497,6 @@ export function criarFonteJson(opcoes: OpcoesFonteJson = {}): FonteDeDados {
       return porReferencia.get(referencia) ?? null;
     },
   };
+
+  return { ...loja, ...criarPainelJson(estado) };
 }

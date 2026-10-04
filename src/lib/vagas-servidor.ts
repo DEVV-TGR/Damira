@@ -2,6 +2,7 @@ import { tz } from "@date-fns/tz";
 import { addDays, startOfDay } from "date-fns";
 import { EsquemaLinhaCesto, type ConfiguracaoDaCasa, type FonteDeDados } from "@/lib/dados/tipos";
 import { vagas, validarLevantamento, type ArtigoDoCesto, type ConfiguracaoHorarios } from "@/lib/horarios";
+import { esgotadoHoje } from "@/lib/painel";
 
 /**
  * # As vagas de levantamento de um cesto, calculadas no servidor
@@ -77,7 +78,7 @@ type Preparado =
 
 /* O que é preciso para o motor fazer as contas: o cesto em tempos de produção,
    e a configuração com a cozinha preenchida. */
-async function preparar(linhas: unknown, fonte: Fonte): Promise<Preparado> {
+async function preparar(linhas: unknown, fonte: Fonte, agora: Date): Promise<Preparado> {
   const lidas = EsquemaLinhaCesto.array().min(1).max(50).safeParse(linhas);
   if (!lidas.success) return { ok: false, motivo: "cesto-invalido" };
   const cotado = await fonte.cotarCesto(lidas.data);
@@ -90,7 +91,10 @@ async function preparar(linhas: unknown, fonte: Fonte): Promise<Preparado> {
   for (const linha of lidas.data) {
     const produto = await fonte.produtoPorId(linha.produtoId);
     if (!produto?.tempoProducao) return { ok: false, motivo: "indisponivel", casa };
-    cesto.push({ tempo: produto.tempoProducao });
+    /* O «esgotado hoje» do balcão tira as vagas de hoje ao cesto inteiro — o
+       mesmo que o `criarPedido` faz, para o calendário não oferecer o que o
+       servidor vai recusar. */
+    cesto.push({ tempo: produto.tempoProducao, esgotadoHoje: esgotadoHoje(produto, agora) });
   }
   return { ok: true, cesto, config: { ...casa, cozinha: casa.cozinha }, casa };
 }
@@ -111,7 +115,7 @@ type Contexto = {
    Começa amanhã e não hoje — sem saber quanto demora o que está no cesto,
    oferecer o próprio dia era prometer o que a cozinha talvez não consiga. */
 async function contexto(linhas: unknown, fonte: Fonte, agora: Date): Promise<Contexto | null> {
-  const preparado = await preparar(linhas, fonte);
+  const preparado = await preparar(linhas, fonte, agora);
   if (preparado.ok) return { ...preparado, desde: agora, aConfirmar: false };
   if (preparado.motivo === "cesto-invalido") return null;
   const casa = preparado.casa;

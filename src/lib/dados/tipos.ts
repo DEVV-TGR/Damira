@@ -98,6 +98,8 @@ export const EsquemaProduto = z.object({
    */
   alergenios: z.array(z.string()).nullable(),
   vegan: z.boolean(),
+  /** Marcado pela gerente, como o vegan (`painel-gerente.md`). Nunca deduzido. */
+  semGluten: z.boolean(),
   fotos: z.array(z.string()),
   /** O sinal pedido no checkout, em percentagem. `null` = paga-se tudo. */
   sinalPercent: z.number().int().min(1).max(100).nullable(),
@@ -107,6 +109,27 @@ export const EsquemaProduto = z.object({
       /** `porDia` é capacidade da cozinha; `total` é stock que não volta. */
       modo: z.enum(["porDia", "total"]),
     })
+    .nullable(),
+  /**
+   * «Apagar é arquivar» (`painel-gerente.md`): sai do site e do checkout, mas
+   * continua a existir, porque os pedidos antigos apontam para ele.
+   */
+  arquivado: z.boolean(),
+  /**
+   * O «tirar de venda» do balcão (`painel-balcao.md` › Esgotados). À parte do
+   * `aVendaOnline`, que é da gerente: senão o balcão, ao «voltar a pôr», ligava
+   * um produto que a gerente tinha deixado desligado de propósito.
+   */
+  foraDeVenda: z.boolean(),
+  /**
+   * O «esgotado hoje» do balcão, como **dia de Lisboa** (`"2026-10-04"`), e não
+   * como sim/não. Só vale enquanto esse dia for hoje: amanhã o produto volta
+   * sozinho, sem uma tarefa agendada a acordar a base de dados para o repor
+   * (regra 6 do AGENTS.md). Tira as vagas de hoje, não o produto (`horarios.ts`).
+   */
+  esgotadoNoDia: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
     .nullable(),
 });
 
@@ -119,6 +142,8 @@ export type FiltroProdutos = {
   familia?: Produto["familia"];
   aVendaOnline?: boolean;
   apareceNaEmenta?: boolean;
+  /** Por defeito `false`: só o painel quer ver os arquivados. */
+  incluirArquivados?: boolean;
 };
 
 // ——— O que o browser manda ———
@@ -337,16 +362,168 @@ export type OrdemEmenta = {
   subcategorias: string[];
 };
 
+// ——— O painel ———
+
+export const PAPEIS = ["funcionario", "gerente"] as const;
+export type Papel = (typeof PAPEIS)[number];
+
+/**
+ * Quem está a mexer, e quando. ⚠️ O `papel` sai da **sessão do painel** (#33),
+ * nunca do formulário — como o `contaId` do pedido. Um papel mandado pelo
+ * browser era um funcionário a escrever «gerente» e a mudar preços.
+ */
+export type ContextoPainel = { papel: Papel; agora: Date };
+
+/**
+ * - `sem-permissao`: o papel não chega. Verifica-se no `index.ts`, antes de a
+ *   fonte ser chamada (regra 8 do AGENTS.md: esconder um botão não é proteger).
+ * - `dados-invalidos`: com `campos`, os nomes dos campos que falharam, para o
+ *   formulário os marcar.
+ * - `nao-existe`: o id não é de produto nenhum.
+ */
+export type ErroPainel = "sem-permissao" | "dados-invalidos" | "nao-existe";
+
+/** As escritas devolvem um resultado e nunca rebentam para o browser (`robustez.md`). */
+export type ResultadoPainel<T> =
+  | { ok: true; valor: T }
+  | { ok: false; erro: ErroPainel; campos?: string[] };
+
+/**
+ * Um produto como a gerente o grava. Sem o `id`, que se gera no servidor a
+ * partir do nome e **nunca muda** (vai no URL e nos cestos de quem já o
+ * juntou); sem o arquivado, o fora de venda e o esgotado, que têm funções
+ * próprias. Uma variante nova vem sem `id`; uma que já existia traz o seu.
+ */
+export const EsquemaEntradaProduto = EsquemaProduto.omit({
+  id: true,
+  arquivado: true,
+  foraDeVenda: true,
+  esgotadoNoDia: true,
+})
+  .extend({
+    variantes: z.array(EsquemaVariante.extend({ id: z.string().min(1).max(100).optional() })).min(1),
+  })
+  .strict()
+  .superRefine((produto, ctx) => {
+    /* ⚠️ Na venda à distância os alergénios têm de estar disponíveis antes da
+       compra. `null` é «ninguém respondeu», e não conta como «não tem»
+       (`painel-gerente.md` › Sem alergénios respondidos). */
+    if (produto.aVendaOnline && produto.alergenios === null) {
+      ctx.addIssue({ code: "custom", path: ["alergenios"], message: "por responder" });
+    }
+    /* A ementa agrupa-se por `{carta}-{categoria}`: um artigo sem as duas não
+       tinha secção onde aparecer. */
+    if (produto.familia === "ementa") {
+      if (produto.carta === null) ctx.addIssue({ code: "custom", path: ["carta"], message: "em falta" });
+      if (produto.categoria === null) ctx.addIssue({ code: "custom", path: ["categoria"], message: "em falta" });
+    }
+    if ((produto.origem === "ementa") !== (produto.familia === "ementa")) {
+      ctx.addIssue({ code: "custom", path: ["familia"], message: "não bate com a origem" });
+    }
+    const ids = produto.variantes.flatMap((v) => (v.id ? [v.id] : []));
+    if (new Set(ids).size !== ids.length) {
+      ctx.addIssue({ code: "custom", path: ["variantes"], message: "id repetido" });
+    }
+  });
+
+export type EntradaProduto = z.input<typeof EsquemaEntradaProduto>;
+
+/* O motor rebenta com uma configuração impossível (`horarios.ts`); aqui
+   recusa-se antes de a gravar, com o campo certo marcado. */
+const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
+const EsquemaIntervalo = z
+  .object({ abre: z.string().regex(HORA), fecha: z.string().regex(HORA).or(z.literal("24:00")) })
+  .strict()
+  .refine(({ abre, fecha }) => abre < fecha, { message: "fecha antes de abrir", path: ["fecha"] });
+
+/* Por ordem e sem se tocarem: dois períodos sobrepostos contavam as horas de
+   cozinha duas vezes. */
+const EsquemaDia = z
+  .array(EsquemaIntervalo)
+  .max(4)
+  .refine((dia) => dia.every((p, i) => i === 0 || dia[i - 1].fecha <= p.abre), {
+    message: "períodos sobrepostos ou fora de ordem",
+  });
+
+const EsquemaSemana = z
+  .object({
+    domingo: EsquemaDia,
+    segunda: EsquemaDia,
+    terca: EsquemaDia,
+    quarta: EsquemaDia,
+    quinta: EsquemaDia,
+    sexta: EsquemaDia,
+    sabado: EsquemaDia,
+  })
+  .strict() satisfies z.ZodType<HorarioSemanal>;
+
+/** O que a gerente grava na secção Horários (`painel-gerente.md`). */
+export const EsquemaHorarios = z
+  .object({
+    loja: EsquemaSemana,
+    /** Pode continuar `null` até a casa a dar: o calendário fica «a confirmar». */
+    cozinha: EsquemaSemana.nullable(),
+    diasFechados: z
+      .array(
+        z
+          .object({
+            data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+            fecha: z.enum(["cozinha", "loja", "ambas"]),
+          })
+          .strict(),
+      )
+      .max(366),
+    duracaoVagaMinutos: z.number().int().min(5).max(240),
+    limitePorVaga: z.number().int().positive().nullable(),
+    diasAFrente: z.number().int().min(0).max(365),
+    limiaresAfluencia: z
+      .object({ livre: z.number().int().min(0).max(100), media: z.number().int().min(0).max(100) })
+      .strict()
+      .refine(({ livre, media }) => livre < media, { message: "livre tem de ser menor", path: ["livre"] }),
+  })
+  .strict() satisfies z.ZodType<ConfiguracaoDaCasa>;
+
+/** O que a gerente grava em Definições. A pausa tem função própria (`pausarLoja`). */
+export const EsquemaDefinicoes = z
+  .object({
+    aceitarCancelamentosSite: z.boolean(),
+    devolverSinalAoCancelar: z.boolean(),
+    valorMinimoCent: Cent.nullable(),
+  })
+  .strict();
+
+/**
+ * O que o painel lê e escreve. Cada função recebe o `ContextoPainel`; **quem
+ * pode chamar cada uma decide-o o `index.ts`**, e a implementação recebe só as
+ * chamadas que já passaram. O que vem do browser entra como `unknown`.
+ */
+export type FontePainel = {
+  /** Todos, arquivados incluídos. */
+  produtosDoPainel(ctx: ContextoPainel): Promise<Produto[]>;
+  criarProduto(entrada: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<Produto>>;
+  editarProduto(id: string, entrada: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<Produto>>;
+  arquivarProduto(id: string, arquivado: boolean, ctx: ContextoPainel): Promise<ResultadoPainel<Produto>>;
+  /** Guarda o dia de Lisboa do `ctx.agora`, ou limpa com `false`. */
+  marcarEsgotadoHoje(id: string, esgotado: boolean, ctx: ContextoPainel): Promise<ResultadoPainel<Produto>>;
+  tirarDeVenda(id: string, fora: boolean, ctx: ContextoPainel): Promise<ResultadoPainel<Produto>>;
+  guardarHorarios(entrada: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<ConfiguracaoDaCasa>>;
+  guardarDefinicoes(entrada: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<DefinicoesLoja>>;
+  /** `null` retoma. O fim de cada opção do balcão calcula-o o `fimDaPausa` (`src/lib/painel.ts`). */
+  pausarLoja(ate: Date | null, ctx: ContextoPainel): Promise<ResultadoPainel<DefinicoesLoja>>;
+};
+
 // ——— A fronteira ———
 
 /**
- * O que a base de dados tem de implementar para substituir os JSON. Tudo
- * `async`, já hoje, para as páginas não mudarem nesse dia.
+ * O que a base de dados tem de implementar para substituir os JSON: a loja e o
+ * painel. Tudo `async`, já hoje, para as páginas não mudarem nesse dia.
  *
  * O que vem do browser entra como `unknown` e valida-se lá dentro: é o único
  * sítio em que se pode confiar que a validação acontece.
  */
-export type FonteDeDados = {
+export type FonteDeDados = FonteLoja & FontePainel;
+
+export type FonteLoja = {
   listarProdutos(filtro?: FiltroProdutos): Promise<Produto[]>;
   produtoPorId(id: string): Promise<Produto | null>;
   ordemDaEmenta(): Promise<OrdemEmenta>;
