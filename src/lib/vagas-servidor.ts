@@ -1,5 +1,5 @@
 import { addDays } from "date-fns";
-import { EsquemaLinhaCesto, type FonteDeDados } from "@/lib/dados/tipos";
+import { EsquemaLinhaCesto, type ConfiguracaoDaCasa, type FonteDeDados } from "@/lib/dados/tipos";
 import { vagas, validarLevantamento, type ArtigoDoCesto, type ConfiguracaoHorarios } from "@/lib/horarios";
 
 /**
@@ -23,13 +23,37 @@ import { vagas, validarLevantamento, type ArtigoDoCesto, type ConfiguracaoHorari
 
 type Fonte = Pick<FonteDeDados, "cotarCesto" | "produtoPorId" | "configuracaoDaCasa" | "ocupacao">;
 
+/**
+ * A afluência de uma vaga, em degraus: `livre` (verde), `pouca` (amarelo),
+ * `media` (laranja), `muita` (vermelho) e `cheia`. `null` quando a casa não tem
+ * limite por vaga — sem limite, a percentagem não quer dizer nada, e o
+ * calendário não pinta.
+ */
+export type Afluencia = "livre" | "pouca" | "media" | "muita" | "cheia";
+
 /** Uma vaga como o browser a recebe: o instante em ISO e o resto já escrito. */
 export type VagaDoCalendario = {
   inicio: string;
   data: string;
   hora: string;
   livre: boolean;
+  afluencia: Afluencia | null;
 };
+
+/** Os degraus vêm da configuração da casa, e não daqui. */
+export function afluenciaDe(
+  ocupadas: number,
+  livre: boolean,
+  { limitePorVaga, limiaresAfluencia }: Pick<ConfiguracaoDaCasa, "limitePorVaga" | "limiaresAfluencia">,
+): Afluencia | null {
+  if (!livre) return "cheia";
+  if (limitePorVaga === null || limitePorVaga <= 0) return null;
+  const percentagem = (ocupadas / limitePorVaga) * 100;
+  if (percentagem <= limiaresAfluencia.pouca) return "livre";
+  if (percentagem <= limiaresAfluencia.media) return "pouca";
+  if (percentagem <= limiaresAfluencia.muita) return "media";
+  return "muita";
+}
 
 export type ResultadoVagas =
   | { ok: true; vagas: VagaDoCalendario[] }
@@ -39,7 +63,7 @@ export type ResultadoVagas =
   | { ok: false; motivo: "indisponivel" | "cesto-invalido" };
 
 type Preparado =
-  | { ok: true; cesto: ArtigoDoCesto[]; config: ConfiguracaoHorarios }
+  | { ok: true; cesto: ArtigoDoCesto[]; config: ConfiguracaoHorarios; casa: ConfiguracaoDaCasa }
   | { ok: false; motivo: "indisponivel" | "cesto-invalido" };
 
 /* O que é preciso para o motor fazer as contas: o cesto em tempos de produção,
@@ -59,14 +83,14 @@ async function preparar(linhas: unknown, fonte: Fonte): Promise<Preparado> {
     if (!produto?.tempoProducao) return { ok: false, motivo: "indisponivel" };
     cesto.push({ tempo: produto.tempoProducao });
   }
-  return { ok: true, cesto, config: { ...casa, cozinha: casa.cozinha } };
+  return { ok: true, cesto, config: { ...casa, cozinha: casa.cozinha }, casa };
 }
 
 export async function vagasDoCesto(linhas: unknown, fonte: Fonte, agora: Date): Promise<ResultadoVagas> {
   const preparado = await preparar(linhas, fonte);
   if (!preparado.ok) return preparado;
 
-  const { cesto, config } = preparado;
+  const { cesto, config, casa } = preparado;
   /* Um dia a mais do que o calendário mostra: a ocupação conta instantes, e o
      último dia tem vagas até ao fecho. */
   const ocupadas = await fonte.ocupacao(agora, addDays(agora, config.diasAFrente + 1));
@@ -80,6 +104,9 @@ export async function vagasDoCesto(linhas: unknown, fonte: Fonte, agora: Date): 
       data: vaga.data,
       hora: vaga.hora,
       livre: vaga.livre,
+      /* Uma vaga com pedidos mostra-se mais cheia **depois** de lá estar o
+         pedido — o «1» de quem acabou de marcar conta. */
+      afluencia: afluenciaDe(vaga.ocupadas, vaga.livre, casa),
     })),
   };
 }

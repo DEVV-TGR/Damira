@@ -39,6 +39,13 @@ export const TEMPOS_DE_EXEMPLO: Record<Produto["familia"], TempoProducao> = {
 
 const oitoAsDezoito = [{ abre: "08:00", fecha: "18:00" }];
 
+/**
+ * Pedidos por meia hora, de exemplo — a pergunta 3 da mensagem à Andreia. É o
+ * que dá cores ao calendário (a afluência conta em percentagem deste limite) e
+ * o que enche uma vaga.
+ */
+export const LIMITE_POR_VAGA_DE_EXEMPLO = 4;
+
 export const COZINHA_DE_EXEMPLO: HorarioSemanal = {
   segunda: oitoAsDezoito,
   terca: oitoAsDezoito,
@@ -76,7 +83,11 @@ export function fonteDeExemplo(
   return criarFonteJson({
     ...opcoes,
     catalogo,
-    configuracao: { ...base, cozinha: base.cozinha ?? COZINHA_DE_EXEMPLO },
+    configuracao: {
+      ...base,
+      cozinha: base.cozinha ?? COZINHA_DE_EXEMPLO,
+      limitePorVaga: base.limitePorVaga ?? LIMITE_POR_VAGA_DE_EXEMPLO,
+    },
   });
 }
 

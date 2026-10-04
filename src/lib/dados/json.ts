@@ -227,6 +227,9 @@ export const CONFIGURACAO_JSON: ConfiguracaoDaCasa = {
   cozinha: null,
   diasFechados: [],
   ...PREDEFINICOES,
+  /* Os degraus que se combinaram a 04/10, até a casa os afinar no painel. Com um
+     limite de 4 por vaga: 1 pedido é verde, 2 amarelo, 3 laranja, 4 cheio. */
+  limiaresAfluencia: { pouca: 25, media: 50, muita: 75 },
 };
 
 const DEFINICOES_JSON: DefinicoesLoja = {

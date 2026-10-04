@@ -53,6 +53,29 @@
    * quente na página.
    */
   --color-papel: #fafbfb;
+
+  /**
+   * ⚠️ **As cores da afluência no calendário de levantamento — e só lá.**
+   * Pedido do cliente a 04/10: o semáforo dos calendários de bilhetes de avião,
+   * verde (livre) → amarelo → laranja → vermelho (muita procura).
+   *
+   * É a **única exceção** à regra de que o verde é do vegan, e é por isso que
+   * este verde não é o da marca: é um verde frio, azulado, que não se confunde
+   * com o verde-oliva da folha (`--color-verde`). Fora do calendário não se usa.
+   *
+   * Cada degrau tem duas: a forte, para o ponto e a borda, e a de fundo, clara,
+   * com o texto a tinta por cima — a tinta sobre qualquer dos fundos passa
+   * largamente em contraste. A cor nunca vai sozinha: o calendário escreve
+   * sempre a palavra ao lado.
+   */
+  --color-afluencia-livre: #2e9d6a;
+  --color-afluencia-livre-fundo: #d9f2e5;
+  --color-afluencia-pouca: #d9a521;
+  --color-afluencia-pouca-fundo: #fbf0c9;
+  --color-afluencia-media: #e0762a;
+  --color-afluencia-media-fundo: #fbdcc4;
+  --color-afluencia-muita: #c8352b;
+  --color-afluencia-muita-fundo: #f7d1cd;
   /* O segundo tom de superfície. ⚠️ **Este é derivado e não medido** — os
      impressos só têm um branco, porque numa folha não é preciso separar dois
      blocos que se seguem. Num ecrã é. */

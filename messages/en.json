@@ -448,7 +448,17 @@
       "horaDeLisboa": "Times are Portugal time.",
       "cheia": "full",
       "aCarregar": "Checking the times…",
-      "semVagas": "No times available in the next few days — call us:"
+      "semVagas": "No times available in the next few days — call us:",
+      "mesAnterior": "Previous month",
+      "mesSeguinte": "Next month",
+      "legenda": "What the colours mean",
+      "afluencia": {
+        "livre": "Free",
+        "pouca": "Some demand",
+        "media": "Busy",
+        "muita": "Very busy",
+        "cheia": "Full"
+      }
     }
   },
   "bolos": {
