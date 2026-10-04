@@ -85,6 +85,11 @@ export const marcarEntregue = painel.marcarEntregue;
 /** O balcão até 5 minutos depois; a gerente sempre. */
 export const desfazerEntregue = painel.desfazerEntregue;
 export const precisaDeAtencao = painel.precisaDeAtencao;
+/** As decisões da gerente (`pedidos.md`). Quem chama avisa o polling. */
+export const tratarAviso = painel.tratarAviso;
+export const reagendarPedido = painel.reagendarPedido;
+export const cancelarPedido = painel.cancelarPedido;
+export const reembolsarPedido = painel.reembolsarPedido;
 /**
  * ⚠️ O número do polling. Quem o serve (a rota do painel, #39) põe-no em cache
  * com uma etiqueta, e cada ação que muda um pedido invalida-a (`revalidateTag`):

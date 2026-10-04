@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { AvisoAtencao, ConfiguracaoDaCasa, DefinicoesLoja } from "@/lib/dados/tipos";
+import type { AvisoAtencao, ConfiguracaoDaCasa, DefinicoesLoja, Pedido } from "@/lib/dados/tipos";
 import type { contarPorPreencher } from "@/lib/painel";
 import { Atencao } from "./Atencao";
 import { Definicoes } from "./Definicoes";
@@ -21,6 +21,8 @@ import { PedidosGestao } from "./PedidosGestao";
 
 export type DadosGestao = {
   avisos: AvisoAtencao[];
+  /** Os pedidos de que os avisos falam, para as decisões se tomarem ali mesmo. */
+  pedidosDosAvisos: Record<string, Pedido>;
   porPreencher: ReturnType<typeof contarPorPreencher>;
   casa: ConfiguracaoDaCasa;
   definicoes: DefinicoesLoja;
@@ -69,7 +71,7 @@ export function Gestao({ dados }: { dados: DadosGestao }) {
       </div>
 
       <div className="mt-6">
-        {secao === "atencao" && <Atencao avisos={dados.avisos} porPreencher={dados.porPreencher} onAbrir={abrir} />}
+        {secao === "atencao" && <Atencao avisos={dados.avisos} pedidos={dados.pedidosDosAvisos} porPreencher={dados.porPreencher} onAbrir={abrir} />}
         {secao === "pedidos" &&
           (aberto ? <DetalhePedido id={aberto} onVoltar={() => setAberto(null)} /> : <PedidosGestao onAbrir={setAberto} />)}
         {secao === "horarios" && <Horarios casa={dados.casa} />}

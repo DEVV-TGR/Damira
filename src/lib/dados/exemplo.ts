@@ -143,6 +143,9 @@ export function fonteDeExemplo(
       entregueEm: null,
       canceladoEm: null,
       canceladoPor: null,
+      reembolsos: [],
+      avisosTratados: [],
+      reagendadoEm: null,
     };
     estado.pedidos.set(pedido.id, pedido);
     estado.porReferencia.set(pedido.referencia, pedido.id);
@@ -400,6 +403,9 @@ export function pedidosDoPainelDeExemplo(
       entregueEm: estado === "entregue" ? new Date(levantamentoEm.getTime() + 5 * 60_000) : null,
       canceladoEm: estado === "cancelado" ? new Date(pagoEm.getTime() + 60 * 60_000) : null,
       canceladoPor: estado === "cancelado" ? "gerente" : null,
+      reembolsos: [],
+      avisosTratados: [],
+      reagendadoEm: null,
     });
   });
   return pedidos;

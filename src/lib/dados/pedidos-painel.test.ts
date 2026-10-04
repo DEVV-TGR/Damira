@@ -1,6 +1,6 @@
 import { TZDate } from "@date-fns/tz";
 import { describe, expect, it } from "vitest";
-import { criarFonteJson } from "./json";
+import { CONFIGURACAO_JSON, criarFonteJson } from "./json";
 import { protegerPainel } from "./papeis";
 import type { ContextoPainel, FonteDeDados, Papel, Pedido } from "./tipos";
 
@@ -47,6 +47,9 @@ const pedido = (id: string, alteracoes: Partial<Pedido> = {}): Pedido => ({
   entregueEm: null,
   canceladoEm: null,
   canceladoPor: null,
+  reembolsos: [],
+  avisosTratados: [],
+  reagendadoEm: null,
   ...alteracoes,
 });
 
@@ -200,3 +203,80 @@ describe("a versão do polling", () => {
     expect(await f.versaoPedidos()).toBe(antes);
   });
 });
+
+describe("as decisões da gerente", () => {
+  it("só a gerente decide: o balcão não cancela, não reembolsa, não muda datas nem trata avisos", async () => {
+    const f = fonte([pedido("a", { chegouTarde: true })]);
+    for (const tentativa of [
+      await f.cancelarPedido("a", 0, BALCAO),
+      await f.reembolsarPedido("a", 100, BALCAO),
+      await f.reagendarPedido("a", lisboa(9, 10).toISOString(), BALCAO),
+      await f.tratarAviso("a", "chegou-tarde", BALCAO),
+    ]) {
+      expect(tentativa).toEqual({ ok: false, erro: "sem-permissao" });
+    }
+  });
+
+  it("aceitar um pago que chegou tarde tira-o da atenção, e o facto fica", async () => {
+    const f = fonte([pedido("a", { chegouTarde: true })]);
+    const tratado = await f.tratarAviso("a", "chegou-tarde", GERENTE);
+    expect(tratado.ok && tratado.valor).toMatchObject({ chegouTarde: true, avisosTratados: ["chegou-tarde"] });
+    expect(await f.precisaDeAtencao(GERENTE)).toEqual({ ok: true, valor: [] });
+  });
+
+  it("cancelar com reembolso total: cancelado, reembolsado e a vaga livre", async () => {
+    const f = fonte([pedido("a")]);
+    const resultado = await f.cancelarPedido("a", 33500, GERENTE);
+    expect(resultado.ok && resultado.valor).toMatchObject({
+      estado: "cancelado",
+      canceladoPor: "gerente",
+      reembolsadoCent: 33500,
+      reembolsos: [expect.objectContaining({ valorCent: 33500, estado: "concluido" })],
+    });
+    expect(await f.ocupacao(lisboa(8, 15), lisboa(8, 15))).toEqual([]);
+  });
+
+  it("cancelar sem reembolso, e nunca reembolsar mais do que foi pago", async () => {
+    const f = fonte([pedido("a"), pedido("b")]);
+    expect((await f.cancelarPedido("a", 0, GERENTE)).ok).toBe(true);
+    expect(await f.cancelarPedido("b", 33501, GERENTE)).toEqual({ ok: false, erro: "dados-invalidos", campos: ["reembolsoCent"] });
+    expect(await f.cancelarPedido("b", 10.5, GERENTE)).toMatchObject({ ok: false });
+  });
+
+  it("um reembolso parcial sem cancelar, e o que sobra para devolver diminui", async () => {
+    const f = fonte([pedido("a", { estado: "entregue", entregueEm: AGORA })]);
+    expect((await f.reembolsarPedido("a", 3500, GERENTE)).ok).toBe(true);
+    const segundo = await f.reembolsarPedido("a", 30000, GERENTE);
+    expect(segundo.ok && segundo.valor.reembolsadoCent).toBe(33500);
+    expect(await f.reembolsarPedido("a", 1, GERENTE)).toMatchObject({ ok: false, campos: ["valorCent"] });
+  });
+
+  it("cancelar um pedido que já não está pago diz que mudou", async () => {
+    const f = fonte([pedido("a", { estado: "entregue", entregueEm: AGORA })]);
+    expect(await f.cancelarPedido("a", 0, GERENTE)).toEqual({ ok: false, erro: "estado-mudou" });
+  });
+
+  it("mudar o levantamento para uma hora da loja, no futuro", async () => {
+    const f = fonte([pedido("a")]);
+    const resultado = await f.reagendarPedido("a", lisboa(9, 11).toISOString(), GERENTE);
+    expect(resultado.ok && resultado.valor).toMatchObject({ levantamentoEm: lisboa(9, 11), reagendadoEm: AGORA });
+  });
+
+  it("não se muda para uma hora fechada, para o passado, nem para uma vaga cheia", async () => {
+    const f = fonte([pedido("a"), pedido("b", { levantamentoEm: lisboa(9, 11) })]);
+    expect((await f.reagendarPedido("a", lisboa(9, 23).toISOString(), GERENTE)).ok).toBe(false);
+    expect((await f.reagendarPedido("a", lisboa(6, 11).toISOString(), GERENTE)).ok).toBe(false);
+    expect((await f.reagendarPedido("a", "amanhã", GERENTE)).ok).toBe(false);
+    const comLimite = criarFonteJson({
+      pedidos: [pedido("a"), pedido("b", { levantamentoEm: lisboa(9, 11) })],
+      configuracao: { ...CONFIGURACAO_JSON, limitePorVaga: 1 },
+    });
+    const g = { ...comLimite, ...protegerPainel(comLimite) };
+    expect(await g.reagendarPedido("a", lisboa(9, 11).toISOString(), GERENTE)).toEqual({
+      ok: false,
+      erro: "dados-invalidos",
+      campos: ["levantamentoEm"],
+    });
+  });
+});
+

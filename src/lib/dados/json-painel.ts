@@ -1,11 +1,14 @@
 import type { z } from "zod";
-import { avisosDosPedidos, diaDeLisboa, faltaPagarCent } from "@/lib/painel";
+import { validarLevantamento, type VagaOcupada } from "@/lib/horarios";
+import { avisosDosPedidos, diaDeLisboa, faltaPagarCent, porDevolverCent } from "@/lib/painel";
 import {
   EsquemaDefinicoes,
   EsquemaEntradaProduto,
   EsquemaFiltroPedidos,
   EsquemaHorarios,
   EsquemaProduto,
+  AVISOS_TRATAVEIS,
+  type AvisoTratavel,
   type ConfiguracaoDaCasa,
   type DefinicoesLoja,
   type FontePainel,
@@ -96,7 +99,37 @@ const comIds = (variantes: EntradaLida["variantes"]): Produto["variantes"] => {
   });
 };
 
-export function criarPainelJson(estado: EstadoJson): FontePainel {
+
+const centValido = (valor: unknown, maximo: number, podeSerZero: boolean): valor is number =>
+  typeof valor === "number" && Number.isInteger(valor) && valor >= (podeSerZero ? 0 : 1) && valor <= maximo;
+
+export function criarPainelJson(
+  estado: EstadoJson,
+  /** A mesma ocupação do calendário (com os pedidos de exemplo, no modo de teste). */
+  ocupacaoEntre: (desde: Date, ate: Date) => VagaOcupada[],
+): FontePainel {
+  /* Troca o pedido por uma cópia alterada, e sobe a versão do polling. */
+  const gravarPedido = (pedido: Pedido): ResultadoPainel<Pedido> => {
+    estado.pedidos.set(pedido.id, pedido);
+    estado.versao++;
+    return { ok: true, valor: pedido };
+  };
+
+  /* Na base de dados, o reembolso pede-se ao Stripe e fica `pendente` até o
+     webhook dizer (`pagamentos.md`). Aqui, sem Stripe, conclui-se logo — e o
+     painel diz que é simulado. */
+  const comReembolso = (pedido: Pedido, valorCent: number, agora: Date): Pedido =>
+    valorCent === 0
+      ? pedido
+      : {
+          ...pedido,
+          reembolsos: [
+            ...pedido.reembolsos,
+            { id: `reembolso-${pedido.id}-${pedido.reembolsos.length + 1}`, valorCent, estado: "concluido", pedidoEm: agora },
+          ],
+          reembolsadoCent: pedido.reembolsadoCent + valorCent,
+        };
+
   /* Troca o produto por uma cópia alterada. Nunca se muda o objeto que já foi
      entregue a alguém: quem o leu antes continua a ter o que leu. */
   const alterar = (id: string, mudanca: Partial<Produto>): ResultadoPainel<Produto> => {
@@ -251,6 +284,54 @@ export function criarPainelJson(estado: EstadoJson): FontePainel {
 
     async versaoPedidos() {
       return estado.versao;
+    },
+
+    async tratarAviso(id, tipo: AvisoTratavel) {
+      const pedido = estado.pedidos.get(id);
+      if (!pedido) return naoExiste;
+      if (!AVISOS_TRATAVEIS.includes(tipo)) return { ok: false, erro: "dados-invalidos", campos: ["tipo"] };
+      if (pedido.avisosTratados.includes(tipo)) return { ok: true, valor: pedido };
+      return gravarPedido({ ...pedido, avisosTratados: [...pedido.avisosTratados, tipo] });
+    },
+
+    async reagendarPedido(id, entrada, { agora }) {
+      const pedido = estado.pedidos.get(id);
+      if (!pedido) return naoExiste;
+      if (pedido.estado !== "pago") return { ok: false, erro: "estado-mudou" };
+      const novo = typeof entrada === "string" ? new Date(entrada) : null;
+      if (!novo || Number.isNaN(novo.getTime())) return { ok: false, erro: "dados-invalidos", campos: ["levantamentoEm"] };
+      /* Uma hora da loja, com vaga, no futuro: o motor do calendário, com o
+         horário da loja no lugar do da cozinha — a gerente sabe se a cozinha
+         consegue; o que não pode é marcar para uma hora fechada ou cheia. O
+         próprio pedido não conta para a ocupação da hora nova. */
+      const casa = estado.configuracao;
+      const ocupadas = ocupacaoEntre(novo, novo).map((o) =>
+        o.inicio.getTime() === pedido.levantamentoEm.getTime() ? { ...o, pedidos: o.pedidos - 1 } : o,
+      );
+      const validacao = validarLevantamento([], novo, agora, { ...casa, cozinha: casa.loja }, ocupadas);
+      if (!validacao.ok) return { ok: false, erro: "dados-invalidos", campos: ["levantamentoEm"] };
+      return gravarPedido({ ...pedido, levantamentoEm: novo, reagendadoEm: agora });
+    },
+
+    async cancelarPedido(id, reembolsoCent, { agora }) {
+      const pedido = estado.pedidos.get(id);
+      if (!pedido) return naoExiste;
+      if (pedido.estado !== "pago") return { ok: false, erro: "estado-mudou" };
+      if (!centValido(reembolsoCent, porDevolverCent(pedido), true)) {
+        return { ok: false, erro: "dados-invalidos", campos: ["reembolsoCent"] };
+      }
+      const cancelado: Pedido = { ...pedido, estado: "cancelado", canceladoEm: agora, canceladoPor: "gerente" };
+      return gravarPedido(comReembolso(cancelado, reembolsoCent, agora));
+    },
+
+    async reembolsarPedido(id, valorCent, { agora }) {
+      const pedido = estado.pedidos.get(id);
+      if (!pedido) return naoExiste;
+      if (!["pago", "entregue", "cancelado"].includes(pedido.estado)) return { ok: false, erro: "estado-mudou" };
+      if (!centValido(valorCent, porDevolverCent(pedido), false)) {
+        return { ok: false, erro: "dados-invalidos", campos: ["valorCent"] };
+      }
+      return gravarPedido(comReembolso(pedido, valorCent, agora));
     },
   };
 }

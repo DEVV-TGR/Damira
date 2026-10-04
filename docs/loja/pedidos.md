@@ -139,6 +139,10 @@ O código existe e é testado antes do lançamento; a casa decide o que liga.
 
 O pedido guarda `canceladoPor` (`cliente` ou `gerente`) e `canceladoEm`.
 
+**A gerente cancela com o reembolso escolhido** — total, parcial ou nenhum (um
+bolo já feito pode não se devolver). É uma ação só (`cancelarPedido`): o estado
+muda, a vaga e as quantidades libertam-se e o reembolso pede-se, juntos.
+
 ⚠️ **Cancelar não é só mudar um estado.** O talão já está na cozinha. Seja quem
 for a cancelar, o balcão é avisado como num pedido novo — som, aviso
 «CANCELADO DAM-…» e talão de cancelamento (ver `impressao.md`). Um cancelamento
@@ -151,6 +155,36 @@ cancelamento reembolsado custa à casa a comissão do pagamento original.
 saldo, o de cartão fica pendente e o de MB WAY falha. O estado do reembolso vem
 do webhook do Stripe e não do pedido que fizemos, e o painel mostra à gerente um
 reembolso falhado como falhado (ver `pagamentos.md`).
+
+## Reembolsos
+
+O pedido guarda **cada reembolso** (`reembolsos`): o valor, o estado
+(`pendente`, `concluido`, `falhado`) e quando foi pedido. O `reembolsadoCent` é
+a soma dos `concluido` — e é tudo o que se calcula a partir deles. O estado vem
+do Stripe (`pagamentos.md`); um `falhado` aparece em «Precisa de atenção».
+
+A gerente reembolsa **sem cancelar** (`reembolsarPedido`) quando o pedido segue
+mas alguma coisa correu mal — um artigo que faltou. Nunca mais do que o que foi
+pago online e ainda não foi devolvido.
+
+⚠️ Até ao Stripe (#49), a implementação provisória dá o reembolso como
+`concluido` logo, e o painel diz que é simulado.
+
+## Mudar o levantamento
+
+A gerente muda o dia ou a hora de um pedido `pago` (`reagendarPedido`) — o
+cliente pediu, ou o dia fechou. **Só para uma hora em que a loja esteja aberta e
+com vaga**, validada com o mesmo motor do calendário (`horarios.md`); a vaga
+antiga liberta-se e a nova ocupa-se na mesma transação (`robustez.md`). O pedido
+guarda `reagendadoEm`, e o histórico mostra-o.
+
+## Avisos tratados
+
+«Precisa de atenção» mostra factos — pagou tarde, parece duplicado, o dia
+fechou —, e os factos não se apagam: um `chegouTarde` continua a ser verdade
+depois de a gerente decidir. O que ela decide guarda-se em `avisosTratados`
+(`chegou-tarde`, `possivel-duplicado`, `dia-fechado`, `reembolso-falhado`), e
+um aviso tratado sai da lista. Num duplicado, basta um dos dois estar tratado.
 
 ## O que nunca se guarda, e o que nunca se apaga
 

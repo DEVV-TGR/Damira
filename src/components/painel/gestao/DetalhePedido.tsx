@@ -10,6 +10,7 @@ import { horaDeLisboa } from "@/lib/painel-ligacao";
 import { formatarCent } from "@/lib/preco";
 import { BOTAO_SECUNDARIO, MENSAGENS } from "../balcao/comum";
 import { PedidoCartao } from "../balcao/PedidoCartao";
+import { DecisoesDoPedido } from "./Decisoes";
 
 const O_QUE: Record<EventoHistorico["o"], string> = {
   criado: "Criado no site",
@@ -17,6 +18,8 @@ const O_QUE: Record<EventoHistorico["o"], string> = {
   impresso: "Talão impresso",
   entregue: "Entregue",
   cancelado: "Cancelado",
+  reagendado: "Levantamento mudado",
+  reembolso: "Reembolso",
 };
 
 /**
@@ -66,8 +69,11 @@ export function DetalhePedido({ id, onVoltar }: { id: string; onVoltar: () => vo
               <h3 className="titulo-display text-xl">Histórico</h3>
               <ol className="mt-3 space-y-2">
                 {historicoDe(pedido).map((evento) => (
-                  <li key={evento.o} className="flex justify-between gap-4">
-                    <span>{O_QUE[evento.o]}</span>
+                  <li key={`${evento.o}-${evento.quando.getTime()}`} className="flex justify-between gap-4">
+                    <span>
+                      {O_QUE[evento.o]}
+                      {evento.detalhe && <span className="block text-sm text-tinta-suave">{evento.detalhe}</span>}
+                    </span>
                     <span className="text-right text-sm text-tinta-suave">
                       {diaPorExtenso(evento.quando)}, {horaDeLisboa(evento.quando)}
                     </span>
@@ -106,10 +112,9 @@ export function DetalhePedido({ id, onVoltar }: { id: string; onVoltar: () => vo
                 Desfazer «entregue»
               </button>
             )}
-            {/* Dizer o que falta, em vez de botões que não fazem nada. */}
-            <p className="text-sm text-tinta-suave">
-              Reembolsar e cancelar chegam com os pagamentos online; reimprimir, com a impressora.
-            </p>
+            <DecisoesDoPedido pedido={pedido} onFeito={setPedido} />
+            {/* Dizer o que falta, em vez de um botão que não faz nada. */}
+            <p className="text-sm text-tinta-suave">Reimprimir o talão chega com a impressora.</p>
           </div>
         </div>
       )}

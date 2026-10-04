@@ -141,6 +141,9 @@ const pedido = (id: string, alteracoes: Partial<Pedido> = {}): Pedido => ({
   entregueEm: null,
   canceladoEm: null,
   canceladoPor: null,
+  reembolsos: [],
+  avisosTratados: [],
+  reagendadoEm: null,
   ...alteracoes,
 });
 
@@ -347,3 +350,37 @@ describe("os formulários da gestão", () => {
     expect(intervaloDeDias(null, "15/07")).toEqual({});
   });
 });
+
+describe("avisos tratados", () => {
+  const HOJE = lisboa(10, 7, 10);
+
+  it("um aviso tratado sai; num duplicado, basta um dos dois", () => {
+    expect(avisosDosPedidos([pedido("tard", { chegouTarde: true, avisosTratados: ["chegou-tarde"] })], CASA, HOJE)).toEqual([]);
+    const a = pedido("aaaa");
+    const b = pedido("bbbb", { pagoEm: lisboa(10, 5, 9, 8), avisosTratados: ["possivel-duplicado"] });
+    expect(avisosDosPedidos([a, b], CASA, HOJE)).toEqual([]);
+  });
+
+  it("um reembolso falhado avisa, seja de que dia for, até ser tratado", () => {
+    const falhado = pedido("reem", {
+      estado: "cancelado",
+      levantamentoEm: lisboa(10, 1, 10),
+      reembolsos: [{ id: "r1", valorCent: 1000, estado: "falhado", pedidoEm: lisboa(10, 1, 9) }],
+    });
+    expect(avisosDosPedidos([falhado], CASA, HOJE)).toEqual([
+      { tipo: "reembolso-falhado", pedidoId: "reem", referencia: "DAM-0710-REEM" },
+    ]);
+    expect(avisosDosPedidos([{ ...falhado, avisosTratados: ["reembolso-falhado"] }], CASA, HOJE)).toEqual([]);
+  });
+
+  it("o histórico mostra a mudança de data e os reembolsos, com valor e estado", () => {
+    const p = pedido("hist", {
+      reagendadoEm: lisboa(10, 6, 12),
+      reembolsos: [{ id: "r1", valorCent: 1250, estado: "concluido", pedidoEm: lisboa(10, 6, 13) }],
+    });
+    const eventos = historicoDe(p);
+    expect(eventos.map((e) => e.o)).toEqual(["criado", "pago", "reagendado", "reembolso"]);
+    expect(eventos.at(-1)?.detalhe?.replace(/\s/g, " ")).toBe("12,50 € · concluído");
+  });
+});
+

@@ -21,10 +21,13 @@ import { BOTAO_PRINCIPAL, BOTAO_SECUNDARIO, MENSAGENS, quantidade } from "./comu
 export function PedidoCartao({
   pedido,
   destaque = false,
+  soLeitura = false,
   onEntregue,
 }: {
   pedido: Pedido;
   destaque?: boolean;
+  /** Sem «Entregue»: para comparar dois pedidos, não para os despachar. */
+  soLeitura?: boolean;
   onEntregue?: (pedido: Pedido) => void;
 }) {
   const router = useRouter();
@@ -115,7 +118,7 @@ export function PedidoCartao({
           {rotuloPagamento(pedido)}
         </p>
 
-        {pedido.estado === "pago" && (
+        {pedido.estado === "pago" && !soLeitura && (
           <div className="mt-4">
             {confirmarFalta ? (
               /* ⚠️ Entregar sem cobrar o resto é o erro mais caro do balcão, e o mais

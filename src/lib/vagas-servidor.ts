@@ -154,6 +154,32 @@ export async function vagasDoCesto(linhas: unknown, fonte: Fonte, agora: Date): 
 }
 
 /**
+ * As horas da loja num dia, para a gerente **mudar o levantamento** de um pedido
+ * (`pedidos.md`). É o calendário com o horário da loja no lugar do da cozinha:
+ * a gerente sabe se a cozinha consegue; o que o ecrã não deixa é escolher uma
+ * hora fechada, passada ou cheia — e o servidor confirma outra vez ao gravar.
+ */
+export async function horasDaLoja(
+  data: string,
+  fonte: Pick<FonteDeDados, "configuracaoDaCasa" | "ocupacao">,
+  agora: Date,
+): Promise<{ inicio: string; hora: string; livre: boolean }[]> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return [];
+  const [ano, mes, dia] = data.split("-").map(Number);
+  const inicioDoDia = new Date(Date.UTC(ano, mes - 1, dia) - 14 * 3_600_000);
+  const fimDoDia = new Date(Date.UTC(ano, mes - 1, dia) + 38 * 3_600_000);
+  const casa = await fonte.configuracaoDaCasa();
+  /* Até esse dia, por longe que seja: quem muda a data é a gerente, não o
+     cliente, e o «dias à frente» do calendário não se lhe aplica. */
+  const diasAte = Math.max(0, Math.ceil((fimDoDia.getTime() - agora.getTime()) / 86_400_000));
+  const config = { ...casa, cozinha: casa.loja, diasAFrente: diasAte };
+  const ocupadas = await fonte.ocupacao(inicioDoDia, fimDoDia);
+  return vagas([], agora, config, ocupadas)
+    .filter((v) => v.data === data)
+    .map((v) => ({ inicio: new Date(v.inicio.getTime()).toISOString(), hora: v.hora, livre: v.livre }));
+}
+
+/**
  * A hora escolhida, confirmada no servidor ao enviar. É o mesmo cálculo do
  * calendário (`validarLevantamento`), de propósito: o que o browser mostrou é o
  * que o servidor aceita, e o calendário é uma ajuda e não uma garantia

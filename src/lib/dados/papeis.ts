@@ -1,4 +1,4 @@
-import type { ContextoPainel, FontePainel, Papel, ResultadoPainel } from "./tipos";
+import type { AvisoTratavel, ContextoPainel, FontePainel, Papel, ResultadoPainel } from "./tipos";
 
 /**
  * # Quem pode chamar cada função do painel
@@ -56,6 +56,17 @@ export function protegerPainel(fonte: FontePainel): FontePainel {
        dependem do pedido. */
     desfazerEntregue: exigirPapel(EQUIPA, (id: string, ctx) => fonte.desfazerEntregue(id, ctx)),
     precisaDeAtencao: exigirPapel(SO_GERENTE, (ctx) => fonte.precisaDeAtencao(ctx)),
+    /* As decisões da gerente: cancelar, reembolsar, mudar a data, dar por tratado. */
+    tratarAviso: exigirPapel(SO_GERENTE, (id: string, tipo: AvisoTratavel, ctx) => fonte.tratarAviso(id, tipo, ctx)),
+    reagendarPedido: exigirPapel(SO_GERENTE, (id: string, levantamentoEm: unknown, ctx) =>
+      fonte.reagendarPedido(id, levantamentoEm, ctx),
+    ),
+    cancelarPedido: exigirPapel(SO_GERENTE, (id: string, reembolsoCent: number, ctx) =>
+      fonte.cancelarPedido(id, reembolsoCent, ctx),
+    ),
+    reembolsarPedido: exigirPapel(SO_GERENTE, (id: string, valorCent: number, ctx) =>
+      fonte.reembolsarPedido(id, valorCent, ctx),
+    ),
     /* Pública de propósito: é um número, servido da cache (`painel.md`). */
     versaoPedidos: () => fonte.versaoPedidos(),
   };

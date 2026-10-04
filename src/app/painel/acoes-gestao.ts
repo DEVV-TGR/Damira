@@ -1,9 +1,20 @@
 "use server";
 
-import { guardarDefinicoes, guardarHorarios, listarPedidos, pedidoDoPainel } from "@/lib/dados";
-import { ESTADOS_PEDIDO, type EstadoPedido } from "@/lib/dados/tipos";
+import * as dados from "@/lib/dados";
+import {
+  cancelarPedido,
+  guardarDefinicoes,
+  guardarHorarios,
+  listarPedidos,
+  pedidoDoPainel,
+  reagendarPedido,
+  reembolsarPedido,
+  tratarAviso,
+} from "@/lib/dados";
+import { ESTADOS_PEDIDO, type AvisoTratavel, type EstadoPedido } from "@/lib/dados/tipos";
 import { intervaloDeDias } from "@/lib/painel";
-import { comSessao } from "@/lib/painel-servidor";
+import { comSessao, contextoDoPainel } from "@/lib/painel-servidor";
+import { horasDaLoja } from "@/lib/vagas-servidor";
 
 /**
  * # As ações da gestão (`painel-gerente.md`)
@@ -55,4 +66,31 @@ export async function gravarHorarios(entrada: unknown) {
 
 export async function gravarDefinicoes(entrada: unknown) {
   return comSessao((ctx) => guardarDefinicoes(entrada, ctx));
+}
+
+// ——— As decisões da gerente (`pedidos.md`) ———
+// Todas mudam um pedido: avisam o polling, e o balcão vê-as na volta seguinte.
+
+/** «Aceitar», «manter neste dia», «já devolvi»: o facto fica, o aviso sai. */
+export async function tratar(id: string, tipo: AvisoTratavel) {
+  return comSessao((ctx) => tratarAviso(id, tipo, ctx), true);
+}
+
+export async function reagendar(id: string, levantamentoEm: string) {
+  return comSessao((ctx) => reagendarPedido(id, levantamentoEm, ctx), true);
+}
+
+export async function cancelar(id: string, reembolsoCent: number) {
+  return comSessao((ctx) => cancelarPedido(id, reembolsoCent, ctx), true);
+}
+
+export async function reembolsar(id: string, valorCent: number) {
+  return comSessao((ctx) => reembolsarPedido(id, valorCent, ctx), true);
+}
+
+/** As horas da loja num dia, para mudar o levantamento. Só para a gerente. */
+export async function horasParaMudar(data: string) {
+  const ctx = await contextoDoPainel();
+  if (ctx?.papel !== "gerente") return [];
+  return horasDaLoja(data, dados, ctx.agora);
 }

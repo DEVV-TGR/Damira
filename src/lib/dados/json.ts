@@ -511,6 +511,9 @@ export function criarFonteJsonComEstado(opcoes: OpcoesFonteJson = {}): { fonte: 
         entregueEm: null,
         canceladoEm: null,
         canceladoPor: null,
+        reembolsos: [],
+        avisosTratados: [],
+        reagendadoEm: null,
       };
 
       pedidos.set(pedido.id, pedido);
@@ -525,5 +528,5 @@ export function criarFonteJsonComEstado(opcoes: OpcoesFonteJson = {}): { fonte: 
     },
   };
 
-  return { fonte: { ...loja, ...criarPainelJson(estado) }, estado };
+  return { fonte: { ...loja, ...criarPainelJson(estado, ocupacaoEntre) }, estado };
 }

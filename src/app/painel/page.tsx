@@ -7,6 +7,7 @@ import {
   configuracaoDaCasa,
   definicoesLoja,
   listarPedidos,
+  pedidoDoPainel,
   precisaDeAtencao,
   produtosDoPainel,
   simularPedidoDeTeste,
@@ -73,6 +74,15 @@ export default async function Painel({ searchParams }: { searchParams: Promise<{
   /* A gestão só se pede para a gerente — e a fronteira recusava-a ao balcão de
      qualquer forma. */
   const atencao = atual.papel === "gerente" ? await precisaDeAtencao(ctx) : null;
+  /* Os pedidos de que os avisos falam: poucos, e a gerente decide sobre eles
+     ali mesmo, sem ir procurá-los. */
+  const pedidosDosAvisos: Record<string, Pedido> = {};
+  for (const aviso of atencao?.ok ? atencao.valor : []) {
+    for (const id of "pedidoIds" in aviso ? aviso.pedidoIds : [aviso.pedidoId]) {
+      const lido = await pedidoDoPainel(id, ctx);
+      if (lido.ok) pedidosDosAvisos[id] = lido.valor;
+    }
+  }
 
   return (
     <>
@@ -96,7 +106,7 @@ export default async function Painel({ searchParams }: { searchParams: Promise<{
           modoTeste={simularPedidoDeTeste !== null}
           gestao={
             atencao?.ok
-              ? { avisos: atencao.valor, porPreencher: contarPorPreencher(produtos), casa, definicoes }
+              ? { avisos: atencao.valor, pedidosDosAvisos, porPreencher: contarPorPreencher(produtos), casa, definicoes }
               : null
           }
         />

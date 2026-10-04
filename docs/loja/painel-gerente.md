@@ -20,6 +20,22 @@ quando há alguma coisa:
 - pedidos marcados para um dia que entretanto foi fechado (ver `horarios.md`);
 - produtos por preencher (ver abaixo).
 
+**Cada aviso traz as suas decisões** — um aviso que só se lê não resolve nada
+(pedido do cliente a 04/10). O que ela decide tira-o da lista, e o facto fica
+(`pedidos.md` › Avisos tratados):
+
+| Aviso | Decisões |
+|---|---|
+| Pago depois de expirar | **aceitar o pedido** · mudar a data · cancelar e reembolsar |
+| Possível duplicado | **comparar lado a lado** → «ficar com este» (o outro é cancelado e reembolsado por inteiro) · «são dois pedidos diferentes» |
+| Dia que fechou | mudar a data · cancelar e reembolsar · manter neste dia |
+| Reembolso falhado | «já devolvi por outra via» |
+
+Mudar a data só deixa escolher horas em que a loja está aberta e com vaga, e o
+servidor confirma ao gravar. Cancelar pergunta o reembolso — tudo, uma parte ou
+nada — e diz o valor antes de confirmar. Os mesmos botões estão no detalhe de
+qualquer pedido, com «reembolsar parte» para os que seguem.
+
 ## Produtos
 
 ### O que cada produto tem

@@ -91,9 +91,18 @@ export function fimDaPausa(
 export const faltaPagarCent = (pedido: Pick<Pedido, "totalCent" | "pagoOnlineCent">): number =>
   Math.max(0, pedido.totalCent - pedido.pagoOnlineCent);
 
+/**
+ * O que ainda se pode devolver: o pago online menos os reembolsos que não
+ * falharam (um pendente já está a caminho). É o teto de qualquer reembolso.
+ */
+export const porDevolverCent = (pedido: Pick<Pedido, "pagoOnlineCent" | "reembolsos">): number =>
+  pedido.pagoOnlineCent - pedido.reembolsos.filter((r) => r.estado !== "falhado").reduce((s, r) => s + r.valorCent, 0);
+
 export type EventoHistorico = {
   quando: Date;
-  o: "criado" | "pago" | "impresso" | "entregue" | "cancelado";
+  o: "criado" | "pago" | "impresso" | "entregue" | "cancelado" | "reagendado" | "reembolso";
+  /** O que o rótulo sozinho não diz: o valor e o estado de um reembolso. */
+  detalhe?: string;
 };
 
 /**
@@ -109,9 +118,16 @@ export function historicoDe(pedido: Pedido): EventoHistorico[] {
     [pedido.entregueEm, "entregue"],
     [pedido.canceladoEm, "cancelado"],
   ];
-  return eventos
-    .flatMap(([quando, o]) => (quando ? [{ quando, o }] : []))
-    .sort((a, b) => a.quando.getTime() - b.quando.getTime());
+  const reembolsos: EventoHistorico[] = pedido.reembolsos.map((r) => ({
+    quando: r.pedidoEm,
+    o: "reembolso",
+    detalhe: `${formatarCent(r.valorCent, "pt")} · ${r.estado === "concluido" ? "concluído" : r.estado}`,
+  }));
+  return [
+    ...eventos.flatMap(([quando, o]) => (quando ? [{ quando, o }] : [])),
+    ...(pedido.reagendadoEm ? [{ quando: pedido.reagendadoEm, o: "reagendado" as const }] : []),
+    ...reembolsos,
+  ].sort((a, b) => a.quando.getTime() - b.quando.getTime());
 }
 
 /** Uma linha de «Produzir hoje»: um produto, somado por todos os pedidos. */
@@ -233,6 +249,11 @@ const assinatura = (pedido: Pedido) =>
  *   separadores. Para o sistema são dois pedidos legítimos; decide a gerente.
  * - **Dia fechado:** marcado para um dia que entretanto fechou à loja
  *   (`horarios.md`). Fechar um dia não cancela os pedidos — avisa.
+ * - **Reembolso falhado:** em qualquer pedido, de qualquer dia — o dinheiro
+ *   ainda não voltou ao cliente (`pagamentos.md`).
+ *
+ * Um aviso que a gerente deu por tratado (`avisosTratados`) não aparece; num
+ * duplicado, basta um dos dois (`pedidos.md` › Avisos tratados).
  */
 export function avisosDosPedidos(
   pedidos: readonly Pedido[],
@@ -245,12 +266,20 @@ export function avisosDosPedidos(
     .sort((a, b) => (a.pagoEm?.getTime() ?? 0) - (b.pagoEm?.getTime() ?? 0));
   const avisos: AvisoAtencao[] = [];
 
+  const tratado = (p: Pedido, tipo: Pedido["avisosTratados"][number]) => p.avisosTratados.includes(tipo);
+
+  for (const pedido of pedidos) {
+    if (pedido.reembolsos.some((r) => r.estado === "falhado") && !tratado(pedido, "reembolso-falhado")) {
+      avisos.push({ tipo: "reembolso-falhado", pedidoId: pedido.id, referencia: pedido.referencia });
+    }
+  }
+
   for (const pedido of vivos) {
-    if (pedido.chegouTarde) {
+    if (pedido.chegouTarde && !tratado(pedido, "chegou-tarde")) {
       avisos.push({ tipo: "chegou-tarde", pedidoId: pedido.id, referencia: pedido.referencia });
     }
     const dia = diaDeLisboa(pedido.levantamentoEm);
-    if (casa.diasFechados.some((d) => d.data === dia && d.fecha !== "cozinha")) {
+    if (casa.diasFechados.some((d) => d.data === dia && d.fecha !== "cozinha") && !tratado(pedido, "dia-fechado")) {
       avisos.push({ tipo: "dia-fechado", pedidoId: pedido.id, referencia: pedido.referencia, data: dia });
     }
   }
@@ -262,6 +291,8 @@ export function avisosDosPedidos(
         a.pagoEm !== null && b.pagoEm !== null && Math.abs(b.pagoEm.getTime() - a.pagoEm.getTime()) < DEZ_MINUTOS;
       if (
         perto &&
+        !tratado(a, "possivel-duplicado") &&
+        !tratado(b, "possivel-duplicado") &&
         a.cliente.email.toLowerCase() === b.cliente.email.toLowerCase() &&
         a.levantamentoEm.getTime() === b.levantamentoEm.getTime() &&
         assinatura(a) === assinatura(b)

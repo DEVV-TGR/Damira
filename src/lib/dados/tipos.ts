@@ -270,6 +270,17 @@ export const EsquemaLinhaPedido = z.object({
   notas: z.string().nullable(),
 });
 
+/** Um reembolso pedido ao Stripe. O estado vem do webhook, não da resposta (`pagamentos.md`). */
+export const EsquemaReembolso = z.object({
+  id: z.string(),
+  valorCent: Cent.positive(),
+  estado: z.enum(["pendente", "concluido", "falhado"]),
+  pedidoEm: z.date(),
+});
+
+/** Os avisos que a gerente pode dar por tratados (`pedidos.md` › Avisos tratados). */
+export const AVISOS_TRATAVEIS = ["chegou-tarde", "possivel-duplicado", "dia-fechado", "reembolso-falhado"] as const;
+
 export const EsquemaPedido = z.object({
   id: z.string(),
   referencia: z.string().regex(FORMATO_REFERENCIA),
@@ -284,17 +295,25 @@ export const EsquemaPedido = z.object({
   pagoOnlineCent: Cent,
   /** Só reembolsos `concluido`. O que falta pagar na loja calcula-se, não se guarda. */
   reembolsadoCent: Cent,
+  /** Cada reembolso, com o seu estado (`pedidos.md` › Reembolsos). */
+  reembolsos: z.array(EsquemaReembolso),
+  /** O que a gerente já decidiu: o facto fica, o aviso sai (`pedidos.md` › Avisos tratados). */
+  avisosTratados: z.array(z.enum(AVISOS_TRATAVEIS)),
   chegouTarde: z.boolean(),
   pagoEm: z.date().nullable(),
   impressoEm: z.date().nullable(),
   entregueEm: z.date().nullable(),
   canceladoEm: z.date().nullable(),
   canceladoPor: z.enum(["cliente", "gerente"]).nullable(),
+  /** A última vez que a gerente mudou o levantamento (`pedidos.md` › Mudar o levantamento). */
+  reagendadoEm: z.date().nullable(),
 });
 
 export type EstadoPedido = (typeof ESTADOS_PEDIDO)[number];
 export type LinhaPedido = z.infer<typeof EsquemaLinhaPedido>;
 export type Pedido = z.infer<typeof EsquemaPedido>;
+export type Reembolso = z.infer<typeof EsquemaReembolso>;
+export type AvisoTratavel = (typeof AVISOS_TRATAVEIS)[number];
 
 /**
  * Os erros de criar um pedido. As ações devolvem-nos, nunca rebentam para o
@@ -586,6 +605,24 @@ export type FontePainel = {
    */
   desfazerEntregue(id: string, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
   precisaDeAtencao(ctx: ContextoPainel): Promise<ResultadoPainel<AvisoAtencao[]>>;
+
+  // As decisões da gerente (`pedidos.md`): só gerente.
+
+  /** Dá um aviso por tratado. O facto (`chegouTarde`, o dia fechado) fica. */
+  tratarAviso(id: string, tipo: AvisoTratavel, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
+  /**
+   * Muda o levantamento de um pedido `pago`. `levantamentoEm` em ISO; tem de ser
+   * uma hora em que a loja abre e com vaga (`validarLevantamento` com o horário
+   * da loja), e no futuro. A vaga antiga liberta-se na mesma transação.
+   */
+  reagendarPedido(id: string, levantamentoEm: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
+  /**
+   * `pago → cancelado`, pela gerente, com o reembolso escolhido: `0` é nenhum, e
+   * nunca mais do que o pago online ainda por devolver. Liberta a vaga.
+   */
+  cancelarPedido(id: string, reembolsoCent: number, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
+  /** Um reembolso sem cancelar (um artigo que faltou), num pedido pago ou entregue. */
+  reembolsarPedido(id: string, valorCent: number, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
   /**
    * Um número que muda sempre que um pedido muda. É o que o painel pergunta de
    * 10 em 10 segundos, **servido da cache da Vercel** e invalidado a cada
