@@ -73,9 +73,11 @@ esquecerem:
 
 Até a casa dar o horário da cozinha e os tempos de produção, e até a conta
 Stripe dela estar verificada, a loja corre no ar em **modo de teste**:
-`LOJA_EM_TESTE=1` na Vercel liga os prazos de exemplo (`src/lib/dados/exemplo.ts`)
-e o Stripe de teste, e **uma faixa no topo de todas as páginas** diz que não se
-cobra nada e que os prazos são de exemplo (`src/components/FaixaModoTeste.tsx`).
+`LOJA_EM_TESTE=1` na Vercel liga os prazos de exemplo, **pedidos de exemplo** que
+enchem o calendário (`src/lib/dados/exemplo.ts` — ao acaso mas sempre os mesmos,
+e contam como verdadeiros para as vagas) e o Stripe de teste, e **uma faixa no
+topo de todas as páginas** diz que não se cobra nada e que os prazos e as vagas
+ocupadas são de exemplo (`src/components/FaixaModoTeste.tsx`).
 
 ⚠️ **A faixa não se apaga** enquanto o interruptor estiver ligado — é ela que
 impede o site de afirmar um prazo que a casa não deu. E ⚠️ **desligar o
@@ -86,7 +88,9 @@ mudar o interruptor obriga a um novo deploy.
 ### A página de compra — e, até ao Stripe, acaba num email
 
 O cesto leva a **`/encomendas/pedido`** (#37): o resumo com o total do servidor,
-o calendário de levantamento e os dados da pessoa. O formulário que vivia no
+o calendário de levantamento (sempre embutido, com dia e hora — sem os dados da
+cozinha, as horas são as da loja e a escolhida é **pretendida**, a confirmar) e
+os dados da pessoa. O botão do carrinho não aparece nesta página. O formulário que vivia no
 fundo das encomendas saiu. ⚠️ **Até ao pagamento online (#38) o pedido acaba num
 email à casa**, por secções e com todos os dados (os opcionais vazios
 escrevem-se «—»); com o Stripe, o botão do fim passa a «Pagar» e o resto da

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { linhasDoCesto, normalizarCesto } from "@/lib/cesto";
 import { formatarCent } from "@/lib/preco";
 import { enviarCompra } from "./acoes";
+import { consultarVagas } from "../vagas";
 
 vi.mock("next-intl/server", async () => (await import("./traducoes-de-teste")).nextIntlDeTeste);
 
@@ -116,5 +117,17 @@ describe("enviarCompra: o que não segue", () => {
 
   it("a armadilha preenchida finge que correu bem, e não escreve nada", async () => {
     expect(await enviar({ armadilha: "x" })).toEqual({ estado: "enviado" });
+  });
+});
+
+describe("enviarCompra: sem dados da cozinha, a hora é pretendida", () => {
+  it("o calendário oferece as horas da loja, e o email diz que a hora é a confirmar", async () => {
+    const vagas = await consultarVagas(linhasDoCesto(CESTO));
+    if (!vagas.ok) throw new Error("devia haver horas");
+    expect(vagas.aConfirmar).toBe(true);
+    const vaga = vagas.vagas[3];
+    const { corpo, registo } = await corpoDe({ levantamento: vaga.inicio, data: "" });
+    expect(corpo).toMatch(/LEVANTAMENTO NA LOJA\n.* \(hora de Lisboa\) — HORA PRETENDIDA, a confirmar com o cliente/);
+    expect(registo.data).toBe(vaga.data);
   });
 });

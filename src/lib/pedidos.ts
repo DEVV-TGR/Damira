@@ -120,6 +120,8 @@ export function corpoDaCompra(pedido: {
   enviadoEm: Date;
   modoDeTeste: boolean;
   levantamento: Date | null;
+  /** A hora é pretendida e confirma-se com o cliente (sem dados da cozinha). */
+  aConfirmar?: boolean;
   data: string;
   dados: DadosCompra;
   cesto: string;
@@ -139,7 +141,9 @@ export function corpoDaCompra(pedido: {
       : []),
     ...seccao("Levantamento na loja", [
       pedido.levantamento
-        ? `${porExtenso(pedido.levantamento)} (hora de Lisboa)`
+        ? pedido.aConfirmar
+          ? `${porExtenso(pedido.levantamento)} (hora de Lisboa) — HORA PRETENDIDA, a confirmar com o cliente`
+          : `${porExtenso(pedido.levantamento)} (hora de Lisboa)`
         : `${pedido.data} — hora a combinar com o cliente`,
     ]),
     ...seccao("Cliente", [

@@ -1,7 +1,9 @@
-import type { HorarioSemanal, TempoProducao } from "@/lib/horarios";
+import { TZDate, tz } from "@date-fns/tz";
+import { addDays, format, getDay } from "date-fns";
+import type { HorarioSemanal, TempoProducao, VagaOcupada } from "@/lib/horarios";
 import { emModoDeTeste, type Ambiente } from "@/lib/modo-teste";
 import { CATALOGO_JSON, CONFIGURACAO_JSON, criarFonteJson, type OpcoesFonteJson } from "./json";
-import type { FonteDeDados, Produto } from "./tipos";
+import type { ConfiguracaoDaCasa, FonteDeDados, Produto } from "./tipos";
 
 /**
  * # ⚠️ Valores de exemplo — **não são da casa**
@@ -71,7 +73,7 @@ const recusarEmProducao = (ambiente: Ambiente) => {
  * exemplo.
  */
 export function fonteDeExemplo(
-  opcoes: OpcoesFonteJson = {},
+  opcoes: OpcoesFonteJson & { pedidosDeExemplo?: boolean } = {},
   ambiente: Ambiente = process.env,
 ): FonteDeDados {
   recusarEmProducao(ambiente);
@@ -80,15 +82,74 @@ export function fonteDeExemplo(
     tempoProducao: produto.tempoProducao ?? TEMPOS_DE_EXEMPLO[produto.familia],
   }));
   const base = opcoes.configuracao ?? CONFIGURACAO_JSON;
+  const configuracao = {
+    ...base,
+    cozinha: base.cozinha ?? COZINHA_DE_EXEMPLO,
+    limitePorVaga: base.limitePorVaga ?? LIMITE_POR_VAGA_DE_EXEMPLO,
+  };
   return criarFonteJson({
     ...opcoes,
     catalogo,
-    configuracao: {
-      ...base,
-      cozinha: base.cozinha ?? COZINHA_DE_EXEMPLO,
-      limitePorVaga: base.limitePorVaga ?? LIMITE_POR_VAGA_DE_EXEMPLO,
-    },
+    configuracao,
+    ...(opcoes.pedidosDeExemplo ? { ocupacaoExtra: pedidosDeExemplo(configuracao) } : {}),
   });
+}
+
+// ——— Pedidos de exemplo ———
+
+const DIAS_DA_SEMANA = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"] as const;
+const LISBOA = { in: tz("Europe/Lisbon") };
+
+/* Um número «ao acaso» que é sempre o mesmo para o mesmo texto (FNV-1a). Não é
+   para segurança: é para o calendário de exemplo não mudar a cada visita, e o
+   servidor recusar ao enviar exatamente as horas que o calendário mostrou
+   cheias. */
+const sorteio = (texto: string): number => {
+  let h = 2166136261;
+  for (let i = 0; i < texto.length; i++) h = Math.imul(h ^ texto.charCodeAt(i), 16777619);
+  /* ⚠️ A mistura final (a do MurmurHash3). Sem ela, datas seguidas
+     («2026-10-20», «2026-10-21»…) davam números vizinhos, e o calendário de
+     exemplo saía em blocos: dez dias vermelhos seguidos, nenhum laranja. */
+  h ^= h >>> 16;
+  h = Math.imul(h, 0x85ebca6b);
+  h ^= h >>> 13;
+  h = Math.imul(h, 0xc2b2ae35);
+  h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+};
+
+/**
+ * ⚠️ **Pedidos inventados, para o calendário em modo de teste mostrar como fica
+ * com procura** — pedido do cliente a 04/10. Cada dia tem uma intensidade ao
+ * acaso (dias calmos, dias cheios) e cada meia hora um número de pedidos à
+ * volta dela, até ao limite. Contam como pedidos a sério para a ocupação: uma
+ * hora cheia de exemplo é recusada ao enviar, como seria uma verdadeira.
+ *
+ * Só existem com o modo de teste ligado, e a faixa diz que as vagas ocupadas
+ * são de exemplo. Os verdadeiros somam-se a estes.
+ */
+function pedidosDeExemplo(config: ConfiguracaoDaCasa) {
+  const limite = config.limitePorVaga ?? LIMITE_POR_VAGA_DE_EXEMPLO;
+  return (desde: Date, ate: Date): VagaOcupada[] => {
+    const ocupadas: VagaOcupada[] = [];
+    for (let dia = desde; dia.getTime() <= ate.getTime() + 86_400_000; dia = addDays(dia, 1, LISBOA)) {
+      const data = format(dia, "yyyy-MM-dd", LISBOA);
+      const [ano, mes, numDia] = data.split("-").map(Number);
+      /* De 0 (calmo) a 3 (cheio): a cor do dia sai daqui. */
+      const intensidade = Math.floor(sorteio(data) * 4);
+      for (const { abre, fecha } of config.loja[DIAS_DA_SEMANA[getDay(dia, LISBOA)]]) {
+        const [ha, ma] = abre.split(":").map(Number);
+        const [hf, mf] = fecha.split(":").map(Number);
+        for (let m = ha * 60 + ma; m + config.duracaoVagaMinutos <= hf * 60 + mf; m += config.duracaoVagaMinutos) {
+          const ruido = Math.round(sorteio(`${data} ${m}`) * 2 - 1);
+          const pedidos = Math.max(0, Math.min(limite, intensidade + ruido));
+          const inicio = new TZDate(ano, mes - 1, numDia, Math.floor(m / 60), m % 60, "Europe/Lisbon");
+          if (pedidos > 0 && inicio >= desde && inicio <= ate) ocupadas.push({ inicio, pedidos });
+        }
+      }
+    }
+    return ocupadas;
+  };
 }
 
 /**
@@ -97,4 +158,4 @@ export function fonteDeExemplo(
  * e o calendário diz «indisponível» até haver dados.
  */
 export const fonteDoAmbiente = (ambiente: Ambiente = process.env): FonteDeDados =>
-  emModoDeTeste(ambiente) ? fonteDeExemplo({}, ambiente) : criarFonteJson();
+  emModoDeTeste(ambiente) ? fonteDeExemplo({ pedidosDeExemplo: true }, ambiente) : criarFonteJson();

@@ -1,5 +1,5 @@
 import { tz } from "@date-fns/tz";
-import { addDays, format, getDay } from "date-fns";
+import { addDays, startOfDay } from "date-fns";
 import { EsquemaLinhaCesto, type ConfiguracaoDaCasa, type FonteDeDados } from "@/lib/dados/tipos";
 import { vagas, validarLevantamento, type ArtigoDoCesto, type ConfiguracaoHorarios } from "@/lib/horarios";
 
@@ -25,12 +25,12 @@ import { vagas, validarLevantamento, type ArtigoDoCesto, type ConfiguracaoHorari
 type Fonte = Pick<FonteDeDados, "cotarCesto" | "produtoPorId" | "configuracaoDaCasa" | "ocupacao">;
 
 /**
- * A afluência de uma vaga, em degraus: `livre` (verde), `pouca` (amarelo),
- * `media` (laranja), `muita` (vermelho) e `cheia`. `null` quando a casa não tem
+ * A afluência de uma vaga, em três degraus e mais um: `livre` (verde), `media`
+ * (amarelo-laranja), `muita` (vermelho) e `cheia`. `null` quando a casa não tem
  * limite por vaga — sem limite, a percentagem não quer dizer nada, e o
  * calendário não pinta.
  */
-export type Afluencia = "livre" | "pouca" | "media" | "muita" | "cheia";
+export type Afluencia = "livre" | "media" | "muita" | "cheia";
 
 /** Uma vaga como o browser a recebe: o instante em ISO e o resto já escrito. */
 export type VagaDoCalendario = {
@@ -50,42 +50,25 @@ export function afluenciaDe(
   if (!livre) return "cheia";
   if (limitePorVaga === null || limitePorVaga <= 0) return null;
   const percentagem = (ocupadas / limitePorVaga) * 100;
-  if (percentagem <= limiaresAfluencia.pouca) return "livre";
-  if (percentagem <= limiaresAfluencia.media) return "pouca";
-  if (percentagem <= limiaresAfluencia.muita) return "media";
+  if (percentagem <= limiaresAfluencia.livre) return "livre";
+  if (percentagem <= limiaresAfluencia.media) return "media";
   return "muita";
 }
 
 export type ResultadoVagas =
-  | { ok: true; vagas: VagaDoCalendario[] }
-  /* `indisponivel`: falta o horário da cozinha ou o tempo de um produto, e não
-     há horas para oferecer — nunca se inventa um prazo. Vêm só **os dias em que
-     a loja abre**, para a pessoa escolher o dia que quer no mesmo calendário, e
-     a hora combina-se com ela. */
-  | { ok: false; motivo: "indisponivel"; dias: string[] }
+  /**
+   * `aConfirmar`: falta o horário da cozinha ou o tempo de um produto (a casa
+   * ainda não os deu, e o modo de teste está desligado), e não se sabe a que
+   * horas o pedido fica pronto. As vagas são então **as horas em que a loja está
+   * aberta, a partir de amanhã** — o calendário deixa escolher dia e hora, como
+   * sempre, mas a hora é **pretendida** e confirma-se com a pessoa. Não se
+   * inventa um prazo: diz-se que é para confirmar.
+   */
+  | { ok: true; vagas: VagaDoCalendario[]; aConfirmar: boolean }
   /* `cesto-invalido`: um artigo que não existe, abaixo do mínimo, fora de venda. */
   | { ok: false; motivo: "cesto-invalido" };
 
-const DIAS_DA_SEMANA = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"] as const;
 const LISBOA = { in: tz("Europe/Lisbon") };
-
-/**
- * Os dias em que a loja abre, de amanhã até onde o calendário vai — do horário
- * da loja e dos dias fechados da casa, e mais nada. Começa amanhã e não hoje:
- * sem saber quanto demora o que está no cesto, oferecer o próprio dia era
- * prometer o que a cozinha talvez não consiga.
- */
-function diasDaLoja(casa: ConfiguracaoDaCasa, agora: Date): string[] {
-  const dias: string[] = [];
-  for (let i = 1; i <= casa.diasAFrente; i++) {
-    const dia = addDays(agora, i, LISBOA);
-    const data = format(dia, "yyyy-MM-dd", LISBOA);
-    const aberta = casa.loja[DIAS_DA_SEMANA[getDay(dia, LISBOA)]].length > 0;
-    const fechada = casa.diasFechados.some((d) => d.data === data && (d.fecha === "loja" || d.fecha === "ambas"));
-    if (aberta && !fechada) dias.push(data);
-  }
-  return dias;
-}
 
 type Preparado =
   | { ok: true; cesto: ArtigoDoCesto[]; config: ConfiguracaoHorarios; casa: ConfiguracaoDaCasa }
@@ -112,21 +95,46 @@ async function preparar(linhas: unknown, fonte: Fonte): Promise<Preparado> {
   return { ok: true, cesto, config: { ...casa, cozinha: casa.cozinha }, casa };
 }
 
-export async function vagasDoCesto(linhas: unknown, fonte: Fonte, agora: Date): Promise<ResultadoVagas> {
-  const preparado = await preparar(linhas, fonte);
-  if (!preparado.ok) {
-    return preparado.motivo === "indisponivel"
-      ? { ok: false, motivo: "indisponivel", dias: diasDaLoja(preparado.casa, agora) }
-      : { ok: false, motivo: "cesto-invalido" };
-  }
+type Contexto = {
+  cesto: ArtigoDoCesto[];
+  config: ConfiguracaoHorarios;
+  casa: ConfiguracaoDaCasa;
+  /* O «agora» a partir do qual se contam as vagas: o verdadeiro, ou o começo de
+     amanhã quando a hora é a confirmar. */
+  desde: Date;
+  aConfirmar: boolean;
+};
 
-  const { cesto, config, casa } = preparado;
+/* Com os dados da cozinha, o cesto e a configuração tal como são. Sem eles, um
+   cesto vazio sobre o horário da **loja**, a contar de amanhã: o motor devolve as
+   horas em que a loja abre, e nenhuma promessa sobre quando o pedido fica pronto.
+   Começa amanhã e não hoje — sem saber quanto demora o que está no cesto,
+   oferecer o próprio dia era prometer o que a cozinha talvez não consiga. */
+async function contexto(linhas: unknown, fonte: Fonte, agora: Date): Promise<Contexto | null> {
+  const preparado = await preparar(linhas, fonte);
+  if (preparado.ok) return { ...preparado, desde: agora, aConfirmar: false };
+  if (preparado.motivo === "cesto-invalido") return null;
+  const casa = preparado.casa;
+  return {
+    cesto: [],
+    config: { ...casa, cozinha: casa.loja },
+    casa,
+    desde: startOfDay(addDays(agora, 1, LISBOA), LISBOA),
+    aConfirmar: true,
+  };
+}
+
+export async function vagasDoCesto(linhas: unknown, fonte: Fonte, agora: Date): Promise<ResultadoVagas> {
+  const c = await contexto(linhas, fonte, agora);
+  if (!c) return { ok: false, motivo: "cesto-invalido" };
+
   /* Um dia a mais do que o calendário mostra: a ocupação conta instantes, e o
      último dia tem vagas até ao fecho. */
-  const ocupadas = await fonte.ocupacao(agora, addDays(agora, config.diasAFrente + 1));
+  const ocupadas = await fonte.ocupacao(c.desde, addDays(c.desde, c.config.diasAFrente + 1));
   return {
     ok: true,
-    vagas: vagas(cesto, agora, config, ocupadas).map((vaga) => ({
+    aConfirmar: c.aConfirmar,
+    vagas: vagas(c.cesto, c.desde, c.config, ocupadas).map((vaga) => ({
       /* ⚠️ Em UTC, com `Z`. O `toISOString()` de um `TZDate` escreve `+01:00`
          — o mesmo instante, outro texto —, e este valor vai ao browser e volta
          quando se escolhe a vaga: tem de ter uma forma só. */
@@ -136,7 +144,7 @@ export async function vagasDoCesto(linhas: unknown, fonte: Fonte, agora: Date): 
       livre: vaga.livre,
       /* Uma vaga com pedidos mostra-se mais cheia **depois** de lá estar o
          pedido — o «1» de quem acabou de marcar conta. */
-      afluencia: afluenciaDe(vaga.ocupadas, vaga.livre, casa),
+      afluencia: afluenciaDe(vaga.ocupadas, vaga.livre, c.casa),
     })),
   };
 }
@@ -145,16 +153,17 @@ export async function vagasDoCesto(linhas: unknown, fonte: Fonte, agora: Date): 
  * A hora escolhida, confirmada no servidor ao enviar. É o mesmo cálculo do
  * calendário (`validarLevantamento`), de propósito: o que o browser mostrou é o
  * que o servidor aceita, e o calendário é uma ajuda e não uma garantia
- * (`pedidos.md` › O levantamento).
+ * (`pedidos.md` › O levantamento). Diz também se a hora é a confirmar.
  */
 export async function confirmarLevantamento(
   linhas: unknown,
   levantamento: Date,
   fonte: Fonte,
   agora: Date,
-): Promise<{ ok: true } | { ok: false; motivo: "indisponivel" | "cesto-invalido" | "vaga-cheia" }> {
-  const preparado = await preparar(linhas, fonte);
-  if (!preparado.ok) return { ok: false, motivo: preparado.motivo };
+): Promise<{ ok: true; aConfirmar: boolean } | { ok: false; motivo: "indisponivel" | "cesto-invalido" | "vaga-cheia" }> {
+  const c = await contexto(linhas, fonte, agora);
+  if (!c) return { ok: false, motivo: "cesto-invalido" };
   const ocupadas = await fonte.ocupacao(levantamento, levantamento);
-  return validarLevantamento(preparado.cesto, levantamento, agora, preparado.config, ocupadas);
+  const validado = validarLevantamento(c.cesto, levantamento, c.desde, c.config, ocupadas);
+  return validado.ok ? { ok: true, aConfirmar: c.aConfirmar } : validado;
 }

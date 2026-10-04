@@ -457,13 +457,12 @@
       "legenda": "What the colours mean",
       "afluencia": {
         "livre": "Free",
-        "pouca": "Some demand",
-        "media": "Busy",
+        "media": "Some demand",
         "muita": "Very busy",
         "cheia": "Full"
       },
-      "soDia": "Collect at the shop: {dia}. We'll agree the time with you.",
-      "escolhaDia": "Choose the day you'd like to collect — we'll agree the time with you."
+      "escolhidoAConfirmar": "Preferred time: {quando}. We'll confirm it with you.",
+      "escolhaAConfirmar": "Choose the day and time you'd like to collect — we'll confirm it with you."
     },
     "compra": {
       "titulo": "Complete your order",
@@ -616,6 +615,6 @@
   },
   "modoTeste": {
     "etiqueta": "Test mode",
-    "aviso": "Nothing is charged and pick-up times are examples."
+    "aviso": "Nothing is charged, and the pick-up times and booked slots are examples."
   }
 }

@@ -57,7 +57,8 @@
   /**
    * ⚠️ **As cores da afluência no calendário de levantamento — e só lá.**
    * Pedido do cliente a 04/10: o semáforo dos calendários de bilhetes de avião,
-   * verde (livre) → amarelo → laranja → vermelho (muita procura).
+   * em três cores — verde (livre), amarelo-laranja (alguma procura), vermelho
+   * (muita procura).
    *
    * É a **única exceção** à regra de que o verde é do vegan, e é por isso que
    * este verde não é o da marca: é um verde frio, azulado, que não se confunde
@@ -68,16 +69,14 @@
    * calendário escreve sempre a palavra.
    *
    * ⚠️ **As cheias foram escurecidas para levar o número a papel** — verde,
-   * laranja e vermelho dão todos mais de 5:1, que passa em texto pequeno. O
-   * amarelo não há forma de escurecer sem virar castanho: leva o número a tinta
-   * (mais de 9:1). Mais claros do que isto, o número do dia deixava de se ler.
+   * e vermelho dão mais de 5:1, que passa em texto pequeno. O amarelo-laranja
+   * não há forma de escurecer sem virar castanho: leva o número a tinta (mais de
+   * 8:1). Mais claros do que isto, o número do dia deixava de se ler.
    */
   --color-afluencia-livre: #1c7c54;
   --color-afluencia-livre-fundo: #d9f2e5;
-  --color-afluencia-pouca: #e8b21f;
-  --color-afluencia-pouca-fundo: #fbf0c9;
-  --color-afluencia-media: #b34f0e;
-  --color-afluencia-media-fundo: #fbdcc4;
+  --color-afluencia-media: #eda21c;
+  --color-afluencia-media-fundo: #fce8c3;
   --color-afluencia-muita: #b8322a;
   --color-afluencia-muita-fundo: #f7d1cd;
   /* O segundo tom de superfície. ⚠️ **Este é derivado e não medido** — os

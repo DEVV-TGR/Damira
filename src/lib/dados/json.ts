@@ -228,8 +228,9 @@ export const CONFIGURACAO_JSON: ConfiguracaoDaCasa = {
   diasFechados: [],
   ...PREDEFINICOES,
   /* Os degraus que se combinaram a 04/10, até a casa os afinar no painel. Com um
-     limite de 4 por vaga: 1 pedido é verde, 2 amarelo, 3 laranja, 4 cheio. */
-  limiaresAfluencia: { pouca: 25, media: 50, muita: 75 },
+     limite de 4 por vaga: 0 ou 1 pedido é verde, 2 amarelo-laranja, 3 vermelho,
+     4 cheio. */
+  limiaresAfluencia: { livre: 25, media: 50 },
 };
 
 const DEFINICOES_JSON: DefinicoesLoja = {
@@ -269,6 +270,12 @@ export type OpcoesFonteJson = {
   catalogo?: readonly Produto[];
   configuracao?: ConfiguracaoDaCasa;
   definicoes?: DefinicoesLoja;
+  /**
+   * Pedidos que contam para a ocupação sem estarem no `Map` — os de exemplo do
+   * modo de teste (`exemplo.ts`). Somam-se aos verdadeiros **dentro da fonte**,
+   * para o calendário e a confirmação ao enviar verem as mesmas vagas cheias.
+   */
+  ocupacaoExtra?: (desde: Date, ate: Date) => VagaOcupada[];
 };
 
 /**
@@ -331,6 +338,9 @@ export function criarFonteJson(opcoes: OpcoesFonteJson = {}): FonteDeDados {
       const quando = pedido.levantamentoEm.getTime();
       if (!ATIVOS.has(pedido.estado) || quando < desde.getTime() || quando > ate.getTime()) continue;
       contagem.set(quando, (contagem.get(quando) ?? 0) + 1);
+    }
+    for (const { inicio, pedidos: n } of opcoes.ocupacaoExtra?.(desde, ate) ?? []) {
+      contagem.set(inicio.getTime(), (contagem.get(inicio.getTime()) ?? 0) + n);
     }
     return [...contagem].map(([quando, n]) => ({ inicio: new Date(quando), pedidos: n }));
   };

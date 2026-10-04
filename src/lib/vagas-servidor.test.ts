@@ -11,18 +11,24 @@ const AGORA = new TZDate(2026, 9, 5, 10, 0, "Europe/Lisbon");
 const KIT = [{ produtoId: "festa-premium", varianteId: "20", quantidade: 1 }];
 
 describe("as vagas de um cesto", () => {
-  it("sem horário da cozinha nem tempos, não há horas — só os dias em que a loja abre, a partir de amanhã", async () => {
+  it("sem horário da cozinha nem tempos, as horas são as da loja, a partir de amanhã, e a confirmar", async () => {
     const resultado = await vagasDoCesto(KIT, criarFonteJson(), AGORA);
-    expect(resultado.ok).toBe(false);
-    if (resultado.ok || resultado.motivo !== "indisponivel") throw new Error("devia estar indisponível");
-    expect(resultado.dias[0]).toBe("2026-10-06");
-    expect(resultado.dias).toHaveLength(30);
+    if (!resultado.ok) throw new Error("devia haver horas");
+    expect(resultado.aConfirmar).toBe(true);
+    // amanhã às 7h00 de Lisboa, a abertura da loja — e não hoje, nem uma hora de produção inventada
+    expect(resultado.vagas[0]).toMatchObject({ data: "2026-10-06", hora: "07:00", afluencia: null });
+    expect(resultado.vagas.filter((v) => v.data === "2026-10-06")).toHaveLength(28);
   });
 
-  it("um dia de loja fechada não aparece", async () => {
+  it("com os dados, a hora não é a confirmar", async () => {
+    const resultado = await vagasDoCesto(KIT, fonteDeExemplo(), AGORA);
+    expect(resultado.ok && resultado.aConfirmar).toBe(false);
+  });
+
+  it("um dia de loja fechada não tem horas", async () => {
     const fonte = criarFonteJson({ configuracao: { ...CONFIGURACAO_JSON, diasFechados: [{ data: "2026-10-07", fecha: "loja" }] } });
     const resultado = await vagasDoCesto(KIT, fonte, AGORA);
-    expect(resultado.ok === false && resultado.motivo === "indisponivel" && resultado.dias).not.toContain("2026-10-07");
+    expect(resultado.ok && resultado.vagas.some((v) => v.data === "2026-10-07")).toBe(false);
   });
 
   it("com os dados (aqui, os de exemplo), começam no primeiro levantamento, em hora de Lisboa", async () => {
@@ -85,7 +91,17 @@ describe("confirmar a hora escolhida, ao enviar", () => {
   it("aceita uma vaga que o calendário mostrou", async () => {
     expect(await confirmarLevantamento(KIT, new Date("2026-10-07T06:00:00Z"), fonteDeExemplo(), AGORA)).toEqual({
       ok: true,
+      aConfirmar: false,
     });
+  });
+
+  it("sem dados, aceita uma hora da loja como a confirmar — e recusa uma fora do horário", async () => {
+    expect(await confirmarLevantamento(KIT, new Date("2026-10-06T09:00:00Z"), criarFonteJson(), AGORA)).toEqual({
+      ok: true,
+      aConfirmar: true,
+    });
+    // 23h00 de Lisboa: a loja está fechada
+    expect((await confirmarLevantamento(KIT, new Date("2026-10-06T22:00:00Z"), criarFonteJson(), AGORA)).ok).toBe(false);
   });
 
   it("recusa uma hora antes de o kit estar pronto", async () => {
@@ -97,13 +113,13 @@ describe("confirmar a hora escolhida, ao enviar", () => {
 });
 
 describe("a afluência, em percentagem do limite", () => {
-  const casa = { limitePorVaga: 4, limiaresAfluencia: { pouca: 25, media: 50, muita: 75 } };
+  const casa = { limitePorVaga: 4, limiaresAfluencia: { livre: 25, media: 50 } };
 
   it.each([
     [0, "livre"],
     [1, "livre"],
-    [2, "pouca"],
-    [3, "media"],
+    [2, "media"],
+    [3, "muita"],
   ] as const)("com limite 4, %i pedido(s) é %s", (ocupadas, afluencia) => {
     expect(afluenciaDe(ocupadas, true, casa)).toBe(afluencia);
   });
@@ -113,7 +129,7 @@ describe("a afluência, em percentagem do limite", () => {
   });
 
   it("acima do último degrau, e ainda livre, é muita", () => {
-    expect(afluenciaDe(7, true, { ...casa, limitePorVaga: 8 })).toBe("muita");
+    expect(afluenciaDe(5, true, { ...casa, limitePorVaga: 8 })).toBe("muita");
   });
 
   it("sem limite por vaga não há cores — percentagem de nada não quer dizer nada", () => {
@@ -121,7 +137,7 @@ describe("a afluência, em percentagem do limite", () => {
   });
 
   it("os degraus vêm da configuração: outra casa, outras cores", () => {
-    const exigente = { limitePorVaga: 4, limiaresAfluencia: { pouca: 0, media: 25, muita: 50 } };
-    expect(afluenciaDe(1, true, exigente)).toBe("pouca");
+    const exigente = { limitePorVaga: 4, limiaresAfluencia: { livre: 0, media: 25 } };
+    expect(afluenciaDe(1, true, exigente)).toBe("media");
   });
 });

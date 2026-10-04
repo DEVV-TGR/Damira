@@ -13,14 +13,13 @@ import type { Afluencia, VagaDoCalendario } from "@/lib/vagas-servidor";
  * referência: os dias em círculos de cor cheia, dois meses lado a lado no
  * computador, a legenda em etiquetas no canto.
  *
- * Funciona de duas maneiras, e a página escolhe conforme o que o servidor sabe:
+ Cada dia tem a cor da sua procura e, ao tocar, mostra as horas, também com
+ * cor; as cheias ficam riscadas. Escolhe-se **dia e hora**, sempre (#36).
  *
- * - **com vagas** — cada dia tem a cor da sua procura e, ao tocar, mostra as
- *   horas, também com cor; as cheias ficam riscadas;
- * - **só com dias** — quando ainda não há o horário da cozinha nem os tempos dos
- *   produtos (a casa ainda não os deu, e o modo de teste está desligado), não há
- *   horas para oferecer: mostram-se os dias em que a loja abre, sem cor, e a hora
- *   combina-se com a pessoa. **Não se inventa um prazo.**
+ * Quando ainda não há o horário da cozinha nem os tempos dos produtos (a casa
+ * ainda não os deu, e o modo de teste está desligado), as horas são as da loja
+ * e a escolhida é **pretendida** (`aConfirmar`): o calendário di-lo, e a casa
+ * confirma. **Não se inventa um prazo.**
  *
  * **Não calcula nada.** As vagas e os dias chegam do servidor (`consultarVagas`),
  * já com a data e a hora de Lisboa escritas; o horário, os tempos e os degraus
@@ -30,19 +29,17 @@ import type { Afluencia, VagaDoCalendario } from "@/lib/vagas-servidor";
  * nome de cada botão. ⚠️ **Sempre a hora de Lisboa**, também em inglês, e diz-o.
  */
 
-const ORDEM: readonly Afluencia[] = ["livre", "pouca", "media", "muita", "cheia"];
+const ORDEM: readonly Afluencia[] = ["livre", "media", "muita", "cheia"];
 
 /* Classes por extenso: o Tailwind só gera as que encontra inteiras no código. */
 const CIRCULO: Record<Afluencia, string> = {
   livre: "bg-afluencia-livre text-papel",
-  pouca: "bg-afluencia-pouca text-tinta",
-  media: "bg-afluencia-media text-papel",
+  media: "bg-afluencia-media text-tinta",
   muita: "bg-afluencia-muita text-papel",
   cheia: "bg-tinta/10 text-tinta/40 line-through",
 };
 const PASTILHA: Record<Afluencia, string> = {
   livre: "bg-afluencia-livre-fundo border-afluencia-livre",
-  pouca: "bg-afluencia-pouca-fundo border-afluencia-pouca",
   media: "bg-afluencia-media-fundo border-afluencia-media",
   muita: "bg-afluencia-muita-fundo border-afluencia-muita",
   cheia: "bg-tinta/5 border-tinta/10",
@@ -79,51 +76,44 @@ const somarMes = (mes: string, n: number) => {
 
 type Dia = { afluencia: Afluencia | null; ativo: boolean };
 
-type Comum = { locale: Locale; telefone: string | null; comTitulo?: boolean };
-type ComVagas = Comum & {
-  modo: "vagas";
+type Props = {
+  locale: Locale;
+  telefone: string | null;
+  comTitulo?: boolean;
   vagas: VagaDoCalendario[];
+  /** As horas são as da loja, e a escolhida confirma-se com a pessoa. */
+  aConfirmar?: boolean;
   escolhida: string | null;
   aoEscolher: (vaga: VagaDoCalendario) => void;
 };
-type SoDias = Comum & {
-  modo: "dias";
-  dias: string[];
-  escolhido: string | null;
-  aoEscolherDia: (data: string) => void;
-};
 
-function mapaDeDias(props: ComVagas | SoDias): Map<string, Dia> {
+function mapaDeDias(vagas: VagaDoCalendario[]): Map<string, Dia> {
   const mapa = new Map<string, Dia>();
-  if (props.modo === "dias") {
-    for (const data of props.dias) mapa.set(data, { afluencia: null, ativo: true });
-    return mapa;
-  }
   const porDia = new Map<string, VagaDoCalendario[]>();
-  for (const vaga of props.vagas) porDia.set(vaga.data, [...(porDia.get(vaga.data) ?? []), vaga]);
+  for (const vaga of vagas) porDia.set(vaga.data, [...(porDia.get(vaga.data) ?? []), vaga]);
   for (const [data, doDia] of porDia) {
     mapa.set(data, { afluencia: afluenciaDoDia(doDia), ativo: doDia.some((v) => v.livre) });
   }
   return mapa;
 }
 
-export function CalendarioLevantamento(props: ComVagas | SoDias) {
-  const { locale, telefone, comTitulo = true } = props;
+export function CalendarioLevantamento({
+  locale,
+  telefone,
+  comTitulo = true,
+  vagas,
+  aConfirmar = false,
+  escolhida: escolhidaVaga,
+  aoEscolher,
+}: Props) {
   const t = useTranslations("encomendas.calendario");
   const lingua = locale === "pt" ? "pt-PT" : "en-GB";
 
-  const fonteDosDias = props.modo === "dias" ? props.dias : props.vagas;
-  // A lista de dias só muda quando o servidor manda outra.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const dias = useMemo(() => mapaDeDias(props), [fonteDosDias]);
-
-  const vagas = props.modo === "vagas" ? props.vagas : [];
-  const escolhidaVaga = props.modo === "vagas" ? props.escolhida : null;
-  const diaEscolhido =
-    props.modo === "dias" ? props.escolhido : (vagas.find((v) => v.inicio === escolhidaVaga)?.data ?? null);
+  const dias = useMemo(() => mapaDeDias(vagas), [vagas]);
+  const diaEscolhido = vagas.find((v) => v.inicio === escolhidaVaga)?.data ?? null;
   const primeiro = [...dias].find(([, d]) => d.ativo)?.[0] ?? null;
-  const [aberto, setAberto] = useState<string | null>(() => diaEscolhido ?? (props.modo === "vagas" ? primeiro : null));
-  const diaAberto = props.modo === "vagas" ? (diaEscolhido ?? aberto) : null;
+  const [aberto, setAberto] = useState<string | null>(() => diaEscolhido ?? primeiro);
+  const diaAberto = diaEscolhido ?? aberto;
 
   const meses = useMemo(() => {
     const datas = [...dias.keys()].sort();
@@ -167,7 +157,7 @@ export function CalendarioLevantamento(props: ComVagas | SoDias) {
 
   const rotulo = (a: Afluencia | null) => (a ? t(`afluencia.${a}`) : "");
   const comCores = [...dias.values()].some((d) => d.afluencia !== null && d.afluencia !== "cheia");
-  const escolher = (data: string) => (props.modo === "dias" ? props.aoEscolherDia(data) : setAberto(data));
+  const escolher = (data: string) => setAberto(data);
   /* Os nomes dos dias, de segunda a domingo — 5 de janeiro de 1970 foi segunda —,
      numa letra só, como nos calendários de bolso. */
   const cabecalho = Array.from({ length: 7 }, (_, i) => formato.diaSemana.format(new Date(Date.UTC(1970, 0, 5 + i))));
@@ -232,7 +222,7 @@ export function CalendarioLevantamento(props: ComVagas | SoDias) {
           {comTitulo ? <h3 className="text-sm font-semibold">{t("titulo")}</h3> : <span />}
           {comCores && (
             <ul className="flex flex-wrap gap-1.5" aria-label={t("legenda")}>
-              {(["livre", "pouca", "media", "muita"] as const).map((nivel) => (
+              {(["livre", "media", "muita"] as const).map((nivel) => (
                 <li key={nivel} className={`rounded-md px-2 py-0.5 text-[0.7rem] font-semibold ${CIRCULO[nivel]}`}>
                   {rotulo(nivel)}
                 </li>
@@ -269,7 +259,7 @@ export function CalendarioLevantamento(props: ComVagas | SoDias) {
         </div>
       </div>
 
-      {props.modo === "vagas" && diaAberto && (
+      {diaAberto && (
         <div className="grid gap-3 border-t border-tinta/10 pt-4">
           <p className="text-sm font-semibold first-letter:uppercase">{formato.diaLongo.format(utc(diaAberto))}</p>
           <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
@@ -282,7 +272,7 @@ export function CalendarioLevantamento(props: ComVagas | SoDias) {
                   disabled={!vaga.livre}
                   aria-pressed={marcada}
                   aria-label={`${vaga.hora}${vaga.afluencia ? ` — ${rotulo(vaga.afluencia)}` : ""}`}
-                  onClick={() => props.aoEscolher(vaga)}
+                  onClick={() => aoEscolher(vaga)}
                   className={`premivel min-h-11 rounded-lg border-2 text-sm font-semibold tabular-nums disabled:line-through disabled:opacity-50 ${
                     marcada ? "border-tinta bg-tinta text-papel" : vaga.afluencia ? PASTILHA[vaga.afluencia] : PASTILHA_NEUTRA
                   }`}
@@ -296,22 +286,16 @@ export function CalendarioLevantamento(props: ComVagas | SoDias) {
       )}
 
       <p className="border-t border-tinta/10 pt-4 text-sm text-tinta-suave" aria-live="polite">
-        {props.modo === "vagas" ? (
-          escolhidaVaga ? (
-            <strong className="font-semibold text-tinta">
-              {t("escolhido", { quando: formato.escolhido.format(new Date(escolhidaVaga)) })}
-            </strong>
-          ) : (
-            t("escolha")
-          )
-        ) : props.escolhido ? (
+        {escolhidaVaga ? (
           <strong className="font-semibold text-tinta">
-            {t("soDia", { dia: formato.diaLongo.format(utc(props.escolhido)) })}
+            {t(aConfirmar ? "escolhidoAConfirmar" : "escolhido", {
+              quando: formato.escolhido.format(new Date(escolhidaVaga)),
+            })}
           </strong>
         ) : (
-          t("escolhaDia")
+          t(aConfirmar ? "escolhaAConfirmar" : "escolha")
         )}{" "}
-        {props.modo === "vagas" && t("horaDeLisboa")}
+        {t("horaDeLisboa")}
       </p>
     </div>
   );

@@ -457,13 +457,12 @@
       "legenda": "O que querem dizer as cores",
       "afluencia": {
         "livre": "Livre",
-        "pouca": "Pouca procura",
-        "media": "Procura média",
+        "media": "Alguma procura",
         "muita": "Muita procura",
         "cheia": "Cheio"
       },
-      "soDia": "Levanta na loja: {dia}. Combinamos a hora consigo.",
-      "escolhaDia": "Escolha o dia em que quer levantar — combinamos a hora consigo."
+      "escolhidoAConfirmar": "Hora pretendida: {quando}. Confirmamos consigo.",
+      "escolhaAConfirmar": "Escolha o dia e a hora em que gostaria de levantar — confirmamos consigo."
     },
     "compra": {
       "titulo": "Finalizar o pedido",
@@ -616,6 +615,6 @@
   },
   "modoTeste": {
     "etiqueta": "Modo de teste",
-    "aviso": "Não se cobra nada e os prazos de levantamento são de exemplo."
+    "aviso": "Não se cobra nada, e os prazos e as vagas ocupadas são de exemplo."
   }
 }

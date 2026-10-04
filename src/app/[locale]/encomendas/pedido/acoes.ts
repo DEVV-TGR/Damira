@@ -67,6 +67,7 @@ export async function enviarCompra(_anterior: Resultado, dados: FormData): Promi
   if (!refeito.ok) return { estado: "erro", campos: { cesto: t("erros.cesto-invalido") } };
 
   let levantamento: Date | null = null;
+  let aConfirmar = false;
   let data = String(dados.get("data") ?? "");
   const escolhido = String(dados.get("levantamento") ?? "");
   if (escolhido) {
@@ -76,6 +77,7 @@ export async function enviarCompra(_anterior: Resultado, dados: FormData): Promi
       : await confirmarLevantamento(linhas, quando, fonte, agora);
     if (!confirmado.ok) return { estado: "erro", campos: { data: t("erros.vaga-indisponivel") } };
     levantamento = quando;
+    aConfirmar = confirmado.aConfirmar;
     data = format(quando, "yyyy-MM-dd", LISBOA);
   }
 
@@ -111,6 +113,7 @@ export async function enviarCompra(_anterior: Resultado, dados: FormData): Promi
     enviadoEm: agora,
     modoDeTeste: emModoDeTeste(),
     levantamento,
+    aConfirmar,
     data,
     dados: validado.data,
     cesto,

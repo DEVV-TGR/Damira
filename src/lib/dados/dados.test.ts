@@ -363,3 +363,54 @@ describe("o interruptor LOJA_EM_TESTE escolhe a fonte", () => {
     }
   });
 });
+
+describe("os pedidos de exemplo do modo de teste", () => {
+  const desde = new Date("2026-10-05T00:00:00Z");
+  const ate = new Date("2026-11-04T23:00:00Z");
+  const ligado = { VERCEL_ENV: "production", LOJA_EM_TESTE: "1" };
+
+  it("só existem com o modo de teste ligado", async () => {
+    expect(await fonteDoAmbiente({ VERCEL_ENV: "production" }).ocupacao(desde, ate)).toEqual([]);
+    expect((await fonteDoAmbiente(ligado).ocupacao(desde, ate)).length).toBeGreaterThan(100);
+  });
+
+  it("nunca passam o limite por vaga, e há horas cheias", async () => {
+    const ocupadas = await fonteDoAmbiente(ligado).ocupacao(desde, ate);
+    expect(Math.max(...ocupadas.map((o) => o.pedidos))).toBe(4);
+    expect(ocupadas.every((o) => o.pedidos >= 1 && o.pedidos <= 4)).toBe(true);
+  });
+
+  it("são sempre os mesmos — o calendário não muda a cada visita", async () => {
+    const uma = await fonteDoAmbiente(ligado).ocupacao(desde, ate);
+    const outra = await fonteDoAmbiente(ligado).ocupacao(desde, ate);
+    expect(outra).toEqual(uma);
+  });
+
+  it("as cores dos dias misturam-se, sem semanas inteiras da mesma cor", async () => {
+    const ocupadas = await fonteDoAmbiente(ligado).ocupacao(desde, ate);
+    const porDia = new Map<string, number>();
+    for (const o of ocupadas) {
+      const dia = o.inicio.toISOString().slice(0, 10);
+      porDia.set(dia, (porDia.get(dia) ?? 0) + o.pedidos);
+    }
+    // de dia para dia a carga muda: em 30 dias, nunca sete seguidos parecidos
+    const cargas = [...porDia.values()];
+    const parecidos = (a: number, b: number) => Math.abs(a - b) < 6;
+    let seguidos = 1, pior = 1;
+    for (let i = 1; i < cargas.length; i++) {
+      seguidos = parecidos(cargas[i], cargas[i - 1]) ? seguidos + 1 : 1;
+      pior = Math.max(pior, seguidos);
+    }
+    expect(pior).toBeLessThan(7);
+  });
+
+  it("variam de dia para dia: há dias calmos e dias cheios", async () => {
+    const ocupadas = await fonteDoAmbiente(ligado).ocupacao(desde, ate);
+    const porDia = new Map<string, number>();
+    for (const o of ocupadas) {
+      const dia = o.inicio.toISOString().slice(0, 10);
+      porDia.set(dia, (porDia.get(dia) ?? 0) + o.pedidos);
+    }
+    expect(Math.max(...porDia.values()) - Math.min(...porDia.values())).toBeGreaterThan(20);
+  });
+});
