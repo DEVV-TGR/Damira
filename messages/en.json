@@ -461,7 +461,9 @@
         "media": "Busy",
         "muita": "Very busy",
         "cheia": "Full"
-      }
+      },
+      "soDia": "Collect at the shop: {dia}. We'll agree the time with you.",
+      "escolhaDia": "Choose the day you'd like to collect — we'll agree the time with you."
     },
     "compra": {
       "titulo": "Complete your order",

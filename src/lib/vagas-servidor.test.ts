@@ -11,8 +11,18 @@ const AGORA = new TZDate(2026, 9, 5, 10, 0, "Europe/Lisbon");
 const KIT = [{ produtoId: "festa-premium", varianteId: "20", quantidade: 1 }];
 
 describe("as vagas de um cesto", () => {
-  it("sem horário da cozinha nem tempos, o calendário está indisponível — não inventa", async () => {
-    expect(await vagasDoCesto(KIT, criarFonteJson(), AGORA)).toEqual({ ok: false, motivo: "indisponivel" });
+  it("sem horário da cozinha nem tempos, não há horas — só os dias em que a loja abre, a partir de amanhã", async () => {
+    const resultado = await vagasDoCesto(KIT, criarFonteJson(), AGORA);
+    expect(resultado.ok).toBe(false);
+    if (resultado.ok || resultado.motivo !== "indisponivel") throw new Error("devia estar indisponível");
+    expect(resultado.dias[0]).toBe("2026-10-06");
+    expect(resultado.dias).toHaveLength(30);
+  });
+
+  it("um dia de loja fechada não aparece", async () => {
+    const fonte = criarFonteJson({ configuracao: { ...CONFIGURACAO_JSON, diasFechados: [{ data: "2026-10-07", fecha: "loja" }] } });
+    const resultado = await vagasDoCesto(KIT, fonte, AGORA);
+    expect(resultado.ok === false && resultado.motivo === "indisponivel" && resultado.dias).not.toContain("2026-10-07");
   });
 
   it("com os dados (aqui, os de exemplo), começam no primeiro levantamento, em hora de Lisboa", async () => {

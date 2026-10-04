@@ -1,4 +1,5 @@
-import { addDays } from "date-fns";
+import { tz } from "@date-fns/tz";
+import { addDays, format, getDay } from "date-fns";
 import { EsquemaLinhaCesto, type ConfiguracaoDaCasa, type FonteDeDados } from "@/lib/dados/tipos";
 import { vagas, validarLevantamento, type ArtigoDoCesto, type ConfiguracaoHorarios } from "@/lib/horarios";
 
@@ -57,14 +58,39 @@ export function afluenciaDe(
 
 export type ResultadoVagas =
   | { ok: true; vagas: VagaDoCalendario[] }
-  /* `indisponivel`: falta o horário da cozinha ou o tempo de um produto — o
-     calendário diz que ainda não está disponível, nunca inventa um prazo.
-     `cesto-invalido`: um artigo que não existe, abaixo do mínimo, sem preço. */
-  | { ok: false; motivo: "indisponivel" | "cesto-invalido" };
+  /* `indisponivel`: falta o horário da cozinha ou o tempo de um produto, e não
+     há horas para oferecer — nunca se inventa um prazo. Vêm só **os dias em que
+     a loja abre**, para a pessoa escolher o dia que quer no mesmo calendário, e
+     a hora combina-se com ela. */
+  | { ok: false; motivo: "indisponivel"; dias: string[] }
+  /* `cesto-invalido`: um artigo que não existe, abaixo do mínimo, fora de venda. */
+  | { ok: false; motivo: "cesto-invalido" };
+
+const DIAS_DA_SEMANA = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"] as const;
+const LISBOA = { in: tz("Europe/Lisbon") };
+
+/**
+ * Os dias em que a loja abre, de amanhã até onde o calendário vai — do horário
+ * da loja e dos dias fechados da casa, e mais nada. Começa amanhã e não hoje:
+ * sem saber quanto demora o que está no cesto, oferecer o próprio dia era
+ * prometer o que a cozinha talvez não consiga.
+ */
+function diasDaLoja(casa: ConfiguracaoDaCasa, agora: Date): string[] {
+  const dias: string[] = [];
+  for (let i = 1; i <= casa.diasAFrente; i++) {
+    const dia = addDays(agora, i, LISBOA);
+    const data = format(dia, "yyyy-MM-dd", LISBOA);
+    const aberta = casa.loja[DIAS_DA_SEMANA[getDay(dia, LISBOA)]].length > 0;
+    const fechada = casa.diasFechados.some((d) => d.data === data && (d.fecha === "loja" || d.fecha === "ambas"));
+    if (aberta && !fechada) dias.push(data);
+  }
+  return dias;
+}
 
 type Preparado =
   | { ok: true; cesto: ArtigoDoCesto[]; config: ConfiguracaoHorarios; casa: ConfiguracaoDaCasa }
-  | { ok: false; motivo: "indisponivel" | "cesto-invalido" };
+  | { ok: false; motivo: "indisponivel"; casa: ConfiguracaoDaCasa }
+  | { ok: false; motivo: "cesto-invalido" };
 
 /* O que é preciso para o motor fazer as contas: o cesto em tempos de produção,
    e a configuração com a cozinha preenchida. */
@@ -75,12 +101,12 @@ async function preparar(linhas: unknown, fonte: Fonte): Promise<Preparado> {
   if (!cotado.ok || !cotado.cotacao.valida) return { ok: false, motivo: "cesto-invalido" };
 
   const casa = await fonte.configuracaoDaCasa();
-  if (casa.cozinha === null) return { ok: false, motivo: "indisponivel" };
+  if (casa.cozinha === null) return { ok: false, motivo: "indisponivel", casa };
 
   const cesto: ArtigoDoCesto[] = [];
   for (const linha of lidas.data) {
     const produto = await fonte.produtoPorId(linha.produtoId);
-    if (!produto?.tempoProducao) return { ok: false, motivo: "indisponivel" };
+    if (!produto?.tempoProducao) return { ok: false, motivo: "indisponivel", casa };
     cesto.push({ tempo: produto.tempoProducao });
   }
   return { ok: true, cesto, config: { ...casa, cozinha: casa.cozinha }, casa };
@@ -88,7 +114,11 @@ async function preparar(linhas: unknown, fonte: Fonte): Promise<Preparado> {
 
 export async function vagasDoCesto(linhas: unknown, fonte: Fonte, agora: Date): Promise<ResultadoVagas> {
   const preparado = await preparar(linhas, fonte);
-  if (!preparado.ok) return preparado;
+  if (!preparado.ok) {
+    return preparado.motivo === "indisponivel"
+      ? { ok: false, motivo: "indisponivel", dias: diasDaLoja(preparado.casa, agora) }
+      : { ok: false, motivo: "cesto-invalido" };
+  }
 
   const { cesto, config, casa } = preparado;
   /* Um dia a mais do que o calendário mostra: a ocupação conta instantes, e o
@@ -124,7 +154,7 @@ export async function confirmarLevantamento(
   agora: Date,
 ): Promise<{ ok: true } | { ok: false; motivo: "indisponivel" | "cesto-invalido" | "vaga-cheia" }> {
   const preparado = await preparar(linhas, fonte);
-  if (!preparado.ok) return preparado;
+  if (!preparado.ok) return { ok: false, motivo: preparado.motivo };
   const ocupadas = await fonte.ocupacao(levantamento, levantamento);
   return validarLevantamento(preparado.cesto, levantamento, agora, preparado.config, ocupadas);
 }

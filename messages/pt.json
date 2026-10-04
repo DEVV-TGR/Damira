@@ -461,7 +461,9 @@
         "media": "Procura média",
         "muita": "Muita procura",
         "cheia": "Cheio"
-      }
+      },
+      "soDia": "Levanta na loja: {dia}. Combinamos a hora consigo.",
+      "escolhaDia": "Escolha o dia em que quer levantar — combinamos a hora consigo."
     },
     "compra": {
       "titulo": "Finalizar o pedido",

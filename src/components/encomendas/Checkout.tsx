@@ -76,6 +76,12 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
   const vagas = useDoServidor<ResultadoVagas>(linhas, comCesto, consultarVagas);
   const cotacao = useDoServidor<ResultadoCotacao>(linhas, comCesto, cotarPedido);
   const [escolhida, setEscolhida] = useState<VagaDoCalendario | null>(null);
+  /* Sem horas para oferecer, escolhe-se só o dia — e só um dos que vieram. */
+  const [diaEscolhido, setDiaEscolhido] = useState<string | null>(null);
+  const diaValido =
+    diaEscolhido && vagas?.ok === false && vagas.motivo === "indisponivel" && vagas.dias.includes(diaEscolhido)
+      ? diaEscolhido
+      : null;
 
   /* ⚠️ **Campos controlados, e o formulário não se reinicia sozinho.** No
      React 19 um `<form action>` limpa os campos depois de cada envio: com um
@@ -205,9 +211,12 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
           <h2 id={`${id}-quando`} className="titulo-display titulo-gama">
             <span className="text-tijolo">1</span> · {t("quando")}
           </h2>
-          {/* O calendário quando há com que o fazer; a data quando não há — sem
-              o horário da cozinha e os tempos, o site no ar não pode ficar sem
-              forma de encomendar. */}
+          {/* ⚠️ **Sempre o calendário embutido, nunca a janela de data do
+              browser.** Com o horário da cozinha e os tempos, escolhe-se o dia e
+              a hora, com a procura em cores; sem eles (a casa ainda não os deu e
+              o modo de teste está desligado), escolhe-se só o dia, entre os que
+              a loja abre, e a hora combina-se — o site no ar não fica sem forma
+              de encomendar, e não inventa um prazo. */}
           {vagas === null ? (
             <p className="text-sm text-tinta-suave" aria-live="polite">
               {tcal("aCarregar")}
@@ -215,6 +224,7 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
           ) : vagas.ok ? (
             <div className="rounded-2xl border border-tinta/15">
               <CalendarioLevantamento
+                modo="vagas"
                 vagas={vagas.vagas}
                 escolhida={escolhidaValida?.inicio ?? null}
                 aoEscolher={setEscolhida}
@@ -225,16 +235,21 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
               <input type="hidden" name="levantamento" value={escolhidaValida?.inicio ?? ""} />
               <input type="hidden" name="data" value={escolhidaValida?.data ?? ""} />
             </div>
+          ) : vagas.motivo === "indisponivel" ? (
+            <div className="rounded-2xl border border-tinta/15">
+              <CalendarioLevantamento
+                modo="dias"
+                dias={vagas.dias}
+                escolhido={diaValido}
+                aoEscolherDia={setDiaEscolhido}
+                locale={locale}
+                telefone={telefone}
+                comTitulo={false}
+              />
+              <input type="hidden" name="data" value={diaValido ?? ""} />
+            </div>
           ) : (
-            <Campo
-              id={`${id}-data`}
-              nome="data"
-              tipo="date"
-              rotulo={tf("campos.data")}
-              obrigatorio
-              valor={valor("data")}
-              aoMudar={mudar("data")}
-            />
+            <Erro>{tf("erros.cesto-invalido")}</Erro>
           )}
           {erros.data && <Erro id={`${id}-data-erro`}>{erros.data}</Erro>}
         </section>
