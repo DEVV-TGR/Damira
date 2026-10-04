@@ -7,12 +7,13 @@ import {
   configuracaoDaCasa,
   definicoesLoja,
   listarPedidos,
+  precisaDeAtencao,
   produtosDoPainel,
   simularPedidoDeTeste,
 } from "@/lib/dados";
 import type { ContextoPainel, Pedido } from "@/lib/dados/tipos";
 import { FUSO } from "@/lib/horarios";
-import { esgotadoHoje, organizarBalcao } from "@/lib/painel";
+import { contarPorPreencher, esgotadoHoje, organizarBalcao } from "@/lib/painel";
 import { VERSAO_DO_SITE, versaoEmCache } from "@/lib/painel-versao";
 import { sessao } from "@/lib/sessao-painel";
 
@@ -69,6 +70,9 @@ export default async function Painel({ searchParams }: { searchParams: Promise<{
     produtosDoPainel(ctx),
     pedidosDoBalcao(ctx),
   ]);
+  /* A gestão só se pede para a gerente — e a fronteira recusava-a ao balcão de
+     qualquer forma. */
+  const atencao = atual.papel === "gerente" ? await precisaDeAtencao(ctx) : null;
 
   return (
     <>
@@ -90,6 +94,11 @@ export default async function Painel({ searchParams }: { searchParams: Promise<{
             )}
           pausaAte={definicoes.pausaAte}
           modoTeste={simularPedidoDeTeste !== null}
+          gestao={
+            atencao?.ok
+              ? { avisos: atencao.valor, porPreencher: contarPorPreencher(produtos), casa, definicoes }
+              : null
+          }
         />
       </PainelAberto>
     </>

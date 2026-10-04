@@ -12,7 +12,9 @@ import {
   fimDaPausa,
   diaPorExtenso,
   historicoDe,
+  intervaloDeDias,
   novidades,
+  paraCent,
   organizarBalcao,
   rotuloPagamento,
 } from "./painel";
@@ -319,5 +321,29 @@ describe("o que o balcão mostra", () => {
     ]);
     expect(resultado.novos.map((p) => p.id)).toEqual(["cccc"]);
     expect(resultado.cancelados.map((p) => p.id)).toEqual(["bbbb"]);
+  });
+});
+
+describe("os formulários da gestão", () => {
+  it("euros escritos à mão passam a cêntimos inteiros, sem decimais pelo caminho", () => {
+    expect(paraCent("12,50")).toBe(1250);
+    expect(paraCent("12.5")).toBe(1250);
+    expect(paraCent("0,29")).toBe(29);
+    expect(paraCent("30")).toBe(3000);
+    expect(paraCent(" 15,00 € ")).toBe(1500);
+  });
+
+  it("o que não é um valor em euros é recusado", () => {
+    for (const errado of ["", "abc", "12,505", "-3", "1e3", "12,"]) expect(paraCent(errado), errado).toBeNull();
+  });
+
+  it("os dias do filtro vão da meia-noite de Lisboa ao fim do último dia", () => {
+    const { desde, ate } = intervaloDeDias("2026-07-15", "2026-07-16");
+    expect(desde?.toISOString()).toBe("2026-07-14T23:00:00.000Z");
+    expect(ate?.toISOString()).toBe("2026-07-16T22:59:59.999Z");
+  });
+
+  it("um dia em branco ou mal escrito não filtra", () => {
+    expect(intervaloDeDias(null, "15/07")).toEqual({});
   });
 });

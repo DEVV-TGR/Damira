@@ -6,6 +6,7 @@ import { desfazer, procurar, simularPedido } from "@/app/painel/acoes-balcao";
 import type { Papel, Pedido } from "@/lib/dados/tipos";
 import { diaDeLisboa, diaPorExtenso, novidades, type Balcao as SeparadoresDoBalcao } from "@/lib/painel";
 import { horaDeLisboa } from "@/lib/painel-ligacao";
+import { Gestao, type DadosGestao } from "../gestao/Gestao";
 import { usePainel } from "../PainelAberto";
 import { Arquivo } from "./Arquivo";
 import { Avisos, type Aviso } from "./Avisos";
@@ -24,7 +25,7 @@ import { PedidoCartao } from "./PedidoCartao";
  * (som uma vez, e um aviso que fica até alguém lhe tocar) ou **um cancelado**
  * (som e aviso vermelho). Um talão que não saiu faz o alarme repetir-se.
  *
- * A gerente vê isto tudo e, por cima, a gestão (#45).
+ * A gerente vê isto tudo e, por cima, a gestão (`../gestao/Gestao.tsx`).
  */
 
 export type ProdutoDoBalcao = { id: string; nome: string; esgotadoHoje: boolean; foraDeVenda: boolean };
@@ -37,6 +38,8 @@ type Props = {
   produtos: ProdutoDoBalcao[];
   pausaAte: Date | null;
   modoTeste: boolean;
+  /** Só para a gerente: a página nem os pede para o balcão. */
+  gestao: DadosGestao | null;
 };
 
 type Separador = "hoje" | "produzir" | "proximos" | "arquivo" | "esgotados" | "gestao";
@@ -47,7 +50,7 @@ const CINCO_MINUTOS = 5 * 60_000;
 
 const mapaDe = (pedidos: Pedido[]) => new Map(pedidos.map((p) => [p.id, p.estado]));
 
-export function Balcao({ papel, pedidos, balcao, produtos, pausaAte, modoTeste }: Props) {
+export function Balcao({ papel, pedidos, balcao, produtos, pausaAte, modoTeste, gestao }: Props) {
   const router = useRouter();
   const { tocar, atualizadoEm } = usePainel();
   const [separador, setSeparador] = useState<Separador>("hoje");
@@ -117,7 +120,7 @@ export function Balcao({ papel, pedidos, balcao, produtos, pausaAte, modoTeste }
     { id: "proximos", rotulo: `Próximos · ${balcao.proximos.length}` },
     { id: "arquivo", rotulo: "Arquivo" },
     { id: "esgotados", rotulo: "Esgotados" },
-    ...(papel === "gerente" ? [{ id: "gestao" as const, rotulo: "Gestão" }] : []),
+    ...(gestao ? [{ id: "gestao" as const, rotulo: gestao.avisos.length > 0 ? `Gestão · ${gestao.avisos.length} ⚠` : "Gestão" }] : []),
   ];
 
   return (
@@ -156,11 +159,7 @@ export function Balcao({ papel, pedidos, balcao, produtos, pausaAte, modoTeste }
           {separador === "proximos" && <Proximos pedidos={balcao.proximos} onEntregue={aoEntregar} atualizadoEm={atualizadoEm} />}
           {separador === "arquivo" && <Arquivo papel={papel} />}
           {separador === "esgotados" && <Esgotados produtos={produtos} />}
-          {separador === "gestao" && (
-            <p className="rounded-2xl border border-tinta/15 bg-papel p-8 text-tinta-suave">
-              A gestão (pedidos, produtos, horários, definições) chega na próxima etapa do painel.
-            </p>
-          )}
+          {separador === "gestao" && gestao && <Gestao dados={gestao} />}
         </div>
       </Pesquisa>
 

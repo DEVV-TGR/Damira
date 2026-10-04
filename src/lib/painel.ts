@@ -316,3 +316,36 @@ export function novidades(
     cancelados: atuais.filter((p) => p.estado === "cancelado" && anteriores.get(p.id) === "pago"),
   };
 }
+
+// ——— Os formulários da gestão ———
+
+/**
+ * «12,50» ou «12.5» → 1250. ⚠️ **Sem passar por um decimal** (regra 2 do
+ * AGENTS.md): `12.5 * 100` dá 1250 por sorte, `0.29 * 100` dá 28,999…, e um
+ * cêntimo a menos no valor mínimo é uma regra que deixa passar um pedido.
+ * `null` se não for um valor em euros com até dois decimais.
+ */
+export function paraCent(texto: string): number | null {
+  const lido = /^(\d{1,6})(?:[.,](\d{1,2}))?$/.exec(texto.trim().replace(/\s*€$/, ""));
+  if (!lido) return null;
+  return Number(lido[1]) * 100 + Number((lido[2] ?? "").padEnd(2, "0"));
+}
+
+const DATA = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Os dias escolhidos no filtro (`"2026-10-07"`), como instantes: do começo do
+ * primeiro ao fim do último, **em hora de Lisboa**. Um `new Date("2026-10-07")`
+ * seria meia-noite em UTC — uma hora a menos no verão, e os pedidos da meia-noite
+ * à uma ficavam do lado errado.
+ */
+export function intervaloDeDias(desde: string | null, ate: string | null): { desde?: Date; ate?: Date } {
+  const instante = (data: string, dias: number) => {
+    const [ano, mes, dia] = data.split("-").map(Number);
+    return new Date(new TZDate(ano, mes - 1, dia + dias, 0, 0, FUSO).getTime());
+  };
+  return {
+    ...(desde && DATA.test(desde) ? { desde: instante(desde, 0) } : {}),
+    ...(ate && DATA.test(ate) ? { ate: new Date(instante(ate, 1).getTime() - 1) } : {}),
+  };
+}

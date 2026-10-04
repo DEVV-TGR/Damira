@@ -10,41 +10,15 @@ import {
   simularPedidoDeTeste,
   tirarDeVenda,
 } from "@/lib/dados";
-import type { ContextoPainel, ResultadoPainel } from "@/lib/dados/tipos";
 import { fimDaPausa, OPCOES_PAUSA, type OpcaoPausa } from "@/lib/painel";
-import { avisarQuePedidosMudaram } from "@/lib/painel-versao";
-import { sessao } from "@/lib/sessao-painel";
+import { comSessao } from "@/lib/painel-servidor";
 
 /**
  * # As ações do balcão (`painel-balcao.md`)
  *
- * ⚠️ **Esconder um botão não é proteger** (regra 8). O papel sai da sessão,
- * aqui, no servidor — nunca de um argumento — e a fronteira (`papeis.ts`)
- * verifica-o outra vez. Sem sessão, `sem-permissao`.
- *
- * Quem muda um pedido chama `avisarQuePedidosMudaram()`: é o que faz os outros
- * dispositivos verem a mudança na próxima volta do polling.
+ * Todas passam pelo `comSessao` (`src/lib/painel-servidor.ts`): o papel sai da
+ * sessão, no servidor, e quem muda um pedido avisa o polling.
  */
-
-const SEM_SESSAO = { ok: false, erro: "sem-permissao" } as const;
-
-async function contexto(): Promise<ContextoPainel | null> {
-  const agora = new Date();
-  const atual = await sessao.sessaoAtual(agora);
-  return atual ? { papel: atual.papel, agora } : null;
-}
-
-/* Corre a ação com o contexto da sessão; se mudou um pedido e correu bem, avisa. */
-async function comSessao<T>(
-  acao: (ctx: ContextoPainel) => Promise<ResultadoPainel<T>>,
-  mudaPedidos = false,
-): Promise<ResultadoPainel<T>> {
-  const ctx = await contexto();
-  if (!ctx) return SEM_SESSAO;
-  const resultado = await acao(ctx);
-  if (resultado.ok && mudaPedidos) avisarQuePedidosMudaram();
-  return resultado;
-}
 
 export async function entregar(id: string, faltaCobrada: boolean) {
   return comSessao((ctx) => marcarEntregue(id, faltaCobrada, ctx), true);
@@ -94,7 +68,7 @@ export async function arquivo(cursor: string | null) {
  */
 export async function simularPedido(talaoFalhou: boolean) {
   return comSessao(async () => {
-    if (!simularPedidoDeTeste) return { ok: false, erro: "sem-permissao" };
+    if (!simularPedidoDeTeste) return { ok: false, erro: "sem-permissao" } as const;
     return { ok: true, valor: simularPedidoDeTeste(new Date(), { talaoFalhou }) };
   }, true);
 }
