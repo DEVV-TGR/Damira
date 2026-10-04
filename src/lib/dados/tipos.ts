@@ -379,9 +379,20 @@ export type ContextoPainel = { papel: Papel; agora: Date };
  *   fonte ser chamada (regra 8 do AGENTS.md: esconder um botão não é proteger).
  * - `dados-invalidos`: com `campos`, os nomes dos campos que falharam, para o
  *   formulário os marcar.
- * - `nao-existe`: o id não é de produto nenhum.
+ * - `nao-existe`: o id não é de produto nem de pedido nenhum.
+ * - `estado-mudou`: o pedido já não está no estado de que a ação parte (alguém
+ *   o cancelou, ou outro dispositivo já lhe tocou). O painel recarrega a lista.
+ * - `falta-cobrar`: entregar um pedido com dinheiro em falta sem confirmar que
+ *   se cobrou (`painel-balcao.md` › Entregar).
+ * - `fora-do-prazo`: o balcão a desfazer um «entregue» depois dos 5 minutos.
  */
-export type ErroPainel = "sem-permissao" | "dados-invalidos" | "nao-existe";
+export type ErroPainel =
+  | "sem-permissao"
+  | "dados-invalidos"
+  | "nao-existe"
+  | "estado-mudou"
+  | "falta-cobrar"
+  | "fora-do-prazo";
 
 /** As escritas devolvem um resultado e nunca rebentam para o browser (`robustez.md`). */
 export type ResultadoPainel<T> =
@@ -493,6 +504,52 @@ export const EsquemaDefinicoes = z
   .strict();
 
 /**
+ * A procura de pedidos do painel: as listas do balcão, o arquivo, a pesquisa e
+ * os filtros da gerente são todos isto. Vem do browser, por isso valida-se.
+ *
+ * - `texto`: parte da referência (`4F7K`) ou do nome do cliente, sem contar
+ *   maiúsculas nem acentos — quem liga diz «é a encomenda da Márcia».
+ * - `cursor`: opaco. O browser devolve o `seguinte` da página anterior e não o
+ *   interpreta; a base de dados escolhe o que lá põe (`robustez.md` › paginação).
+ * - `ordem`: `levantamento` (o mais cedo primeiro, para as listas do dia) ou
+ *   `recentes` (o último criado primeiro, para o arquivo).
+ */
+export const EsquemaFiltroPedidos = z
+  .object({
+    estados: z.array(z.enum(ESTADOS_PEDIDO)).min(1).optional(),
+    levantamentoDesde: z.date().optional(),
+    levantamentoAte: z.date().optional(),
+    texto: z.string().trim().min(2).max(100).optional(),
+    ordem: z.enum(["levantamento", "recentes"]).default("levantamento"),
+    cursor: z.string().max(200).nullable().default(null),
+    limite: z.number().int().min(1).max(100).default(50),
+  })
+  .strict();
+
+export type FiltroPedidos = z.input<typeof EsquemaFiltroPedidos>;
+
+/** Uma página. `seguinte` é `null` na última. */
+export type PaginaPedidos = { pedidos: Pedido[]; seguinte: string | null };
+
+/**
+ * O que espera pela gerente no topo do painel (`painel-gerente.md` › Precisa de
+ * atenção). Só os pedidos que ainda vão ser levantados: depois do dia, o aviso
+ * já não serve de nada e sai sozinho, sem ninguém o ter de dispensar.
+ *
+ * Os três do Stripe estão já declarados, para o painel os saber mostrar; a
+ * implementação provisória nunca os devolve, porque não há pagamentos (#42, #43,
+ * #49). Os produtos por preencher não estão aqui: contam-se com o
+ * `contarPorPreencher` (`src/lib/painel.ts`) sobre o `produtosDoPainel`.
+ */
+export type AvisoAtencao =
+  | { tipo: "chegou-tarde"; pedidoId: string; referencia: string }
+  | { tipo: "possivel-duplicado"; pedidoIds: [string, string]; referencias: [string, string] }
+  | { tipo: "dia-fechado"; pedidoId: string; referencia: string; data: string }
+  | { tipo: "reembolso-falhado"; pedidoId: string; referencia: string }
+  | { tipo: "disputa"; pedidoId: string; referencia: string }
+  | { tipo: "apanhado-pela-verificacao"; pedidoId: string; referencia: string };
+
+/**
  * O que o painel lê e escreve. Cada função recebe o `ContextoPainel`; **quem
  * pode chamar cada uma decide-o o `index.ts`**, e a implementação recebe só as
  * chamadas que já passaram. O que vem do browser entra como `unknown`.
@@ -510,6 +567,33 @@ export type FontePainel = {
   guardarDefinicoes(entrada: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<DefinicoesLoja>>;
   /** `null` retoma. O fim de cada opção do balcão calcula-o o `fimDaPausa` (`src/lib/painel.ts`). */
   pausarLoja(ate: Date | null, ctx: ContextoPainel): Promise<ResultadoPainel<DefinicoesLoja>>;
+
+  // Pedidos
+
+  listarPedidos(filtro: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<PaginaPedidos>>;
+  pedidoDoPainel(id: string, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
+  /**
+   * `pago → entregue`, **condicional**: dois toques ao mesmo tempo (ou em dois
+   * dispositivos) entregam uma vez, e o segundo recebe o pedido já entregue.
+   * Com dinheiro em falta, só com `faltaCobrada: true` — o painel pergunta
+   * «Recebeu os 12,50 € em falta?» antes, e o servidor não confia que perguntou.
+   */
+  marcarEntregue(id: string, faltaCobrada: boolean, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
+  /**
+   * `entregue → pago`. ⚠️ **A única regra de papel que a fonte verifica ela
+   * própria**, porque depende do pedido: o balcão só nos 5 minutos a seguir ao
+   * `entregueEm`; a gerente a qualquer momento (`pedidos.md`).
+   */
+  desfazerEntregue(id: string, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
+  precisaDeAtencao(ctx: ContextoPainel): Promise<ResultadoPainel<AvisoAtencao[]>>;
+  /**
+   * Um número que muda sempre que um pedido muda. É o que o painel pergunta de
+   * 10 em 10 segundos, **servido da cache da Vercel** e invalidado a cada
+   * alteração — o painel só vai à base de dados quando ele muda, e ela pode
+   * dormir (`painel.md`, regra 6). Não diz nada sobre os pedidos, por isso não
+   * pede papel nem sessão.
+   */
+  versaoPedidos(): Promise<number>;
 };
 
 // ——— A fronteira ———

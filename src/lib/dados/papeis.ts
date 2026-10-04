@@ -46,5 +46,17 @@ export function protegerPainel(fonte: FontePainel): FontePainel {
     guardarHorarios: exigirPapel(SO_GERENTE, (entrada: unknown, ctx) => fonte.guardarHorarios(entrada, ctx)),
     guardarDefinicoes: exigirPapel(SO_GERENTE, (entrada: unknown, ctx) => fonte.guardarDefinicoes(entrada, ctx)),
     pausarLoja: exigirPapel(EQUIPA, (ate: Date | null, ctx) => fonte.pausarLoja(ate, ctx)),
+    /* Os pedidos têm nomes e telefones: mesmo as leituras pedem um papel válido. */
+    listarPedidos: exigirPapel(EQUIPA, (filtro: unknown, ctx) => fonte.listarPedidos(filtro, ctx)),
+    pedidoDoPainel: exigirPapel(EQUIPA, (id: string, ctx) => fonte.pedidoDoPainel(id, ctx)),
+    marcarEntregue: exigirPapel(EQUIPA, (id: string, faltaCobrada: boolean, ctx) =>
+      fonte.marcarEntregue(id, faltaCobrada, ctx),
+    ),
+    /* Os dois papéis entram; os 5 minutos do balcão verifica-os a fonte, porque
+       dependem do pedido. */
+    desfazerEntregue: exigirPapel(EQUIPA, (id: string, ctx) => fonte.desfazerEntregue(id, ctx)),
+    precisaDeAtencao: exigirPapel(SO_GERENTE, (ctx) => fonte.precisaDeAtencao(ctx)),
+    /* Pública de propósito: é um número, servido da cache (`painel.md`). */
+    versaoPedidos: () => fonte.versaoPedidos(),
   };
 }

@@ -287,6 +287,11 @@ export type OpcoesFonteJson = {
    * para o calendário e a confirmação ao enviar verem as mesmas vagas cheias.
    */
   ocupacaoExtra?: (desde: Date, ate: Date) => VagaOcupada[];
+  /**
+   * Pedidos que já existem ao arrancar — os testes do painel precisam de
+   * pedidos pagos, e só o Stripe paga (#42). Contam para tudo, como os outros.
+   */
+  pedidos?: readonly Pedido[];
 };
 
 /**
@@ -301,12 +306,17 @@ export function criarFonteJson(opcoes: OpcoesFonteJson = {}): FonteDeDados {
     porId: new Map((opcoes.catalogo ?? CATALOGO_JSON).map((produto) => [produto.id, produto])),
     configuracao: opcoes.configuracao ?? CONFIGURACAO_JSON,
     definicoes: opcoes.definicoes ?? DEFINICOES_JSON,
+    pedidos: new Map((opcoes.pedidos ?? []).map((pedido) => [pedido.id, pedido])),
+    porReferencia: new Map((opcoes.pedidos ?? []).map((pedido) => [pedido.referencia, pedido.id])),
+    versao: 0,
   };
-  const { porId } = estado;
+  const { porId, pedidos, porReferencia } = estado;
 
-  const pedidos = new Map<string, Pedido>();
-  const porReferencia = new Map<string, Pedido>();
-  const porChave = new Map<string, Pedido>();
+  /* A chave de idempotência só serve ao criar; não precisa de estar no estado
+     partilhado. Os índices guardam o id, e não o pedido: o painel troca o
+     pedido por uma cópia quando lhe toca, e um índice com o objeto ficava com a
+     versão antiga. */
+  const porChave = new Map<string, string>();
 
   const cotar = (linhas: ReturnType<typeof EsquemaLinhaCesto.parse>[]): Cotacao => {
     const cotadas = linhas.map((linha): LinhaCotada => {
@@ -409,7 +419,7 @@ export function criarFonteJson(opcoes: OpcoesFonteJson = {}): FonteDeDados {
 
       /* A mesma chave devolve o mesmo pedido, seja qual for o resto: é o que
          impede um duplo clique de pagar duas vezes. */
-      const repetido = porChave.get(dados.chaveIdempotencia);
+      const repetido = pedidos.get(porChave.get(dados.chaveIdempotencia) ?? "");
       if (repetido) return { ok: true, pedido: repetido };
 
       if (definicoes.pausaAte && agora.getTime() < definicoes.pausaAte.getTime()) {
@@ -488,13 +498,14 @@ export function criarFonteJson(opcoes: OpcoesFonteJson = {}): FonteDeDados {
       };
 
       pedidos.set(pedido.id, pedido);
-      porReferencia.set(referencia, pedido);
-      porChave.set(dados.chaveIdempotencia, pedido);
+      porReferencia.set(referencia, pedido.id);
+      porChave.set(dados.chaveIdempotencia, pedido.id);
+      estado.versao++;
       return { ok: true, pedido };
     },
 
     async pedidoPorReferencia(referencia) {
-      return porReferencia.get(referencia) ?? null;
+      return pedidos.get(porReferencia.get(referencia) ?? "") ?? null;
     },
   };
 

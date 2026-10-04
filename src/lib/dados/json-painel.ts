@@ -1,13 +1,15 @@
 import type { z } from "zod";
-import { diaDeLisboa } from "@/lib/painel";
+import { avisosDosPedidos, diaDeLisboa, faltaPagarCent } from "@/lib/painel";
 import {
   EsquemaDefinicoes,
   EsquemaEntradaProduto,
+  EsquemaFiltroPedidos,
   EsquemaHorarios,
   EsquemaProduto,
   type ConfiguracaoDaCasa,
   type DefinicoesLoja,
   type FontePainel,
+  type Pedido,
   type Produto,
   type ResultadoPainel,
 } from "./tipos";
@@ -33,6 +35,11 @@ export type EstadoJson = {
   porId: Map<string, Produto>;
   configuracao: ConfiguracaoDaCasa;
   definicoes: DefinicoesLoja;
+  pedidos: Map<string, Pedido>;
+  /** Referência → id do pedido. */
+  porReferencia: Map<string, string>;
+  /** Sobe a cada pedido criado ou alterado (`versaoPedidos`). */
+  versao: number;
 };
 
 const invalido = (erro: z.ZodError): ResultadoPainel<never> => ({
@@ -64,6 +71,12 @@ const livre = (base: string, ocupados: (id: string) => boolean): string => {
 };
 
 type EntradaLida = z.output<typeof EsquemaEntradaProduto>;
+
+/* «Márcia», «marcia» e «MARCIA» são a mesma pessoa ao telefone. */
+const paraProcura = (texto: string) =>
+  texto.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+
+const CINCO_MINUTOS = 5 * 60_000;
 
 /* Uma variante nova ganha id a partir do que a distingue: o número de pessoas,
    o rótulo, ou `unica` se for a única. As que já tinham id guardam-no. */
@@ -163,6 +176,81 @@ export function criarPainelJson(estado: EstadoJson): FontePainel {
       }
       estado.definicoes = { ...estado.definicoes, pausaAte: ate };
       return { ok: true, valor: estado.definicoes };
+    },
+
+    async listarPedidos(entrada) {
+      const lido = EsquemaFiltroPedidos.safeParse(entrada);
+      if (!lido.success) return invalido(lido.error);
+      const filtro = lido.data;
+      /* Aqui o cursor é a posição na lista. Na base de dados será outra coisa
+         (o último visto, por índice); o browser não sabe e não precisa. */
+      if (filtro.cursor !== null && !/^\d+$/.test(filtro.cursor)) {
+        return { ok: false, erro: "dados-invalidos", campos: ["cursor"] };
+      }
+      const texto = filtro.texto ? paraProcura(filtro.texto) : null;
+      const encontrados = [...estado.pedidos.values()]
+        .filter(
+          (p) =>
+            (!filtro.estados || filtro.estados.includes(p.estado)) &&
+            (!filtro.levantamentoDesde || p.levantamentoEm >= filtro.levantamentoDesde) &&
+            (!filtro.levantamentoAte || p.levantamentoEm <= filtro.levantamentoAte) &&
+            (!texto || paraProcura(p.referencia).includes(texto) || paraProcura(p.cliente.nome).includes(texto)),
+        )
+        .sort((a, b) =>
+          filtro.ordem === "recentes"
+            ? b.criadoEm.getTime() - a.criadoEm.getTime() || a.id.localeCompare(b.id)
+            : a.levantamentoEm.getTime() - b.levantamentoEm.getTime() || a.id.localeCompare(b.id),
+        );
+      const inicio = filtro.cursor === null ? 0 : Number(filtro.cursor);
+      const fim = inicio + filtro.limite;
+      return {
+        ok: true,
+        valor: {
+          pedidos: encontrados.slice(inicio, fim),
+          seguinte: fim < encontrados.length ? String(fim) : null,
+        },
+      };
+    },
+
+    async pedidoDoPainel(id) {
+      const pedido = estado.pedidos.get(id);
+      return pedido ? { ok: true, valor: pedido } : naoExiste;
+    },
+
+    async marcarEntregue(id, faltaCobrada, { agora }) {
+      const pedido = estado.pedidos.get(id);
+      if (!pedido) return naoExiste;
+      /* O segundo toque — ou o outro dispositivo — encontra-o já entregue, e
+         isso não é um erro: o que se queria aconteceu. Na base de dados é um
+         `UPDATE … WHERE estado = 'pago'`, nunca ler e depois escrever. */
+      if (pedido.estado === "entregue") return { ok: true, valor: pedido };
+      if (pedido.estado !== "pago") return { ok: false, erro: "estado-mudou" };
+      if (faltaPagarCent(pedido) > 0 && !faltaCobrada) return { ok: false, erro: "falta-cobrar" };
+      const entregue: Pedido = { ...pedido, estado: "entregue", entregueEm: agora };
+      estado.pedidos.set(id, entregue);
+      estado.versao++;
+      return { ok: true, valor: entregue };
+    },
+
+    async desfazerEntregue(id, { papel, agora }) {
+      const pedido = estado.pedidos.get(id);
+      if (!pedido) return naoExiste;
+      if (pedido.estado !== "entregue" || pedido.entregueEm === null) return { ok: false, erro: "estado-mudou" };
+      if (papel === "funcionario" && agora.getTime() - pedido.entregueEm.getTime() > CINCO_MINUTOS) {
+        return { ok: false, erro: "fora-do-prazo" };
+      }
+      const devolvido: Pedido = { ...pedido, estado: "pago", entregueEm: null };
+      estado.pedidos.set(id, devolvido);
+      estado.versao++;
+      return { ok: true, valor: devolvido };
+    },
+
+    async precisaDeAtencao({ agora }) {
+      return { ok: true, valor: avisosDosPedidos([...estado.pedidos.values()], estado.configuracao, agora) };
+    },
+
+    async versaoPedidos() {
+      return estado.versao;
     },
   };
 }

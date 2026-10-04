@@ -78,3 +78,16 @@ export const guardarHorarios = painel.guardarHorarios;
 export const guardarDefinicoes = painel.guardarDefinicoes;
 /** Do balcão, para quando a cozinha está cheia. O fim calcula-o o `fimDaPausa` (`src/lib/painel.ts`). */
 export const pausarLoja = painel.pausarLoja;
+export const listarPedidos = painel.listarPedidos;
+export const pedidoDoPainel = painel.pedidoDoPainel;
+/** `pago → entregue`, condicional. Com dinheiro em falta, só com `faltaCobrada`. */
+export const marcarEntregue = painel.marcarEntregue;
+/** O balcão até 5 minutos depois; a gerente sempre. */
+export const desfazerEntregue = painel.desfazerEntregue;
+export const precisaDeAtencao = painel.precisaDeAtencao;
+/**
+ * ⚠️ O número do polling. Quem o serve (a rota do painel, #39) põe-no em cache
+ * com uma etiqueta, e cada ação que muda um pedido invalida-a (`revalidateTag`):
+ * é o que deixa a base de dados dormir com o tablet aberto o dia inteiro.
+ */
+export const versaoPedidos = painel.versaoPedidos;

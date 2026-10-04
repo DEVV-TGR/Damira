@@ -85,7 +85,8 @@ O tablet fica com o painel aberto do abrir ao fechar da loja.
    pergunta de 10 em 10 segundos (e sempre que volta a ficar visível) por um
    **número de versão**, servido a partir da cache da Vercel. Cada alteração a um
    pedido invalida essa cache (`revalidateTag`). O painel só vai buscar a lista à
-   base de dados quando a versão muda. A versão não diz nada sobre os pedidos, por
+   base de dados quando a versão muda (`versaoPedidos`, em `src/lib/dados/`). A
+   versão não diz nada sobre os pedidos, por
    isso pode ser pública e estar em cache. Porquê: uma consulta à base de dados a
    cada 10 segundos mantinha-a acordada o dia inteiro — ver `robustez.md`.
    Polling e não websockets: a Vercel não mantém ligações abertas, e numa

@@ -21,6 +21,12 @@ Três separadores, e nada de colunas de estado — a casa recusou-as na reunião
 Mais um **Arquivo** (entregues e cancelados) e uma **pesquisa** por referência ou
 nome — quem liga diz «DAM-0309-4F7K» ou «é a encomenda da Marta».
 
+Os três separadores saem de uma função só, `organizarBalcao` (`src/lib/painel.ts`),
+a partir dos pedidos de hoje em diante (`listarPedidos`). O início da produção
+conta-se por linha, com o tempo de cada produto. ⚠️ Um pedido de que não se sabe
+quando começar — falta o horário da cozinha ou o tempo de um produto — não
+desaparece da lista: vai para `semInicio`, e o painel mostra-o à parte.
+
 ⚠️ **«Levantam hoje» e «Produzir hoje» não são a mesma coisa.** Um bolo de 3 dias
 para sexta aparece em «Produzir» na terça e em «Levantam» na sexta. Juntar as
 duas (como a proposta fazia com «Para hoje») deixava a cozinha a descobrir o bolo
@@ -61,7 +67,10 @@ O único toque do dia a dia: **Entregue**.
   abre «Recebeu os 12,50 € em falta?» antes de marcar. Entregar um bolo sem cobrar
   o resto é o erro mais caro que o balcão pode fazer, e o mais fácil numa hora de
   ponta. A cobrança em si faz-se na caixa da loja, como hoje — o painel não
-  regista meios de pagamento.
+  regista meios de pagamento. O servidor também não confia que se perguntou:
+  `marcarEntregue` recusa (`falta-cobrar`) sem a confirmação.
+- **Dois toques** (ou dois dispositivos) entregam uma vez: a passagem a
+  `entregue` é condicional, e o segundo recebe o pedido já entregue.
 - **Desfazer:** durante 5 minutos, o pedido entregue mostra «Desfazer» e volta à
   lista. Depois disso, só a gerente.
 
