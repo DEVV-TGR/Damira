@@ -40,9 +40,14 @@ A lista junta a do Gonçalo (#73) à nossa, para a casa receber uma só.
 - [ ] **O domínio**: escolhê-lo (`damira.pt`? `confeitariadamira.pt`?) e
       registá-lo **em nome da casa**, como as outras contas, com a DevPlus a
       gerir o DNS. É ele que o site vai ter, e o remetente dos emails.
-- [ ] **Resend**: a conta, com o domínio verificado (os registos no DNS).
-      ⚠️ Sem ele, o código da gerente não chega por email; até lá, no modo de
-      teste, a entrada provisória mostra-o no ecrã.
+- [ ] **Resend**: ⚠️ **criar a conta com o email da gerente.** Enquanto o
+      domínio não estiver verificado, o Resend só entrega ao email de quem
+      criou a conta — e é por email que chega o código para ela entrar no
+      painel. Assim, o código chega-lhe mesmo que o domínio demore, e a casa
+      pode começar a preencher os produtos a 14/10.
+- [ ] **Resend, depois**: verificar o domínio (os registos no DNS). Só então o
+      código chega a qualquer gerente da lista, e os emails saem com o nome da
+      casa.
 - [ ] Em cada conta, a DevPlus entra como membro com o papel de programador.
 - [ ] ⚠️ As chaves vão **diretamente para a Vercel** — nunca por mensagem, nem
       por papel.
