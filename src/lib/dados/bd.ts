@@ -280,3 +280,49 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
     },
   };
 }
+
+/**
+ * # Os pedidos, enquanto não estão na base de dados
+ *
+ * As tabelas dos pedidos vêm num PR de esquema seu (`base-de-dados.md`). Até lá,
+ * com a base de dados ligada, o site responde **a verdade**: não há pedidos
+ * guardados — até ao Stripe (#38) eles chegam por email. O balcão abre vazio,
+ * «Precisa de atenção» não aparece, e o calendário só conta os de exemplo do
+ * modo de teste. Os pedidos de exemplo do painel e o «Simular pedido novo»
+ * ficam só na fonte dos JSON (#57).
+ *
+ * Saem quando os pedidos entrarem na base de dados — cada função passa a ser a
+ * verdadeira, e esta lista encolhe até desaparecer.
+ */
+export const pedidosAindaNaoGuardados: Pick<
+  FonteDeDados,
+  | "ocupacao"
+  | "criarPedido"
+  | "pedidoPorReferencia"
+  | "listarPedidos"
+  | "pedidoDoPainel"
+  | "marcarEntregue"
+  | "desfazerEntregue"
+  | "precisaDeAtencao"
+  | "tratarAviso"
+  | "reagendarPedido"
+  | "cancelarPedido"
+  | "reembolsarPedido"
+  | "versaoPedidos"
+> = {
+  ocupacao: async () => [],
+  /* Ninguém o chama até ao Stripe (#38); e sem pedidos guardados, não há como. */
+  criarPedido: async () => ({ ok: false, erro: "indisponivel" }),
+  pedidoPorReferencia: async () => null,
+  listarPedidos: async () => ({ ok: true, valor: { pedidos: [], seguinte: null } }),
+  pedidoDoPainel: async () => naoExiste,
+  marcarEntregue: async () => naoExiste,
+  desfazerEntregue: async () => naoExiste,
+  precisaDeAtencao: async () => ({ ok: true, valor: [] }),
+  tratarAviso: async () => naoExiste,
+  reagendarPedido: async () => naoExiste,
+  cancelarPedido: async () => naoExiste,
+  reembolsarPedido: async () => naoExiste,
+  versaoPedidos: async () => 0,
+};
+
