@@ -1,0 +1,691 @@
+{
+  "id": "3bfefc96-97fa-4b9f-b01e-68c588b0a8b2",
+  "prevId": "9757c840-50aa-414e-b036-5dc70b7742be",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.casa": {
+      "name": "casa",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "smallint",
+          "primaryKey": true,
+          "notNull": true,
+          "default": 1
+        },
+        "horario_loja": {
+          "name": "horario_loja",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "horario_cozinha": {
+          "name": "horario_cozinha",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dias_fechados": {
+          "name": "dias_fechados",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "duracao_vaga_minutos": {
+          "name": "duracao_vaga_minutos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "limite_por_vaga": {
+          "name": "limite_por_vaga",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dias_a_frente": {
+          "name": "dias_a_frente",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "limiar_livre": {
+          "name": "limiar_livre",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "limiar_media": {
+          "name": "limiar_media",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "aceitar_cancelamentos_site": {
+          "name": "aceitar_cancelamentos_site",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "devolver_sinal_ao_cancelar": {
+          "name": "devolver_sinal_ao_cancelar",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "valor_minimo_cent": {
+          "name": "valor_minimo_cent",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pausa_ate": {
+          "name": "pausa_ate",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ordem_ementa": {
+          "name": "ordem_ementa",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "versao_pedidos": {
+          "name": "versao_pedidos",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "pin_equipa_hash": {
+          "name": "pin_equipa_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "casa_uma_so": {
+          "name": "casa_uma_so",
+          "value": "\"casa\".\"id\" = 1"
+        },
+        "casa_duracao_vaga": {
+          "name": "casa_duracao_vaga",
+          "value": "\"casa\".\"duracao_vaga_minutos\" between 5 and 240"
+        },
+        "casa_limite_por_vaga": {
+          "name": "casa_limite_por_vaga",
+          "value": "\"casa\".\"limite_por_vaga\" > 0"
+        },
+        "casa_dias_a_frente": {
+          "name": "casa_dias_a_frente",
+          "value": "\"casa\".\"dias_a_frente\" between 0 and 365"
+        },
+        "casa_limiares": {
+          "name": "casa_limiares",
+          "value": "\"casa\".\"limiar_livre\" between 0 and 100 and \"casa\".\"limiar_media\" between 0 and 100 and \"casa\".\"limiar_livre\" < \"casa\".\"limiar_media\""
+        },
+        "casa_valor_minimo": {
+          "name": "casa_valor_minimo",
+          "value": "\"casa\".\"valor_minimo_cent\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.codigos_gerente": {
+      "name": "codigos_gerente",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "codigo_hash": {
+          "name": "codigo_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expira_em": {
+          "name": "expira_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "usado_em": {
+          "name": "usado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tentativas": {
+          "name": "tentativas",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "codigos_gerente_datas": {
+          "name": "codigos_gerente_datas",
+          "value": "\"codigos_gerente\".\"expira_em\" > \"codigos_gerente\".\"criado_em\""
+        },
+        "codigos_gerente_tentativas": {
+          "name": "codigos_gerente_tentativas",
+          "value": "\"codigos_gerente\".\"tentativas\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.limites": {
+      "name": "limites",
+      "schema": "",
+      "columns": {
+        "chave": {
+          "name": "chave",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "janela": {
+          "name": "janela",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contagem": {
+          "name": "contagem",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "limites_chave_janela_pk": {
+          "name": "limites_chave_janela_pk",
+          "columns": [
+            "chave",
+            "janela"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "limites_contagem": {
+          "name": "limites_contagem",
+          "value": "\"limites\".\"contagem\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.produtos": {
+      "name": "produtos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "posicao": {
+          "name": "posicao",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "origem": {
+          "name": "origem",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "familia": {
+          "name": "familia",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nome_pt": {
+          "name": "nome_pt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nome_en": {
+          "name": "nome_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "descricao_pt": {
+          "name": "descricao_pt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "descricao_en": {
+          "name": "descricao_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "carta": {
+          "name": "carta",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "categoria": {
+          "name": "categoria",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subcategoria": {
+          "name": "subcategoria",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unidade": {
+          "name": "unidade",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "escolhas": {
+          "name": "escolhas",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'"
+        },
+        "tempo_producao_unidade": {
+          "name": "tempo_producao_unidade",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tempo_producao_valor": {
+          "name": "tempo_producao_valor",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quantidade_minima": {
+          "name": "quantidade_minima",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "multiplo": {
+          "name": "multiplo",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "a_venda_online": {
+          "name": "a_venda_online",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "aparece_na_ementa": {
+          "name": "aparece_na_ementa",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "alergenios": {
+          "name": "alergenios",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vegan": {
+          "name": "vegan",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "sem_gluten": {
+          "name": "sem_gluten",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "fotos": {
+          "name": "fotos",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'"
+        },
+        "sinal_percent": {
+          "name": "sinal_percent",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "limite_quantidade": {
+          "name": "limite_quantidade",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "limite_modo": {
+          "name": "limite_modo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "arquivado": {
+          "name": "arquivado",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "fora_de_venda": {
+          "name": "fora_de_venda",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "esgotado_no_dia": {
+          "name": "esgotado_no_dia",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "produtos_id_formato": {
+          "name": "produtos_id_formato",
+          "value": "\"produtos\".\"id\" ~ '^[a-z0-9-]+$'"
+        },
+        "produtos_origem": {
+          "name": "produtos_origem",
+          "value": "\"produtos\".\"origem\" in ('ementa', 'encomendas')"
+        },
+        "produtos_familia": {
+          "name": "produtos_familia",
+          "value": "\"produtos\".\"familia\" in ('ementa', 'festa', 'bolo', 'box', 'medida')"
+        },
+        "produtos_familia_da_origem": {
+          "name": "produtos_familia_da_origem",
+          "value": "(\"produtos\".\"origem\" = 'ementa') = (\"produtos\".\"familia\" = 'ementa')"
+        },
+        "produtos_ementa_com_carta": {
+          "name": "produtos_ementa_com_carta",
+          "value": "\"produtos\".\"familia\" <> 'ementa' or (\"produtos\".\"carta\" is not null and \"produtos\".\"categoria\" is not null)"
+        },
+        "produtos_unidade": {
+          "name": "produtos_unidade",
+          "value": "\"produtos\".\"unidade\" in ('un', 'kg')"
+        },
+        "produtos_descricao_pt": {
+          "name": "produtos_descricao_pt",
+          "value": "\"produtos\".\"descricao_en\" is null or \"produtos\".\"descricao_pt\" is not null"
+        },
+        "produtos_tempo_producao_par": {
+          "name": "produtos_tempo_producao_par",
+          "value": "(\"produtos\".\"tempo_producao_unidade\" is null) = (\"produtos\".\"tempo_producao_valor\" is null)"
+        },
+        "produtos_tempo_producao": {
+          "name": "produtos_tempo_producao",
+          "value": "\"produtos\".\"tempo_producao_unidade\" in ('horas', 'dias') and \"produtos\".\"tempo_producao_valor\" >= 0"
+        },
+        "produtos_minimo_e_multiplo": {
+          "name": "produtos_minimo_e_multiplo",
+          "value": "\"produtos\".\"quantidade_minima\" > 0 and \"produtos\".\"multiplo\" > 0"
+        },
+        "produtos_sinal": {
+          "name": "produtos_sinal",
+          "value": "\"produtos\".\"sinal_percent\" between 1 and 100"
+        },
+        "produtos_limite_par": {
+          "name": "produtos_limite_par",
+          "value": "(\"produtos\".\"limite_quantidade\" is null) = (\"produtos\".\"limite_modo\" is null)"
+        },
+        "produtos_limite": {
+          "name": "produtos_limite",
+          "value": "\"produtos\".\"limite_quantidade\" > 0 and \"produtos\".\"limite_modo\" in ('porDia', 'total')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.sessoes_painel": {
+      "name": "sessoes_painel",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "token_hash": {
+          "name": "token_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "papel": {
+          "name": "papel",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lembrar": {
+          "name": "lembrar",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dispositivo": {
+          "name": "dispositivo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "criada_em": {
+          "name": "criada_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ultimo_uso_em": {
+          "name": "ultimo_uso_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expira_em": {
+          "name": "expira_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "sessoes_painel_token_hash_unique": {
+          "name": "sessoes_painel_token_hash_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "token_hash"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "sessoes_painel_papel": {
+          "name": "sessoes_painel_papel",
+          "value": "\"sessoes_painel\".\"papel\" in ('funcionario', 'gerente')"
+        },
+        "sessoes_painel_datas": {
+          "name": "sessoes_painel_datas",
+          "value": "\"sessoes_painel\".\"ultimo_uso_em\" >= \"sessoes_painel\".\"criada_em\" and \"sessoes_painel\".\"expira_em\" > \"sessoes_painel\".\"criada_em\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.variantes": {
+      "name": "variantes",
+      "schema": "",
+      "columns": {
+        "produto_id": {
+          "name": "produto_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "posicao": {
+          "name": "posicao",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rotulo_pt": {
+          "name": "rotulo_pt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rotulo_en": {
+          "name": "rotulo_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pessoas": {
+          "name": "pessoas",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "preco_cent": {
+          "name": "preco_cent",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "composicao": {
+          "name": "composicao",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "variantes_produto_id_produtos_id_fk": {
+          "name": "variantes_produto_id_produtos_id_fk",
+          "tableFrom": "variantes",
+          "tableTo": "produtos",
+          "columnsFrom": [
+            "produto_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "variantes_produto_id_id_pk": {
+          "name": "variantes_produto_id_id_pk",
+          "columns": [
+            "produto_id",
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "variantes_rotulo_pt": {
+          "name": "variantes_rotulo_pt",
+          "value": "\"variantes\".\"rotulo_en\" is null or \"variantes\".\"rotulo_pt\" is not null"
+        },
+        "variantes_pessoas": {
+          "name": "variantes_pessoas",
+          "value": "\"variantes\".\"pessoas\" > 0"
+        },
+        "variantes_preco": {
+          "name": "variantes_preco",
+          "value": "\"variantes\".\"preco_cent\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
