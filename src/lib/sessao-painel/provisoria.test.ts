@@ -45,6 +45,12 @@ describe("quando liga: com o modo de teste, e só com ele", () => {
     expect(await semModo.pedirCodigo("ana@example.com", CTX)).toEqual({ ok: false, erro: "indisponivel" });
   });
 
+  it("com a base de dados, não liga: o PIN daqui é público, e o painel gravava a sério", async () => {
+    const comBase = criar({ ...LOCAL, DATABASE_URL: "postgres://teste" }).sessao;
+    expect(comBase.ligada).toBe(false);
+    expect(await comBase.entrarComPin("246810", CTX)).toEqual({ ok: false, erro: "indisponivel" });
+  });
+
   it("só com LOJA_EM_TESTE=1, no ar, liga com o PIN 123456 e o email da equipa como gerente", async () => {
     const { sessao } = criar({ NODE_ENV: "production", LOJA_EM_TESTE: "1" });
     expect(sessao.ligada).toBe(true);
