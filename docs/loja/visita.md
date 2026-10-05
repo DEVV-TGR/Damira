@@ -12,19 +12,18 @@ a casa, e não fica escrito em lado nenhum.
 
 ## Antes da visita: o que a Damira deve ter à mão
 
-O Gonçalo envia à parte o que a cliente precisa de levar para as contas — esta
-lista junta-se à dele, para a casa não receber duas.
+A lista junta a do Gonçalo (#73) à nossa, para a casa receber uma só.
 
 - [ ] **Para a Stripe** (a verificação da empresa demora — é a primeira a
-      abrir): os dados da empresa (NIPC, certidão permanente), o IBAN da conta
-      da empresa e a identificação do representante legal. Confirmar com a
-      lista do Gonçalo.
-- [ ] **Para a Neon**: um email da casa para a conta, e um cartão para o plano
-      Launch (pago pelo uso; previsão de 3 a 10 €/mês — `robustez.md`).
-- [ ] **Para a Resend**: ⚠️ **o domínio decidido, e o acesso a quem o gere** —
-      o registo do domínio, ou a pessoa que o tem. A Resend só envia depois de
-      verificar o domínio no DNS, e **o domínio final ainda não está decidido**
-      (`src/lib/site.ts`). Sem ele, o código da gerente não chega por email.
+      abrir): o NIF/NIPC e o **código da certidão permanente**; o IBAN da
+      conta da empresa; o cartão de cidadão do responsável legal; um telemóvel;
+      a morada da empresa; e uma descrição curta do negócio.
+- [ ] **Para a Neon**: um email da casa para a conta, e um cartão para a
+      faturação do plano Launch (pago pelo uso; previsão de 3 a 10 €/mês —
+      `robustez.md`).
+- [ ] **Para o domínio e a Resend**: ⚠️ **a casa não tem domínio**, e a Resend
+      só envia com um domínio verificado. Decide-se na visita (ver o ponto 1);
+      para o registo, um email e um cartão.
 - [ ] **O acesso ao router** (a palavra-passe de administração), ou quem a
       tenha.
 - [ ] **O tablet e as impressoras** ligados, com o carregador.
@@ -38,8 +37,13 @@ lista junta-se à dele, para a casa não receber duas.
 - [ ] **Neon**: plano **Launch**, **Postgres 18**, região **Frankfurt**, dois
       ramos — `production` e `desenvolvimento`. Convidar a DevPlus. O porquê de
       cada escolha está em `ligar-a-neon.md` › 1.
-- [ ] **Resend**: a conta, e o domínio dela, com os registos do DNS
-      acrescentados.
+- [ ] **O domínio**: escolhê-lo (`damira.pt`? `confeitariadamira.pt`?) e
+      registá-lo **em nome da casa**, como as outras contas, com a DevPlus a
+      gerir o DNS. É ele que o site vai ter, e o remetente dos emails.
+- [ ] **Resend**: a conta, com o domínio verificado (os registos no DNS).
+      ⚠️ Sem ele, o código da gerente não chega por email; até lá, no modo de
+      teste, a entrada provisória mostra-o no ecrã.
+- [ ] Em cada conta, a DevPlus entra como membro com o papel de programador.
 - [ ] ⚠️ As chaves vão **diretamente para a Vercel** — nunca por mensagem, nem
       por papel.
 
@@ -72,10 +76,24 @@ Ficaram por mandar:
 - [ ] O sinal noutros produtos além dos bolos personalizados (os kits de festa
       grandes, por exemplo).
 
-Nasceu do esquema da base de dados (`base-de-dados.md` › Em aberto):
+Da revisão do contrato, a 05/10 (Gonçalo e Sobral):
 
-- [ ] **«Só fazemos 30 por dia»: o dia é o de levantamento, ou o de produção?**
-      Num bolo de três dias, os dois não são o mesmo.
+- [ ] **O limite por dia**: nos produtos que levam vários dias (bolos, kits),
+      «só fazemos 30 por dia» conta pelo **dia de levantamento**, ou pelo dia em
+      que se **começa a fazer**? Hoje conta pelo de levantamento; na pastelaria
+      do dia os dois são o mesmo.
+- [ ] **Sabores à dúzia**: nos salgados fritos e nos folhados vegan, é **uma
+      dúzia por sabor** (12 de alheira + 12 de legumes), sem misturar sabores na
+      mesma dúzia?
+- [ ] **O «croissant recheado»** da carta da casa: que recheios há? Separam-se
+      em produtos, como na carta vegan (chocolate / creme)?
+- [ ] **Sabor obrigatório**: num produto com sabores, o cliente tem sempre de
+      escolher um? (O site vai pedir o sabor ao juntar ao cesto.)
+- [ ] **Reembolsar depois de cancelar**: depois de cancelarem um pedido sem
+      reembolso (o bolo já estava feito), querem poder devolver uma parte mais
+      tarde?
+- [ ] **Números estrangeiros**: há muitos clientes com telefone de fora? (A
+      página aceita qualquer país, com o indicativo, mas convém saber.)
 
 E um aviso a dar, não uma pergunta:
 
