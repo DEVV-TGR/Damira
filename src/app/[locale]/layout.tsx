@@ -131,9 +131,7 @@ export default async function LayoutIdioma({
         {/* ⚠️ **O cesto e o histórico subiram da página das encomendas para
             aqui.** Não é arrumação: a página da conta precisa de ler o histórico
             e de repor um pedido antigo no cesto, e um provedor montado só em
-            `/encomendas` deixava-a a olhar para `null`. A **barra** do cesto
-            continua a aparecer só nas encomendas — é lá que ela faz falta, e o
-            que subiu foi o estado, não a interface. */}
+            `/encomendas` deixava-a a olhar para `null`. */}
         <CestoProvider>
         <ProvedorHistorico>
           {/* Primeiro tabulador da página: quem navega por teclado salta o
@@ -151,13 +149,12 @@ export default async function LayoutIdioma({
               página. Ver o componente para as duas regras que o mantêm
               discreto. */}
           <BotaoEncomendar />
-          {/* ⚠️ **A barra do cesto subiu da página das encomendas para aqui.**
-              Com as páginas de produto, juntar deixou de acontecer todo no mesmo
-              sítio: quem juntava um kit em `/encomendas/festa-premium` não via
-              barra nenhuma, ficava sem sinal de que tinha acertado e sem caminho
-              de volta ao pedido. Continua a só aparecer quando tem alguma coisa
-              dentro, portanto não ocupa o fundo do ecrã de quem nunca juntou
-              nada. */}
+          {/* ⚠️ **O botão do cesto e o «Encomendas» ocupam o mesmo canto e
+              trocam-se**: com o cesto vazio aparece o «Encomendas» (fora das
+              encomendas), com alguma coisa dentro aparece o carrinho, em todas as
+              páginas — juntar acontece na ementa, nas encomendas e nas páginas de
+              produto, e o sinal de que se acertou tem de estar em todas. Nunca os
+              dois ao mesmo tempo. */}
           <Cesto locale={locale as Locale} />
         </ProvedorHistorico>
         </CestoProvider>

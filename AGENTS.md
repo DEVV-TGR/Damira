@@ -387,8 +387,10 @@ instantaneamente — por um nome no canto superior direito.
 
 ⚠️ **O cesto e o histórico vivem no layout e não na página das encomendas.** A
 conta precisa de os ler, e um provedor montado só em `/encomendas` deixava-a a
-olhar para `null`. A **barra** do cesto continua a aparecer só nas encomendas: o
-que subiu foi o estado, não a interface.
+olhar para `null`. Desde outubro de 2026 a interface também está em todas as
+páginas: o cesto é um **botão no canto que se troca com o «Encomendas»** (com o
+cesto vazio, «Encomendas»; com alguma coisa dentro, o carrinho — nunca os
+dois), e abre um cartão centrado com o que se escolheu. Ver `Cesto.tsx`.
 
 ## As armadilhas que já morderam aqui
 
@@ -458,7 +460,10 @@ primeiras sete vieram do Santo Burga e continuam a valer — o motor é o mesmo.
     sem sinal de ter acertado e sem caminho de volta ao pedido. Subiu para o
     layout. Do mesmo golpe, o botão flutuante «encomendar» escondia-se com
     `caminho === "/encomendas"` e voltava a aparecer nas páginas de produto, por
-    cima da barra.
+    cima da barra. **E voltou a morder em outubro:** com a barra em todas as
+    páginas, na ementa o «Encomendas» ficava por baixo dela. A barra saiu, e os
+    dois botões passaram a ocupar o mesmo canto e a trocar-se — dois elementos
+    fixos no mesmo sítio só não se tapam se um souber do outro.
 18. **Uma fotografia quadrada num cartão é a mais alta que há, não a mais
     pequena.** A altura de uma imagem quadrada **é** a largura da coluna; a 3/2
     gasta dois terços disso. Numa grelha de setenta cartões a diferença foram
