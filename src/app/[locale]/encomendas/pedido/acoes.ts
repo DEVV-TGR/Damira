@@ -85,6 +85,7 @@ export async function enviarCompra(_anterior: Resultado, dados: FormData): Promi
     nome: dados.get("nome") ?? "",
     email: dados.get("email") ?? "",
     telefone: dados.get("telefone") ?? "",
+    pais: dados.get("pais") ?? "PT",
     nif: dados.get("nif") ?? "",
     observacoes: dados.get("observacoes") ?? "",
     data,

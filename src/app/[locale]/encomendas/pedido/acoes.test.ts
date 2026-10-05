@@ -83,6 +83,11 @@ describe("enviarCompra: o email por secções, com os preços do servidor", () =
     expect((await corpoDe()).corpo).toMatch(/LEVANTAMENTO NA LOJA\n2099-01-15 — hora a combinar com o cliente/);
   });
 
+  it("o telefone chega arrumado, com o indicativo do país", async () => {
+    expect((await corpoDe()).corpo).toContain("Telefone:  +351 912 345 678");
+    expect((await corpoDe({ telefone: "07400 123456", pais: "GB" })).corpo).toContain("Telefone:  +44 7400 123456");
+  });
+
   it("sem o modo de teste, o email não traz o aviso de teste", async () => {
     expect((await corpoDe()).corpo).not.toContain("MODO DE TESTE");
   });
@@ -93,6 +98,8 @@ describe("enviarCompra: o que não segue", () => {
     ["email", { email: "" }],
     ["email", { email: "nao-e-um-email" }],
     ["telefone", { telefone: "" }],
+    ["telefone", { telefone: "811 222 333" }],
+    ["telefone", { telefone: "7400 123456", pais: "PT" }],
     ["nif", { nif: "12345" }],
     ["data", { data: "2020-01-01" }],
     ["consentimento", { consentimento: "" }],
