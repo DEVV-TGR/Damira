@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { estimativa, quantidadeEmTexto, totalArtigos } from "@/lib/cesto";
-import { formatarPreco } from "@/lib/preco";
+import { estimativa, quantidadeEmTexto, totalArtigos, totalDaLinha } from "@/lib/cesto";
+import { formatarCent } from "@/lib/preco";
 import type { Locale } from "@/i18n/routing";
 import { useCesto } from "./CestoProvider";
 
@@ -40,7 +40,7 @@ export function Cesto({ locale }: { locale: Locale }) {
   if (!contexto || !contexto.pronto || contexto.cesto.length === 0) return null;
 
   const { cesto, mudarQuantidade, remover, esvaziar } = contexto;
-  const { soma, semPreco } = estimativa(cesto);
+  const { somaCent, semPreco } = estimativa(cesto);
   const artigos = totalArtigos(cesto);
 
   return (
@@ -76,9 +76,9 @@ export function Cesto({ locale }: { locale: Locale }) {
                       <p className="text-sm text-tinta-suave">{item.variante}</p>
                     )}
                     <p className="mt-1 text-sm tabular-nums text-tijolo">
-                      {item.preco === null
+                      {item.precoCent === null
                         ? t("semPreco")
-                        : formatarPreco(item.preco * item.quantidade, locale)}
+                        : formatarCent(totalDaLinha(item.precoCent, item.quantidade), locale)}
                     </p>
                   </div>
 
@@ -151,7 +151,7 @@ export function Cesto({ locale }: { locale: Locale }) {
             <span className="truncate text-sm">
               {semPreco > 0 ? t("aPartirDe") : t("estimativa")}{" "}
               <strong className="tabular-nums">
-                {formatarPreco(soma, locale)}
+                {formatarCent(somaCent, locale)}
               </strong>
             </span>
           </span>

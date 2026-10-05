@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { formatarPreco } from "@/lib/preco";
+import { formatarCent } from "@/lib/preco";
 import { quantidadeEmTexto, type ItemCesto } from "@/lib/cesto";
 import { paraOCesto, type PedidoGuardado } from "@/lib/historico";
 import type { Locale } from "@/i18n/routing";
@@ -157,7 +157,7 @@ export function ListaHistorico({
                 ))}
                 <li className="pt-1 font-semibold">
                   {pedido.semPreco > 0 ? t("aPartirDe") : t("estimado")}{" "}
-                  {formatarPreco(pedido.estimativa, locale)}
+                  {formatarCent(pedido.estimativaCent, locale)}
                 </li>
               </ul>
             )}

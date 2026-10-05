@@ -211,12 +211,15 @@ function Detalhe({ artigo, locale }: { artigo: Produto; locale: Locale }) {
                           locale={locale}
                           item={{
                             id: `ementa:${artigo.id}:${v.id}`,
+                            produtoId: artigo.id,
+                            varianteId: v.id,
                             tipo: "ementa",
-                            nome: `${nome} (${v.id})`,
+                            /* ⚠️ O nome **sem** a variante: o texto do pedido
+                               junta-a entre parênteses, e com ela também no
+                               nome saía «Chocolate do Dubai (470g) (470g)». */
+                            nome,
                             variante: v.id,
-                            /* O cesto ainda guarda euros; passa a ids e
-                               cêntimos no PR seguinte. */
-                            preco: v.precoCent === null ? null : v.precoCent / 100,
+                            precoCent: v.precoCent,
                             pessoas: null,
                             notas: null,
                             unidade: artigo.unidade,
@@ -244,9 +247,10 @@ function Detalhe({ artigo, locale }: { artigo: Produto; locale: Locale }) {
               <>
                 <ComprarProduto
                   id={`ementa:${artigo.id}`}
+                  produtoId={artigo.id}
                   tipo="ementa"
                   nome={nome}
-                  preco={precoUnicoCent(artigo) === null ? null : precoUnicoCent(artigo)! / 100}
+                  precoCent={precoUnicoCent(artigo)}
                   escaloes={[]}
                   locale={locale}
                   comMensagem={artigo.categoria === "bolos-inteiros"}

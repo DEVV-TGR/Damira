@@ -101,11 +101,12 @@ export function CartaoArtigo({
             locale={locale}
             item={{
               id: `ementa:${artigo.id}`,
+              produtoId: artigo.id,
+              varianteId: "unica",
               tipo: "ementa",
               nome,
               variante: null,
-              /* O cesto ainda guarda euros; passa a ids e cêntimos no PR seguinte. */
-              preco: precoUnicoCent(artigo) === null ? null : precoUnicoCent(artigo)! / 100,
+              precoCent: precoUnicoCent(artigo),
               pessoas: null,
               notas: null,
               unidade: artigo.unidade,
