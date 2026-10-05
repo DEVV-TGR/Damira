@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, inArray, type SQL } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import {
   EsquemaHorarios,
@@ -32,10 +32,15 @@ type LinhaCasa = typeof casa.$inferSelect;
 
 // ——— Produto ———
 
-export function produtoParaLinhas(produto: Produto, posicao: number) {
-  const linha = {
-    id: produto.id,
-    posicao,
+/**
+ * As colunas que a gerente grava ao editar um produto: tudo o que a entrada do
+ * painel traz (`EsquemaEntradaProduto`). Ficam de fora o id e a posição, que não
+ * mudam, e os três interruptores do balcão — arquivado, fora de venda, esgotado
+ * —, que têm funções próprias: a gerente a gravar um preço não pode desfazer o
+ * «esgotado» que o balcão acabou de marcar.
+ */
+export function colunasEditaveis(produto: Produto) {
+  return {
     origem: produto.origem,
     familia: produto.familia,
     nomePt: produto.nome.pt,
@@ -60,6 +65,14 @@ export function produtoParaLinhas(produto: Produto, posicao: number) {
     sinalPercent: produto.sinalPercent,
     limiteQuantidade: produto.limite?.quantidade ?? null,
     limiteModo: produto.limite?.modo ?? null,
+  } satisfies Partial<typeof produtos.$inferInsert>;
+}
+
+export function produtoParaLinhas(produto: Produto, posicao: number) {
+  const linha = {
+    id: produto.id,
+    posicao,
+    ...colunasEditaveis(produto),
     arquivado: produto.arquivado,
     foraDeVenda: produto.foraDeVenda,
     esgotadoNoDia: produto.esgotadoNoDia,
@@ -124,17 +137,30 @@ export function linhasParaProduto(linha: LinhaProduto, linhasVariantes: LinhaVar
 }
 
 /**
- * O catálogo inteiro, arquivados incluídos, pela ordem do catálogo. Duas
- * consultas e não uma por produto (`robustez.md` › sem N+1).
+ * Os produtos que cumprem a `condicao` (todos, sem ela), pela ordem do
+ * catálogo, com as variantes.
+ *
+ * ⚠️ **Duas consultas, ao mesmo tempo, e nunca uma por produto** (`robustez.md`
+ * › sem N+1). As variantes escolhem-se pela mesma condição, numa subconsulta,
+ * para as duas poderem partir juntas: pela Neon cada consulta é uma ida e
+ * volta pela rede.
  */
-export async function lerCatalogo(db: BaseDeDados): Promise<Produto[]> {
+export async function lerProdutos(db: BaseDeDados, condicao?: SQL): Promise<Produto[]> {
+  const ids = db.select({ id: produtos.id }).from(produtos).where(condicao);
   const [linhas, todasVariantes] = await Promise.all([
-    db.select().from(produtos).orderBy(asc(produtos.posicao)),
-    db.select().from(variantes).orderBy(asc(variantes.posicao)),
+    db.select().from(produtos).where(condicao).orderBy(asc(produtos.posicao)),
+    db
+      .select()
+      .from(variantes)
+      .where(condicao ? inArray(variantes.produtoId, ids) : undefined)
+      .orderBy(asc(variantes.posicao)),
   ]);
   const porProduto = Map.groupBy(todasVariantes, (v) => v.produtoId);
   return linhas.map((linha) => linhasParaProduto(linha, porProduto.get(linha.id) ?? []));
 }
+
+/** O catálogo inteiro, arquivados incluídos. */
+export const lerCatalogo = (db: BaseDeDados) => lerProdutos(db);
 
 // ——— A casa ———
 
@@ -144,9 +170,9 @@ export type DadosDaCasa = {
   ordem: OrdemEmenta;
 };
 
-export function casaParaLinha({ configuracao, definicoes, ordem }: DadosDaCasa) {
+/** As colunas que a gerente grava na secção Horários (`EsquemaHorarios`). */
+export function colunasDosHorarios(configuracao: ConfiguracaoDaCasa) {
   return {
-    id: 1,
     horarioLoja: configuracao.loja,
     horarioCozinha: configuracao.cozinha,
     diasFechados: [...configuracao.diasFechados],
@@ -155,9 +181,27 @@ export function casaParaLinha({ configuracao, definicoes, ordem }: DadosDaCasa) 
     diasAFrente: configuracao.diasAFrente,
     limiarLivre: configuracao.limiaresAfluencia.livre,
     limiarMedia: configuracao.limiaresAfluencia.media,
+  } satisfies Partial<typeof casa.$inferInsert>;
+}
+
+/**
+ * As colunas que a gerente grava em Definições (`EsquemaDefinicoes`). ⚠️ Sem a
+ * pausa, que tem função própria (`pausarLoja`): gravar o valor mínimo não pode
+ * reabrir uma loja que o balcão acabou de pausar.
+ */
+export function colunasDasDefinicoes(definicoes: Omit<DefinicoesLoja, "pausaAte">) {
+  return {
     aceitarCancelamentosSite: definicoes.aceitarCancelamentosSite,
     devolverSinalAoCancelar: definicoes.devolverSinalAoCancelar,
     valorMinimoCent: definicoes.valorMinimoCent,
+  } satisfies Partial<typeof casa.$inferInsert>;
+}
+
+export function casaParaLinha({ configuracao, definicoes, ordem }: DadosDaCasa) {
+  return {
+    id: 1,
+    ...colunasDosHorarios(configuracao),
+    ...colunasDasDefinicoes(definicoes),
     pausaAte: definicoes.pausaAte,
     ordemEmenta: ordem,
   } satisfies typeof casa.$inferInsert;

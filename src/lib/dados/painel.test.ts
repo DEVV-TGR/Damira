@@ -1,6 +1,7 @@
 import { TZDate } from "@date-fns/tz";
 import { describe, expect, it } from "vitest";
 import { fonteDeExemplo } from "./exemplo";
+import { fonteDaBaseDeDados, NA_BASE_DE_DADOS } from "./fontes-de-teste";
 import { CATALOGO_JSON, CONFIGURACAO_JSON } from "./json";
 import { protegerPainel } from "./papeis";
 import type { ContextoPainel, EntradaPedido, EntradaProduto, FonteDeDados, Produto } from "./tipos";
@@ -22,14 +23,23 @@ const CONTEXTO_PEDIDO = { agora: AGORA, ip: "203.0.113.1", contaId: null };
    — é aí que se vê o «esgotado hoje». */
 const RAPIDO = "bolo-de-cenoura";
 
-const fonte = (): FonteDeDados => {
-  const base = fonteDeExemplo({
-    catalogo: CATALOGO_JSON.map((p) =>
-      p.id === RAPIDO ? { ...p, tempoProducao: { unidade: "horas" as const, valor: 1 } } : p,
-    ),
-  });
+/* Na volta da base de dados (`fontes-de-teste.ts`), a fonte é a dela, sem os
+   valores de exemplo: os testes que precisam do tempo do RAPIDO criam pedidos,
+   e esses saltam essa volta até os pedidos estarem na base de dados. */
+const fonte = async (): Promise<FonteDeDados> => {
+  const base = NA_BASE_DE_DADOS
+    ? await fonteDaBaseDeDados()
+    : fonteDeExemplo({
+        catalogo: CATALOGO_JSON.map((p) =>
+          p.id === RAPIDO ? { ...p, tempoProducao: { unidade: "horas" as const, valor: 1 } } : p,
+        ),
+      });
   return { ...base, ...protegerPainel(base) };
 };
+
+/* Os pedidos ainda não estão na base de dados: estes testes só correm na volta
+   dos JSON (`fontes-de-teste.ts`). */
+const comPedidos = it.skipIf(NA_BASE_DE_DADOS);
 
 const hojeAs = (h: number) => new TZDate(2026, 9, 5, h, 0, "Europe/Lisbon").toISOString();
 const amanhaAs = (h: number) => new TZDate(2026, 9, 6, h, 0, "Europe/Lisbon").toISOString();
@@ -86,7 +96,7 @@ const precoDe = async (f: FonteDeDados, produtoId: string, varianteId: string, q
 
 describe("o papel verifica-se no servidor, antes de a fonte ser chamada", () => {
   it("o balcão não cria, não edita, não arquiva, não mexe em horários nem em definições — e nada muda", async () => {
-    const f = fonte();
+    const f = await fonte();
     const antes = await f.produtosDoPainel(BALCAO);
     const premium = (await f.produtoPorId("festa-premium"))!;
 
@@ -108,7 +118,7 @@ describe("o papel verifica-se no servidor, antes de a fonte ser chamada", () => 
   });
 
   it("o balcão esgota, tira de venda e pausa a loja", async () => {
-    const f = fonte();
+    const f = await fonte();
     expect((await f.marcarEsgotadoHoje(RAPIDO, true, BALCAO)).ok).toBe(true);
     expect((await f.tirarDeVenda(RAPIDO, true, BALCAO)).ok).toBe(true);
     expect((await f.pausarLoja(new Date(AGORA.getTime() + 30 * 60_000), BALCAO)).ok).toBe(true);
@@ -117,7 +127,7 @@ describe("o papel verifica-se no servidor, antes de a fonte ser chamada", () => 
 
 describe("criar e editar produtos", () => {
   it("o id sai do nome, sem acentos, e nunca repete; a variante única chama-se «unica»", async () => {
-    const f = fonte();
+    const f = await fonte();
     const primeiro = await f.criarProduto(novoBolo(), GERENTE);
     const segundo = await f.criarProduto(novoBolo(), GERENTE);
     const pao = await f.criarProduto(novoBolo({ nome: { pt: "Pão de Ló", en: null } }), GERENTE);
@@ -128,14 +138,14 @@ describe("criar e editar produtos", () => {
   });
 
   it("um produto novo aparece na loja e cobra o preço que a gerente escreveu", async () => {
-    const f = fonte();
+    const f = await fonte();
     await f.criarProduto(novoBolo(), GERENTE);
     expect(await f.produtoPorId("bolo-de-bolacha")).not.toBeNull();
     expect((await precoDe(f, "bolo-de-bolacha", "unica")).totalCent).toBe(2500);
   });
 
   it("sem alergénios respondidos não vai à venda online — e «sem alergénios» é uma resposta", async () => {
-    const f = fonte();
+    const f = await fonte();
     expect(await f.criarProduto(novoBolo({ alergenios: null }), GERENTE)).toEqual({
       ok: false,
       erro: "dados-invalidos",
@@ -146,7 +156,7 @@ describe("criar e editar produtos", () => {
   });
 
   it("a entrada não traz id nem o arquivado: esses não se escrevem por aqui", async () => {
-    const f = fonte();
+    const f = await fonte();
     const comId = { ...novoBolo(), id: "outro" };
     const resultado = await f.criarProduto(comId, GERENTE);
     expect(resultado.ok).toBe(false);
@@ -154,7 +164,7 @@ describe("criar e editar produtos", () => {
   });
 
   it("um preço editado é o que o checkout cobra a seguir, e os ids das variantes não mudam", async () => {
-    const f = fonte();
+    const f = await fonte();
     expect((await precoDe(f, "festa-premium", "20")).totalCent).toBe(33500);
     const premium = (await f.produtoPorId("festa-premium"))!;
     const entrada = paraEntrada(premium);
@@ -172,7 +182,7 @@ describe("criar e editar produtos", () => {
   });
 
   it("um id de variante que o produto não tem é recusado, e um produto que não existe também", async () => {
-    const f = fonte();
+    const f = await fonte();
     const premium = (await f.produtoPorId("festa-premium"))!;
     const entrada = { ...paraEntrada(premium), alergenios: [] };
     const inventada = { ...entrada, variantes: [{ ...entrada.variantes[0], id: "inventada" }] };
@@ -187,7 +197,7 @@ describe("criar e editar produtos", () => {
 
 describe("arquivar, tirar de venda", () => {
   it("arquivado sai do site e do checkout, mas não do painel; desarquivar devolve-o", async () => {
-    const f = fonte();
+    const f = await fonte();
     await f.arquivarProduto("festa-premium", true, GERENTE);
     expect(await f.produtoPorId("festa-premium")).toBeNull();
     expect((await f.listarProdutos({ familia: "festa" })).map((p) => p.id)).not.toContain("festa-premium");
@@ -200,7 +210,7 @@ describe("arquivar, tirar de venda", () => {
   });
 
   it("tirado de venda pelo balcão não se vende, e volta quando alguém o põe", async () => {
-    const f = fonte();
+    const f = await fonte();
     await f.tirarDeVenda(RAPIDO, true, BALCAO);
     expect((await precoDe(f, RAPIDO, "unica", 12)).erro).toBe("fora-de-venda");
     await f.tirarDeVenda(RAPIDO, false, BALCAO);
@@ -209,23 +219,23 @@ describe("arquivar, tirar de venda", () => {
 });
 
 describe("esgotado hoje", () => {
-  it("tira as vagas de hoje e deixa as de amanhã", async () => {
-    const f = fonte();
+  comPedidos("tira as vagas de hoje e deixa as de amanhã", async () => {
+    const f = await fonte();
     expect((await f.criarPedido(pedido(RAPIDO, hojeAs(15)), CONTEXTO_PEDIDO)).ok).toBe(true);
     await f.marcarEsgotadoHoje(RAPIDO, true, BALCAO);
     expect(await f.criarPedido(pedido(RAPIDO, hojeAs(16)), CONTEXTO_PEDIDO)).toMatchObject({ ok: false });
     expect((await f.criarPedido(pedido(RAPIDO, amanhaAs(15)), CONTEXTO_PEDIDO)).ok).toBe(true);
   });
 
-  it("amanhã volta sozinho, sem ninguém o repor", async () => {
-    const f = fonte();
+  comPedidos("amanhã volta sozinho, sem ninguém o repor", async () => {
+    const f = await fonte();
     await f.marcarEsgotadoHoje(RAPIDO, true, BALCAO);
     const amanha = { ...CONTEXTO_PEDIDO, agora: new TZDate(2026, 9, 6, 10, 0, "Europe/Lisbon") };
     expect((await f.criarPedido(pedido(RAPIDO, amanhaAs(15)), amanha)).ok).toBe(true);
   });
 
   it("o dia é o de Lisboa: às 23h30 UTC de verão já é amanhã", async () => {
-    const f = fonte();
+    const f = await fonte();
     const meiaNoiteEMeia = { papel: "funcionario" as const, agora: new Date("2026-07-15T23:30:00Z") };
     const resultado = await f.marcarEsgotadoHoje(RAPIDO, true, meiaNoiteEMeia);
     expect(resultado.ok && resultado.valor.esgotadoNoDia).toBe("2026-07-16");
@@ -236,14 +246,14 @@ describe("esgotado hoje", () => {
 
 describe("horários, definições e pausa", () => {
   it("um período que fecha antes de abrir é recusado, com o campo marcado", async () => {
-    const f = fonte();
+    const f = await fonte();
     const casa = await f.configuracaoDaCasa();
     const errado = { ...casa, loja: { ...casa.loja, segunda: [{ abre: "18:00", fecha: "08:00" }] } };
     expect(await f.guardarHorarios(errado, GERENTE)).toEqual({ ok: false, erro: "dados-invalidos", campos: ["loja"] });
   });
 
   it("os degraus das cores têm de subir", async () => {
-    const f = fonte();
+    const f = await fonte();
     const casa = await f.configuracaoDaCasa();
     const errado = { ...casa, limiaresAfluencia: { livre: 60, media: 50 } };
     expect(await f.guardarHorarios(errado, GERENTE)).toEqual({
@@ -254,7 +264,7 @@ describe("horários, definições e pausa", () => {
   });
 
   it("um horário gravado é o que a casa passa a ter, e o calendário lê", async () => {
-    const f = fonte();
+    const f = await fonte();
     const casa = await f.configuracaoDaCasa();
     const resultado = await f.guardarHorarios({ ...casa, limitePorVaga: 2, diasAFrente: 14 }, GERENTE);
     expect(resultado.ok).toBe(true);
@@ -262,7 +272,7 @@ describe("horários, definições e pausa", () => {
   });
 
   it("as definições gravam-se sem mexer na pausa", async () => {
-    const f = fonte();
+    const f = await fonte();
     const ate = new Date(AGORA.getTime() + 60 * 60_000);
     await f.pausarLoja(ate, BALCAO);
     await f.guardarDefinicoes(
@@ -277,8 +287,8 @@ describe("horários, definições e pausa", () => {
     });
   });
 
-  it("com a loja em pausa não se criam pedidos; ao retomar, sim", async () => {
-    const f = fonte();
+  comPedidos("com a loja em pausa não se criam pedidos; ao retomar, sim", async () => {
+    const f = await fonte();
     await f.pausarLoja(new Date(AGORA.getTime() + 30 * 60_000), BALCAO);
     expect(await f.criarPedido(pedido(RAPIDO, amanhaAs(15)), CONTEXTO_PEDIDO)).toEqual({
       ok: false,
@@ -289,7 +299,7 @@ describe("horários, definições e pausa", () => {
   });
 
   it("uma pausa que já acabou é recusada", async () => {
-    const f = fonte();
+    const f = await fonte();
     expect(await f.pausarLoja(new Date(AGORA.getTime() - 1), BALCAO)).toEqual({
       ok: false,
       erro: "dados-invalidos",
