@@ -1,11 +1,8 @@
-import { fileURLToPath } from "node:url";
-import { PGlite } from "@electric-sql/pglite";
 import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/pglite";
-import { migrate } from "drizzle-orm/pglite/migrator";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { HorarioSemanal } from "@/lib/horarios";
 import { casa, produtos, variantes } from "./esquema";
+import { baseDeTeste, recusado } from "./teste";
 
 /**
  * # As regras que a base de dados faz cumprir
@@ -19,28 +16,11 @@ import { casa, produtos, variantes } from "./esquema";
  * as tabelas vazias, sem criar uma base de dados por teste.
  */
 
-const cliente = new PGlite();
-const db = drizzle(cliente);
+const { db, cliente } = await baseDeTeste();
 
-beforeAll(async () => {
-  await migrate(db, { migrationsFolder: fileURLToPath(new URL("./migracoes", import.meta.url)) });
-});
 afterAll(() => cliente.close());
 beforeEach(() => cliente.exec("begin"));
 afterEach(() => cliente.exec("rollback"));
-
-/* O Drizzle embrulha o erro do Postgres; o nome da regra que falhou está na
-   causa. Confirmar o nome, e não só que falhou, é o que garante que foi esta
-   regra a recusar — e não outra coisa partida pelo caminho. */
-async function recusado(escrita: Promise<unknown>): Promise<string> {
-  try {
-    await escrita;
-  } catch (erro) {
-    const causa = (erro as { cause?: { constraint?: string } }).cause;
-    return causa?.constraint ?? `sem regra: ${String(erro)}`;
-  }
-  throw new Error("a base de dados aceitou o que devia recusar");
-}
 
 // ——— O que se grava ———
 
