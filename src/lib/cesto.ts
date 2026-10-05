@@ -87,6 +87,14 @@ export type ItemCesto = {
    * nome escrito por cima.
    */
   notas: string | null;
+  /**
+   * O sabor (ou recheio) escolhido, num produto que os tem. **Obrigatório
+   * nesses**: o botão de juntar pergunta antes, e o servidor recusa a linha sem
+   * ele (`escolha-invalida`). Como as notas, **faz parte da identidade da
+   * linha**: 12 de alheira e 12 de legumes são duas linhas, cada uma com a sua
+   * dúzia (ver `idComEscolha`). Opcional no tipo só para os cestos antigos.
+   */
+  escolha?: string | null;
 };
 
 /**
@@ -119,6 +127,21 @@ export function idComNotas(id: string, notas: string | null): string {
     soma = ((soma << 5) + soma + limpo.charCodeAt(i)) | 0;
   }
   return `${id}#${(soma >>> 0).toString(36)}`;
+}
+
+/**
+ * O `id` de uma linha com o sabor escolhido: `ementa:vegan-folhados~alheira`.
+ * Vem antes da marca das notas, que é sempre a última (`#…`).
+ */
+export function idComEscolha(id: string, escolha: string | null | undefined): string {
+  if (!escolha) return id;
+  const marca = escolha
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return `${id}~${marca}`;
 }
 
 /**
@@ -194,6 +217,7 @@ export function normalizarCesto(lido: unknown): ItemCesto[] {
       minimo,
       passo,
       notas: typeof item.notas === "string" && item.notas.trim() ? item.notas : null,
+      escolha: typeof item.escolha === "string" && item.escolha.trim() ? item.escolha : null,
     });
   }
   return items;
@@ -274,7 +298,9 @@ export function cestoEmTexto(
   if (cesto.length === 0) return "";
 
   const linhas = cesto.flatMap((item) => {
-    const nome = item.variante ? `${item.nome} (${item.variante})` : item.nome;
+    const comVariante = item.variante ? `${item.nome} (${item.variante})` : item.nome;
+    /* O sabor colado ao artigo, como no talão — nunca nas notas. */
+    const nome = item.escolha ? `${comVariante} · ${item.escolha}` : comVariante;
     const preco =
       item.precoCent === null
         ? rotulos.semPreco
@@ -307,6 +333,7 @@ export const linhasDoCesto = (cesto: ItemCesto[]) =>
     varianteId: item.varianteId,
     quantidade: item.quantidade,
     notas: item.notas,
+    escolhas: item.escolha ? [item.escolha] : [],
   }));
 
 /**

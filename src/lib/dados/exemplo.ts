@@ -130,7 +130,7 @@ export function fonteDeExemplo(
       estado: "pago",
       criadoEm: new Date(quando.getTime() - 3 * 60_000),
       levantamentoEm,
-      cliente: { nome, email: paraEmail(nome), telefone: "910009999", nif: null, contaId: null },
+      cliente: { nome, email: paraEmail(nome), telefone: "+351910009999", nif: null, contaId: null },
       linhas,
       observacoes: talaoFalhou ? "Simulado com o talão a falhar." : null,
       totalCent,
@@ -386,7 +386,7 @@ export function pedidosDoPainelDeExemplo(
       cliente: {
         nome,
         email: paraEmail(nome),
-        telefone: `91000${String(1000 + p.cliente).slice(-4)}`,
+        telefone: `+35191000${String(1000 + p.cliente).slice(-4)}`,
         nif: null,
         contaId: null,
       },

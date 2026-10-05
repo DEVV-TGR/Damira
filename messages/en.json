@@ -368,7 +368,8 @@
         "detalhe": "What you need",
         "detalhePlaceholder": "A chocolate cake with red berries, for 15 people, with the name “Matilde” on top.",
         "consentimento": "I agree that my details may be used to answer this request. They are not used for anything else, nor shared.",
-        "armadilha": "Leave this field blank"
+        "armadilha": "Leave this field blank",
+        "pais": "Country"
       },
       "erros": {
         "nome-curto": "Please write your name.",
@@ -381,7 +382,9 @@
         "vaga-indisponivel": "That time is no longer available. Please choose another.",
         "email-invalido": "Please enter a valid email — that's where your reference goes.",
         "telefone-curto": "Please enter a phone number — we'll call if something needs sorting out.",
-        "nif-invalido": "The tax number has nine digits."
+        "nif-invalido": "The tax number has nine digits.",
+        "telefone-invalido": "Please check the number: it doesn't look like a valid phone number for the country chosen.",
+        "loja-em-pausa": "The shop is paused until {quando}: the kitchen is full. You can order from then."
       },
       "sucesso": {
         "titulo": "Request sent.",
@@ -426,7 +429,14 @@
       "notas": "Anything to add?",
       "notasDica": "Filling, colour, the name to write on the cake, allergies.",
       "tipoDoCesto": "Comes from what you added. To change it, edit the order.",
-      "juntarArtigo": "Add {nome} to your order"
+      "juntarArtigo": "Add {nome} to your order",
+      "escolha": {
+        "titulo": "Which flavour?",
+        "ajuda": "Each flavour goes in as its own line, with its own minimum quantity.",
+        "cancelar": "Cancel",
+        "rotulo": "Flavour",
+        "falta": "Choose the flavour first."
+      }
     },
     "daEmenta": {
       "titulo": "From the menu, to order",
@@ -483,7 +493,8 @@
       "vazioTexto": "Add whatever you like from the orders or the menu, then come back here.",
       "irEncomendas": "See the orders",
       "rever": "Review and order",
-      "reverTexto": "You already have items in your order. Choose the collection time and your details in the next step."
+      "reverTexto": "You already have items in your order. Choose the collection time and your details in the next step.",
+      "pausa": "The shop is paused until {quando}: the kitchen is full. You can order from then."
     }
   },
   "bolos": {

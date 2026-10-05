@@ -154,6 +154,12 @@ até quantos dias à frente.
 - Mudar o PIN da equipa — termina todas as sessões de funcionário.
 - Lista de dispositivos com sessão aberta; terminar qualquer um.
 
+No contrato da entrada (`FonteSessao`, decidido a 05/10): `listarSessoes`,
+`terminarSessao` e `mudarPin`, só para a gerente — a ação confirma o papel no
+servidor antes de chegar à entrada. O PIN tem 4 ou 6 dígitos (#25). Com a
+entrada provisória, só se veem as sessões do próprio aparelho e o PIN é fixo, e
+o ecrã di-lo. A implementação sobre a base de dados é do Sobral (#33).
+
 (Ver `painel.md`.)
 
 ## Definições da loja

@@ -368,7 +368,8 @@
         "detalhe": "O que precisa",
         "detalhePlaceholder": "Um bolo de chocolate com frutos vermelhos, para 15 pessoas, com o nome «Matilde» em cima.",
         "consentimento": "Autorizo que os meus dados sejam usados para responder a este pedido. Não são usados para mais nada nem partilhados.",
-        "armadilha": "Deixe este campo em branco"
+        "armadilha": "Deixe este campo em branco",
+        "pais": "País"
       },
       "erros": {
         "nome-curto": "Escreva o seu nome.",
@@ -381,7 +382,9 @@
         "vaga-indisponivel": "Essa hora já não está disponível. Escolha outra.",
         "email-invalido": "Escreva um email válido — é para lá que vai a referência.",
         "telefone-curto": "Escreva um telefone — ligamos se for preciso acertar alguma coisa.",
-        "nif-invalido": "O NIF tem nove algarismos."
+        "nif-invalido": "O NIF tem nove algarismos.",
+        "telefone-invalido": "Confira o número: não parece um telefone válido do país escolhido.",
+        "loja-em-pausa": "A loja está em pausa até {quando}: a cozinha está cheia. Pode encomendar a partir dessa hora."
       },
       "sucesso": {
         "titulo": "Pedido enviado.",
@@ -426,7 +429,14 @@
       "notas": "Quer acrescentar alguma coisa?",
       "notasDica": "Recheio, cor, o nome a escrever no bolo, alergias.",
       "tipoDoCesto": "Vem do que juntou ao pedido. Para mudar, altere o cesto.",
-      "juntarArtigo": "Juntar {nome} ao pedido"
+      "juntarArtigo": "Juntar {nome} ao pedido",
+      "escolha": {
+        "titulo": "Qual sabor?",
+        "ajuda": "Cada sabor entra como uma linha à parte, com a sua quantidade mínima.",
+        "cancelar": "Cancelar",
+        "rotulo": "Sabor",
+        "falta": "Escolha o sabor primeiro."
+      }
     },
     "daEmenta": {
       "titulo": "Da carta, por encomenda",
@@ -483,7 +493,8 @@
       "vazioTexto": "Junte ao pedido o que quiser, nas encomendas ou na ementa, e volte aqui.",
       "irEncomendas": "Ver as encomendas",
       "rever": "Rever e encomendar",
-      "reverTexto": "Já tem artigos no pedido. Escolhe a hora de levantamento e os seus dados no passo seguinte."
+      "reverTexto": "Já tem artigos no pedido. Escolhe a hora de levantamento e os seus dados no passo seguinte.",
+      "pausa": "A loja está em pausa até {quando}: a cozinha está cheia. Pode encomendar a partir dessa hora."
     }
   },
   "bolos": {

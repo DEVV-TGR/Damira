@@ -151,7 +151,9 @@ export function Cesto({ locale }: { locale: Locale }) {
               <li key={item.id} className="flex items-start gap-3 py-3">
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold">{item.nome}</p>
-                  {item.variante && <p className="text-sm text-tinta-suave">{item.variante}</p>}
+                  {(item.variante || item.escolha) && (
+                    <p className="text-sm text-tinta-suave">{[item.variante, item.escolha].filter(Boolean).join(" · ")}</p>
+                  )}
                   <p className="mt-1 text-sm tabular-nums text-tijolo">
                     {item.precoCent === null
                       ? t("semPreco")

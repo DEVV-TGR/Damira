@@ -171,7 +171,14 @@ export const EsquemaCliente = z
     nome: z.string().trim().min(1).max(120),
     /** Obrigatório: é para lá que vai a confirmação com a referência. */
     email: z.email().max(200),
-    telefone: z.string().trim().max(30).nullable().default(null),
+    /**
+     * **Obrigatório**: é por ele que o balcão liga a um cliente que não aparece
+     * (`pedidos.md` › O cliente). Em **E.164** (`+351911222333`): a página
+     * escolhe o país, valida o número para esse país (`libphonenumber-js`) e
+     * manda-o já assim. Aqui confere-se só a forma, para o tipo não trazer a
+     * biblioteca para o browser (há um teste que o vigia).
+     */
+    telefone: z.string().regex(/^\+[1-9]\d{6,14}$/, "telefone em E.164"),
     nif: z
       .string()
       .regex(/^\d{9}$/)
@@ -211,12 +218,19 @@ export type ContextoPedido = {
 
 // ——— A cotação: o preço que o servidor calcula ———
 
+/**
+ * - `escolha-invalida`: o produto tem escolhas (sabores) e a linha não traz
+ *   **exatamente uma** que exista nele — ou não tem escolhas e a linha traz
+ *   alguma. O browser não decide o que é válido (regra 1): um sabor inventado
+ *   chegava à cozinha impresso no talão.
+ */
 export type ErroLinha =
   | "produto-desconhecido"
   | "variante-desconhecida"
   | "fora-de-venda"
   | "abaixo-do-minimo"
-  | "fora-do-multiplo";
+  | "fora-do-multiplo"
+  | "escolha-invalida";
 
 export type LinhaCotada = {
   produtoId: string;
@@ -621,7 +635,10 @@ export type FontePainel = {
    * nunca mais do que o pago online ainda por devolver. Liberta a vaga.
    */
   cancelarPedido(id: string, reembolsoCent: number, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
-  /** Um reembolso sem cancelar (um artigo que faltou), num pedido pago ou entregue. */
+  /**
+   * Um reembolso sem cancelar (um artigo que faltou), num pedido **pago,
+   * entregue ou cancelado** — cancelado sem reembolso e devolvido mais tarde.
+   */
   reembolsarPedido(id: string, valorCent: number, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
   /**
    * Um número que muda sempre que um pedido muda. É o que o painel pergunta de
