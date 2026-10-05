@@ -346,7 +346,13 @@ O PIN da equipa é o `casa.pin_equipa_hash`.
 - **Os limites contam por chave e janela**, somados com `ON CONFLICT` numa
   instrução só: o PIN conta por IP (`pin:<ip>`), porque antes de entrar não há
   nada que identifique o dispositivo, e um cookie apagava-se para fugir ao
-  limite.
+  limite. As janelas são fixas: o bloqueio dura até ao fim da janela.
+- ⚠️ **A tentativa conta-se antes de ser conferida.** «Ver se está bloqueado,
+  tentar, contar o erro» deixava passar vinte tentativas mandadas ao mesmo
+  tempo — todas viam o contador a zero. Somada primeiro, cada uma recebe o seu
+  número, e só as cinco primeiras chegam a ser conferidas. Acertar apaga o
+  contador: contam os erros seguidos. Há um teste que o prova, e que falha com
+  a forma ingénua.
 - **Mudar o PIN apaga as sessões de funcionário no mesmo lote** — é assim que se
   tira o acesso a quem saiu da casa (`painel.md`).
 
