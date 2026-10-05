@@ -8,7 +8,8 @@ quem entra, como entra, e como a página se aguenta aberta o dia inteiro.
 ## Onde vive
 
 - `src/app/painel/`, **fora de `[locale]`**. O painel é para a equipa e é só em
-  português; não passa pelo `next-intl`.
+  português; não passa pelo `next-intl`. ⚠️ Tem layout raiz próprio, e o
+  `matcher` do `src/proxy.ts` exclui-o — sem isso, `/painel` ia para `/pt/painel`.
 - `noindex` e fora do `sitemap.xml`.
 - Pensado primeiro para o **tablet do balcão**: alvos de toque grandes, nada que
   dependa de *hover*. A gerente também o usa no telemóvel.
@@ -85,7 +86,8 @@ O tablet fica com o painel aberto do abrir ao fechar da loja.
    pergunta de 10 em 10 segundos (e sempre que volta a ficar visível) por um
    **número de versão**, servido a partir da cache da Vercel. Cada alteração a um
    pedido invalida essa cache (`revalidateTag`). O painel só vai buscar a lista à
-   base de dados quando a versão muda. A versão não diz nada sobre os pedidos, por
+   base de dados quando a versão muda (`versaoPedidos`, em `src/lib/dados/`). A
+   versão não diz nada sobre os pedidos, por
    isso pode ser pública e estar em cache. Porquê: uma consulta à base de dados a
    cada 10 segundos mantinha-a acordada o dia inteiro — ver `robustez.md`.
    Polling e não websockets: a Vercel não mantém ligações abertas, e numa
@@ -101,6 +103,49 @@ O tablet fica com o painel aberto do abrir ao fechar da loja.
    sozinho no primeiro momento em que não houver nada a meio.
 4. O ecrã não se apaga e o som tem de estar desbloqueado — ver
    `painel-balcao.md`.
+
+## A entrada provisória — e é um bloqueador de lançamento
+
+A página e as ações só falam com `src/lib/sessao-painel/` (o contrato está em
+`tipos.ts`, a `FonteSessao`). Do outro lado está hoje uma **entrada provisória**
+(`provisoria.ts`), para o painel poder ser construído e mostrado antes de haver
+base de dados. A verdadeira é a #33: troca-se uma linha no `index.ts`, e os
+ecrãs não mudam.
+
+- **Liga com o modo de teste (`LOJA_EM_TESTE=1`), e só com ele**, em local e no
+  ar: é o mesmo interruptor de todos os dados provisórios. Sem ele, o painel diz
+  que a entrada ainda não está ligada.
+- ⚠️ **Valores por defeito no código** (decidido a 04/10): PIN `123456`, o email
+  da equipa (`developerplusteam@gmail.com`) como gerente e um segredo fixo, que
+  não é segredo nenhum. O repositório é público, por isso quem o lê entra no
+  painel do site de teste — onde só há pedidos de exemplo em memória. É a troca
+  aceite para não haver nada a configurar. `PAINEL_PIN_TESTE`, `PAINEL_SEGREDO` e
+  `EMAILS_GERENTE` sobrepõem-se.
+- **Os pedidos que o painel mostra são de exemplo** (`pedidosDoPainelDeExemplo`,
+  em `src/lib/dados/exemplo.ts`), relativos ao dia de hoje: só o Stripe paga um
+  pedido, e sem eles o balcão e a gerente abriam vazios.
+- ⚠️ **Enquanto estiver ligada, há um aviso no topo** («Entrada de teste»), que
+  não se apaga — a mesma regra da faixa do modo de teste.
+- **O que não faz**, porque pede a base de dados: limitar tentativas, terminar
+  sessões à distância (nem quando o PIN muda), renovar a cada uso e listar os
+  dispositivos. A sessão é um cookie assinado; o código da gerente aparece no
+  ecrã em vez de ir por email (para qualquer email, com e sem acesso — só o da
+  lista abre).
+- **Duas sessões no mesmo tablet:** a da equipa e a da gerente, em cookies
+  separados. A gerente que sai deixa o tablet no balcão; «esquecer este
+  dispositivo» tira as duas.
+
+**No lançamento (#55):** a entrada provisória sai, e com ela o aviso.
+
+## A versão do polling
+
+`/api/painel/versao` devolve `{ versao, site }`. A `versao` vem do
+`versaoPedidos` através de um `unstable_cache` com a etiqueta `pedidos`
+(`src/lib/painel-versao.ts`); quem muda um pedido chama `avisarQuePedidosMudaram()`
+(`revalidateTag` com `expire: 0`, para o próximo polling já a ver). O `site` é o
+id do deploy: quando muda, o painel recarrega-se assim que não houver nada a
+meio (o `ocupado()` do `usePainel`). Sem resposta durante 25 segundos, ou com o
+browser offline, aparece o aviso vermelho (`src/lib/painel-ligacao.ts`).
 
 ## Em aberto
 

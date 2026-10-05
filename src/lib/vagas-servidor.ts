@@ -2,6 +2,7 @@ import { tz } from "@date-fns/tz";
 import { addDays, startOfDay } from "date-fns";
 import { EsquemaLinhaCesto, type ConfiguracaoDaCasa, type FonteDeDados } from "@/lib/dados/tipos";
 import { vagas, validarLevantamento, type ArtigoDoCesto, type ConfiguracaoHorarios } from "@/lib/horarios";
+import { esgotadoHoje } from "@/lib/painel";
 
 /**
  * # As vagas de levantamento de um cesto, calculadas no servidor
@@ -77,7 +78,7 @@ type Preparado =
 
 /* O que é preciso para o motor fazer as contas: o cesto em tempos de produção,
    e a configuração com a cozinha preenchida. */
-async function preparar(linhas: unknown, fonte: Fonte): Promise<Preparado> {
+async function preparar(linhas: unknown, fonte: Fonte, agora: Date): Promise<Preparado> {
   const lidas = EsquemaLinhaCesto.array().min(1).max(50).safeParse(linhas);
   if (!lidas.success) return { ok: false, motivo: "cesto-invalido" };
   const cotado = await fonte.cotarCesto(lidas.data);
@@ -90,7 +91,10 @@ async function preparar(linhas: unknown, fonte: Fonte): Promise<Preparado> {
   for (const linha of lidas.data) {
     const produto = await fonte.produtoPorId(linha.produtoId);
     if (!produto?.tempoProducao) return { ok: false, motivo: "indisponivel", casa };
-    cesto.push({ tempo: produto.tempoProducao });
+    /* O «esgotado hoje» do balcão tira as vagas de hoje ao cesto inteiro — o
+       mesmo que o `criarPedido` faz, para o calendário não oferecer o que o
+       servidor vai recusar. */
+    cesto.push({ tempo: produto.tempoProducao, esgotadoHoje: esgotadoHoje(produto, agora) });
   }
   return { ok: true, cesto, config: { ...casa, cozinha: casa.cozinha }, casa };
 }
@@ -111,7 +115,7 @@ type Contexto = {
    Começa amanhã e não hoje — sem saber quanto demora o que está no cesto,
    oferecer o próprio dia era prometer o que a cozinha talvez não consiga. */
 async function contexto(linhas: unknown, fonte: Fonte, agora: Date): Promise<Contexto | null> {
-  const preparado = await preparar(linhas, fonte);
+  const preparado = await preparar(linhas, fonte, agora);
   if (preparado.ok) return { ...preparado, desde: agora, aConfirmar: false };
   if (preparado.motivo === "cesto-invalido") return null;
   const casa = preparado.casa;
@@ -147,6 +151,32 @@ export async function vagasDoCesto(linhas: unknown, fonte: Fonte, agora: Date): 
       afluencia: afluenciaDe(vaga.ocupadas, vaga.livre, c.casa),
     })),
   };
+}
+
+/**
+ * As horas da loja num dia, para a gerente **mudar o levantamento** de um pedido
+ * (`pedidos.md`). É o calendário com o horário da loja no lugar do da cozinha:
+ * a gerente sabe se a cozinha consegue; o que o ecrã não deixa é escolher uma
+ * hora fechada, passada ou cheia — e o servidor confirma outra vez ao gravar.
+ */
+export async function horasDaLoja(
+  data: string,
+  fonte: Pick<FonteDeDados, "configuracaoDaCasa" | "ocupacao">,
+  agora: Date,
+): Promise<{ inicio: string; hora: string; livre: boolean }[]> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return [];
+  const [ano, mes, dia] = data.split("-").map(Number);
+  const inicioDoDia = new Date(Date.UTC(ano, mes - 1, dia) - 14 * 3_600_000);
+  const fimDoDia = new Date(Date.UTC(ano, mes - 1, dia) + 38 * 3_600_000);
+  const casa = await fonte.configuracaoDaCasa();
+  /* Até esse dia, por longe que seja: quem muda a data é a gerente, não o
+     cliente, e o «dias à frente» do calendário não se lhe aplica. */
+  const diasAte = Math.max(0, Math.ceil((fimDoDia.getTime() - agora.getTime()) / 86_400_000));
+  const config = { ...casa, cozinha: casa.loja, diasAFrente: diasAte };
+  const ocupadas = await fonte.ocupacao(inicioDoDia, fimDoDia);
+  return vagas([], agora, config, ocupadas)
+    .filter((v) => v.data === data)
+    .map((v) => ({ inicio: new Date(v.inicio.getTime()).toISOString(), hora: v.hora, livre: v.livre }));
 }
 
 /**

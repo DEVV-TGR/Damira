@@ -172,22 +172,14 @@ const EsquemaArtigo = z
         message: "preço e variantes ao mesmo tempo: escolher um",
       });
     }
-    /* Toda a carta vegan é vegan, e nada fora dela o é — a Damira não marca
-       artigos vegan no menu principal. Se um dia marcar, esta regra cai; até lá
-       é o que apanha um `vegan: true` copiado à pressa para o sítio errado. */
+    /* Toda a carta vegan é vegan. O outro sentido — nada fora dela o é — saiu
+       com a edição de produtos (#40): quem marca o vegan passou a ser a casa, no
+       painel, e pode marcá-lo em qualquer artigo. Deduzi-lo continua proibido. */
     if (artigo.carta === "vegan" && !artigo.vegan) {
       ctx.addIssue({
         code: "custom",
         path: ["vegan"],
         message: "está na carta vegan e não está marcado como vegan",
-      });
-    }
-    if (artigo.carta !== "vegan" && artigo.vegan) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["vegan"],
-        message:
-          "só a carta vegan tem artigos vegan — o impresso principal não os assinala",
       });
     }
     /* A subcategoria só existe dentro das bebidas, que são 25 artigos e sem ela

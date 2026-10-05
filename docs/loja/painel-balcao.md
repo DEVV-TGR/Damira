@@ -21,6 +21,12 @@ Três separadores, e nada de colunas de estado — a casa recusou-as na reunião
 Mais um **Arquivo** (entregues e cancelados) e uma **pesquisa** por referência ou
 nome — quem liga diz «DAM-0309-4F7K» ou «é a encomenda da Marta».
 
+Os três separadores saem de uma função só, `organizarBalcao` (`src/lib/painel.ts`),
+a partir dos pedidos de hoje em diante (`listarPedidos`). O início da produção
+conta-se por linha, com o tempo de cada produto. ⚠️ Um pedido de que não se sabe
+quando começar — falta o horário da cozinha ou o tempo de um produto — não
+desaparece da lista: vai para `semInicio`, e o painel mostra-o à parte.
+
 ⚠️ **«Levantam hoje» e «Produzir hoje» não são a mesma coisa.** Um bolo de 3 dias
 para sexta aparece em «Produzir» na terça e em «Levantam» na sexta. Juntar as
 duas (como a proposta fazia com «Para hoje») deixava a cozinha a descobrir o bolo
@@ -35,6 +41,12 @@ Os pedidos que se levantam hoje têm destaque em bloco invertido (fundo escuro,
 texto claro), como no talão.
 
 ## Um pedido novo
+
+⚠️ **No modo de teste, «Simular pedido novo»** (e «com o talão a falhar»), ao
+fundo do balcão: sem pagamentos (#42) não chega nenhum pedido, e o som, o aviso
+e o alarme ficavam por experimentar. Só existe com `LOJA_EM_TESTE=1`
+(`simularPedidoDeTeste`, em `src/lib/dados/`), e não é da `FonteDeDados`: na
+base de dados só o `marcarPago` põe um pedido a `pago`.
 
 1. O som toca **uma vez**.
 2. Aparece um aviso no canto: «Novo pedido DAM-… · 14:30 · talão impresso ✓».
@@ -61,7 +73,10 @@ O único toque do dia a dia: **Entregue**.
   abre «Recebeu os 12,50 € em falta?» antes de marcar. Entregar um bolo sem cobrar
   o resto é o erro mais caro que o balcão pode fazer, e o mais fácil numa hora de
   ponta. A cobrança em si faz-se na caixa da loja, como hoje — o painel não
-  regista meios de pagamento.
+  regista meios de pagamento. O servidor também não confia que se perguntou:
+  `marcarEntregue` recusa (`falta-cobrar`) sem a confirmação.
+- **Dois toques** (ou dois dispositivos) entregam uma vez: a passagem a
+  `entregue` é condicional, e o segundo recebe o pedido já entregue.
 - **Desfazer:** durante 5 minutos, o pedido entregue mostra «Desfazer» e volta à
   lista. Depois disso, só a gerente.
 
@@ -72,6 +87,17 @@ Um toque num produto tira-o de venda, com duas opções:
 - **Esgotado hoje** — sem vagas de levantamento para hoje; volta sozinho amanhã,
   à abertura. É o caso normal.
 - **Tirar de venda** — fica fora até alguém o voltar a pôr.
+
+São dois campos do produto, e nenhum é o «à venda online» da gerente
+(`src/lib/dados/tipos.ts`):
+
+- `esgotadoNoDia` guarda **o dia de Lisboa** em que se esgotou, e não um
+  sim/não. Só vale enquanto esse dia for hoje — é isso que o faz voltar sozinho,
+  sem nenhuma tarefa agendada a acordar a base de dados para o repor
+  (`robustez.md`). Tira as vagas de hoje ao cesto inteiro, no calendário e na
+  confirmação ao enviar.
+- `foraDeVenda` é à parte do `aVendaOnline`: senão o balcão, ao «voltar a pôr»,
+  ligava um produto que a gerente tinha deixado desligado de propósito.
 
 **Os pedidos que já existem não são tocados.** Esgotar um produto trava pedidos
 novos, não cancela os pagos.

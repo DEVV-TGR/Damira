@@ -1,5 +1,6 @@
 import "server-only";
-import { fonteDoAmbiente } from "./exemplo";
+import { fonteDoAmbiente, type FonteDeExemplo } from "./exemplo";
+import { protegerPainel } from "./papeis";
 import type { FonteDeDados } from "./tipos";
 
 /**
@@ -22,7 +23,7 @@ import type { FonteDeDados } from "./tipos";
 /* O modo de teste (`LOJA_EM_TESTE=1`, ver `src/lib/modo-teste.ts`) liga os
    tempos e a cozinha de exemplo, para o calendário funcionar antes de a casa os
    dar. Quando vier a base de dados, é aqui que ela entra no lugar dos JSON. */
-const fonte: FonteDeDados = fonteDoAmbiente();
+const fonte: FonteDeExemplo = fonteDoAmbiente();
 
 export const listarProdutos: FonteDeDados["listarProdutos"] = (filtro) =>
   fonte.listarProdutos(filtro);
@@ -51,3 +52,55 @@ export const criarPedido: FonteDeDados["criarPedido"] = (entrada, contexto) =>
 
 export const pedidoPorReferencia: FonteDeDados["pedidoPorReferencia"] = (referencia) =>
   fonte.pedidoPorReferencia(referencia);
+
+// ——— O painel ———
+
+/*
+ * O papel verifica-se no `protegerPainel` (`papeis.ts`), antes de a fonte ser
+ * chamada. Depois de gravar um produto, quem chama (a ação do servidor, #40)
+ * revalida as páginas onde ele aparece: são estáticas, e sem isso o site mostra
+ * o preço antigo durante horas (`painel-gerente.md` › Mudar um preço). A fonte
+ * não sabe que páginas há; a ação sabe.
+ */
+const painel = protegerPainel(fonte);
+
+/** Todos os produtos, arquivados incluídos. O balcão também os vê, para os esgotar. */
+export const produtosDoPainel = painel.produtosDoPainel;
+export const criarProduto = painel.criarProduto;
+export const editarProduto = painel.editarProduto;
+/** «Apagar» no painel. Nunca se apaga a sério: os pedidos antigos apontam para ele. */
+export const arquivarProduto = painel.arquivarProduto;
+/** Do balcão. Volta sozinho amanhã. */
+export const marcarEsgotadoHoje = painel.marcarEsgotadoHoje;
+/** Do balcão. Fica fora até alguém o voltar a pôr. */
+export const tirarDeVenda = painel.tirarDeVenda;
+export const guardarHorarios = painel.guardarHorarios;
+export const guardarDefinicoes = painel.guardarDefinicoes;
+/** Do balcão, para quando a cozinha está cheia. O fim calcula-o o `fimDaPausa` (`src/lib/painel.ts`). */
+export const pausarLoja = painel.pausarLoja;
+export const listarPedidos = painel.listarPedidos;
+export const pedidoDoPainel = painel.pedidoDoPainel;
+/** `pago → entregue`, condicional. Com dinheiro em falta, só com `faltaCobrada`. */
+export const marcarEntregue = painel.marcarEntregue;
+/** O balcão até 5 minutos depois; a gerente sempre. */
+export const desfazerEntregue = painel.desfazerEntregue;
+export const precisaDeAtencao = painel.precisaDeAtencao;
+/** As decisões da gerente (`pedidos.md`). Quem chama avisa o polling. */
+export const tratarAviso = painel.tratarAviso;
+export const reagendarPedido = painel.reagendarPedido;
+export const cancelarPedido = painel.cancelarPedido;
+export const reembolsarPedido = painel.reembolsarPedido;
+/**
+ * ⚠️ O número do polling. Quem o serve (a rota do painel, #39) põe-no em cache
+ * com uma etiqueta, e cada ação que muda um pedido invalida-a (`revalidateTag`):
+ * é o que deixa a base de dados dormir com o tablet aberto o dia inteiro.
+ */
+export const versaoPedidos = painel.versaoPedidos;
+
+/**
+ * ⚠️ **Só no modo de teste** (`null` sem ele): um pedido pago a chegar agora,
+ * como se o Stripe o tivesse confirmado, para o balcão poder ser experimentado
+ * sem pagamentos. Não é da `FonteDeDados` — na base de dados, só o `marcarPago`
+ * (#42) põe um pedido a `pago` (regra 4).
+ */
+export const simularPedidoDeTeste = fonte.simularPedidoPago ?? null;

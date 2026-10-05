@@ -20,6 +20,22 @@ quando há alguma coisa:
 - pedidos marcados para um dia que entretanto foi fechado (ver `horarios.md`);
 - produtos por preencher (ver abaixo).
 
+**Cada aviso traz as suas decisões** — um aviso que só se lê não resolve nada
+(pedido do cliente a 04/10). O que ela decide tira-o da lista, e o facto fica
+(`pedidos.md` › Avisos tratados):
+
+| Aviso | Decisões |
+|---|---|
+| Pago depois de expirar | **aceitar o pedido** · mudar a data · cancelar e reembolsar |
+| Possível duplicado | **comparar lado a lado** → «ficar com este» (o outro é cancelado e reembolsado por inteiro) · «são dois pedidos diferentes» |
+| Dia que fechou | mudar a data · cancelar e reembolsar · manter neste dia |
+| Reembolso falhado | «já devolvi por outra via» |
+
+Mudar a data só deixa escolher horas em que a loja está aberta e com vaga, e o
+servidor confirma ao gravar. Cancelar pergunta o reembolso — tudo, uma parte ou
+nada — e diz o valor antes de confirmar. Os mesmos botões estão no detalhe de
+qualquer pedido, com «reembolsar parte» para os que seguem.
+
 ## Produtos
 
 ### O que cada produto tem
@@ -67,13 +83,13 @@ O `AGENTS.md` tem três regras escritas para um site em que **nós** púnhamos o
 dados. Com a gerente a editar, mudam — e o código que as impõe tem de mudar com
 elas, no mesmo PR, ou o painel rebenta ao gravar:
 
-1. **Vegan.** Hoje o `superRefine` só aceita `vegan: true` na carta vegan, porque
+1. **Vegan.** O `superRefine` só aceitava `vegan: true` na carta vegan, porque
    o site não podia afirmar o que a casa não afirmava. Agora quem marca é a casa:
-   a regra sai.
-2. **Mínimos por categoria.** Hoje o mínimo vive em `encomendavel.ts`, por
-   categoria. Passa a ser **do produto** — é o que a gerente percebe quando abre um
-   artigo. A migração preenche cada produto a partir da tabela atual, para
-   ninguém ter de escrever 70 mínimos.
+   **a regra saiu** (#40). Fica a do outro sentido (a carta vegan é toda vegan).
+2. **Mínimos por categoria.** O mínimo **passou a ser do produto** (#40) — é o
+   que a gerente percebe quando abre um artigo. A tabela de `encomendavel.ts` só
+   preenche o JSON, e a migração tira dela os 70 mínimos, para ninguém os ter de
+   escrever.
 3. **Alergénios vazios.** Continuam a não se deduzir. Ver o ⚠️ abaixo.
 
 ### ⚠️ Sem alergénios respondidos, não vai à venda online

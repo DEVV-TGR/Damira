@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Bricolage_Grotesque, Instrument_Sans } from "next/font/google";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Analytics } from "@vercel/analytics/next";
@@ -17,35 +16,8 @@ import { MODO_CONTA } from "@/lib/conta";
 import { routing, type Locale } from "@/i18n/routing";
 import { URL_SITE, urlLocalizado } from "@/lib/site";
 import { imagensDePartilha } from "@/lib/metadata";
+import { corpo, display } from "@/lib/fontes";
 import "../globals.css";
-
-/**
- * ⚠️ **As duas fontes são aproximações.** O impresso usa um display condensado
- * com textura gasta e um sans humanista, e nenhum dos dois se identifica a
- * partir de um PDF achatado. Quando aparecer o manual de marca, trocam-se aqui e
- * mudam em todo o lado.
- *
- * A **Bricolage Grotesque** entrou por ter eixos de largura e de tamanho ótico:
- * dá para abrir um título gigante e apertar uma etiqueta de 12 px sem trocar de
- * família, e é isso que mantém a página coerente. A Anton, que aqui esteve
- * antes, é uma fonte de póster — puxava a página para o registo gritado do
- * impresso, que é justamente o que esta direção não quer.
- *
- * `next/font` descarrega-as no `build` e serve-as do próprio domínio, que é o
- * que permite ao `font-src 'self'` da CSP ser tão fechado.
- */
-const display = Bricolage_Grotesque({
-  subsets: ["latin"],
-  axes: ["opsz", "wdth"],
-  variable: "--fonte-display",
-  display: "swap",
-});
-
-const corpo = Instrument_Sans({
-  subsets: ["latin"],
-  variable: "--fonte-corpo",
-  display: "swap",
-});
 
 /** As duas línguas geram-se no `build`; não há renderização a pedido. */
 export function generateStaticParams() {
