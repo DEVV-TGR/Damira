@@ -426,7 +426,14 @@
       "notas": "Anything to add?",
       "notasDica": "Filling, colour, the name to write on the cake, allergies.",
       "tipoDoCesto": "Comes from what you added. To change it, edit the order.",
-      "juntarArtigo": "Add {nome} to your order"
+      "juntarArtigo": "Add {nome} to your order",
+      "escolha": {
+        "titulo": "Which flavour?",
+        "ajuda": "Each flavour goes in as its own line, with its own minimum quantity.",
+        "cancelar": "Cancel",
+        "rotulo": "Flavour",
+        "falta": "Choose the flavour first."
+      }
     },
     "daEmenta": {
       "titulo": "From the menu, to order",

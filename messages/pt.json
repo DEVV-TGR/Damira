@@ -426,7 +426,14 @@
       "notas": "Quer acrescentar alguma coisa?",
       "notasDica": "Recheio, cor, o nome a escrever no bolo, alergias.",
       "tipoDoCesto": "Vem do que juntou ao pedido. Para mudar, altere o cesto.",
-      "juntarArtigo": "Juntar {nome} ao pedido"
+      "juntarArtigo": "Juntar {nome} ao pedido",
+      "escolha": {
+        "titulo": "Qual sabor?",
+        "ajuda": "Cada sabor entra como uma linha à parte, com a sua quantidade mínima.",
+        "cancelar": "Cancelar",
+        "rotulo": "Sabor",
+        "falta": "Escolha o sabor primeiro."
+      }
     },
     "daEmenta": {
       "titulo": "Da carta, por encomenda",

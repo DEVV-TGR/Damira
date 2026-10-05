@@ -170,6 +170,7 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
                     <span className="tabular-nums text-tinta-suave">{quantidadeEmTexto(item, locale)}</span>{" "}
                     <span className="font-semibold">{item.nome}</span>
                     {item.variante && <span className="text-tinta-suave"> · {item.variante}</span>}
+                    {item.escolha && <span className="text-tinta-suave"> · {item.escolha}</span>}
                   </p>
                   <span className="shrink-0 tabular-nums">
                     {agora === null ? tc("semPreco") : formatarCent(totalDaLinha(agora, item.quantidade), locale)}

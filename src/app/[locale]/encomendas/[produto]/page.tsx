@@ -198,6 +198,7 @@ function Detalhe({ produto, locale }: { produto: Produto; locale: Locale }) {
               <Conteudo produto={produto} locale={locale} />
 
               <ComprarProduto
+                escolhas={produto.escolhas}
                 id={produto.id}
                 produtoId={produto.id}
                 tipo={tipoDoPedido(produto)}

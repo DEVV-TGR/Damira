@@ -209,6 +209,7 @@ function Detalhe({ artigo, locale }: { artigo: Produto; locale: Locale }) {
                         <BotaoJuntar
                           variante="compacta"
                           locale={locale}
+                          escolhas={artigo.escolhas}
                           item={{
                             id: `ementa:${artigo.id}:${v.id}`,
                             produtoId: artigo.id,
@@ -246,6 +247,7 @@ function Detalhe({ artigo, locale }: { artigo: Produto; locale: Locale }) {
             {regra && variantesVisiveis(artigo).length === 0 ? (
               <>
                 <ComprarProduto
+                  escolhas={artigo.escolhas}
                   id={`ementa:${artigo.id}`}
                   produtoId={artigo.id}
                   tipo="ementa"
