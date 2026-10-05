@@ -30,18 +30,115 @@ Notion tem **um só membro** (todos os outros entram como convidados, senão o p
 deixa de ser grátis), e cada funcionalidade visível ganha **um ponto próprio no
 Progresso, com prints**.
 
+Desde outubro de 2026 o `settings.json` também **bloqueia** a ferramenta
+`EnterWorktree`, o `git worktree add`, o `git push` para o `main` e a leitura dos
+`.env` (exceto o `.env.example`). Esses bloqueios travam a forma como o Claude
+escreve os comandos; não são uma barreira de segurança — a barreira a sério é a
+proteção do `main` no GitHub.
+
+## A loja online — ler antes de mexer
+
+A partir de outubro de 2026 o site passa a vender: pagamento online, painel do
+balcão e da gerente, impressão de talões. **As regras de negócio estão em
+`docs/loja/`, um ficheiro por área. Antes de mexer numa área, ler o ficheiro
+dela** — e o `pedidos.md`, que é o contrato de que todos dependem.
+
+| Área | Ficheiro |
+|---|---|
+| **Quem faz o quê, e com quem estás a trabalhar** | `divisao.md` |
+| O pedido: estados, referência, dinheiro, cancelamento | `pedidos.md` |
+| Calendário, tempos de produção, até quando se cancela | `horarios.md` |
+| Stripe: checkout, webhook, reembolsos | `pagamentos.md` |
+| Painel: entrada, papéis, sessões | `painel.md` |
+| Painel: vista do balcão | `painel-balcao.md` |
+| Painel: vista da gerente, produtos | `painel-gerente.md` |
+| Talão e impressora | `impressao.md` |
+| Bolos personalizados | `bolos-personalizados.md` |
+| Concorrência, limites, erros, cache, logs, backups | `robustez.md` |
+
+### As regras que não se negociam
+
+Cada uma está explicada no ficheiro indicado. Aqui ficam só para não se
+esquecerem:
+
+1. **O browser manda ids e quantidades, nunca preços.** O total calcula-se no
+   servidor, sempre. (`pedidos.md`)
+2. **Dinheiro em cêntimos, inteiros.** Nunca um decimal num valor a cobrar.
+3. **Hora de Lisboa, com biblioteca de fusos.** `agora` entra como argumento;
+   nunca `getHours()` no servidor — a Vercel está em UTC e o erro só aparece
+   em março. (`horarios.md`)
+4. **Só o Stripe confirma um pagamento.** `marcarPago` é a única porta, e é
+   condicional e idempotente. (`pagamentos.md`)
+5. **A última vaga decide-a a base de dados**, com restrições `CHECK` numa
+   transação — não o código a ler e depois escrever. (`robustez.md`)
+6. **A base de dados dorme.** Nada que corra sozinho (polling, tarefas
+   agendadas, monitor) a consulta sem necessidade. (`robustez.md`)
+7. **Nunca em cache:** vagas, quantidades, estado de um pedido, checkout,
+   `/painel`. (`robustez.md`)
+8. **Esconder um botão não é proteger.** Cada acção de gestão verifica o papel
+   no servidor. (`painel.md`)
+9. **Um pedido pago nunca se perde e nunca se apaga.** (`pedidos.md`)
+
+### A documentação muda no mesmo PR que o código
+
+Se um PR faz o código contradizer um ficheiro de `docs/loja/` ou uma secção deste
+`AGENTS.md`, **o mesmo PR corrige o texto**. Uma regra escrita que o código já não
+cumpre é pior do que nenhuma: o próximo Claude lê-a e desfaz o que está certo.
+
+Secções deste ficheiro que a loja vai tornar falsas, e que se reescrevem no PR
+que as torna falsas:
+
+- **«O modelo de dados — quatro ficheiros»** — no PR que passa o catálogo para a
+  base de dados.
+- **«A conta de cliente», regras 2 e 3** — no PR que liga as chaves e no que
+  passa o histórico para o servidor.
+- **O `vegan: true` só na carta vegan** e **os mínimos por categoria em
+  `encomendavel.ts`** — no PR da edição de produtos no painel
+  (ver `painel-gerente.md`).
+
+### Base de dados
+
+- Neon, com o driver HTTP (`@neondatabase/serverless`) e [ORM a decidir na
+  primeira chamada — proposta: Drizzle].
+- Tabelas e colunas em português, `snake_case` (`pedidos`, `linhas_pedido`);
+  no TypeScript, `camelCase`.
+- **Alterações ao esquema vão num PR só para isso.** Nunca uma migração escondida
+  dentro de uma funcionalidade.
+- Desenvolvimento e produção são bases diferentes (ramos da Neon). Nunca testar
+  contra a de produção.
+
+### Revisão
+
+**Obrigatória do outro** só em três áreas — pagamentos, base de dados e a
+fronteira `src/lib/dados/` — e o GitHub impõe-na pelo `.github/CODEOWNERS`. Tudo
+o resto: merge pelo próprio, depois de `lint`, `build` e `test`.
+
+Antes de abrir qualquer PR, revê o diff com o Claude. Não substitui a revisão do
+outro onde ela é obrigatória; apanha o básico onde não é.
+
+### O repositório é público
+
+- Nunca `.env`, chaves ou segredos — nem em comentários, nem em exemplos.
+- Nunca dados reais de clientes, nem em dados de teste.
+- Nunca valores do contrato, preços do nosso trabalho ou contactos da casa
+  para além dos que estão no site.
+
 ## Antes de dizer que algo está pronto
 
-Correr **os dois**:
+Correr **os três**:
 
 ```bash
 npm run lint
 npm run build
+npm test
 ```
 
 O `build` é o que valida o `src/data/*.json` (via `zod`) e o que apanha erros de
 tipos — o `lint` sozinho deixa passar os dois. Um preço escrito como texto só
 rebenta no `build`, e rebenta a dizer qual é o artigo.
+
+O `npm test` (Vitest) existe a partir do PR que traz o motor de horários. Até lá,
+os dois primeiros chegam — e esse PR acrescenta o script `test` ao `package.json`.
 
 ## Língua
 
