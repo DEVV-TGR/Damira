@@ -170,6 +170,8 @@ export function CalendarioLevantamento({
     return (
       <div className="grid content-start gap-2">
         <p className="text-center text-base font-semibold first-letter:uppercase">{nomeMes}</p>
+        {/* Os dias ocupam a coluna até 40 px, e encolhem com ela: sete círculos
+            fixos de 40 px não cabiam num telemóvel de 320 (armadilha 15). */}
         <div role="grid" aria-label={nomeMes} className="grid grid-cols-7 gap-y-1.5 text-center">
           {cabecalho.map((nome, i) => (
             <span key={i} className="pb-1 text-xs font-semibold text-tinta-suave">
@@ -199,7 +201,7 @@ export function CalendarioLevantamento({
                   aria-pressed={marcado}
                   aria-label={`${formato.diaLongo.format(utc(data))}${dia.afluencia ? ` — ${rotulo(dia.afluencia)}` : ""}`}
                   onClick={() => escolher(data)}
-                  className={`premivel grid size-10 place-items-center rounded-full text-sm font-bold tabular-nums ${cor} ${
+                  className={`premivel grid aspect-square w-full max-w-10 place-items-center justify-self-center rounded-full text-sm font-bold tabular-nums ${cor} ${
                     marcado ? "ring-[3px] ring-tinta ring-offset-2 ring-offset-papel" : ""
                   }`}
                 >

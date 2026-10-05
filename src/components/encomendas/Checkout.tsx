@@ -8,6 +8,7 @@ import { cotarPedido } from "@/app/[locale]/encomendas/pedido/cotacao";
 import { enviarCompra, type Resultado } from "@/app/[locale]/encomendas/pedido/acoes";
 import { consultarVagas } from "@/app/[locale]/encomendas/vagas";
 import { useConta } from "@/components/conta/ProvedorConta";
+import { CampoTelefone } from "./CampoTelefone";
 import { linhasDoCesto, quantidadeEmTexto, totalDaLinha, type ItemCesto } from "@/lib/cesto";
 import type { ResultadoCotacao } from "@/lib/dados/tipos";
 import { itensGuardados } from "@/lib/historico";
@@ -151,7 +152,7 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
       }}
       className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:items-start lg:gap-14">
       {/* ── O resumo: primeiro no telemóvel, ao lado e colado no computador ── */}
-      <aside className="rounded-2xl border border-tinta/15 p-5 lg:sticky lg:top-24 lg:order-2">
+      <aside className="min-w-0 rounded-2xl border border-tinta/15 p-5 lg:sticky lg:top-24 lg:order-2">
         <div className="flex items-baseline justify-between gap-4">
           <h2 className="titulo-display titulo-gama">{t("resumo")}</h2>
           <Link href="/encomendas" className="alvo-toque text-xs font-semibold uppercase tracking-widest text-tijolo underline underline-offset-4">
@@ -200,7 +201,7 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
         {erros.cesto && <Erro>{erros.cesto}</Erro>}
       </aside>
 
-      <div className="grid gap-12 lg:order-1">
+      <div className="grid min-w-0 gap-12 lg:order-1">
         {/* ── 1 · Quando levanta ───────────────────────────────────────── */}
         <section aria-labelledby={`${id}-quando`} className="grid gap-4">
           <h2 id={`${id}-quando`} className="titulo-display titulo-gama">
@@ -263,17 +264,17 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
               valor={valor("email", utilizador?.email ?? "")}
               aoMudar={mudar("email")}
             />
-            <Campo
+            <CampoTelefone
               id={`${id}-telefone`}
-              nome="telefone"
-              tipo="tel"
               rotulo={tf("campos.telefone")}
+              rotuloPais={tf("campos.pais")}
+              locale={locale}
+              pais={valor("pais", "PT")}
+              numero={valor("telefone")}
               erro={erros.telefone}
               ajuda={t("telefoneAjuda")}
-              obrigatorio
-              autoComplete="tel"
-              valor={valor("telefone")}
-              aoMudar={mudar("telefone")}
+              aoMudarPais={(pais) => setCampos((antes) => ({ ...antes, pais }))}
+              aoMudarNumero={(telefone) => setCampos((antes) => ({ ...antes, telefone }))}
             />
             <Campo
               id={`${id}-nif`}

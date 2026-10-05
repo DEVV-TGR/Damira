@@ -368,7 +368,8 @@
         "detalhe": "O que precisa",
         "detalhePlaceholder": "Um bolo de chocolate com frutos vermelhos, para 15 pessoas, com o nome «Matilde» em cima.",
         "consentimento": "Autorizo que os meus dados sejam usados para responder a este pedido. Não são usados para mais nada nem partilhados.",
-        "armadilha": "Deixe este campo em branco"
+        "armadilha": "Deixe este campo em branco",
+        "pais": "País"
       },
       "erros": {
         "nome-curto": "Escreva o seu nome.",
@@ -381,7 +382,8 @@
         "vaga-indisponivel": "Essa hora já não está disponível. Escolha outra.",
         "email-invalido": "Escreva um email válido — é para lá que vai a referência.",
         "telefone-curto": "Escreva um telefone — ligamos se for preciso acertar alguma coisa.",
-        "nif-invalido": "O NIF tem nove algarismos."
+        "nif-invalido": "O NIF tem nove algarismos.",
+        "telefone-invalido": "Confira o número: não parece um telefone válido do país escolhido."
       },
       "sucesso": {
         "titulo": "Pedido enviado.",

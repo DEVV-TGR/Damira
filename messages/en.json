@@ -368,7 +368,8 @@
         "detalhe": "What you need",
         "detalhePlaceholder": "A chocolate cake with red berries, for 15 people, with the name “Matilde” on top.",
         "consentimento": "I agree that my details may be used to answer this request. They are not used for anything else, nor shared.",
-        "armadilha": "Leave this field blank"
+        "armadilha": "Leave this field blank",
+        "pais": "Country"
       },
       "erros": {
         "nome-curto": "Please write your name.",
@@ -381,7 +382,8 @@
         "vaga-indisponivel": "That time is no longer available. Please choose another.",
         "email-invalido": "Please enter a valid email — that's where your reference goes.",
         "telefone-curto": "Please enter a phone number — we'll call if something needs sorting out.",
-        "nif-invalido": "The tax number has nine digits."
+        "nif-invalido": "The tax number has nine digits.",
+        "telefone-invalido": "Please check the number: it doesn't look like a valid phone number for the country chosen."
       },
       "sucesso": {
         "titulo": "Request sent.",

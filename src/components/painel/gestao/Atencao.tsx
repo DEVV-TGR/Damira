@@ -7,6 +7,7 @@ import type { AvisoAtencao, AvisoTratavel, Pedido } from "@/lib/dados/tipos";
 import type { contarPorPreencher } from "@/lib/painel";
 import { diaPorExtenso } from "@/lib/painel";
 import { horaDeLisboa } from "@/lib/painel-ligacao";
+import { telefoneArrumado } from "@/lib/telefone";
 import { BOTAO, BOTAO_PRINCIPAL, BOTAO_SECUNDARIO, MENSAGENS } from "../balcao/comum";
 import { Comparar } from "./Comparar";
 import { Cancelar, MudarData } from "./Decisoes";
@@ -110,7 +111,7 @@ export function Atencao({
             {pedido && (
               <p className="mt-1 text-sm">
                 {pedido.referencia} · {pedido.cliente.nome}
-                {pedido.cliente.telefone && ` · ${pedido.cliente.telefone}`} · levanta {diaPorExtenso(pedido.levantamentoEm)},{" "}
+                {pedido.cliente.telefone && ` · ${telefoneArrumado(pedido.cliente.telefone)}`} · levanta {diaPorExtenso(pedido.levantamentoEm)},{" "}
                 {horaDeLisboa(pedido.levantamentoEm)}
               </p>
             )}
