@@ -67,7 +67,11 @@ const iguais = (a: string, b: string): boolean => {
 };
 
 export function criarSessaoProvisoria({ ambiente, cookies }: Opcoes): FonteSessao {
-  const ligada = emModoDeTeste(ambiente);
+  /* ⚠️ **Nunca com a base de dados.** Com a `DATABASE_URL`, o painel grava os
+     produtos a sério — e o PIN daqui está escrito no código, num repositório
+     público: qualquer um os editava. Trancado é melhor do que aberto: sem a
+     entrada verdadeira ligada (#33), o painel diz que a entrada não está. */
+  const ligada = emModoDeTeste(ambiente) && !ambiente.DATABASE_URL;
   /* Um PIN do ambiente que não seja de seis dígitos cai no de defeito, em vez
      de deixar o painel sem entrada. */
   const pin = /^\d{6}$/.test(ambiente.PAINEL_PIN_TESTE ?? "") ? ambiente.PAINEL_PIN_TESTE! : PIN_DE_TESTE;
