@@ -93,6 +93,21 @@ describe("enviarCompra: o email por secções, com os preços do servidor", () =
   });
 });
 
+describe("enviarCompra: com a loja em pausa", () => {
+  it("não segue, e diz até quando — a cozinha está cheia", async () => {
+    const { pausarLoja } = await import("@/lib/dados");
+    const gerente = { papel: "gerente" as const, agora: new Date() };
+    await pausarLoja(new Date(Date.now() + 30 * 60_000), gerente);
+    try {
+      const resultado = await enviar({});
+      expect(resultado.estado).toBe("erro");
+      expect(resultado.estado === "erro" && resultado.campos.geral).toMatch(/A loja está em pausa até .*\d\d:\d\d/);
+    } finally {
+      await pausarLoja(null, gerente);
+    }
+  });
+});
+
 describe("enviarCompra: o que não segue", () => {
   it.each([
     ["email", { email: "" }],
