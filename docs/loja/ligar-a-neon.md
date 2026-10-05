@@ -128,10 +128,13 @@ A casa começa a preencher os produtos no painel, e o que ela grava tem de ficar
       (`comExemplo`): o site fica em modo de teste até 11/11, e é nesse modo que
       ela vai preencher. Nada de exemplo chega à base de dados, e o painel vê a
       casa como está gravada.
-- [ ] **A entrada verdadeira da gerente** (#33): o PIN da entrada provisória
-      está escrito no código, num repositório público. O que falta está no
-      ponto 8.
-- [ ] A conta Resend da Damira, para o código da gerente chegar por email (#26).
+- [x] **A entrada verdadeira da gerente** (#33), ligada pela `DATABASE_URL`:
+      o PIN da entrada provisória está escrito no código, num repositório
+      público, e ela não liga com a base de dados. Falta só o que é da Vercel
+      (ponto 8).
+- [ ] A conta Resend da Damira, para o código da gerente chegar por email (#26)
+      — **criada com o email da gerente**, para o código lhe chegar antes de o
+      domínio estar verificado (ponto 8).
 
 ## 8. A entrada no painel (#33) — o que falta
 
@@ -149,12 +152,25 @@ existem; o resto está aqui, por quem o faz.
 - [x] **O comando para definir o PIN da equipa**: `npm run painel:pin`. É a
       forma de pôr o **primeiro** PIN, antes de haver gerente com sessão;
       depois, muda-se no ecrã «Equipa» da gestão.
-- [ ] **Ligá-la** no `src/lib/sessao-painel/index.ts` — é a única linha que muda.
-      O `criarSessaoBd` recebe: a base de dados e o `loteNeon`; os cookies do
-      `next/headers` (como hoje); os emails do `EMAILS_GERENTE`; o envio do
-      código pelo Resend (como o `src/lib/email.ts`, sem nunca registar o email);
-      o `user-agent` dos cabeçalhos, para a lista de sessões; e `producao` para
-      os cookies `secure`.
+- [x] **Ligá-la**: o `src/lib/sessao-painel/escolher.ts` escolhe a verdadeira
+      quando há `DATABASE_URL` — a mesma variável da fonte dos dados, por isso
+      as duas entram juntas, no mesmo deploy. Sem ela, a provisória, como até
+      aqui.
+
+**O que a entrada verdadeira lê da Vercel:**
+
+| Variável | Para quê | Sem ela |
+|---|---|---|
+| `DATABASE_URL` | liga-a (e à fonte dos dados) | a provisória |
+| `EMAILS_GERENTE` | quem pode ser gerente | ⚠️ **ninguém é gerente** — não há valor por defeito |
+| `RESEND_API_KEY` | o envio do código da gerente | a entrada da gerente diz que não está disponível; a do PIN funciona |
+| `EMAIL_REMETENTE` | o remetente, de um domínio verificado | `onboarding@resend.dev`, que **só entrega a quem criou a conta Resend** |
+
+⚠️ **O código da gerente antes de o domínio estar verificado.** O remetente de
+testes do Resend só entrega ao email com que se criou a conta. **Se a conta
+Resend da casa for criada com o email da gerente**, o código chega-lhe mesmo
+sem domínio — e chega para o dia 14. Com o domínio verificado, põe-se o
+`EMAIL_REMETENTE` e passa a entregar a qualquer gerente da lista.
 
 ### No contrato e no ecrã (Gonçalo)
 
