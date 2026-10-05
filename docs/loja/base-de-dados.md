@@ -151,6 +151,7 @@ sem ela o calendário diz «indisponível» em vez de inventar.
 | `ip` | `text` nulo | **só da base de dados** |
 | `stripe_session_id` | `text` único, nulo | **só da base de dados** (#38) |
 | `procura` | `text` | **só da base de dados** |
+| `reembolso_reservado_cent` | `integer` `>= 0`, `CHECK (… <= pago_online_cent)` | **só da base de dados** (ver «Reembolsos ao mesmo tempo») |
 
 **O `reembolsadoCent` não tem coluna.** O contrato define-o como a soma dos
 reembolsos `concluido`, e o `pedidos.md` avisa que um campo derivado guardado é um
@@ -197,6 +198,27 @@ um pedido antigo diz o que se pagou nesse dia (`pedidos.md`).
 | `estado` | `text` `CHECK` (`pendente`, `concluido`, `falhado`) | `estado` |
 | `pedido_em` | `timestamptz` | `pedidoEm` |
 | `stripe_refund_id` | `text` único, nulo | **só da base de dados** (#49) |
+
+### Reembolsos ao mesmo tempo
+
+É a última vaga outra vez, do lado do dinheiro. O `pedidos.md` diz «nunca mais
+do que o que foi pago online e ainda não foi devolvido». Dois reembolsos pedidos
+ao mesmo tempo — a gerente no telemóvel e no computador, ou um duplo clique —
+leem os dois o mesmo «falta devolver», passam os dois a verificação, e juntos
+devolvem mais do que se pagou.
+
+Por isso o pedido guarda **`reembolso_reservado_cent`**: o que já foi devolvido
+**ou está a caminho** (os reembolsos `pendente` e `concluido`), com
+`CHECK (reembolso_reservado_cent <= pago_online_cent)`. Pedir um reembolso é um
+lote só: soma ao contador e insere o reembolso. Se a soma passar o que foi pago,
+o `CHECK` falha e o segundo reembolso não existe. Quando o Stripe diz que um
+falhou (`pagamentos.md`), o contador desconta-o na mesma instrução que muda o
+estado — o dinheiro volta a estar «por devolver».
+
+Não contradiz a decisão sobre o `reembolsadoCent`: este contador não é o que o
+contrato devolve — é uma trava, como os contadores das vagas, e o
+`reembolsadoCent` continua a somar-se só dos `concluido`. Um teste confirma que
+o contador bate sempre com a soma dos reembolsos `pendente` e `concluido`.
 
 ### Como o pedido muda de estado
 
