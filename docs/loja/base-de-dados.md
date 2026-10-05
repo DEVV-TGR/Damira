@@ -321,19 +321,37 @@ contadores. A lógica completa é da #41.
 
 ## A entrada no painel (#33)
 
+As tabelas estão em `src/db/esquema.ts` e na migração `0001_sessoes.sql`, num
+PR de esquema próprio.
+
 | Tabela | O que guarda |
 |---|---|
-| `sessoes_painel` | `token_hash` (chave), `papel`, `lembrar`, `dispositivo`, `criada_em`, `ultimo_uso_em`, `expira_em` |
-| `codigos_gerente` | `email`, `codigo_hash`, `criado_em`, `expira_em`, `usado_em`, `tentativas` |
+| `sessoes_painel` | `id` (chave), `token_hash` (único), `papel`, `lembrar`, `dispositivo`, `criada_em`, `ultimo_uso_em`, `expira_em` |
+| `codigos_gerente` | `id` (chave), `email`, `codigo_hash`, `criado_em`, `expira_em`, `usado_em`, `tentativas` |
+| `limites` | `(chave, janela)` (chave), `contagem` |
 
 O PIN da equipa é o `casa.pin_equipa_hash`.
 
 - **O cookie leva um token aleatório; a base de dados guarda o *hash* dele.**
   Quem lesse a base de dados não ficava com sessões abertas.
+- **A sessão tem um `id` à parte do hash.** É o que o ecrã da gerente usa para
+  mostrar e terminar uma sessão — o hash nunca vai ao browser.
+- **O PIN e o código da gerente guardam-se com *hash* lento (`scrypt`).** São
+  seis dígitos: com um hash rápido, quem tivesse esta tabela adivinhava-os em
+  segundos. O token da sessão é aleatório e comprido, e chega-lhe um rápido.
+- **Quem decide se uma sessão vale é o `expira_em`, e não o prazo do cookie.**
+  O cookie dura muito; os 30 dias renovam-se aqui, a cada uso — e só se o
+  último uso foi há mais de uma hora, para a base de dados não ser acordada a
+  cada clique (regra 6).
+- **Os limites contam por chave e janela**, somados com `ON CONFLICT` numa
+  instrução só: o PIN conta por IP (`pin:<ip>`), porque antes de entrar não há
+  nada que identifique o dispositivo, e um cookie apagava-se para fugir ao
+  limite.
 - **Mudar o PIN apaga as sessões de funcionário no mesmo lote** — é assim que se
   tira o acesso a quem saiu da casa (`painel.md`).
-- O detalhe fecha-se na #33. As tabelas entram no mesmo PR do esquema porque a
-  #27 já as inclui.
+
+O que ainda falta para isto estar inteiro — no contrato, no ecrã e no ar — está
+em `ligar-a-neon.md` › A entrada no painel.
 
 ## O Stripe
 

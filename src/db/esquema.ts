@@ -12,6 +12,7 @@ import {
   smallint,
   text,
   timestamp,
+  uuid,
 } from "drizzle-orm/pg-core";
 import type { GrupoComposicao, OrdemEmenta } from "@/lib/dados/tipos";
 import type { DiaFechado, HorarioSemanal } from "@/lib/horarios";
@@ -196,5 +197,92 @@ export const casa = pgTable(
       sql`${t.limiarLivre} between 0 and 100 and ${t.limiarMedia} between 0 and 100 and ${t.limiarLivre} < ${t.limiarMedia}`,
     ),
     check("casa_valor_minimo", sql`${t.valorMinimoCent} >= 0`),
+  ],
+);
+
+// ——— A entrada no painel (#33, `painel.md`) ———
+
+/* Um instante com fuso. Todos os desta secção são assim: guardam UTC. */
+const instante = (nome: string) => timestamp(nome, { withTimezone: true, mode: "date" });
+
+/**
+ * Uma sessão aberta no painel: o tablet do balcão, o telemóvel da gerente.
+ *
+ * ⚠️ **Não é um JWT** (`painel.md` › As sessões vivem na base de dados): só
+ * assim se termina a sessão de um dispositivo, ou todas as da equipa quando o
+ * PIN muda. O cookie leva um token aleatório; aqui fica **o hash dele**, e quem
+ * lesse esta tabela não ficava com sessão nenhuma aberta.
+ */
+export const sessoesPainel = pgTable(
+  "sessoes_painel",
+  {
+    /**
+     * O que o ecrã da gerente usa para mostrar e terminar uma sessão. À parte
+     * do hash, para o hash nunca ter de ir ao browser.
+     */
+    id: uuid("id").primaryKey().defaultRandom(),
+    tokenHash: text("token_hash").notNull().unique(),
+    papel: text("papel").notNull(),
+    /** Lembrado: 30 dias, renovados a cada uso. Sem lembrar: um dia de trabalho. */
+    lembrar: boolean("lembrar").notNull(),
+    /** O que a gerente vê na lista: «iPad · Safari». Nunca o IP. */
+    dispositivo: text("dispositivo"),
+    criadaEm: instante("criada_em").notNull(),
+    ultimoUsoEm: instante("ultimo_uso_em").notNull(),
+    /** Quem decide se a sessão vale é isto, e não o prazo do cookie. */
+    expiraEm: instante("expira_em").notNull(),
+  },
+  (t) => [
+    check("sessoes_painel_papel", sql`${t.papel} in (${umDe(["funcionario", "gerente"])})`),
+    check(
+      "sessoes_painel_datas",
+      sql`${t.ultimoUsoEm} >= ${t.criadaEm} and ${t.expiraEm} > ${t.criadaEm}`,
+    ),
+  ],
+);
+
+/**
+ * Um código de entrada da gerente, enviado por email: 10 minutos, uso único.
+ * O código guarda-se com *hash* lento (`scrypt`): são seis dígitos, e um hash
+ * rápido adivinhava-se a partir desta tabela em segundos.
+ */
+export const codigosGerente = pgTable(
+  "codigos_gerente",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: text("email").notNull(),
+    codigoHash: text("codigo_hash").notNull(),
+    criadoEm: instante("criado_em").notNull(),
+    expiraEm: instante("expira_em").notNull(),
+    /** Preenchido ao entrar: um código usado não volta a servir. */
+    usadoEm: instante("usado_em"),
+    /** Tentativas erradas com este código: ao fim de poucas, deixa de servir. */
+    tentativas: integer("tentativas").notNull().default(0),
+  },
+  (t) => [
+    check("codigos_gerente_datas", sql`${t.expiraEm} > ${t.criadoEm}`),
+    check("codigos_gerente_tentativas", sql`${t.tentativas} >= 0`),
+  ],
+);
+
+/**
+ * Os limites de tentativas (`robustez.md` › Limites): quantas vezes uma `chave`
+ * — `pin:<ip>`, `codigo:<email>` — falhou ou pediu dentro de uma `janela` de
+ * tempo. ⚠️ **Na base de dados e não em memória**: na Vercel cada pedido pode
+ * cair numa instância diferente, e um limite em memória não limita nada.
+ */
+export const limites = pgTable(
+  "limites",
+  {
+    chave: text("chave").notNull(),
+    /** O início da janela: os 15 minutos do PIN começam aqui. */
+    janela: instante("janela").notNull(),
+    contagem: integer("contagem").notNull().default(0),
+  },
+  (t) => [
+    /* A chave primária é também o que deixa somar com `ON CONFLICT`, numa
+       instrução só, sem ler antes. */
+    primaryKey({ columns: [t.chave, t.janela] }),
+    check("limites_contagem", sql`${t.contagem} >= 0`),
   ],
 );
