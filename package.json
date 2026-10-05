@@ -15,8 +15,10 @@
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
+    "@neondatabase/serverless": "^1.2.0",
     "@vercel/analytics": "^2.0.1",
     "date-fns": "^4.4.0",
+    "drizzle-orm": "^0.45.3",
     "next": "16.2.12",
     "next-auth": "^5.0.0-beta.32",
     "next-intl": "^4.13.4",
@@ -32,10 +34,12 @@
     "sharp": "^0.35.3"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^22.20.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.2.12",
     "playwright-core": "^1.62.1",
