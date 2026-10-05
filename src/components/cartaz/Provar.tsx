@@ -1,19 +1,9 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { ementa, CARTAS, daCarta, type Carta } from "@/data/ementa";
-import { formatarPreco } from "@/lib/preco";
 import type { Locale } from "@/i18n/routing";
-
-/* As cartas com artigos, contadas. ⚠️ **Contado e não escrito**: no dia em que
-   a casa deixar de fazer a carta de chocolate, esta secção desaparece sozinha
-   em vez de anunciar uma carta que já não existe. */
-const CARTAS_COM_ARTIGOS = CARTAS.filter((carta) => daCarta(carta).length > 0);
-
-/* Um artigo de cada carta, para dar a ver o preço a par do nome. É o primeiro
-   de cada uma e não um escolhido a dedo: escolher seis à mão seria uma lista de
-   mais vendidos, que é justamente a coisa que este sítio não afirma porque os
-   impressos da casa não a marcam. */
-const AMOSTRA = CARTAS_COM_ARTIGOS.map((carta) => daCarta(carta)[0]);
+import type { OrdemEmenta, Produto } from "@/lib/dados/tipos";
+import { formatarCent } from "@/lib/preco";
+import { cartasComArtigos, daCarta, nomeDe, precoUnicoCent } from "@/lib/vista";
 
 /**
  * # Provar: a ementa vista da página inicial
@@ -38,7 +28,26 @@ const AMOSTRA = CARTAS_COM_ARTIGOS.map((carta) => daCarta(carta)[0]);
  * "17,00 €" ao lado dele anuncia metade do preço. O `formatarPreco` trata do
  * número; a unidade vem do artigo e escreve-se sempre.
  */
-export function Provar({ locale }: { locale: Locale }) {
+export function Provar({
+  ementa,
+  ordem,
+  locale,
+}: {
+  ementa: Produto[];
+  ordem: OrdemEmenta;
+  locale: Locale;
+}) {
+  /* As cartas com artigos, contadas. ⚠️ **Contado e não escrito**: no dia em
+     que a casa deixar de fazer a carta de chocolate, esta secção desaparece
+     sozinha em vez de anunciar uma carta que já não existe. */
+  const CARTAS_COM_ARTIGOS = cartasComArtigos(ementa, ordem);
+
+  /* Um artigo de cada carta, para dar a ver o preço a par do nome. É o primeiro
+     de cada uma e não um escolhido a dedo: escolher seis à mão seria uma lista
+     de mais vendidos, que é justamente a coisa que este sítio não afirma porque
+     os impressos da casa não a marcam. */
+  const AMOSTRA = CARTAS_COM_ARTIGOS.map((carta) => daCarta(ementa, carta)[0]);
+
   const t = useTranslations("cartaz.provar");
   const cartas = useTranslations("ementa.cartas");
 
@@ -61,20 +70,21 @@ export function Provar({ locale }: { locale: Locale }) {
       </div>
 
       <ul className="provar__cartas" data-sc-in data-sc-stagger="60">
-        {CARTAS_COM_ARTIGOS.map((carta: Carta, indice) => {
+        {CARTAS_COM_ARTIGOS.map((carta, indice) => {
           const artigo = AMOSTRA[indice];
+          const preco = precoUnicoCent(artigo);
           return (
             <li key={carta} className="provar__carta">
               <h3>{cartas(`${carta}.curto`)}</h3>
               <p className="provar__quantos">
-                {t("quantos", { n: daCarta(carta).length })}
+                {t("quantos", { n: daCarta(ementa, carta).length })}
               </p>
               <p className="provar__exemplo">
-                <span>{locale === "en" ? artigo.nomeEn : artigo.nome}</span>
+                <span>{nomeDe(artigo, locale)}</span>
                 <span className="provar__preco">
-                  {artigo.preco === null
+                  {preco === null
                     ? t("semPreco")
-                    : `${formatarPreco(artigo.preco, locale)}${
+                    : `${formatarCent(preco, locale)}${
                         artigo.unidade === "kg" ? ` / ${t("quilo")}` : ""
                       }`}
                 </span>

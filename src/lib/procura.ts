@@ -1,4 +1,4 @@
-import type { Artigo } from "@/data/ementa";
+import type { Produto } from "@/lib/dados/tipos";
 
 /**
  * ⚠️ **Tira acentos e maiúsculas antes de comparar.**
@@ -27,21 +27,21 @@ export const normalizar = (texto: string): string =>
  * nome português é *Chocolate do Dubai*, e um português que escreva "cookie"
  * tem de acertar no nome inglês. São dados que temos à mão nos dois idiomas.
  */
-export function correspondeArtigo(artigo: Artigo, termo: string): boolean {
+export function correspondeArtigo(artigo: Produto, termo: string): boolean {
   const t = normalizar(termo);
   if (t.length === 0) return true;
 
   const campos = [
-    artigo.nome,
-    artigo.nomeEn,
+    artigo.nome.pt,
+    artigo.nome.en,
     artigo.descricao?.pt,
     artigo.descricao?.en,
-    ...artigo.sabores,
+    ...artigo.escolhas,
   ];
 
   return campos.some((campo) => campo && normalizar(campo).includes(t));
 }
 
 /** O filtro: os artigos que correspondem ao termo. */
-export const filtrarArtigos = (artigos: Artigo[], termo: string): Artigo[] =>
+export const filtrarArtigos = (artigos: Produto[], termo: string): Produto[] =>
   artigos.filter((artigo) => correspondeArtigo(artigo, termo));

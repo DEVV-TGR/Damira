@@ -303,11 +303,18 @@ era uma página só com tudo aberto: cinco ecrãs em que a única coisa a distin
 dois kits era um preço a meio de vinte linhas de miudezas, e **sem sítio nenhum
 para uma fotografia**.
 
-O catálogo unificado está em `src/lib/produtos.ts`. ⚠️ **É uma vista e não uma
-segunda fonte de verdade** — não há lá um dado que não venha do
-`encomendas.json`. Cartões, rotas e `sitemap.xml` saem todos dele.
+Desde outubro de 2026 as páginas leem o catálogo de **`src/lib/dados/`**, e
+cartões, rotas e `sitemap.xml` saem todos de lá (ver `docs/loja/divisao.md`). O
+`src/lib/produtos.ts` continua a existir, mas **só o `src/lib/dados/json.ts` o
+lê**: é uma das fontes da implementação provisória, e sai quando a base de dados
+a substituir. ⚠️ **Nenhuma página nem componente importa `@/data/ementa`,
+`@/data/encomendas`, `produtos.ts` ou `encomendavel.ts`** — o `index.ts` da
+fronteira é `server-only`, e os componentes de cliente recebem os dados por
+props. Um import direto voltava a meter o JSON no bundle do browser. As funções
+de apresentação, sem dados, estão em `src/lib/vista.ts`.
 
-⚠️ **`produto.foto` está a `null` em todos, e não se preenche com o que há.**
+⚠️ **As fotografias dos produtos estão vazias em todos, e não se preenchem com o
+que há.**
 Existem dezanove fotografias da casa, e **nenhuma é deste kit ou desta box**.
 Numa página de produto qualquer imagem se lê como sendo o produto: pôr ali a
 montra vista da rua é anunciar uma coisa e entregar outra, e é a mesma regra que

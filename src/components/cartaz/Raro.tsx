@@ -1,13 +1,6 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { ementa } from "@/data/ementa";
-
-/* ⚠️ **Contados, não escritos.** O `taste.md` e o `AGENTS.md` proíbem os dois
-   um número inventado, e um número escrito à mão é um número inventado assim
-   que alguém acrescentar um artigo ao JSON sem se lembrar disto. Estes saem do
-   próprio `ementa.json` no `build`, portanto ou estão certos ou não há build. */
-const VEGAN = ementa.filter((artigo) => artigo.vegan).length;
-const TOTAL = ementa.length;
+import type { Produto } from "@/lib/dados/tipos";
 
 /**
  * Capítulo IV: **o raro**. É o argumento que faz alguém atravessar Ermesinde.
@@ -36,8 +29,15 @@ const TOTAL = ementa.length;
  * saída do palco, sobe um ecrã inteiro e sobrepõe-se ao capítulo seguinte.
  * Todas fecham a 1.
  */
-export function Raro() {
+export function Raro({ ementa }: { ementa: Produto[] }) {
   const t = useTranslations("cartaz.raro");
+
+  /* ⚠️ **Contados, não escritos.** O `taste.md` e o `AGENTS.md` proíbem os dois
+     um número inventado, e um número escrito à mão é um número inventado assim
+     que alguém acrescentar um artigo sem se lembrar disto. Saem do catálogo que
+     a página foi buscar a `@/lib/dados`. */
+  const VEGAN = ementa.filter((artigo) => artigo.vegan).length;
+  const TOTAL = ementa.length;
 
   return (
     <section
