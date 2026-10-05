@@ -137,8 +137,9 @@ existem; o resto está aqui, por quem o faz.
       gerente por email, 10 minutos, uso único, com tentativas contadas; as
       sessões na base de dados, renovadas a cada uso; sair, e «esquecer este
       dispositivo». Testada no PGlite. **Ainda não ligada.**
-- [x] **O comando para definir o PIN da equipa**: `npm run painel:pin`. Até
-      haver ecrã, é a única forma de pôr ou mudar um PIN.
+- [x] **O comando para definir o PIN da equipa**: `npm run painel:pin`. É a
+      forma de pôr o **primeiro** PIN, antes de haver gerente com sessão;
+      depois, muda-se no ecrã «Equipa» da gestão.
 - [ ] **Ligá-la** no `src/lib/sessao-painel/index.ts` — é a única linha que muda.
       O `criarSessaoBd` recebe: a base de dados e o `loteNeon`; os cookies do
       `next/headers` (como hoje); os emails do `EMAILS_GERENTE`; o envio do

@@ -107,7 +107,8 @@ export async function comandoImportar(opcoes: {
 
 /**
  * `npm run painel:pin`: o PIN da equipa, e o fim das sessões da equipa que
- * houver. ⚠️ O PIN pede-se depois, escondido e duas vezes — nunca na linha do
+ * houver. É o primeiro PIN, antes de haver gerente com sessão; depois, muda-se
+ * no ecrã «Equipa» da gestão (#74). ⚠️ O PIN pede-se depois, escondido e duas vezes — nunca na linha do
  * comando, que fica no histórico do terminal.
  */
 export async function comandoPin(opcoes: {
