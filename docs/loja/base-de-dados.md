@@ -374,12 +374,22 @@ dados não se distinguia de um verdadeiro, e ia parar a um relatório de vendas.
 
 ## Os testes
 
-Os testes de especificação do Gonçalo (`dados.test.ts`, `painel.test.ts`,
-`pedidos-painel.test.ts`, `vagas-servidor.test.ts`) estão hoje presos ao
-`criarFonteJson`. Passam a correr contra **as duas fontes**, a dos JSON e a da
-base de dados sobre o PGlite, com o mesmo conjunto de casos. É a prova de que a
-troca no `index.ts` não muda nada para as páginas. Como mexe em
-`src/lib/dados/`, pede a revisão do Gonçalo.
+**O `npm test` dá duas voltas** (`vitest.config.mts`). A primeira, `json`, é a
+de sempre: tudo, contra a fonte dos JSON. A segunda, `bd`, corre os testes do
+contrato (`dados.test.ts`, `painel.test.ts`) contra a fonte da base de dados,
+numa cópia limpa do catálogo importado para um PGlite
+(`src/lib/dados/fontes-de-teste.ts`). É a prova de que a troca no `index.ts`
+não muda nada para as páginas.
+
+Os testes que precisam do que ainda não está na base de dados — os pedidos, o
+modo de teste por cima dela — **saltam a volta `bd`, marcados**, com o motivo
+escrito ao lado. Uma função de pedido chamada na volta `bd` rebenta a dizê-lo,
+em vez de correr contra os JSON sem ninguém dar por isso. O
+`pedidos-painel.test.ts` e o `vagas-servidor.test.ts` entram na volta `bd` com
+as tabelas dos pedidos.
+
+Além disso, `bd.test.ts` e `bd-escritas.test.ts` põem as duas fontes a
+responder às mesmas perguntas, lado a lado.
 
 ⚠️ **O PGlite tem uma ligação só**: não reproduz dois clientes ao mesmo tempo. O
 teste da última vaga prova que o `CHECK` recusa a segunda reserva, não a corrida
