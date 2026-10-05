@@ -1,4 +1,5 @@
-import type { Cotacao, LinhaCesto, LinhaCotada, Produto } from "./tipos";
+import type { z } from "zod";
+import type { Cotacao, EsquemaEntradaProduto, LinhaCesto, LinhaCotada, Produto, ResultadoPainel } from "./tipos";
 
 /**
  * # As regras da fronteira, num sítio só
@@ -65,3 +66,54 @@ export function cotarLinhas(
     valida: validas.length === cotadas.length,
   };
 }
+
+// ——— Gravar um produto (o painel da gerente) ———
+
+/** Os campos que falharam, para o formulário do painel os marcar. */
+export const invalido = (erro: z.ZodError): ResultadoPainel<never> => ({
+  ok: false,
+  erro: "dados-invalidos",
+  campos: [...new Set(erro.issues.flatMap((issue) => (issue.path.length > 0 ? [String(issue.path[0])] : [])))],
+});
+
+export const naoExiste: ResultadoPainel<never> = { ok: false, erro: "nao-existe" };
+
+/* «Bolo de Bolacha» → `bolo-de-bolacha`. Os acentos saem, porque o id vai no
+   URL e um `pão` partilhado por mensagem chega como `p%C3%A3o`. */
+export const emId = (texto: string): string =>
+  texto
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60)
+    .replace(/-+$/, "");
+
+/* O primeiro livre de `base`, `base-2`, `base-3`… */
+export const livre = (base: string, ocupados: (id: string) => boolean): string => {
+  if (!ocupados(base)) return base;
+  let n = 2;
+  while (ocupados(`${base}-${n}`)) n++;
+  return `${base}-${n}`;
+};
+
+type EntradaLida = z.output<typeof EsquemaEntradaProduto>;
+
+/* Uma variante nova ganha id a partir do que a distingue: o número de pessoas,
+   o rótulo, ou `unica` se for a única. As que já tinham id guardam-no. */
+export const comIds = (variantes: EntradaLida["variantes"]): Produto["variantes"] => {
+  const usados = new Set(variantes.flatMap((v) => (v.id ? [v.id] : [])));
+  return variantes.map((variante) => {
+    if (variante.id) return { ...variante, id: variante.id };
+    const base =
+      variante.pessoas !== null
+        ? String(variante.pessoas)
+        : variante.rotulo
+          ? emId(variante.rotulo.pt) || "variante"
+          : "unica";
+    const id = livre(base, (candidato) => usados.has(candidato));
+    usados.add(id);
+    return { ...variante, id };
+  });
+};
