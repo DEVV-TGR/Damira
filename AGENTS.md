@@ -20,6 +20,16 @@ O motivo é prático: uma branch aparece em `git branch` e num PR; um worktree s
 aparece a quem se lembra de correr `git worktree list`, e o trabalho não
 commitado que lá fica é invisível para quem olha para o `main`.
 
+## O planner da cliente, no Notion
+
+A Andreia acompanha o projeto por uma página no Notion: tarefas, progresso com
+prints, o que precisamos dela e os pedidos que ela deixa. **Como se mantém está em
+`docs/planner-notion.md`** — ler antes de lhe mexer, e quando alguém pedir
+«atualiza o planner da Damira». Duas regras que se desfazem sem querer: o espaço
+Notion tem **um só membro** (todos os outros entram como convidados, senão o plano
+deixa de ser grátis), e cada funcionalidade visível ganha **um ponto próprio no
+Progresso, com prints**.
+
 Desde outubro de 2026 o `settings.json` também **bloqueia** a ferramenta
 `EnterWorktree`, o `git worktree add`, o `git push` para o `main` e a leitura dos
 `.env` (exceto o `.env.example`). Esses bloqueios travam a forma como o Claude
