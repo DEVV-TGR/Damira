@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, inArray, type SQL } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import {
   EsquemaHorarios,
@@ -124,17 +124,30 @@ export function linhasParaProduto(linha: LinhaProduto, linhasVariantes: LinhaVar
 }
 
 /**
- * O catálogo inteiro, arquivados incluídos, pela ordem do catálogo. Duas
- * consultas e não uma por produto (`robustez.md` › sem N+1).
+ * Os produtos que cumprem a `condicao` (todos, sem ela), pela ordem do
+ * catálogo, com as variantes.
+ *
+ * ⚠️ **Duas consultas, ao mesmo tempo, e nunca uma por produto** (`robustez.md`
+ * › sem N+1). As variantes escolhem-se pela mesma condição, numa subconsulta,
+ * para as duas poderem partir juntas: pela Neon cada consulta é uma ida e
+ * volta pela rede.
  */
-export async function lerCatalogo(db: BaseDeDados): Promise<Produto[]> {
+export async function lerProdutos(db: BaseDeDados, condicao?: SQL): Promise<Produto[]> {
+  const ids = db.select({ id: produtos.id }).from(produtos).where(condicao);
   const [linhas, todasVariantes] = await Promise.all([
-    db.select().from(produtos).orderBy(asc(produtos.posicao)),
-    db.select().from(variantes).orderBy(asc(variantes.posicao)),
+    db.select().from(produtos).where(condicao).orderBy(asc(produtos.posicao)),
+    db
+      .select()
+      .from(variantes)
+      .where(condicao ? inArray(variantes.produtoId, ids) : undefined)
+      .orderBy(asc(variantes.posicao)),
   ]);
   const porProduto = Map.groupBy(todasVariantes, (v) => v.produtoId);
   return linhas.map((linha) => linhasParaProduto(linha, porProduto.get(linha.id) ?? []));
 }
+
+/** O catálogo inteiro, arquivados incluídos. */
+export const lerCatalogo = (db: BaseDeDados) => lerProdutos(db);
 
 // ——— A casa ———
 
