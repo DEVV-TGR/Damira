@@ -32,10 +32,15 @@ type LinhaCasa = typeof casa.$inferSelect;
 
 // ——— Produto ———
 
-export function produtoParaLinhas(produto: Produto, posicao: number) {
-  const linha = {
-    id: produto.id,
-    posicao,
+/**
+ * As colunas que a gerente grava ao editar um produto: tudo o que a entrada do
+ * painel traz (`EsquemaEntradaProduto`). Ficam de fora o id e a posição, que não
+ * mudam, e os três interruptores do balcão — arquivado, fora de venda, esgotado
+ * —, que têm funções próprias: a gerente a gravar um preço não pode desfazer o
+ * «esgotado» que o balcão acabou de marcar.
+ */
+export function colunasEditaveis(produto: Produto) {
+  return {
     origem: produto.origem,
     familia: produto.familia,
     nomePt: produto.nome.pt,
@@ -60,6 +65,14 @@ export function produtoParaLinhas(produto: Produto, posicao: number) {
     sinalPercent: produto.sinalPercent,
     limiteQuantidade: produto.limite?.quantidade ?? null,
     limiteModo: produto.limite?.modo ?? null,
+  } satisfies Partial<typeof produtos.$inferInsert>;
+}
+
+export function produtoParaLinhas(produto: Produto, posicao: number) {
+  const linha = {
+    id: produto.id,
+    posicao,
+    ...colunasEditaveis(produto),
     arquivado: produto.arquivado,
     foraDeVenda: produto.foraDeVenda,
     esgotadoNoDia: produto.esgotadoNoDia,
