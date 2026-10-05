@@ -113,13 +113,20 @@ existem; o resto está aqui, por quem o faz.
 
 ### No código (Sobral)
 
-- [ ] **A entrada verdadeira** (`src/lib/sessao-painel/bd.ts`): o PIN com *hash*
-      e 5 erros → 15 minutos bloqueado, por IP; o código da gerente por email,
-      10 minutos, uso único, com tentativas contadas; as sessões na base de
-      dados, renovadas a cada uso; sair, e «esquecer este dispositivo».
-- [ ] **O comando para definir o PIN da equipa** (`npm run painel:pin`). Ainda
-      não existe: até haver ecrã, é a única forma de pôr um PIN.
+- [x] **A entrada verdadeira** (`src/lib/sessao-painel/bd.ts`): o PIN com *hash*
+      e 5 erros bloqueiam o IP até ao fim da janela de 15 minutos; o código da
+      gerente por email, 10 minutos, uso único, com tentativas contadas; as
+      sessões na base de dados, renovadas a cada uso; sair, e «esquecer este
+      dispositivo». Testada no PGlite. **Ainda não ligada.**
+- [ ] **O comando para definir o PIN da equipa** (`npm run painel:pin`, a chamar
+      o `definirPinDaEquipa`). Ainda não existe — como o da importação, liga-se
+      à Neon e escreve-se com ela. Até haver ecrã, é a única forma de pôr um PIN.
 - [ ] **Ligá-la** no `src/lib/sessao-painel/index.ts` — é a única linha que muda.
+      O `criarSessaoBd` recebe: a base de dados e o `loteNeon`; os cookies do
+      `next/headers` (como hoje); os emails do `EMAILS_GERENTE`; o envio do
+      código pelo Resend (como o `src/lib/email.ts`, sem nunca registar o email);
+      o `user-agent` dos cabeçalhos, para a lista de sessões; e `producao` para
+      os cookies `secure`.
 
 ### No contrato e no ecrã (Gonçalo) — ⚠️ ainda não existem
 
