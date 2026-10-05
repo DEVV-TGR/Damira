@@ -14,6 +14,9 @@ import {
 import { formatarCent } from "@/lib/preco";
 import type { Locale } from "@/i18n/routing";
 import { enviarPedido, type Resultado } from "@/app/[locale]/encomendas/acoes";
+import { consultarVagas } from "@/app/[locale]/encomendas/vagas";
+import type { ResultadoVagas, VagaDoCalendario } from "@/lib/vagas-servidor";
+import { CalendarioLevantamento } from "./CalendarioLevantamento";
 import { useCesto } from "./CestoProvider";
 import { useHistorico } from "./ProvedorHistorico";
 import { itensGuardados } from "@/lib/historico";
@@ -66,9 +69,17 @@ const INICIAL: Resultado = { estado: "inicial" };
    memorização a fingir. */
 const SEM_CESTO: ItemCesto[] = [];
 
-export function FormularioPedido({ locale }: { locale: Locale }) {
+export function FormularioPedido({
+  locale,
+  telefone = null,
+}: {
+  locale: Locale;
+  /** O telefone da casa, para o calendário sem vagas dizer a quem ligar. */
+  telefone?: string | null;
+}) {
   const t = useTranslations("encomendas.formulario");
   const tc = useTranslations("encomendas.cesto");
+  const tcal = useTranslations("encomendas.calendario");
   const [resultado, agir, aPendente] = useActionState(enviarPedido, INICIAL);
   const id = useId();
 
@@ -99,6 +110,30 @@ export function FormularioPedido({ locale }: { locale: Locale }) {
      do pedido com os preços dele (`pedido-servidor.ts`). Os preços que o cesto
      mostra são do `localStorage` e podem ter sido mexidos. */
   const linhas = useMemo(() => JSON.stringify(linhasDoCesto(cesto)), [cesto]);
+
+  /* ⚠️ **As vagas pedem-se ao servidor sempre que o cesto muda**, e nunca vão
+     para cache (`robustez.md`): juntar um kit de 3 dias muda o primeiro dia
+     possível. Enquanto o servidor responde, a resposta anterior é esquecida —
+     mostrar vagas de um cesto que já não é este era oferecer uma hora que o
+     servidor ia recusar. */
+  const [vagas, setVagas] = useState<{ chave: string; resultado: ResultadoVagas } | null>(null);
+  const [escolhida, setEscolhida] = useState<VagaDoCalendario | null>(null);
+  useEffect(() => {
+    if (!comCesto) return;
+    let actual = true;
+    consultarVagas(JSON.parse(linhas)).then((resultado) => {
+      if (actual) setVagas({ chave: linhas, resultado });
+    });
+    return () => {
+      actual = false;
+    };
+  }, [comCesto, linhas]);
+  const vagasDoCesto = vagas?.chave === linhas ? vagas.resultado : null;
+  /* A hora escolhida só vale se ainda estiver nas vagas deste cesto, e livre. */
+  const escolhidaValida =
+    escolhida && vagasDoCesto?.ok && vagasDoCesto.vagas.some((v) => v.inicio === escolhida.inicio && v.livre)
+      ? escolhida
+      : null;
 
   /**
    * ⚠️ **O pedido entra no histórico deste browser assim que o servidor
@@ -351,14 +386,44 @@ export function FormularioPedido({ locale }: { locale: Locale }) {
 
       {/* ── 2 · Quando é ───────────────────────────────────────────────── */}
       <div className={visivel(1) ? "grid gap-6 sm:grid-cols-2" : "hidden"}>
-        <Campo
-          id={`${id}-data`}
-          nome="data"
-          tipo="date"
-          rotulo={t("campos.data")}
-          erro={erros.data}
-          obrigatorio
-        />
+        {/* ⚠️ **O calendário quando há com que o fazer, a data quando não há.**
+            Sem o horário da cozinha e os tempos dos produtos (a casa ainda não
+            os deu, e o modo de teste está desligado), o calendário não se
+            calcula — e o site no ar não pode ficar sem forma de encomendar.
+            Fica a data pretendida de sempre, e a casa combina a hora. */}
+        {comCesto && vagasDoCesto === null ? (
+          <p className="text-sm text-papel/70 sm:col-span-2" aria-live="polite">
+            {tcal("aCarregar")}
+          </p>
+        ) : comCesto && vagasDoCesto?.ok ? (
+          <>
+            <CalendarioLevantamento
+              vagas={vagasDoCesto.vagas}
+              escolhida={escolhidaValida?.inicio ?? null}
+              aoEscolher={setEscolhida}
+              locale={locale}
+              telefone={telefone}
+            />
+            {/* O instante vai ao servidor, que o confirma com o mesmo motor; a
+                data vai para o campo de sempre, que o email já mostra. */}
+            <input type="hidden" name="levantamento" value={escolhidaValida?.inicio ?? ""} />
+            <input type="hidden" name="data" value={escolhidaValida?.data ?? ""} />
+            {erros.data && (
+              <div className="sm:col-span-2">
+                <Erro id={`${id}-data-erro`}>{erros.data}</Erro>
+              </div>
+            )}
+          </>
+        ) : (
+          <Campo
+            id={`${id}-data`}
+            nome="data"
+            tipo="date"
+            rotulo={t("campos.data")}
+            erro={erros.data}
+            obrigatorio
+          />
+        )}
         {(tipo === "festa" || pessoasSugeridas(cesto) !== null) && (
           <Campo
             /* A `key` traz o número do cesto: `defaultValue` só vale à

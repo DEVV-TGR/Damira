@@ -301,6 +301,12 @@ opção.
 com uma folha verde; usar esse verde como cor decorativa numa secção de leitão
 ensina o olho a ignorá-lo justamente onde ele conta.
 
+**A única exceção é o calendário de levantamento** (pedido do cliente a 04/10):
+a afluência pinta-se em semáforo, verde → amarelo → laranja → vermelho. O verde
+de lá é **outro** — frio, azulado (`--color-afluencia-livre`), que não se
+confunde com o verde-oliva da folha —, vai sempre com a palavra escrita ao lado,
+e não sai do calendário.
+
 A tabela completa está em `src/app/globals.css`, com as classes `.bloco-*` que já
 trazem a cor de texto certa para cada fundo — usar essas em vez de compor `bg-` +
 `text-` à mão.

@@ -229,7 +229,7 @@ function Encomendas({
             </div>
           </div>
 
-          <FormularioPedido locale={locale} />
+          <FormularioPedido locale={locale} telefone={casa.telefone} />
         </div>
       </section>
 
