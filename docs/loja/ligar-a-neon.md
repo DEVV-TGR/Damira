@@ -128,20 +128,19 @@ existem; o resto está aqui, por quem o faz.
       o `user-agent` dos cabeçalhos, para a lista de sessões; e `producao` para
       os cookies `secure`.
 
-### No contrato e no ecrã (Gonçalo) — ⚠️ ainda não existem
+### No contrato e no ecrã (Gonçalo)
 
-A `FonteSessao` (`src/lib/sessao-painel/tipos.ts`) só tem entrar e sair, e a
-gestão diz «fica para a #33». O que o `painel.md` pede e falta:
+O `painel.md` pede que a gerente veja e termine as sessões e mude o PIN. A
+`FonteSessao` não o tinha; passou a ter no #74.
 
-- [ ] **A gerente vê as sessões abertas** — tipo de aparelho, papel, último uso
-      — **e termina qualquer uma**. É o «revogar o tablet» da proposta: um
-      telemóvel perdido, ou alguém que saiu da casa. Proposta para o contrato:
-      `listarSessoes(ctx)` e `terminarSessao(id, ctx)`, só gerente.
-- [ ] **Mudar o PIN da equipa**, que termina todas as sessões de funcionário
-      ao mesmo tempo. Proposta: `mudarPin(pin, ctx)`, só gerente.
-
-A base de dados já está preparada para as três: a sessão tem um `id` à parte
-do *hash*, para o ecrã a poder mostrar e terminar sem o *hash* ir ao browser.
+- [x] **No contrato**: `listarSessoes`, `terminarSessao` e `mudarPin`, só para a
+      gerente — a ação confirma o papel antes de chegar à entrada (#74).
+- [x] **No ecrã**: «Equipa», na gestão — os aparelhos com sessão (o aparelho, o
+      papel, o último uso, «este aparelho»), terminar com confirmação, e mudar o
+      PIN duas vezes (#74).
+- [x] **Na base de dados** (#71): a lista mostra o `id` da sessão e nunca o
+      *hash*; um id sem forma de id responde «não existe» em vez de rebentar;
+      um browser que não se reconhece aparece como «Aparelho desconhecido».
 
 ### Na visita (com a Damira)
 

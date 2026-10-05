@@ -4,7 +4,7 @@ import type { BaseDeDados } from "@/db/catalogo";
 import { casa, codigosGerente, limites, sessoesPainel } from "@/db/esquema";
 import type { ExecutarLote } from "@/db/lote";
 import type { Papel } from "@/lib/dados/tipos";
-import type { FonteSessao, LojaDeCookies, OpcoesCookie, SessaoPainel } from "./tipos";
+import type { FonteSessao, LojaDeCookies, OpcoesCookie, SessaoListada, SessaoPainel } from "./tipos";
 
 /**
  * # A entrada verdadeira no painel (#33)
@@ -48,6 +48,13 @@ const COOKIE_LEMBRADO_S = 400 * 24 * 60 * 60;
 /* Renovar a cada uso, mas não a cada clique: uma escrita por hora chega, e a
    base de dados não é acordada sem necessidade (regra 6). */
 const RENOVAR_DEPOIS_DE_MS = HORA;
+
+/* O id de uma sessão é um uuid. Um que não tenha essa forma vem de um browser a
+   inventar, e a coluna `uuid` rebentava com ele em vez de dizer que não existe. */
+const FORMATO_DO_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/* O que a gerente vê quando o browser não se reconheceu (`descreverDispositivo`). */
+const APARELHO_DESCONHECIDO = "Aparelho desconhecido";
 
 /* 4 ou 6 dígitos: a casa escolhe (#25). Ao entrar e ao definir, o mesmo. */
 const FORMATO_DO_PIN = /^(\d{4}|\d{6})$/;
@@ -348,6 +355,53 @@ export function criarSessaoBd(opcoes: OpcoesSessaoBd): FonteSessao {
 
       await abrirSessao("gerente", lembrar, agora);
       return { ok: true, papel: "gerente" };
+    },
+
+    // ——— A equipa, na gestão (só a gerente: quem chama confirma o papel) ———
+
+    async listarSessoes(agora) {
+      /* «Este aparelho»: as sessões cujo token está nos cookies de quem vê. */
+      const loja = await cookies();
+      const destes = new Set(
+        [loja.get(COOKIE_GERENTE), loja.get(COOKIE_EQUIPA)].flatMap((token) => (token ? [hashDoToken(token)] : [])),
+      );
+      const abertas = await db
+        .select()
+        .from(sessoesPainel)
+        .where(gt(sessoesPainel.expiraEm, agora))
+        .orderBy(desc(sessoesPainel.ultimoUsoEm));
+      return abertas.map(
+        (sessao): SessaoListada => ({
+          /* O id, e nunca o hash: é o que vai ao browser. */
+          id: sessao.id,
+          papel: sessao.papel as Papel,
+          dispositivo: sessao.dispositivo ?? APARELHO_DESCONHECIDO,
+          desde: sessao.criadaEm,
+          ultimoUso: sessao.ultimoUsoEm,
+          esta: destes.has(sessao.tokenHash),
+        }),
+      );
+    },
+
+    async terminarSessao(id) {
+      if (typeof id !== "string" || !FORMATO_DO_ID.test(id)) return { ok: false, erro: "nao-existe" };
+      /* Apagada aqui, o aparelho volta a pedir o PIN (ou o código) no próximo
+         uso: o cookie dele aponta para uma sessão que já não existe. */
+      const terminadas = await db
+        .delete(sessoesPainel)
+        .where(eq(sessoesPainel.id, id))
+        .returning({ id: sessoesPainel.id });
+      return terminadas.length > 0 ? { ok: true } : { ok: false, erro: "nao-existe" };
+    },
+
+    async mudarPin(novo) {
+      if (typeof novo !== "string" || !FORMATO_DO_PIN.test(novo)) return { ok: false, erro: "dados-invalidos" };
+      /* Sem a casa importada não há onde guardar o PIN: a entrada da equipa
+         ainda não está ligada. */
+      const [linha] = await db.select({ id: casa.id }).from(casa).where(eq(casa.id, 1));
+      if (!linha) return { ok: false, erro: "indisponivel" };
+      await definirPinDaEquipa(db, emLote, novo);
+      return { ok: true };
     },
 
     async sair(ambito) {
