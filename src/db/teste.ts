@@ -18,6 +18,26 @@ export async function baseDeTeste() {
 }
 
 /**
+ * Uma base de dados com o catálogo de hoje já importado, e uma forma de tirar
+ * **cópias** dela: cada teste que escreve começa numa cópia limpa, sem ter de
+ * migrar e importar outra vez (o PGlite clona-se em milissegundos).
+ */
+export async function catalogoDeTeste() {
+  /* Importado aqui, e não no topo, para os testes do esquema não carregarem o
+     catálogo inteiro sem precisarem dele. */
+  const { importarCatalogo, origemDosJson } = await import("./importar-catalogo");
+  const { db, cliente: modelo } = await baseDeTeste();
+  await importarCatalogo(db, await origemDosJson());
+  return {
+    async copia() {
+      const cliente = (await modelo.clone()) as PGlite;
+      return { db: drizzle(cliente), cliente };
+    },
+    fechar: () => modelo.close(),
+  };
+}
+
+/**
  * O nome da regra que recusou uma escrita, ou um erro se ela foi aceite.
  *
  * O Drizzle embrulha o erro do Postgres e o nome da regra está na causa.

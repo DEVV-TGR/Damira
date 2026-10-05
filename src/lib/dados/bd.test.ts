@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
 import { produtos } from "@/db/esquema";
 import { importarCatalogo, origemDosJson } from "@/db/importar-catalogo";
+import { loteEmTransacao } from "@/db/lote";
 import { baseDeTeste } from "@/db/teste";
 import { criarFonteBd } from "./bd";
 import { CATALOGO_JSON, criarFonteJson } from "./json";
@@ -22,7 +23,7 @@ await importarCatalogo(db, await origemDosJson());
 afterAll(() => cliente.close());
 
 const json = criarFonteJson();
-const bd = criarFonteBd(db);
+const bd = criarFonteBd(db, loteEmTransacao(db));
 
 /* Produtos reais do catálogo, escolhidos pelo que têm de diferente. */
 const AO_QUILO = CATALOGO_JSON.find((p) => p.unidade === "kg" && p.aVendaOnline)!;
