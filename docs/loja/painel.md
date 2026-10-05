@@ -34,9 +34,14 @@ chegue a uma acção de reembolso tem de receber uma recusa, não um reembolso.
 - 6 dígitos, definido e mudado pela gerente. Guarda-se com *hash*, nunca em
   claro.
 - ⚠️ **Tentativas limitadas, na base de dados.** Cinco erros seguidos bloqueiam
-  esse dispositivo durante 15 minutos. O contador vive na base de dados e não em
-  memória: na Vercel cada pedido pode cair numa instância diferente, e um limite
-  em memória não limita nada.
+  esse **IP** até ao fim da janela de 15 minutos em que aconteceram. O contador
+  vive na base de dados e não em memória: na Vercel cada pedido pode cair numa
+  instância diferente, e um limite em memória não limita nada.
+  - **Por IP, e não por dispositivo**: antes de entrar não há nada que
+    identifique o dispositivo, e um cookie apagava-se para fugir ao limite.
+  - **A tentativa conta-se antes de o PIN ser conferido.** Vinte tentativas
+    mandadas ao mesmo tempo dão cinco conferidas, e não vinte.
+  - Ver `src/lib/sessao-painel/bd.ts` e `base-de-dados.md` › A entrada no painel.
 - **Mudar o PIN termina todas as sessões de funcionário**, em todos os
   dispositivos. É assim que se tira o acesso a quem saiu da casa.
 
