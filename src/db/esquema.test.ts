@@ -1,7 +1,7 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { HorarioSemanal } from "@/lib/horarios";
-import { casa, produtos, variantes } from "./esquema";
+import { casa, codigosGerente, limites, produtos, sessoesPainel, variantes } from "./esquema";
 import { baseDeTeste, recusado } from "./teste";
 
 /**
@@ -199,5 +199,82 @@ describe("cada regra recusa o que é para recusar", () => {
     ["um valor mínimo negativo", { valorMinimoCent: -100 }, "casa_valor_minimo"],
   ] as const)("casa: %s", async (_, mudanca, regra) => {
     expect(await recusado(db.insert(casa).values({ ...CASA, ...mudanca }))).toBe(regra);
+  });
+});
+
+// ——— A entrada no painel ———
+
+const ONTEM = new Date("2026-10-04T10:00:00Z");
+const HOJE = new Date("2026-10-05T10:00:00Z");
+const DAQUI_A_30_DIAS = new Date("2026-11-04T10:00:00Z");
+
+const SESSAO = {
+  tokenHash: "hash-do-token",
+  papel: "funcionario",
+  lembrar: true,
+  dispositivo: "iPad · Safari",
+  criadaEm: HOJE,
+  ultimoUsoEm: HOJE,
+  expiraEm: DAQUI_A_30_DIAS,
+} satisfies typeof sessoesPainel.$inferInsert;
+
+const CODIGO = {
+  email: "gerente@example.com",
+  codigoHash: "hash-do-codigo",
+  criadoEm: HOJE,
+  expiraEm: new Date(HOJE.getTime() + 10 * 60_000),
+} satisfies typeof codigosGerente.$inferInsert;
+
+describe("a entrada no painel: o que é válido entra", () => {
+  it("uma sessão, com um id que não é o hash", async () => {
+    const [criada] = await db.insert(sessoesPainel).values(SESSAO).returning();
+    expect(criada.id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(criada.id).not.toBe(SESSAO.tokenHash);
+  });
+
+  it("um código, ainda por usar e sem tentativas", async () => {
+    const [criado] = await db.insert(codigosGerente).values(CODIGO).returning();
+    expect(criado.usadoEm).toBeNull();
+    expect(criado.tentativas).toBe(0);
+  });
+
+  it("um limite soma-se numa instrução só, sem ler antes", async () => {
+    const somar = () =>
+      db
+        .insert(limites)
+        .values({ chave: "pin:203.0.113.1", janela: HOJE, contagem: 1 })
+        .onConflictDoUpdate({ target: [limites.chave, limites.janela], set: { contagem: sql`${limites.contagem} + 1` } });
+    await somar();
+    await somar();
+    await somar();
+    const [lido] = await db.select().from(limites);
+    expect(lido.contagem).toBe(3);
+  });
+});
+
+describe("a entrada no painel: cada regra recusa o que é para recusar", () => {
+  it.each([
+    ["um papel que não existe", { papel: "admin" }, "sessoes_painel_papel"],
+    ["uma sessão que acaba antes de começar", { expiraEm: ONTEM }, "sessoes_painel_datas"],
+    ["um último uso antes de a sessão existir", { ultimoUsoEm: ONTEM }, "sessoes_painel_datas"],
+  ] as const)("sessão: %s", async (_, mudanca, regra) => {
+    expect(await recusado(db.insert(sessoesPainel).values({ ...SESSAO, ...mudanca }))).toBe(regra);
+  });
+
+  it("sessão: o mesmo token duas vezes", async () => {
+    await db.insert(sessoesPainel).values(SESSAO);
+    expect(await recusado(db.insert(sessoesPainel).values(SESSAO))).toBe("sessoes_painel_token_hash_unique");
+  });
+
+  it.each([
+    ["um código que acaba antes de ser criado", { expiraEm: ONTEM }, "codigos_gerente_datas"],
+    ["tentativas negativas", { tentativas: -1 }, "codigos_gerente_tentativas"],
+  ] as const)("código: %s", async (_, mudanca, regra) => {
+    expect(await recusado(db.insert(codigosGerente).values({ ...CODIGO, ...mudanca }))).toBe(regra);
+  });
+
+  it("limite: uma contagem negativa", async () => {
+    const negativo = db.insert(limites).values({ chave: "pin:203.0.113.1", janela: HOJE, contagem: -1 });
+    expect(await recusado(negativo)).toBe("limites_contagem");
   });
 });
