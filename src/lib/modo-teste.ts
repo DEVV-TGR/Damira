@@ -11,15 +11,23 @@
  * - **prazos e horário de exemplo** no calendário (`src/lib/dados/exemplo.ts`);
  * - **pedidos de exemplo no calendário**, que dão cor aos dias e enchem horas
  *   (`pedidosDeExemplo`, no mesmo ficheiro);
- * - **pedidos de exemplo no painel**: pagos, entregues, um cancelado, um com
- *   dinheiro em falta, um que chegou tarde, um duplicado (`pedidosDoPainelDeExemplo`),
- *   e o **«Simular pedido novo»** do balcão (`simularPedidoDeTeste`);
- * - **a entrada provisória do painel**, com o PIN `123456` e o email da equipa
- *   como gerente (`src/lib/sessao-painel/provisoria.ts`);
+ * - **sem base de dados**, **pedidos de exemplo no painel**: pagos, entregues,
+ *   um cancelado, um com dinheiro em falta, um que chegou tarde, um duplicado
+ *   (`pedidosDoPainelDeExemplo`), e o **«Simular pedido novo»** do balcão
+ *   (`simularPedidoDeTeste`);
+ * - **sem base de dados**, **a entrada provisória do painel**, com o PIN
+ *   `123456` e o email da equipa como gerente (`src/lib/sessao-painel/provisoria.ts`);
  * - o pagamento com as chaves de teste do Stripe, quando chegar (#38) — não se
  *   cobra nada;
  * - e **os avisos que dizem tudo isto**: a faixa no topo de todas as páginas da
  *   loja, e o aviso no topo do painel.
+ *
+ * ⚠️ **Com a base de dados (`DATABASE_URL`), a fonte é sempre ela** (#57): os
+ * prazos, o horário e os pedidos do calendário de exemplo são uma camada por
+ * cima que só tapa o que falta nas leituras da loja, e nunca grava nada
+ * (`comExemplo`, em `exemplo.ts`). Os pedidos de exemplo do painel e a entrada
+ * provisória ficam de fora: no ar, testa-se comprando com os cartões de teste
+ * do Stripe, e a entrada é a verdadeira.
  *
  * ⚠️ **A faixa é o que impede isto de ser uma mentira, e não se apaga.** É a
  * mesma regra da conta em demonstração (`AGENTS.md` › A conta de cliente): uma

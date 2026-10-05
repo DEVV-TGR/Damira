@@ -53,8 +53,15 @@ várias.
 | `DATABASE_URL` | o site (driver HTTP), endereço **com pooling** | Vercel: Production → ramo `production`; Preview e Development → `desenvolvimento`. Local: `.env.local` → `desenvolvimento` |
 | `DATABASE_URL_UNPOOLED` | migrações e importação, endereço **direto** | as mesmas, e só quando for preciso correr uma |
 
-- [ ] Pôr as duas, vazias e comentadas, no `.env.example` — no PR que ligar a
-      fonte (#29).
+- [x] As duas, vazias e comentadas, no `.env.example`.
+
+⚠️ **A `DATABASE_URL` é o interruptor da base de dados.** Com ela, o site lê e
+grava na Neon (`fonteDoAmbiente`, em `exemplo.ts`); sem ela, os JSON, como até
+aqui. Lê-se também no build: as páginas públicas geram-se a partir da base de
+dados, e mudá-la obriga a um novo deploy. E com ela **a entrada provisória do
+painel desliga-se** — o PIN dela é público, e o painel gravaria a sério —, por
+isso a entrada verdadeira (ponto 8) liga-se no mesmo deploy, ou o painel fica
+trancado até ela.
 
 ## Os comandos
 
@@ -115,10 +122,12 @@ nosso processo. Estas ficam por provar até haver a conta:
 
 A casa começa a preencher os produtos no painel, e o que ela grava tem de ficar.
 
-- [ ] A fonte sobre a base de dados no `src/lib/dados/index.ts` (#29, #31).
-- [ ] **O modo de teste por cima da base de dados, e não no lugar dela**: o site
-      fica em modo de teste até 11/11, e é nesse modo que ela vai preencher
-      (revisão do #57).
+- [x] A fonte sobre a base de dados, escolhida pela `DATABASE_URL` (#69, e o
+      `fonteDoAmbiente`). Falta pôr a variável na Vercel.
+- [x] **O modo de teste por cima da base de dados, e não no lugar dela**
+      (`comExemplo`): o site fica em modo de teste até 11/11, e é nesse modo que
+      ela vai preencher. Nada de exemplo chega à base de dados, e o painel vê a
+      casa como está gravada.
 - [ ] **A entrada verdadeira da gerente** (#33): o PIN da entrada provisória
       está escrito no código, num repositório público. O que falta está no
       ponto 8.

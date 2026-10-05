@@ -120,6 +120,9 @@ ecrãs não mudam.
 - **Liga com o modo de teste (`LOJA_EM_TESTE=1`), e só com ele**, em local e no
   ar: é o mesmo interruptor de todos os dados provisórios. Sem ele, o painel diz
   que a entrada ainda não está ligada.
+- ⚠️ **E nunca com a base de dados** (`DATABASE_URL`): aí o painel grava os
+  produtos a sério, e o PIN daqui é público. Até a entrada verdadeira estar
+  ligada, o painel fica trancado (`provisoria.ts`).
 - ⚠️ **Valores por defeito no código** (decidido a 04/10): PIN `123456`, o email
   da equipa (`developerplusteam@gmail.com`) como gerente e um segredo fixo, que
   não é segredo nenhum. O repositório é público, por isso quem o lê entra no
