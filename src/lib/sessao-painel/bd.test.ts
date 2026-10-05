@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
 import { codigosGerente, sessoesPainel } from "@/db/esquema";
 import { loteEmTransacao } from "@/db/lote";
-import { catalogoDeTeste } from "@/db/teste";
+import { baseDeTeste, catalogoDeTeste } from "@/db/teste";
 import { criarSessaoBd, definirPinDaEquipa, descreverDispositivo } from "./bd";
 import type { LojaDeCookies, OpcoesCookie } from "./tipos";
 
@@ -44,7 +44,7 @@ const browser = () => {
  * Uma entrada nova, numa base de dados nova, com o PIN da equipa definido.
  * `semEmail` é não haver serviço de email.
  */
-async function criar({ semEmail = false, comPin = true } = {}) {
+async function criar({ semEmail = false, comPin = true, userAgent = IPAD as string | null } = {}) {
   const { db } = await modelo.copia();
   const emLote = loteEmTransacao(db);
   if (comPin) await definirPinDaEquipa(db, emLote, PIN);
@@ -55,7 +55,7 @@ async function criar({ semEmail = false, comPin = true } = {}) {
     emLote,
     gerentes: ["Ana@Example.com", " andreia@example.com"],
     enviarCodigo: semEmail ? null : async (email: string, codigo: string) => void emails.push({ email, codigo }),
-    dispositivo: async () => IPAD,
+    dispositivo: async () => userAgent,
     producao: true,
   };
   /* Outro dispositivo, na mesma base de dados: o telemóvel da gerente. */
@@ -322,5 +322,90 @@ describe("o dispositivo, como a gerente o vê", () => {
     [null, null],
   ])("%s", (userAgent, esperado) => {
     expect(descreverDispositivo(userAgent)).toBe(esperado);
+  });
+});
+
+describe("a equipa, na gestão: ver e terminar sessões, mudar o PIN", () => {
+  /* O tablet do balcão com o PIN, e a gerente noutro aparelho, com o código. */
+  async function balcaoEGerente() {
+    const criado = await criar();
+    await criado.sessao.entrarComPin(PIN, CTX);
+    const telemovel = criado.outroDispositivo();
+    await telemovel.pedirCodigo("ana@example.com", CTX);
+    await telemovel.entrarComCodigo("ana@example.com", ultimoCodigo(criado.emails, "ana@example.com")!, true, minutosDepois(1));
+    return { ...criado, telemovel };
+  }
+
+  it("a gerente vê as sessões abertas: o papel, o aparelho, o último uso, e qual é a deste aparelho", async () => {
+    const { telemovel } = await balcaoEGerente();
+    const lista = await telemovel.listarSessoes(minutosDepois(2).agora);
+    expect(lista.map((s) => [s.papel, s.dispositivo, s.esta])).toEqual([
+      ["gerente", "iPad · Safari", true],
+      ["funcionario", "iPad · Safari", false],
+    ]);
+    /* O id que vai ao browser não é o hash do token. */
+    expect(lista.every((s) => /^[0-9a-f-]{36}$/.test(s.id))).toBe(true);
+  });
+
+  it("as sessões que já expiraram não aparecem", async () => {
+    const { telemovel } = await balcaoEGerente();
+    expect(await telemovel.listarSessoes(diasDepois(61))).toEqual([]);
+  });
+
+  it("terminar a sessão do tablet: o tablet volta a pedir o PIN, e a gerente fica", async () => {
+    const { sessao, telemovel } = await balcaoEGerente();
+    const tablet = (await telemovel.listarSessoes(AGORA)).find((s) => s.papel === "funcionario")!;
+    expect(await telemovel.terminarSessao(tablet.id, AGORA)).toEqual({ ok: true });
+    expect(await sessao.sessaoAtual(AGORA)).toBeNull();
+    expect((await telemovel.sessaoAtual(AGORA))?.papel).toBe("gerente");
+    expect(await telemovel.terminarSessao(tablet.id, AGORA)).toEqual({ ok: false, erro: "nao-existe" });
+  });
+
+  it.each([
+    ["um id que não existe", "00000000-0000-4000-8000-000000000000"],
+    ["um id sem forma de id, que a base de dados não aceitava", "abc"],
+    ["nada", undefined],
+  ])("terminar %s responde que não existe, sem rebentar", async (_, id) => {
+    const { telemovel } = await balcaoEGerente();
+    expect(await telemovel.terminarSessao(id as string, AGORA)).toEqual({ ok: false, erro: "nao-existe" });
+    expect(await telemovel.listarSessoes(AGORA)).toHaveLength(2);
+  });
+
+  it("mudar o PIN fecha as sessões da equipa, e só essas; o PIN novo é o que entra", async () => {
+    const { sessao, telemovel } = await balcaoEGerente();
+    expect(await telemovel.mudarPin("1357", CTX)).toEqual({ ok: true });
+    expect(await sessao.sessaoAtual(AGORA)).toBeNull();
+    expect((await telemovel.sessaoAtual(AGORA))?.papel).toBe("gerente");
+    expect((await sessao.entrarComPin(PIN, minutosDepois(1, "198.51.100.7"))).ok).toBe(false);
+    expect((await sessao.entrarComPin("1357", minutosDepois(1, "198.51.100.8"))).ok).toBe(true);
+  });
+
+  it.each([["12345"], ["abcdef"], [123456], [null]])("mudar o PIN para %s é recusado, e nada muda", async (novo) => {
+    const { sessao, telemovel } = await balcaoEGerente();
+    expect(await telemovel.mudarPin(novo, CTX)).toEqual({ ok: false, erro: "dados-invalidos" });
+    expect((await sessao.sessaoAtual(AGORA))?.papel).toBe("funcionario");
+  });
+
+  it("sem a casa importada, mudar o PIN diz que a entrada da equipa ainda não está ligada", async () => {
+    const { db, cliente } = await baseDeTeste();
+    try {
+      const sessao = criarSessaoBd({
+        db,
+        emLote: loteEmTransacao(db),
+        cookies: browser().cookies,
+        gerentes: [],
+        enviarCodigo: null,
+        producao: true,
+      });
+      expect(await sessao.mudarPin("1357", CTX)).toEqual({ ok: false, erro: "indisponivel" });
+    } finally {
+      await cliente.close();
+    }
+  });
+
+  it("um browser que não se reconhece aparece como «Aparelho desconhecido»", async () => {
+    const { sessao } = await criar({ userAgent: null });
+    await sessao.entrarComPin(PIN, CTX);
+    expect((await sessao.listarSessoes(AGORA))[0].dispositivo).toBe("Aparelho desconhecido");
   });
 });
