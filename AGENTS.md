@@ -46,6 +46,7 @@ dela** — e o `pedidos.md`, que é o contrato de que todos dependem.
 | Bolos personalizados | `bolos-personalizados.md` |
 | Concorrência, limites, erros, cache, logs, backups | `robustez.md` |
 | Base de dados: tabelas, contadores, migração | `base-de-dados.md` |
+| **Ligar a Neon: o que falta fazer e confirmar com a conta** | `ligar-a-neon.md` |
 
 ### As regras que não se negociam
 
