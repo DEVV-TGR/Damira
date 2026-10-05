@@ -56,18 +56,37 @@ várias.
 - [ ] Pôr as duas, vazias e comentadas, no `.env.example` — no PR que ligar a
       fonte (#29).
 
+## Os comandos
+
+Correm no terminal de quem está a fazer a ligação, e nunca no site. O endereço
+vem do `DATABASE_URL_UNPOOLED` do `.env.local` — ⚠️ **é ele que decide em que
+ramo se escreve.** Cada comando que escreve mostra o servidor e a base de dados
+(nunca a palavra-passe) e só avança com um «sim».
+
+| Comando | O que faz | Escreve? |
+|---|---|---|
+| `npm run bd:migrar` | as tabelas: aplica as migrações que faltam | sim |
+| `npm run bd:importar` | o catálogo dos JSON, e a comparação no fim — recusa-se se já houver produtos | sim |
+| `npm run bd:comparar` | a base de dados contra os JSON, campo a campo | não |
+| `npm run painel:pin` | o PIN da equipa, pedido escondido e duas vezes; fecha as sessões da equipa | sim |
+
+**Para os experimentar sem conta**, com `-- --ensaio` (por exemplo
+`npm run painel:pin -- --ensaio`): correm num PGlite em memória, que desaparece
+no fim. É a forma de ver um comando antes do dia em que conta.
+
+O que cada um faz está em `src/db/comandos.ts`, testado no PGlite; a entrada
+pelo terminal em `scripts/bd.ts`.
+
 ## 4. Aplicar o esquema — primeiro no desenvolvimento
 
-- [ ] Juntar ao `package.json` o comando das migrações (`drizzle-kit migrate`,
-      a ler o `DATABASE_URL_UNPOOLED`). **Ainda não existe.**
-- [ ] Correr no ramo `desenvolvimento` e confirmar as 3 tabelas e as 22 regras.
+- [x] O comando: `npm run bd:migrar`.
+- [ ] Correr no ramo `desenvolvimento` e confirmar as tabelas e as regras.
 - [ ] Só depois no `production`.
 
 ## 5. Importar o catálogo
 
-- [ ] Escrever o comando que corre a importação na Neon, com o driver de
-      WebSockets (a importação usa uma transação, e o driver HTTP não as faz).
-      **Ainda não existe** — #28.
+- [x] O comando: `npm run bd:importar`, com o driver de WebSockets (a
+      importação usa uma transação, e o driver HTTP não as faz).
 - [ ] Correr no `desenvolvimento`: a comparação tem de dar **zero diferenças**.
 - [ ] No `production`: **uma vez**, antes de a casa começar a preencher os
       produtos (14/10).
@@ -118,9 +137,8 @@ existem; o resto está aqui, por quem o faz.
       gerente por email, 10 minutos, uso único, com tentativas contadas; as
       sessões na base de dados, renovadas a cada uso; sair, e «esquecer este
       dispositivo». Testada no PGlite. **Ainda não ligada.**
-- [ ] **O comando para definir o PIN da equipa** (`npm run painel:pin`, a chamar
-      o `definirPinDaEquipa`). Ainda não existe — como o da importação, liga-se
-      à Neon e escreve-se com ela. Até haver ecrã, é a única forma de pôr um PIN.
+- [x] **O comando para definir o PIN da equipa**: `npm run painel:pin`. Até
+      haver ecrã, é a única forma de pôr ou mudar um PIN.
 - [ ] **Ligá-la** no `src/lib/sessao-painel/index.ts` — é a única linha que muda.
       O `criarSessaoBd` recebe: a base de dados e o `loteNeon`; os cookies do
       `next/headers` (como hoje); os emails do `EMAILS_GERENTE`; o envio do
