@@ -87,9 +87,12 @@ export function criarPainelJson(
   const alterar = (id: string, mudanca: Partial<Produto>): ResultadoPainel<Produto> => {
     const atual = estado.porId.get(id);
     if (!atual) return naoExiste;
-    const novo = EsquemaProduto.parse({ ...atual, ...mudanca });
-    estado.porId.set(id, novo);
-    return { ok: true, valor: novo };
+    /* `safeParse`: um valor errado responde `dados-invalidos`, e nunca rebenta
+       para o browser (`robustez.md` › Erros). */
+    const lido = EsquemaProduto.safeParse({ ...atual, ...mudanca });
+    if (!lido.success) return invalido(lido.error);
+    estado.porId.set(id, lido.data);
+    return { ok: true, valor: lido.data };
   };
 
   return {

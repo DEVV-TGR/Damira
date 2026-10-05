@@ -21,7 +21,7 @@ const pedido = (id: string, alteracoes: Partial<Pedido> = {}): Pedido => ({
   estado: "pago",
   criadoEm: lisboa(6, 9),
   levantamentoEm: lisboa(8, 15),
-  cliente: { nome: "Cliente de Teste", email: "teste@example.com", telefone: null, nif: null, contaId: null },
+  cliente: { nome: "Cliente de Teste", email: "teste@example.com", telefone: "+351910000001", nif: null, contaId: null },
   linhas: [
     {
       produtoId: "festa-premium",
@@ -140,6 +140,12 @@ describe("listar e procurar", () => {
 });
 
 describe("entregar", () => {
+  it("um entregue continua a ocupar a vaga: o «desfazer» nunca esbarra no limite", async () => {
+    const f = fonte([pedido("a")]);
+    await f.marcarEntregue("a", false, BALCAO);
+    expect(await f.ocupacao(lisboa(8, 15), lisboa(8, 15))).toEqual([{ inicio: lisboa(8, 15), pedidos: 1 }]);
+  });
+
   it("passa a entregue com a hora, e um segundo toque não faz nada de novo", async () => {
     const f = fonte([pedido("a")]);
     const primeiro = await f.marcarEntregue("a", false, BALCAO);

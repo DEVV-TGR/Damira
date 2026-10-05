@@ -93,7 +93,7 @@ describe("as vagas de um cesto", () => {
       {
         linhas: KIT,
         levantamentoEm: "2026-10-07T06:00:00.000Z",
-        cliente: { nome: "Cliente de Teste", email: "teste@example.com" },
+        cliente: { nome: "Cliente de Teste", email: "teste@example.com", telefone: "+351912345678" },
         chaveIdempotencia: "4f1b2c3d-1111-4222-8333-444455556666",
         armadilha: "",
       },

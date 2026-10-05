@@ -267,7 +267,10 @@ const gerarReferencia = (agora: Date): string => {
 
 // ——— A fonte ———
 
-const ATIVOS = new Set<Pedido["estado"]>(["pendente", "pago"]);
+/* O `entregue` continua a ocupar a vaga: gastou a capacidade daquela hora, e o
+   «desfazer» nunca pode esbarrar no limite (`pedidos.md` › O levantamento). Só o
+   cancelado e o expirado a libertam. */
+const ATIVOS = new Set<Pedido["estado"]>(["pendente", "pago", "entregue"]);
 
 export type OpcoesFonteJson = {
   catalogo?: readonly Produto[];
