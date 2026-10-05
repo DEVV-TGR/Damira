@@ -32,6 +32,7 @@ export function protegerPainel(fonte: FontePainel): FontePainel {
   return {
     /* Ler os produtos é dos dois: o balcão precisa deles para os esgotar. */
     produtosDoPainel: (ctx) => fonte.produtosDoPainel(ctx),
+    configuracaoDoPainel: (ctx) => fonte.configuracaoDoPainel(ctx),
     criarProduto: exigirPapel(SO_GERENTE, (entrada: unknown, ctx) => fonte.criarProduto(entrada, ctx)),
     editarProduto: exigirPapel(SO_GERENTE, (id: string, entrada: unknown, ctx) =>
       fonte.editarProduto(id, entrada, ctx),

@@ -391,10 +391,22 @@ O horário da loja sai do `casa.json` para `casa.horario_loja`; a cozinha fica
 
 ## O modo de teste e a base de dados
 
-⚠️ **Os dados de exemplo nunca entram na base de dados.** A cozinha, os tempos e
-os pedidos de exemplo (`exemplo.ts`) continuam a ser uma camada por cima da
-fonte, ligada pelo `LOJA_EM_TESTE=1`. Um pedido de exemplo gravado na base de
-dados não se distinguia de um verdadeiro, e ia parar a um relatório de vendas.
+⚠️ **Os dados de exemplo nunca entram na base de dados.** Com a `DATABASE_URL`,
+a fonte é sempre a base de dados, e o `LOJA_EM_TESTE=1` põe-lhe por cima a
+camada `comExemplo` (`exemplo.ts`): tapa os tempos, a cozinha e o limite que
+faltam, e junta os pedidos de exemplo à ocupação — **só nas leituras da loja**.
+Um pedido de exemplo gravado não se distinguia de um verdadeiro, e ia parar a um
+relatório de vendas.
+
+⚠️ **O painel lê sempre o que está gravado** — `produtosDoPainel` e
+`configuracaoDoPainel`, que a camada não tapa. Era a armadilha: a gerente via a
+cozinha de exemplo em «Horários», gravava outra coisa qualquer, e a cozinha
+inventada ficava na base de dados como sendo a da casa. Há um teste que o prova,
+e que falha se a camada deixar passar o exemplo para o painel.
+
+Os pedidos de exemplo do painel e o «Simular pedido novo» ficam na fonte dos
+JSON. **Enquanto os pedidos não estão na base de dados**, o site com ela diz a
+verdade: zero pedidos guardados (`pedidosAindaNaoGuardados`, em `bd.ts`).
 
 ## Os testes
 

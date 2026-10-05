@@ -82,17 +82,30 @@ provisório** — em local e na Vercel, sem uma segunda variável para ligar
 - os **prazos e o horário de exemplo** e os **pedidos de exemplo** que enchem o
   calendário (`src/lib/dados/exemplo.ts` — ao acaso mas sempre os mesmos, e
   contam como verdadeiros para as vagas);
-- os **pedidos de exemplo no painel** — pagos, entregues, um cancelado, um com
-  dinheiro em falta, um que chegou tarde, um duplicado —, relativos ao dia de hoje,
-  e o botão **«Simular pedido novo»** no balcão, para ouvir o som e ver o alarme
-  do talão sem haver pagamentos;
-- a **entrada provisória do painel**, com o PIN `123456` e o email da equipa como
-  gerente. ⚠️ Estão escritos no código, num repositório público: é a troca
-  aceite para o modo de teste ligar com uma variável só, e só há dados de
-  exemplo do outro lado. Sai com a entrada verdadeira (#33);
+- **sem base de dados**, os **pedidos de exemplo no painel** — pagos, entregues,
+  um cancelado, um com dinheiro em falta, um que chegou tarde, um duplicado —,
+  relativos ao dia de hoje, e o botão **«Simular pedido novo»** no balcão, para
+  ouvir o som e ver o alarme do talão sem haver pagamentos;
+- **sem base de dados**, a **entrada provisória do painel**, com o PIN `123456`
+  e o email da equipa como gerente. ⚠️ Estão escritos no código, num
+  repositório público: é a troca aceite para o modo de teste ligar com uma
+  variável só, e só há dados de exemplo do outro lado. Sai com a entrada
+  verdadeira (#33);
 - o Stripe de teste;
 - e os avisos que o dizem: **uma faixa no topo de todas as páginas** da loja
   (`src/components/FaixaModoTeste.tsx`) e outra no topo do painel.
+
+⚠️ **Com a base de dados (`DATABASE_URL`), a fonte é sempre ela** (decidido a
+05/10, #57). O modo de teste passa a ser uma **camada por cima**
+(`comExemplo`, em `exemplo.ts`) que só tapa o que falta nas leituras da loja —
+os tempos, a cozinha, o limite por vaga — e junta os pedidos de exemplo ao
+calendário. ⚠️ **Nunca grava nada**, e o painel lê a casa e os produtos **como
+estão gravados** (`configuracaoDoPainel`, `produtosDoPainel`): se a gerente
+visse a cozinha de exemplo em «Horários», gravava-a como sendo a dela. Os
+pedidos de exemplo do painel ficam nos JSON; no ar, testa-se comprando com os
+cartões de teste do Stripe. E ⚠️ **a entrada provisória não liga com a base de
+dados** — o PIN dela é público, e o painel gravava a sério: até a verdadeira
+estar ligada, o painel fica trancado.
 
 ⚠️ **A faixa não se apaga** enquanto o interruptor estiver ligado — é ela que
 impede o site de afirmar um prazo que a casa não deu. E ⚠️ **desligar o

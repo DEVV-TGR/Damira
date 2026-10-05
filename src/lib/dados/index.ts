@@ -66,6 +66,8 @@ const painel = protegerPainel(fonte);
 
 /** Todos os produtos, arquivados incluídos. O balcão também os vê, para os esgotar. */
 export const produtosDoPainel = painel.produtosDoPainel;
+/** A casa como está gravada, para «Horários»: nunca com os valores de exemplo. */
+export const configuracaoDoPainel = painel.configuracaoDoPainel;
 export const criarProduto = painel.criarProduto;
 export const editarProduto = painel.editarProduto;
 /** «Apagar» no painel. Nunca se apaga a sério: os pedidos antigos apontam para ele. */

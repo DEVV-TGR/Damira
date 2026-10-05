@@ -5,6 +5,7 @@ import { EntradaPainel } from "@/components/painel/EntradaPainel";
 import { PainelAberto } from "@/components/painel/PainelAberto";
 import {
   configuracaoDaCasa,
+  configuracaoDoPainel,
   definicoesLoja,
   listarPedidos,
   ordemDaEmenta,
@@ -66,8 +67,11 @@ export default async function Painel({ searchParams }: { searchParams: Promise<{
   }
 
   const ctx: ContextoPainel = { papel: atual.papel, agora };
-  const [casa, definicoes, produtos, pedidos] = await Promise.all([
+  const [casa, casaGravada, definicoes, produtos, pedidos] = await Promise.all([
     configuracaoDaCasa(),
+    /* ⚠️ «Horários» edita a casa **como está gravada**: no modo de teste, a da
+       loja traz a cozinha de exemplo, e gravá-la fazia-a passar por da casa. */
+    configuracaoDoPainel(ctx),
     definicoesLoja(),
     produtosDoPainel(ctx),
     pedidosDoBalcao(ctx),
@@ -111,7 +115,7 @@ export default async function Painel({ searchParams }: { searchParams: Promise<{
                   avisos: atencao.valor,
                   pedidosDosAvisos,
                   porPreencher: contarPorPreencher(produtos),
-                  casa,
+                  casa: casaGravada,
                   definicoes,
                   produtos,
                   ordem: await ordemDaEmenta(),
