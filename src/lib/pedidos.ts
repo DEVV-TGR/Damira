@@ -67,6 +67,20 @@ export function telefoneValido(texto: string, pais: string): string | null {
   return numero?.isValid() ? numero.number : null;
 }
 
+/**
+ * Até quando a loja está em pausa, escrito para o cliente: «11:30», ou
+ * «amanhã… às 07:00» quando é outro dia. `null` se não está em pausa. Sempre em
+ * hora de Lisboa (regra 3), seja qual for a língua.
+ */
+export function quandoVoltaALoja(pausaAte: Date | null, agora: Date, locale: string): string | null {
+  if (!pausaAte || pausaAte.getTime() <= agora.getTime()) return null;
+  const dia = (d: Date) => format(d, "yyyy-MM-dd", { in: tz("Europe/Lisbon") });
+  const hora = new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Lisbon" }).format(pausaAte);
+  if (dia(pausaAte) === dia(agora)) return hora;
+  const quando = new Intl.DateTimeFormat(locale, { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Lisbon" }).format(pausaAte);
+  return `${quando}, ${hora}`;
+}
+
 export const esquemaCompra = (agora: Date) =>
   z.object({
     nome: z.string().trim().min(2, "nome-curto").max(120),

@@ -383,7 +383,8 @@
         "email-invalido": "Please enter a valid email — that's where your reference goes.",
         "telefone-curto": "Please enter a phone number — we'll call if something needs sorting out.",
         "nif-invalido": "The tax number has nine digits.",
-        "telefone-invalido": "Please check the number: it doesn't look like a valid phone number for the country chosen."
+        "telefone-invalido": "Please check the number: it doesn't look like a valid phone number for the country chosen.",
+        "loja-em-pausa": "The shop is paused until {quando}: the kitchen is full. You can order from then."
       },
       "sucesso": {
         "titulo": "Request sent.",
@@ -492,7 +493,8 @@
       "vazioTexto": "Add whatever you like from the orders or the menu, then come back here.",
       "irEncomendas": "See the orders",
       "rever": "Review and order",
-      "reverTexto": "You already have items in your order. Choose the collection time and your details in the next step."
+      "reverTexto": "You already have items in your order. Choose the collection time and your details in the next step.",
+      "pausa": "The shop is paused until {quando}: the kitchen is full. You can order from then."
     }
   },
   "bolos": {

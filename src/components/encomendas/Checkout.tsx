@@ -8,6 +8,7 @@ import { cotarPedido } from "@/app/[locale]/encomendas/pedido/cotacao";
 import { enviarCompra, type Resultado } from "@/app/[locale]/encomendas/pedido/acoes";
 import { consultarVagas } from "@/app/[locale]/encomendas/vagas";
 import { useConta } from "@/components/conta/ProvedorConta";
+import { pausaDaLoja } from "@/app/[locale]/encomendas/pedido/pausa";
 import { CampoTelefone } from "./CampoTelefone";
 import { linhasDoCesto, quantidadeEmTexto, totalDaLinha, type ItemCesto } from "@/lib/cesto";
 import type { ResultadoCotacao } from "@/lib/dados/tipos";
@@ -77,6 +78,18 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
   const vagas = useDoServidor<ResultadoVagas>(linhas, comCesto, consultarVagas);
   const cotacao = useDoServidor<ResultadoCotacao>(linhas, comCesto, cotarPedido);
   const [escolhida, setEscolhida] = useState<VagaDoCalendario | null>(null);
+  /* A loja em pausa (o balcão com a cozinha cheia): diz-se até quando, e o botão
+     fica desligado. O servidor confirma outra vez ao enviar. */
+  const [pausa, setPausa] = useState<string | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    void pausaDaLoja(locale).then((quando) => {
+      if (vivo) setPausa(quando);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [locale]);
 
   /* ⚠️ **Campos controlados, e o formulário não se reinicia sozinho.** No
      React 19 um `<form action>` limpa os campos depois de cada envio: com um
@@ -326,9 +339,15 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
         </div>
         <input type="hidden" name="linhas" value={linhas} />
 
+        {pausa && (
+          <p role="status" className="rounded-xl border-2 border-tinta bg-papel px-4 py-3 font-semibold">
+            {t("pausa", { quando: pausa })}
+          </p>
+        )}
+        {erros.geral && <Erro>{erros.geral}</Erro>}
         <button
           type="submit"
-          disabled={aPendente}
+          disabled={aPendente || pausa !== null}
           className="premivel flex min-h-14 items-center justify-center rounded-full bg-tijolo px-8 text-sm font-semibold uppercase tracking-widest text-papel disabled:opacity-60"
         >
           {aPendente ? tf("aEnviar") : tf("enviar")}
