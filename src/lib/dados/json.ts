@@ -1,0 +1,465 @@
+import { randomUUID } from "node:crypto";
+import { tz } from "@date-fns/tz";
+import { format } from "date-fns";
+import { casa, DIAS_DA_SEMANA } from "@/data/casa";
+import { CARTAS, CATEGORIAS, ementa, SUBCATEGORIAS, type Artigo } from "@/data/ementa";
+import type { Box, KitBolo, Linha } from "@/data/encomendas";
+import { regraDe } from "@/lib/encomendavel";
+import {
+  FUSO,
+  PREDEFINICOES,
+  validarLevantamento,
+  type ArtigoDoCesto,
+  type HorarioSemanal,
+  type VagaOcupada,
+} from "@/lib/horarios";
+import { PRODUTOS, type Produto as ProdutoDasEncomendas } from "@/lib/produtos";
+import mensagensEn from "../../../messages/en.json";
+import mensagensPt from "../../../messages/pt.json";
+import {
+  EsquemaEntradaPedido,
+  EsquemaLinhaCesto,
+  EsquemaProduto,
+  type ConfiguracaoDaCasa,
+  type Cotacao,
+  type DefinicoesLoja,
+  type FonteDeDados,
+  type GrupoComposicao,
+  type LinhaCotada,
+  type Pedido,
+  type Produto,
+  type ResultadoCriarPedido,
+} from "./tipos";
+
+/**
+ * # A implementação provisória: os JSON por trás da fronteira
+ *
+ * É **o único ficheiro que a migração troca**. A base de dados implementa a
+ * mesma `FonteDeDados` (ver `tipos.ts`) e as páginas não dão por nada.
+ *
+ * ⚠️ **Os pedidos ficam em memória e não persistem.** Um `Map` num processo da
+ * Vercel apaga-se no próximo arranque, e dois processos não se veem. Serve para
+ * o cesto, o calendário e o checkout poderem ser construídos e testados antes
+ * de haver base de dados — **não serve para receber um pedido a sério**, e não
+ * está ligado a nenhuma página.
+ *
+ * ⚠️ **O que a casa ainda não deu fica `null`**, e não se inventa: o tempo de
+ * produção, os alergénios, o sinal, o limite e o horário da cozinha. Sem eles o
+ * calendário não se calcula, e o `criarPedido` responde `indisponivel`. Os
+ * valores para trabalhar estão em `exemplo.ts`, à parte.
+ */
+
+// ——— Euros → cêntimos ———
+
+/* A conversão acontece uma vez, aqui. Rebenta em vez de arredondar em silêncio:
+   um preço de 1,605 € no JSON é um erro de quem o escreveu, e arredondá-lo é
+   decidir pela casa quanto custa. Os 95 + 12 de hoje são todos exatos. */
+const emCent = (euros: number, onde: string): number => {
+  const cent = Math.round(euros * 100);
+  if (Math.abs(cent - euros * 100) > 1e-6) {
+    throw new Error(`src/lib/dados/json.ts: ${onde} custa ${euros} €, que não é um número de cêntimos.`);
+  }
+  return cent;
+};
+
+// ——— O catálogo ———
+
+const daEmenta = (artigo: Artigo): Produto => {
+  /* O mínimo e o passo da encomenda vivem ainda numa tabela por categoria (ver
+     `encomendavel.ts`). Passam a ser por produto quando a gerente os puder
+     editar; até lá, um artigo sem regra não se encomenda. */
+  const regra = regraDe(artigo);
+  return {
+    id: artigo.id,
+    origem: "ementa",
+    familia: "ementa",
+    nome: { pt: artigo.nome, en: artigo.nomeEn },
+    descricao: artigo.descricao,
+    carta: artigo.carta,
+    categoria: artigo.categoria,
+    subcategoria: artigo.subcategoria,
+    unidade: artigo.unidade,
+    variantes: artigo.variantes
+      ? artigo.variantes.map((variante) => ({
+          id: variante.chave,
+          rotulo: { pt: variante.chave, en: variante.chave },
+          pessoas: null,
+          precoCent: emCent(variante.preco, `${artigo.id} (${variante.chave})`),
+          composicao: [],
+        }))
+      : [
+          {
+            id: "unica",
+            rotulo: null,
+            pessoas: null,
+            precoCent: artigo.preco === null ? null : emCent(artigo.preco, artigo.id),
+            composicao: [],
+          },
+        ],
+    escolhas: artigo.sabores,
+    tempoProducao: null,
+    quantidadeMinima: regra?.minimo ?? 1,
+    multiplo: regra?.passo ?? 1,
+    aVendaOnline: regra !== null,
+    apareceNaEmenta: true,
+    /* O JSON escreve `[]` em todos, e ali quer dizer **por preencher** — nunca
+       «sem alergénios». Aqui passa a `null`, que é o que significa. */
+    alergenios: artigo.alergenios.length > 0 ? artigo.alergenios : null,
+    vegan: artigo.vegan,
+    fotos: artigo.foto ? [artigo.foto] : [],
+    sinalPercent: null,
+    limite: null,
+  };
+};
+
+const paraPessoas = (n: number) => ({
+  pt: mensagensPt.produto.paraPessoas.replace("{n}", String(n)),
+  en: mensagensEn.produto.paraPessoas.replace("{n}", String(n)),
+});
+
+const linhas = (itens: readonly Linha[]) =>
+  itens.map((item) => ({ nome: item.nome, quantidade: item.quantidade }));
+
+/* O que um produto de variante única leva, por família. A box escreve a
+   quantidade colada ao nome; o kit de bolo tem-na em coluna própria. */
+const composicaoDe = (produto: ProdutoDasEncomendas): GrupoComposicao[] => {
+  if (produto.familia === "bolo") {
+    return [{ grupo: "itens", linhas: linhas((produto.fonte as KitBolo).itens) }];
+  }
+  if (produto.familia === "box") {
+    const itens = (produto.fonte as Box).itens;
+    return [{ grupo: "itens", linhas: itens.map((nome) => ({ nome, quantidade: null })) }];
+  }
+  return [];
+};
+
+const daEncomenda = (produto: ProdutoDasEncomendas): Produto => {
+  const fonte = produto.fonte;
+  const variantes =
+    fonte && "escaloes" in fonte
+      ? fonte.escaloes.map((escalao) => ({
+          id: String(escalao.pessoas),
+          rotulo: paraPessoas(escalao.pessoas),
+          pessoas: escalao.pessoas,
+          precoCent: emCent(escalao.preco, `${produto.id} (${escalao.pessoas} pessoas)`),
+          composicao: [
+            { grupo: "salgados" as const, linhas: linhas(escalao.salgados) },
+            { grupo: "doces" as const, linhas: linhas(escalao.doces) },
+          ],
+        }))
+      : [
+          {
+            id: "unica",
+            rotulo: null,
+            pessoas: null,
+            precoCent: produto.preco === null ? null : emCent(produto.preco, produto.id),
+            composicao: composicaoDe(produto),
+          },
+        ];
+
+  /* O bolo por medida não vem do JSON e o nome dele vive nas traduções. */
+  const medida = produto.familia === "medida";
+  return {
+    id: produto.id,
+    origem: "encomendas",
+    familia: produto.familia,
+    nome: medida
+      ? { pt: mensagensPt.produto.medida.nome, en: mensagensEn.produto.medida.nome }
+      : { pt: produto.nome("pt"), en: produto.nome("en") },
+    descricao: medida
+      ? { pt: mensagensPt.produto.medida.resumo, en: mensagensEn.produto.medida.resumo }
+      : produto.resumo
+        ? { pt: produto.resumo("pt"), en: produto.resumo("en") }
+        : null,
+    carta: null,
+    categoria: null,
+    subcategoria: null,
+    unidade: "un",
+    variantes,
+    escolhas: [],
+    tempoProducao: null,
+    quantidadeMinima: 1,
+    multiplo: 1,
+    aVendaOnline: true,
+    apareceNaEmenta: false,
+    alergenios: null,
+    vegan: produto.vegan,
+    fotos: produto.foto ? [produto.foto] : [],
+    sinalPercent: null,
+    limite: null,
+  };
+};
+
+const montarCatalogo = (): Produto[] => {
+  const catalogo = EsquemaProduto.array().parse([
+    ...ementa.map(daEmenta),
+    ...PRODUTOS.map(daEncomenda),
+  ]);
+  /* A ementa e as encomendas vêm de ficheiros diferentes e agora partilham um
+     espaço de ids. Um `nata` nos dois era um produto que tapava o outro. */
+  const repetidos = catalogo
+    .map((produto) => produto.id)
+    .filter((id, i, todos) => todos.indexOf(id) !== i);
+  if (repetidos.length > 0) {
+    throw new Error(`src/lib/dados/json.ts: id repetido — ${[...new Set(repetidos)].join(", ")}`);
+  }
+  return catalogo;
+};
+
+export const CATALOGO_JSON: readonly Produto[] = montarCatalogo();
+
+// ——— A casa ———
+
+const lojaDoCasaJson = (): HorarioSemanal => {
+  const semana = {} as Record<(typeof DIAS_DA_SEMANA)[number], { abre: string; fecha: string }[]>;
+  for (const dia of DIAS_DA_SEMANA) {
+    const horario = casa.horarios?.[dia] ?? null;
+    semana[dia] = horario ? [horario] : [];
+  }
+  return semana;
+};
+
+export const CONFIGURACAO_JSON: ConfiguracaoDaCasa = {
+  loja: lojaDoCasaJson(),
+  /* A Damira ainda não deu o horário da cozinha. É diferente do da loja, e
+     usar o da loja no lugar dele era prometer pastéis às 7h00 feitos numa
+     cozinha que só abre às 8h00. */
+  cozinha: null,
+  diasFechados: [],
+  ...PREDEFINICOES,
+};
+
+const DEFINICOES_JSON: DefinicoesLoja = {
+  aceitarCancelamentosSite: false,
+  devolverSinalAoCancelar: false,
+  valorMinimoCent: null,
+  pausaAte: null,
+};
+
+// ——— A referência ———
+
+const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+/* ⚠️ O dia é o de **Lisboa**. O `gerarReferencia` do `historico.ts` usa o dia
+   UTC, e entre a meia-noite e a uma da manhã de verão dá o dia anterior — é a
+   regra 3 do AGENTS.md vista do lado da referência. Corrige-se no PR que liga
+   as páginas a esta fronteira; aqui já nasce certo. */
+const gerarReferencia = (agora: Date): string => {
+  let sufixo = "";
+  for (let i = 0; i < 4; i++) sufixo += ALFABETO[Math.floor(Math.random() * ALFABETO.length)];
+  return `DAM-${format(agora, "ddMM", { in: tz(FUSO) })}-${sufixo}`;
+};
+
+// ——— A fonte ———
+
+/* Um passo de 0,5 kg em vírgula flutuante: 1,5 / 0,5 dá 3 certinho, mas não é
+   preciso esperar muito por um 0,1 + 0,2. */
+const EPSILON = 1e-9;
+const noMultiplo = (quantidade: number, minimo: number, multiplo: number) => {
+  const passos = (quantidade - minimo) / multiplo;
+  return Math.abs(passos - Math.round(passos)) < EPSILON;
+};
+
+const ATIVOS = new Set<Pedido["estado"]>(["pendente", "pago"]);
+
+export type OpcoesFonteJson = {
+  catalogo?: readonly Produto[];
+  configuracao?: ConfiguracaoDaCasa;
+  definicoes?: DefinicoesLoja;
+};
+
+/**
+ * A fonte sobre os JSON. Cada chamada tem os seus próprios pedidos em memória —
+ * é o que deixa os testes não se pisarem uns aos outros.
+ */
+export function criarFonteJson(opcoes: OpcoesFonteJson = {}): FonteDeDados {
+  const catalogo = opcoes.catalogo ?? CATALOGO_JSON;
+  const configuracao = opcoes.configuracao ?? CONFIGURACAO_JSON;
+  const definicoes = opcoes.definicoes ?? DEFINICOES_JSON;
+  const porId = new Map(catalogo.map((produto) => [produto.id, produto]));
+
+  const pedidos = new Map<string, Pedido>();
+  const porReferencia = new Map<string, Pedido>();
+  const porChave = new Map<string, Pedido>();
+
+  const cotar = (linhas: ReturnType<typeof EsquemaLinhaCesto.parse>[]): Cotacao => {
+    const cotadas = linhas.map((linha): LinhaCotada => {
+      const base = { produtoId: linha.produtoId, varianteId: linha.varianteId, quantidade: linha.quantidade };
+      const falha = (erro: LinhaCotada["erro"]): LinhaCotada => ({
+        ...base,
+        precoUnitarioCent: null,
+        totalCent: null,
+        erro,
+      });
+
+      const produto = porId.get(linha.produtoId);
+      if (!produto) return falha("produto-desconhecido");
+      const variante = produto.variantes.find((v) => v.id === linha.varianteId);
+      if (!variante) return falha("variante-desconhecida");
+      if (!produto.aVendaOnline) return falha("fora-de-venda");
+      if (linha.quantidade < produto.quantidadeMinima - EPSILON) return falha("abaixo-do-minimo");
+      if (!noMultiplo(linha.quantidade, produto.quantidadeMinima, produto.multiplo)) {
+        return falha("fora-do-multiplo");
+      }
+
+      const preco = variante.precoCent;
+      return {
+        ...base,
+        precoUnitarioCent: preco,
+        /* Ao quilo, 1,5 kg a 1700 cêntimos são 2550: arredonda-se uma vez, no
+           total da linha, e é sempre um inteiro. */
+        totalCent: preco === null ? null : Math.round(preco * linha.quantidade),
+        erro: null,
+      };
+    });
+
+    const validas = cotadas.filter((linha) => linha.erro === null);
+    return {
+      linhas: cotadas,
+      totalCent: validas.reduce((soma, linha) => soma + (linha.totalCent ?? 0), 0),
+      semPreco: validas.filter((linha) => linha.totalCent === null).length,
+      valida: validas.length === cotadas.length,
+    };
+  };
+
+  const ocupacaoEntre = (desde: Date, ate: Date): VagaOcupada[] => {
+    const contagem = new Map<number, number>();
+    for (const pedido of pedidos.values()) {
+      const quando = pedido.levantamentoEm.getTime();
+      if (!ATIVOS.has(pedido.estado) || quando < desde.getTime() || quando > ate.getTime()) continue;
+      contagem.set(quando, (contagem.get(quando) ?? 0) + 1);
+    }
+    return [...contagem].map(([quando, n]) => ({ inicio: new Date(quando), pedidos: n }));
+  };
+
+  return {
+    async listarProdutos(filtro = {}) {
+      return catalogo.filter(
+        (produto) =>
+          (filtro.origem === undefined || produto.origem === filtro.origem) &&
+          (filtro.familia === undefined || produto.familia === filtro.familia) &&
+          (filtro.aVendaOnline === undefined || produto.aVendaOnline === filtro.aVendaOnline) &&
+          (filtro.apareceNaEmenta === undefined || produto.apareceNaEmenta === filtro.apareceNaEmenta),
+      );
+    },
+
+    async produtoPorId(id) {
+      return porId.get(id) ?? null;
+    },
+
+    async ordemDaEmenta() {
+      return { cartas: [...CARTAS], categorias: [...CATEGORIAS], subcategorias: [...SUBCATEGORIAS] };
+    },
+
+    async configuracaoDaCasa() {
+      return configuracao;
+    },
+
+    async definicoesLoja() {
+      return definicoes;
+    },
+
+    async ocupacao(desde, ate) {
+      return ocupacaoEntre(desde, ate);
+    },
+
+    async cotarCesto(entrada) {
+      const lido = EsquemaLinhaCesto.array().max(50).safeParse(entrada);
+      if (!lido.success) return { ok: false, erro: "dados-invalidos" };
+      return { ok: true, cotacao: cotar(lido.data) };
+    },
+
+    async criarPedido(entrada, { agora, contaId }): Promise<ResultadoCriarPedido> {
+      const lido = EsquemaEntradaPedido.safeParse(entrada);
+      if (!lido.success) return { ok: false, erro: "dados-invalidos" };
+      const dados = lido.data;
+      if (dados.armadilha !== "") return { ok: false, erro: "recusado" };
+
+      /* A mesma chave devolve o mesmo pedido, seja qual for o resto: é o que
+         impede um duplo clique de pagar duas vezes. */
+      const repetido = porChave.get(dados.chaveIdempotencia);
+      if (repetido) return { ok: true, pedido: repetido };
+
+      if (definicoes.pausaAte && agora.getTime() < definicoes.pausaAte.getTime()) {
+        return { ok: false, erro: "loja-em-pausa" };
+      }
+
+      const cotacao = cotar(dados.linhas);
+      if (!cotacao.valida) return { ok: false, erro: "artigo-invalido", linhas: cotacao.linhas };
+      if (cotacao.semPreco > 0) return { ok: false, erro: "sob-orcamento", linhas: cotacao.linhas };
+      if (definicoes.valorMinimoCent !== null && cotacao.totalCent < definicoes.valorMinimoCent) {
+        return { ok: false, erro: "abaixo-do-minimo-da-loja" };
+      }
+
+      /* Sem a cozinha ou sem um tempo de produção, não há calendário — e um
+         pedido sem calendário é uma promessa sem data. */
+      const produtos = dados.linhas.map((linha) => porId.get(linha.produtoId)!);
+      if (configuracao.cozinha === null || produtos.some((p) => p.tempoProducao === null)) {
+        return { ok: false, erro: "indisponivel" };
+      }
+      const cesto: ArtigoDoCesto[] = produtos.map((p) => ({ tempo: p.tempoProducao! }));
+      const levantamentoEm = new Date(dados.levantamentoEm);
+      const validacao = validarLevantamento(
+        cesto,
+        levantamentoEm,
+        agora,
+        { ...configuracao, cozinha: configuracao.cozinha },
+        ocupacaoEntre(levantamentoEm, levantamentoEm),
+      );
+      if (!validacao.ok) return { ok: false, erro: validacao.motivo };
+
+      let referencia = gerarReferencia(agora);
+      while (porReferencia.has(referencia)) referencia = gerarReferencia(agora);
+
+      const pedido: Pedido = {
+        id: randomUUID(),
+        referencia,
+        estado: "pendente",
+        criadoEm: agora,
+        levantamentoEm,
+        cliente: { ...dados.cliente, contaId },
+        linhas: dados.linhas.map((linha, i) => {
+          const produto = produtos[i];
+          const variante = produto.variantes.find((v) => v.id === linha.varianteId)!;
+          const cotada = cotacao.linhas[i];
+          return {
+            produtoId: produto.id,
+            varianteId: variante.id,
+            /* Em português: a língua do pedido ainda não está decidida
+               (`pedidos.md` não tem `locale`). */
+            nome: produto.nome.pt,
+            variante: variante.rotulo?.pt ?? null,
+            escolhas: linha.escolhas,
+            unidade: produto.unidade,
+            quantidade: linha.quantidade,
+            precoUnitarioCent: cotada.precoUnitarioCent!,
+            totalCent: cotada.totalCent!,
+            notas: linha.notas,
+          };
+        }),
+        observacoes: dados.observacoes,
+        totalCent: cotacao.totalCent,
+        /* O sinal é por produto e o modo de pagamento é por pedido; o cesto misto
+           está em aberto. Até haver sinal em algum produto, paga-se tudo. */
+        modoPagamento: "total",
+        pagoOnlineCent: 0,
+        reembolsadoCent: 0,
+        chegouTarde: false,
+        pagoEm: null,
+        impressoEm: null,
+        entregueEm: null,
+        canceladoEm: null,
+        canceladoPor: null,
+      };
+
+      pedidos.set(pedido.id, pedido);
+      porReferencia.set(referencia, pedido);
+      porChave.set(dados.chaveIdempotencia, pedido);
+      return { ok: true, pedido };
+    },
+
+    async pedidoPorReferencia(referencia) {
+      return porReferencia.get(referencia) ?? null;
+    },
+  };
+}
