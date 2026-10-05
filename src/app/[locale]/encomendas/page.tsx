@@ -6,7 +6,7 @@ import { listarProdutos } from "@/lib/dados";
 import type { Produto } from "@/lib/dados/tipos";
 import { routing, type Locale } from "@/i18n/routing";
 import { metadataDaPagina } from "@/lib/metadata";
-import { FormularioPedido } from "@/components/encomendas/FormularioPedido";
+import { IrParaCompra } from "@/components/encomendas/IrParaCompra";
 import { CartaoProduto } from "@/components/encomendas/CartaoProduto";
 import { EmentaEncomendavel } from "@/components/encomendas/EmentaEncomendavel";
 import { ListaHistorico } from "@/components/encomendas/ListaHistorico";
@@ -229,7 +229,10 @@ function Encomendas({
             </div>
           </div>
 
-          <FormularioPedido locale={locale} telefone={casa.telefone} />
+          {/* O formulário que vivia aqui passou a página própria
+              (`/encomendas/pedido`, #37): aqui fica o caminho para lá, quando
+              há o que encomendar, e o telefone ao lado, para quem prefere. */}
+          <IrParaCompra />
         </div>
       </section>
 

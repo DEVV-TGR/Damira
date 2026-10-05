@@ -344,8 +344,8 @@
       "assunto": "Order enquiry"
     },
     "formulario": {
-      "titulo": "Request a quote",
-      "texto": "Tell us what you want, for how many people, and for which day. We reply with the price and a confirmation — there is no payment on this page.",
+      "titulo": "Ordering",
+      "texto": "Add whatever you like to your order and, at the end, choose when to collect and leave your details. Or give us a call.",
       "assunto": "Order enquiry — {nome}, {data}",
       "enviar": "Send request",
       "aEnviar": "Sending…",
@@ -378,7 +378,10 @@
         "detalhe-curto": "Tell us a little more about what you need.",
         "cesto-invalido": "Something in your basket has changed or is no longer available. Please check your basket and send it again — or give us a call.",
         "consentimento": "We need this permission in order to reply to you.",
-        "vaga-indisponivel": "That time is no longer available. Please choose another."
+        "vaga-indisponivel": "That time is no longer available. Please choose another.",
+        "email-invalido": "Please enter a valid email — that's where your reference goes.",
+        "telefone-curto": "Please enter a phone number — we'll call if something needs sorting out.",
+        "nif-invalido": "The tax number has nine digits."
       },
       "sucesso": {
         "titulo": "Request sent.",
@@ -409,7 +412,7 @@
       "estimativa": "Estimate",
       "aPartirDe": "From",
       "semPreco": "Quoted on request",
-      "avisoEstimativa": "This is an estimate from list prices, not a bill. Delivery is not included and the final figure comes with our reply.",
+      "avisoEstimativa": "This is an estimate at list prices. We'll confirm the amount with you once you send the order.",
       "avisoOrcamento": "Some items have no list price. The final figure comes with our reply.",
       "passos": {
         "leva": "What you want",
@@ -454,11 +457,33 @@
       "legenda": "What the colours mean",
       "afluencia": {
         "livre": "Free",
-        "pouca": "Some demand",
-        "media": "Busy",
+        "media": "Some demand",
         "muita": "Very busy",
         "cheia": "Full"
-      }
+      },
+      "escolhidoAConfirmar": "Preferred time: {quando}. We'll confirm it with you.",
+      "escolhaAConfirmar": "Choose the day and time you'd like to collect — we'll confirm it with you."
+    },
+    "compra": {
+      "titulo": "Complete your order",
+      "intro": "Choose when you'll collect, leave your details and send. We'll reply to confirm.",
+      "quando": "When you'll collect",
+      "dados": "Your details",
+      "resumo": "Your order",
+      "alterar": "Change the order",
+      "precoMudou": "The price has changed: it was {antes}, now {agora}.",
+      "sobOrcamento": "Priced on request — we'll tell you the amount.",
+      "semPagamento": "There's no online payment yet: once you send it, we'll confirm the amount and the time with you.",
+      "nif": "Tax number (optional)",
+      "nifAjuda": "Only if you need an invoice with your tax number.",
+      "observacoes": "Notes (optional)",
+      "observacoesDica": "Allergies, the name to write on the cake, the ribbon colour…",
+      "telefoneAjuda": "We only call if something needs sorting out.",
+      "vazio": "Your order is empty.",
+      "vazioTexto": "Add whatever you like from the orders or the menu, then come back here.",
+      "irEncomendas": "See the orders",
+      "rever": "Review and order",
+      "reverTexto": "You already have items in your order. Choose the collection time and your details in the next step."
     }
   },
   "bolos": {
@@ -590,6 +615,6 @@
   },
   "modoTeste": {
     "etiqueta": "Test mode",
-    "aviso": "Nothing is charged and pick-up times are examples."
+    "aviso": "Nothing is charged, and the pick-up times and booked slots are examples."
   }
 }
