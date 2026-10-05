@@ -170,9 +170,9 @@ export type DadosDaCasa = {
   ordem: OrdemEmenta;
 };
 
-export function casaParaLinha({ configuracao, definicoes, ordem }: DadosDaCasa) {
+/** As colunas que a gerente grava na secção Horários (`EsquemaHorarios`). */
+export function colunasDosHorarios(configuracao: ConfiguracaoDaCasa) {
   return {
-    id: 1,
     horarioLoja: configuracao.loja,
     horarioCozinha: configuracao.cozinha,
     diasFechados: [...configuracao.diasFechados],
@@ -181,9 +181,27 @@ export function casaParaLinha({ configuracao, definicoes, ordem }: DadosDaCasa) 
     diasAFrente: configuracao.diasAFrente,
     limiarLivre: configuracao.limiaresAfluencia.livre,
     limiarMedia: configuracao.limiaresAfluencia.media,
+  } satisfies Partial<typeof casa.$inferInsert>;
+}
+
+/**
+ * As colunas que a gerente grava em Definições (`EsquemaDefinicoes`). ⚠️ Sem a
+ * pausa, que tem função própria (`pausarLoja`): gravar o valor mínimo não pode
+ * reabrir uma loja que o balcão acabou de pausar.
+ */
+export function colunasDasDefinicoes(definicoes: Omit<DefinicoesLoja, "pausaAte">) {
+  return {
     aceitarCancelamentosSite: definicoes.aceitarCancelamentosSite,
     devolverSinalAoCancelar: definicoes.devolverSinalAoCancelar,
     valorMinimoCent: definicoes.valorMinimoCent,
+  } satisfies Partial<typeof casa.$inferInsert>;
+}
+
+export function casaParaLinha({ configuracao, definicoes, ordem }: DadosDaCasa) {
+  return {
+    id: 1,
+    ...colunasDosHorarios(configuracao),
+    ...colunasDasDefinicoes(definicoes),
     pausaAte: definicoes.pausaAte,
     ordemEmenta: ordem,
   } satisfies typeof casa.$inferInsert;

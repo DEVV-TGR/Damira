@@ -1,18 +1,23 @@
 import { and, eq, inArray, like, or, sql } from "drizzle-orm";
 import {
+  colunasDasDefinicoes,
+  colunasDosHorarios,
   colunasEditaveis,
   lerCasa,
   lerProdutos,
+  linhaParaCasa,
   produtoParaLinhas,
   type BaseDeDados,
   type DadosDaCasa,
 } from "@/db/catalogo";
-import { produtos, variantes } from "@/db/esquema";
+import { casa as tabelaCasa, produtos, variantes } from "@/db/esquema";
 import type { ExecutarLote } from "@/db/lote";
 import { diaDeLisboa } from "@/lib/painel";
 import { comIds, cotarLinhas, emId, invalido, livre, naoExiste } from "./regras";
 import {
+  EsquemaDefinicoes,
   EsquemaEntradaProduto,
+  EsquemaHorarios,
   EsquemaLinhaCesto,
   EsquemaProduto,
   type FonteDeDados,
@@ -53,6 +58,10 @@ export type FonteBd = Pick<
   | "arquivarProduto"
   | "marcarEsgotadoHoje"
   | "tirarDeVenda"
+  // O painel: a casa.
+  | "guardarHorarios"
+  | "guardarDefinicoes"
+  | "pausarLoja"
 >;
 
 /* Um id já usado por outro produto: o Postgres chama-lhe 23505. Vem como causa
@@ -96,6 +105,14 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
       );
     }
     return lida;
+  };
+
+  /* A casa muda-se numa instrução só, que devolve a linha já mudada. Sem linha,
+     a base de dados não foi importada — o mesmo erro das leituras. */
+  const mudarCasa = async (mudanca: Partial<typeof tabelaCasa.$inferInsert>): Promise<DadosDaCasa> => {
+    const [linha] = await db.update(tabelaCasa).set(mudanca).where(eq(tabelaCasa.id, 1)).returning();
+    if (!linha) return casa();
+    return linhaParaCasa(linha);
   };
 
   return {
@@ -229,6 +246,30 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
 
     async tirarDeVenda(id, fora) {
       return mudar(id, fora, "foraDeVenda", { foraDeVenda: fora });
+    },
+
+    // ——— O painel: a casa ———
+
+    async guardarHorarios(entrada) {
+      /* O mesmo esquema que valida a casa ao ler: o que se grava é o que se lê. */
+      const lido = EsquemaHorarios.safeParse(entrada);
+      if (!lido.success) return invalido(lido.error);
+      return { ok: true, valor: (await mudarCasa(colunasDosHorarios(lido.data))).configuracao };
+    },
+
+    async guardarDefinicoes(entrada) {
+      const lido = EsquemaDefinicoes.safeParse(entrada);
+      if (!lido.success) return invalido(lido.error);
+      return { ok: true, valor: (await mudarCasa(colunasDasDefinicoes(lido.data))).definicoes };
+    },
+
+    async pausarLoja(ate, { agora }) {
+      /* Uma pausa que já acabou não é pausa: é um relógio errado algures. E o
+         que vem do browser pode nem ser uma data. */
+      if (ate !== null && (!(ate instanceof Date) || Number.isNaN(ate.getTime()) || ate.getTime() <= agora.getTime())) {
+        return { ok: false, erro: "dados-invalidos", campos: ["pausaAte"] };
+      }
+      return { ok: true, valor: (await mudarCasa({ pausaAte: ate })).definicoes };
     },
   };
 }
