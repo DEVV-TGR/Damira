@@ -1,4 +1,3 @@
-import type { z } from "zod";
 import { validarLevantamento, type VagaOcupada } from "@/lib/horarios";
 import { avisosDosPedidos, diaDeLisboa, faltaPagarCent, porDevolverCent } from "@/lib/painel";
 import {
@@ -16,6 +15,7 @@ import {
   type Produto,
   type ResultadoPainel,
 } from "./tipos";
+import { comIds, emId, invalido, livre, naoExiste } from "./regras";
 
 /**
  * # O painel sobre os JSON — em memória, como os pedidos
@@ -45,59 +45,11 @@ export type EstadoJson = {
   versao: number;
 };
 
-const invalido = (erro: z.ZodError): ResultadoPainel<never> => ({
-  ok: false,
-  erro: "dados-invalidos",
-  campos: [...new Set(erro.issues.flatMap((issue) => (issue.path.length > 0 ? [String(issue.path[0])] : [])))],
-});
-
-const naoExiste: ResultadoPainel<never> = { ok: false, erro: "nao-existe" };
-
-/* «Bolo de Bolacha» → `bolo-de-bolacha`. Os acentos saem, porque o id vai no
-   URL e um `pão` partilhado por mensagem chega como `p%C3%A3o`. */
-const emId = (texto: string): string =>
-  texto
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60)
-    .replace(/-+$/, "");
-
-/* O primeiro livre de `base`, `base-2`, `base-3`… */
-const livre = (base: string, ocupados: (id: string) => boolean): string => {
-  if (!ocupados(base)) return base;
-  let n = 2;
-  while (ocupados(`${base}-${n}`)) n++;
-  return `${base}-${n}`;
-};
-
-type EntradaLida = z.output<typeof EsquemaEntradaProduto>;
-
 /* «Márcia», «marcia» e «MARCIA» são a mesma pessoa ao telefone. */
 const paraProcura = (texto: string) =>
   texto.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 
 const CINCO_MINUTOS = 5 * 60_000;
-
-/* Uma variante nova ganha id a partir do que a distingue: o número de pessoas,
-   o rótulo, ou `unica` se for a única. As que já tinham id guardam-no. */
-const comIds = (variantes: EntradaLida["variantes"]): Produto["variantes"] => {
-  const usados = new Set(variantes.flatMap((v) => (v.id ? [v.id] : [])));
-  return variantes.map((variante) => {
-    if (variante.id) return { ...variante, id: variante.id };
-    const base =
-      variante.pessoas !== null
-        ? String(variante.pessoas)
-        : variante.rotulo
-          ? emId(variante.rotulo.pt) || "variante"
-          : "unica";
-    const id = livre(base, (candidato) => usados.has(candidato));
-    usados.add(id);
-    return { ...variante, id };
-  });
-};
 
 
 const centValido = (valor: unknown, maximo: number, podeSerZero: boolean): valor is number =>
