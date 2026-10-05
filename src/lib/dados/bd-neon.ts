@@ -1,7 +1,7 @@
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import type { BaseDeDados } from "@/db/catalogo";
-import { loteNeon } from "@/db/lote";
+import { loteNeon, type ExecutarLote } from "@/db/lote";
 import { criarFonteBd, pedidosAindaNaoGuardados } from "./bd";
 import type { FonteDeDados } from "./tipos";
 
@@ -18,9 +18,17 @@ import type { FonteDeDados } from "./tipos";
  * exemplo (`comExemplo`). Ver `docs/loja/ligar-a-neon.md`.
  */
 export function fonteDaNeon(endereco: string): FonteDeDados {
+  const { db, emLote } = baseDaNeon(endereco);
+  return { ...pedidosAindaNaoGuardados, ...criarFonteBd(db, emLote) };
+}
+
+/**
+ * A base de dados da Neon pelo driver HTTP, e a forma de gravar tudo ou nada
+ * nela. É a mesma para a fonte e para a entrada no painel
+ * (`src/lib/sessao-painel/escolher.ts`). Não abre ligação nenhuma: cada consulta
+ * é um pedido HTTP.
+ */
+export function baseDaNeon(endereco: string): { db: BaseDeDados; emLote: ExecutarLote } {
   const db = drizzle(neon(endereco));
-  return {
-    ...pedidosAindaNaoGuardados,
-    ...criarFonteBd(db as unknown as BaseDeDados, loteNeon(db)),
-  };
+  return { db: db as unknown as BaseDeDados, emLote: loteNeon(db) };
 }
