@@ -239,3 +239,122 @@ describe("arquivar, tirar de venda, esgotar hoje", () => {
     }
   });
 });
+
+describe("a casa: horários, definições e pausa", () => {
+  /* O fim de cada teste: a casa inteira, igual nas duas. */
+  async function mesmaCasa(fontes: Fontes) {
+    await igual(fontes, (f) => f.configuracaoDaCasa());
+    await igual(fontes, (f) => f.definicoesLoja());
+  }
+
+  const OITO_AS_DEZOITO = [{ abre: "08:00", fecha: "18:00" }];
+  const COZINHA = {
+    domingo: [],
+    segunda: OITO_AS_DEZOITO,
+    terca: OITO_AS_DEZOITO,
+    quarta: OITO_AS_DEZOITO,
+    quinta: OITO_AS_DEZOITO,
+    sexta: [{ abre: "08:00", fecha: "12:00" }, { abre: "14:00", fecha: "18:00" }],
+    sabado: OITO_AS_DEZOITO,
+  };
+
+  it("um horário gravado é o que a casa passa a ter", async () => {
+    const fontes = await ambas();
+    try {
+      const atual = await fontes.json.configuracaoDaCasa();
+      const novo = {
+        ...atual,
+        cozinha: COZINHA,
+        diasFechados: [{ data: "2026-12-25", fecha: "ambas" as const }],
+        limitePorVaga: 4,
+        limiaresAfluencia: { livre: 30, media: 60 },
+      };
+      const gravado = await igual(fontes, (f) => f.guardarHorarios(novo, GERENTE));
+      expect(gravado.ok && gravado.valor.cozinha?.sexta).toHaveLength(2);
+      await mesmaCasa(fontes);
+    } finally {
+      await fontes.fechar();
+    }
+  });
+
+  it.each<[string, (atual: Record<string, unknown>) => unknown]>([
+    ["um período que fecha antes de abrir", (a) => ({ ...a, cozinha: { ...COZINHA, segunda: [{ abre: "18:00", fecha: "08:00" }] } })],
+    ["dois períodos sobrepostos", (a) => ({ ...a, cozinha: { ...COZINHA, segunda: [{ abre: "08:00", fecha: "13:00" }, { abre: "12:00", fecha: "18:00" }] } })],
+    ["os degraus das cores ao contrário", (a) => ({ ...a, limiaresAfluencia: { livre: 60, media: 50 } })],
+    ["vagas de 3 minutos", (a) => ({ ...a, duracaoVagaMinutos: 3 })],
+    ["um campo a mais", (a) => ({ ...a, inventado: true })],
+  ])("recusa %s, e a casa fica como estava", async (_, estragar) => {
+    const fontes = await ambas();
+    try {
+      const atual = await fontes.json.configuracaoDaCasa();
+      const recusado = await igual(fontes, (f) => f.guardarHorarios(estragar(atual), GERENTE));
+      expect(recusado.ok).toBe(false);
+      await mesmaCasa(fontes);
+    } finally {
+      await fontes.fechar();
+    }
+  });
+
+  it("as definições gravam-se, e não mexem na pausa", async () => {
+    const fontes = await ambas();
+    try {
+      const daquiAUmaHora = new Date(AGORA.getTime() + 60 * 60_000);
+      await igual(fontes, (f) => f.pausarLoja(daquiAUmaHora, GERENTE));
+      const definicoes = { aceitarCancelamentosSite: true, devolverSinalAoCancelar: true, valorMinimoCent: 1500 };
+      const gravado = await igual(fontes, (f) => f.guardarDefinicoes(definicoes, GERENTE));
+      expect(gravado.ok && gravado.valor).toEqual({ ...definicoes, pausaAte: daquiAUmaHora });
+      await mesmaCasa(fontes);
+    } finally {
+      await fontes.fechar();
+    }
+  });
+
+  it.each<[string, unknown]>([
+    ["um valor mínimo negativo", { aceitarCancelamentosSite: false, devolverSinalAoCancelar: false, valorMinimoCent: -1 }],
+    ["um valor mínimo em euros", { aceitarCancelamentosSite: false, devolverSinalAoCancelar: false, valorMinimoCent: 15.5 }],
+    ["a pausa, que tem função própria", { aceitarCancelamentosSite: false, devolverSinalAoCancelar: false, valorMinimoCent: null, pausaAte: null }],
+  ])("recusa nas definições %s", async (_, definicoes) => {
+    const fontes = await ambas();
+    try {
+      expect((await igual(fontes, (f) => f.guardarDefinicoes(definicoes, GERENTE))).ok).toBe(false);
+      await mesmaCasa(fontes);
+    } finally {
+      await fontes.fechar();
+    }
+  });
+
+  it("pausar, retomar, e uma pausa que já acabou é recusada", async () => {
+    const fontes = await ambas();
+    try {
+      const daquiAMeiaHora = new Date(AGORA.getTime() + 30 * 60_000);
+      const pausada = await igual(fontes, (f) => f.pausarLoja(daquiAMeiaHora, GERENTE));
+      expect(pausada.ok && pausada.valor.pausaAte).toEqual(daquiAMeiaHora);
+
+      const haUmaHora = new Date(AGORA.getTime() - 60 * 60_000);
+      expect(await igual(fontes, (f) => f.pausarLoja(haUmaHora, GERENTE))).toEqual({
+        ok: false,
+        erro: "dados-invalidos",
+        campos: ["pausaAte"],
+      });
+
+      const retomada = await igual(fontes, (f) => f.pausarLoja(null, GERENTE));
+      expect(retomada.ok && retomada.valor.pausaAte).toBeNull();
+      await mesmaCasa(fontes);
+    } finally {
+      await fontes.fechar();
+    }
+  });
+  it("na base de dados, uma pausa que nem é uma data volta como dados inválidos, em vez de rebentar", async () => {
+    /* Só na base de dados: a dos JSON chama o `getTime` e rebenta. */
+    const { bd, fechar } = await ambas();
+    try {
+      expect(await bd.pausarLoja("amanhã" as unknown as Date, GERENTE)).toEqual({
+        ok: false,
+        erro: "dados-invalidos",
+        campos: ["pausaAte"],
+      });
+    } finally {
+      await fechar();
+    }
+  });
+});
