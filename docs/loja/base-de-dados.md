@@ -139,8 +139,8 @@ sem ela o calendário diz «indisponível» em vez de inventar.
 | `estado` | `text` `CHECK` dos 5 estados | `estado` |
 | `criado_em`, `levantamento_em` | `timestamptz` | iguais |
 | `pago_em`, `impresso_em`, `entregue_em`, `cancelado_em`, `reagendado_em` | `timestamptz` nulo | iguais |
-| `cliente_nome`, `cliente_email` | `text` | `cliente` |
-| `cliente_telefone`, `cliente_nif`, `conta_id` | `text` nulo | `cliente` |
+| `cliente_nome`, `cliente_email`, `cliente_telefone` | `text` | `cliente` — o telefone é obrigatório (ver «Em aberto», 5) |
+| `cliente_nif`, `conta_id` | `text` nulo | `cliente` |
 | `observacoes` | `text` nulo | `observacoes` |
 | `total_cent`, `pago_online_cent` | `integer` `>= 0` | iguais |
 | `modo_pagamento` | `text` `CHECK` (`total`, `sinal`) | `modoPagamento` |
@@ -365,3 +365,8 @@ da visita.
 3. **Pago depois de expirar sobe o limite da vaga** (acima). É a forma de o
    `marcarPago` nunca falhar; confirmar com quem o escreve. *(Gonçalo)*
 4. **PIN de 4 ou 6 dígitos** — pergunta à Damira (#25). Não muda o esquema.
+5. **O telefone do cliente é obrigatório aqui, e opcional no contrato.** A
+   página de compra (#59) exige-o, até 40 caracteres, porque é por ele que o
+   balcão liga e o talão leva-o; o `EsquemaCliente` aceita `null`, até 30. O
+   `pedidos.md` lê-se como obrigatório, e é o que esta coluna segue. Falta o
+   contrato alinhar com a página (revisão do #59). *(Gonçalo)*
