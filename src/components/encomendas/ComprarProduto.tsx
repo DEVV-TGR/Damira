@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
 import { formatarCent } from "@/lib/preco";
-import { REGRA_SIMPLES, idComNotas, quantidadeEmTexto } from "@/lib/cesto";
+import { REGRA_SIMPLES, idComEscolha, idComNotas, quantidadeEmTexto } from "@/lib/cesto";
 import type { TipoPedido } from "@/lib/pedidos";
 import type { Locale } from "@/i18n/routing";
 import { useCesto } from "./CestoProvider";
@@ -31,6 +31,7 @@ export function ComprarProduto({
   comMensagem,
   regra = REGRA_SIMPLES,
   notaDaRegra,
+  escolhas = [],
 }: {
   /** A base do `id` da linha do cesto: `festa-premium`, `ementa:nata`. */
   id: string;
@@ -58,12 +59,20 @@ export function ComprarProduto({
   regra?: { unidade: "un" | "kg"; minimo: number; passo: number };
   /** A frase do mínimo, quando há um que não seja «uma unidade». */
   notaDaRegra?: string;
+  /**
+   * Os sabores do produto. Com algum, **escolher é obrigatório** antes de
+   * juntar, e o sabor vai na linha — nunca nas observações (decidido a 05/10).
+   */
+  escolhas?: readonly string[];
 }) {
   const t = useTranslations("produto");
   const contexto = useCesto();
   const campo = useId();
 
   const [escolhido, setEscolhido] = useState(0);
+  const [sabor, setSabor] = useState<string | null>(null);
+  const [faltaSabor, setFaltaSabor] = useState(false);
+  const tc = useTranslations("encomendas.cesto");
   const [mensagem, setMensagem] = useState("");
   const [observacoes, setObservacoes] = useState("");
   /* O que se mostra depois de juntar. ⚠️ Um botão que não muda deixa a pessoa
@@ -85,11 +94,15 @@ export function ComprarProduto({
       .join("\n") || null;
 
   const juntar = () => {
+    if (escolhas.length > 0 && !sabor) {
+      setFaltaSabor(true);
+      return;
+    }
     contexto.juntar({
       ...regra,
       /* ⚠️ As notas entram no `id`: dois bolos com mensagens diferentes são duas
          linhas do pedido, e não um com quantidade dois. Ver `idComNotas`. */
-      id: idComNotas(escalao ? `${id}:${escalao.pessoas}` : id, notas),
+      id: idComNotas(idComEscolha(escalao ? `${id}:${escalao.pessoas}` : id, sabor), notas),
       produtoId,
       /* Num kit de festa a variante é o escalão, e o id dela é o número de
          pessoas — o mesmo que `@/lib/dados` lhe dá. */
@@ -100,6 +113,7 @@ export function ComprarProduto({
       precoCent: precoFinal,
       pessoas: escalao?.pessoas ?? null,
       notas,
+      escolha: sabor,
     });
     setJuntado(true);
   };
@@ -146,7 +160,44 @@ export function ComprarProduto({
         </fieldset>
       )}
 
-      <div className={escaloes.length > 0 ? "mt-6 grid gap-4" : "grid gap-4"}>
+      {escolhas.length > 0 && (
+        <fieldset className={escaloes.length > 0 ? "mt-6" : ""}>
+          <legend className="text-xs font-semibold uppercase tracking-widest text-tinta-suave">
+            {tc("escolha.rotulo")}
+          </legend>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {escolhas.map((escolha) => (
+              <label
+                key={escolha}
+                className={`premivel alvo-toque flex min-h-11 cursor-pointer items-center rounded-full border px-5 text-sm ${
+                  sabor === escolha ? "border-tijolo bg-tijolo text-papel" : "border-tinta/25 hover:bg-tinta hover:text-papel"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name={`${campo}-sabor`}
+                  checked={sabor === escolha}
+                  onChange={() => {
+                    setSabor(escolha);
+                    setFaltaSabor(false);
+                    setJuntado(false);
+                  }}
+                  className="sr-only"
+                />
+                {escolha}
+              </label>
+            ))}
+          </div>
+          <p className="mt-2 text-sm text-tinta-suave">{tc("escolha.ajuda")}</p>
+          {faltaSabor && (
+            <p role="alert" className="mt-2 text-sm font-semibold text-tijolo">
+              {tc("escolha.falta")}
+            </p>
+          )}
+        </fieldset>
+      )}
+
+      <div className={escaloes.length > 0 || escolhas.length > 0 ? "mt-6 grid gap-4" : "grid gap-4"}>
         {comMensagem && (
           <div>
             <label
