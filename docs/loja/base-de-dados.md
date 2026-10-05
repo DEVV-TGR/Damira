@@ -10,6 +10,9 @@ está por trás de `src/lib/dados/index.ts` e `src/lib/sessao-painel/index.ts` �
 **as assinaturas não mudam**. Se uma tabela daqui pedir uma assinatura diferente,
 muda primeiro o contrato, num PR revisto pelo outro (`divisao.md`).
 
+O que falta fazer e confirmar quando houver conta Neon — a região, os ramos, as
+variáveis, a ordem dos passos — está em `ligar-a-neon.md`.
+
 ## As ferramentas
 
 - **Neon**, com o driver HTTP (`@neondatabase/serverless`). Dois ramos:
