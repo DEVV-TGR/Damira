@@ -54,6 +54,7 @@ export type FonteBd = Pick<
   | "cotarCesto"
   // O painel: os produtos.
   | "produtosDoPainel"
+  | "configuracaoDoPainel"
   | "criarProduto"
   | "editarProduto"
   | "arquivarProduto"
@@ -178,6 +179,12 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
 
     async produtosDoPainel() {
       return lerProdutos(db);
+    },
+
+    /* A casa como está gravada. A camada do modo de teste (`comExemplo`) só tapa
+       o `configuracaoDaCasa` da loja, e nunca este: é o que a gerente edita. */
+    async configuracaoDoPainel() {
+      return (await casa()).configuracao;
     },
 
     async criarProduto(entrada) {
