@@ -588,8 +588,20 @@ export type AvisoAtencao =
  * chamadas que já passaram. O que vem do browser entra como `unknown`.
  */
 export type FontePainel = {
-  /** Todos, arquivados incluídos. */
+  /**
+   * Todos, arquivados incluídos. ⚠️ **Como estão gravados**: no modo de teste,
+   * os tempos de exemplo tapam o que está por preencher só nas leituras da loja,
+   * nunca aqui — senão a gerente gravava um tempo inventado como se fosse dela.
+   */
   produtosDoPainel(ctx: ContextoPainel): Promise<Produto[]>;
+  /**
+   * A configuração da casa **como está gravada** — a que a gerente vê e edita em
+   * «Horários». ⚠️ No modo de teste, o `configuracaoDaCasa` da loja tapa a
+   * cozinha e o limite que faltam com os de exemplo, para o calendário
+   * funcionar; se o painel lesse esse, a gerente gravava a cozinha de exemplo
+   * como sendo a dela. Os dois papéis leem-na.
+   */
+  configuracaoDoPainel(ctx: ContextoPainel): Promise<ConfiguracaoDaCasa>;
   criarProduto(entrada: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<Produto>>;
   editarProduto(id: string, entrada: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<Produto>>;
   arquivarProduto(id: string, arquivado: boolean, ctx: ContextoPainel): Promise<ResultadoPainel<Produto>>;

@@ -96,6 +96,13 @@ export function criarPainelJson(
   };
 
   return {
+    /* Nos JSON não há nada gravado: a configuração é a do estado em memória
+       (com os valores de exemplo dentro, no modo de teste sem base de dados —
+       e nada disso sobrevive a um arranque). */
+    async configuracaoDoPainel() {
+      return estado.configuracao;
+    },
+
     async produtosDoPainel() {
       return [...estado.porId.values()];
     },
