@@ -205,3 +205,33 @@ describe("sair", () => {
     expect(await sessao.sessaoAtual(AGORA)).toBeNull();
   });
 });
+
+describe("a gestão da equipa, na entrada provisória", () => {
+  it("lista as sessões deste aparelho — e só essas, porque são cookies", async () => {
+    const { sessao } = criar();
+    await sessao.entrarComPin("246810", CTX);
+    const pedido = await sessao.pedirCodigo("ana@example.com", CTX);
+    if (!pedido.ok || !pedido.codigoDeTeste) throw new Error("devia haver código");
+    await sessao.entrarComCodigo("ana@example.com", pedido.codigoDeTeste, false, CTX);
+    const lista = await sessao.listarSessoes(AGORA);
+    expect(lista.map((s) => [s.id, s.papel, s.esta])).toEqual([
+      ["gerente", "gerente", true],
+      ["equipa", "funcionario", true],
+    ]);
+  });
+
+  it("terminar a da gerente deixa a da equipa; uma que não existe diz que não existe", async () => {
+    const { sessao } = criar();
+    await sessao.entrarComPin("246810", CTX);
+    expect(await sessao.terminarSessao("gerente", AGORA)).toEqual({ ok: false, erro: "nao-existe" });
+    expect(await sessao.terminarSessao("equipa", AGORA)).toEqual({ ok: true });
+    expect(await sessao.sessaoAtual(AGORA)).toBeNull();
+  });
+
+  it("o PIN da entrada provisória não se muda, mas um PIN mal escrito é recusado antes", async () => {
+    const { sessao } = criar();
+    expect(await sessao.mudarPin("12", CTX)).toEqual({ ok: false, erro: "dados-invalidos" });
+    expect(await sessao.mudarPin("1234", CTX)).toEqual({ ok: false, erro: "indisponivel" });
+  });
+});
+

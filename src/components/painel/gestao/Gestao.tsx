@@ -6,6 +6,7 @@ import type { contarPorPreencher } from "@/lib/painel";
 import { Atencao } from "./Atencao";
 import { Definicoes } from "./Definicoes";
 import { DetalhePedido } from "./DetalhePedido";
+import { Equipa } from "./Equipa";
 import { Horarios } from "./Horarios";
 import { PedidosGestao } from "./PedidosGestao";
 import { Produtos } from "./Produtos";
@@ -82,18 +83,7 @@ export function Gestao({ dados }: { dados: DadosGestao }) {
         {secao === "produtos" && <Produtos produtos={dados.produtos} ordem={dados.ordem} />}
         {secao === "horarios" && <Horarios casa={dados.casa} />}
         {secao === "definicoes" && <Definicoes definicoes={dados.definicoes} />}
-        {secao === "equipa" && (
-          /* Mudar o PIN e terminar dispositivos pedem sessões na base de dados
-             (#33): com a entrada provisória, uma sessão é um cookie assinado e
-             não se termina à distância. Diz-se, em vez de um botão que não faz nada. */
-          <div className="rounded-2xl border border-tinta/15 bg-papel p-6">
-            <h3 className="titulo-display text-xl">Equipa e dispositivos</h3>
-            <p className="mt-2 text-tinta-suave">
-              Mudar o PIN da equipa e ver ou terminar os dispositivos com sessão chegam com a entrada verdadeira do
-              painel. Até lá, «Esquecer este dispositivo», no topo, termina a sessão do aparelho onde se está.
-            </p>
-          </div>
-        )}
+        {secao === "equipa" && <Equipa />}
       </div>
     </section>
   );
