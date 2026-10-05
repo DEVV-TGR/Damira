@@ -19,6 +19,8 @@ para o `.env.local` de cada um.
   (`src/db/migracoes/0000_catalogo.sql`), com 22 regras `CHECK` — #67.
 - A importação do catálogo e a comparação campo a campo com os JSON
   (`src/db/importar-catalogo.ts`, na branch `feat/importar-catalogo`) — #28.
+- As tabelas da entrada no painel — sessões, códigos da gerente, limites de
+  tentativas (`src/db/migracoes/0001_sessoes.sql`) — #33.
 - Tudo testado no PGlite, no `npm test`.
 
 ## 1. Na visita (#26): criar a conta
@@ -99,5 +101,54 @@ A casa começa a preencher os produtos no painel, e o que ela grava tem de ficar
       fica em modo de teste até 11/11, e é nesse modo que ela vai preencher
       (revisão do #57).
 - [ ] **A entrada verdadeira da gerente** (#33): o PIN da entrada provisória
-      está escrito no código, num repositório público.
+      está escrito no código, num repositório público. O que falta está no
+      ponto 8.
 - [ ] A conta Resend da Damira, para o código da gerente chegar por email (#26).
+
+## 8. A entrada no painel (#33) — o que falta
+
+Até isto estar feito, o painel no ar usa a **entrada provisória**, com o PIN
+escrito no código e o código da gerente no ecrã (`painel.md`). As tabelas já
+existem; o resto está aqui, por quem o faz.
+
+### No código (Sobral)
+
+- [ ] **A entrada verdadeira** (`src/lib/sessao-painel/bd.ts`): o PIN com *hash*
+      e 5 erros → 15 minutos bloqueado, por IP; o código da gerente por email,
+      10 minutos, uso único, com tentativas contadas; as sessões na base de
+      dados, renovadas a cada uso; sair, e «esquecer este dispositivo».
+- [ ] **O comando para definir o PIN da equipa** (`npm run painel:pin`). Ainda
+      não existe: até haver ecrã, é a única forma de pôr um PIN.
+- [ ] **Ligá-la** no `src/lib/sessao-painel/index.ts` — é a única linha que muda.
+
+### No contrato e no ecrã (Gonçalo) — ⚠️ ainda não existem
+
+A `FonteSessao` (`src/lib/sessao-painel/tipos.ts`) só tem entrar e sair, e a
+gestão diz «fica para a #33». O que o `painel.md` pede e falta:
+
+- [ ] **A gerente vê as sessões abertas** — tipo de aparelho, papel, último uso
+      — **e termina qualquer uma**. É o «revogar o tablet» da proposta: um
+      telemóvel perdido, ou alguém que saiu da casa. Proposta para o contrato:
+      `listarSessoes(ctx)` e `terminarSessao(id, ctx)`, só gerente.
+- [ ] **Mudar o PIN da equipa**, que termina todas as sessões de funcionário
+      ao mesmo tempo. Proposta: `mudarPin(pin, ctx)`, só gerente.
+
+A base de dados já está preparada para as três: a sessão tem um `id` à parte
+do *hash*, para o ecrã a poder mostrar e terminar sem o *hash* ir ao browser.
+
+### Na visita (com a Damira)
+
+- [ ] **O PIN da equipa**: ela escolhe (4 ou 6 dígitos — #25), e define-se com o
+      comando, na base de dados de produção. ⚠️ Não se escreve em lado nenhum —
+      nem em mensagens, nem aqui.
+- [ ] **O email da gerente** → `EMAILS_GERENTE` na Vercel.
+- [ ] **A conta Resend**, com o domínio dela verificado → `RESEND_API_KEY` e o
+      remetente na Vercel. É por aqui que o código da gerente chega.
+
+### Antes de ligar no ar
+
+- [ ] Sem Resend, a entrada da gerente diz que não está disponível — ⚠️ nunca
+      mostra o código no ecrã.
+- [ ] No tablet da loja: entrar com o PIN; 5 erros bloqueiam; a gerente, no
+      telemóvel, termina a sessão do tablet e ele volta a pedir o PIN.
+- [ ] A entrada provisória sai no lançamento (#55), e com ela o aviso.
