@@ -79,6 +79,20 @@ esquecerem:
    no servidor. (`painel.md`)
 9. **Um pedido pago nunca se perde e nunca se apaga.** (`pedidos.md`)
 
+### O modo de teste — e é um bloqueador de lançamento
+
+Até a casa dar o horário da cozinha e os tempos de produção, e até a conta
+Stripe dela estar verificada, a loja corre no ar em **modo de teste**:
+`LOJA_EM_TESTE=1` na Vercel liga os prazos de exemplo (`src/lib/dados/exemplo.ts`)
+e o Stripe de teste, e **uma faixa no topo de todas as páginas** diz que não se
+cobra nada e que os prazos são de exemplo (`src/components/FaixaModoTeste.tsx`).
+
+⚠️ **A faixa não se apaga** enquanto o interruptor estiver ligado — é ela que
+impede o site de afirmar um prazo que a casa não deu. E ⚠️ **desligar o
+interruptor faz parte do lançamento** (#55): sem os dados verdadeiros, o
+calendário volta a «indisponível», nunca a um prazo inventado. Lê-se no build:
+mudar o interruptor obriga a um novo deploy.
+
 ### A documentação muda no mesmo PR que o código
 
 Se um PR faz o código contradizer um ficheiro de `docs/loja/` ou uma secção deste

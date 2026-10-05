@@ -68,8 +68,9 @@ pela regra de baixo, não por dentro.
 **Onde está.** As funções estão em `src/lib/dados/index.ts` e o contrato em
 `tipos.ts` (a `FonteDeDados`). A implementação provisória é o `json.ts`, e é
 **o único ficheiro que a migração troca**. Os valores que a casa ainda não deu
-ficam `null`; os de exemplo vivem à parte, em `exemplo.ts`, e recusam-se a
-correr em produção.
+ficam `null`; os de exemplo vivem à parte, em `exemplo.ts`, e só correm no ar
+com o modo de teste ligado (`LOJA_EM_TESTE=1`, ver `src/lib/modo-teste.ts`), que
+mostra uma faixa a dizê-lo.
 
 - Mudar uma função de `src/lib/dados/`, um schema ou o esquema da base de dados
   → **PR próprio, revisto pelo outro** (o `CODEOWNERS` pede-o automaticamente).
