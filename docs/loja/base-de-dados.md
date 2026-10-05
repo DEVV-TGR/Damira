@@ -32,6 +32,14 @@ instrução depende de ler a anterior**. Nunca «ler, decidir no código, escrev
 É a mesma regra de `robustez.md` › Concorrência vista do lado do código — e é
 também o que faz o PGlite e a Neon comportarem-se igual nos testes.
 
+**O lote escreve-se uma vez, e cada driver corre-o à sua maneira**
+(`src/db/lote.ts`). A Neon por HTTP faz lotes e não faz transações; o PGlite faz
+transações e não faz lotes. Uma escrita com várias partes — um produto e as
+variantes dele — é por isso um `Lote`: uma função que devolve a lista de
+instruções. O `loteNeon` manda-a como lote; o `loteEmTransacao` corre-a numa
+transação. A fonte (`src/lib/dados/bd.ts`) recebe o executor e não sabe qual é —
+o código que os testes provam é o mesmo que corre no site.
+
 ## Convenções
 
 - Tabelas e colunas em português, `snake_case`; no TypeScript, `camelCase`.
