@@ -45,6 +45,7 @@ dela** — e o `pedidos.md`, que é o contrato de que todos dependem.
 | Talão e impressora | `impressao.md` |
 | Bolos personalizados | `bolos-personalizados.md` |
 | Concorrência, limites, erros, cache, logs, backups | `robustez.md` |
+| Base de dados: tabelas, contadores, migração | `base-de-dados.md` |
 
 ### As regras que não se negociam
 
@@ -130,8 +131,9 @@ que as torna falsas:
 
 ### Base de dados
 
-- Neon, com o driver HTTP (`@neondatabase/serverless`) e [ORM a decidir na
-  primeira chamada — proposta: Drizzle].
+- Neon, com o driver HTTP (`@neondatabase/serverless`), e Drizzle como ORM —
+  proposto em `docs/loja/base-de-dados.md`, fecha-se na revisão da #27. O
+  esquema inteiro, e porquê, está lá.
 - Tabelas e colunas em português, `snake_case` (`pedidos`, `linhas_pedido`);
   no TypeScript, `camelCase`.
 - **Alterações ao esquema vão num PR só para isso.** Nunca uma migração escondida
