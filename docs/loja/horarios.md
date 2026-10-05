@@ -112,6 +112,34 @@ são os exemplos deste ficheiro, um dia fechado, as duas mudanças de hora, um
 cesto com unidades misturadas, um pedido feito à hora de fecho e outro com a
 cozinha fechada.
 
+## O que o motor decidiu onde este ficheiro não dizia
+
+O `src/lib/horarios.ts` segue o que está acima. Onde o texto não chegava, ficou
+isto — e os testes em `horarios.test.ts` prendem cada ponto:
+
+- **O primeiro levantamento é uma vaga**, não um instante qualquer. Um pedido
+  pronto às 9h59 levanta-se às 10h00. Conta mesmo que a vaga esteja cheia: é o
+  que a cozinha consegue, não o que sobra.
+- **Os períodos abrem no início e fecham no fim, exclusive.** Pedido às 18h00
+  com a cozinha a fechar às 18h00 já não conta esse dia; pronto às 18h00 com a
+  loja aberta levanta-se às 18h00.
+- **Só vagas inteiras.** A loja que fecha às 21h00 tem a última às 20h30.
+- **Um dia pode ter vários períodos** (uma cozinha que pára ao almoço). Um dia
+  com a lista vazia está fechado.
+- **Em `dias`, o dia do levantamento conta** quando a cozinha abre nele — é a
+  leitura literal do exemplo da quinta. Para trás faz-se o mesmo: um bolo de 3
+  dias para sábado começa na quinta, à abertura da cozinha.
+- **«Esgotado hoje» tira as vagas de hoje ao cesto inteiro**, porque o pedido
+  é levantado de uma vez.
+- **O calendário vai de hoje até hoje + `diasAFrente`**, inclusive. Um artigo
+  que precisa de mais do que isso não tem vagas.
+- **Uma configuração impossível rebenta** (`RangeError`) em vez de calcular:
+  «25:00», um intervalo que fecha antes de abrir, dois períodos sobrepostos
+  (contavam horas a dobrar), dias com casas decimais.
+- ⚠️ **Os instantes devolvidos são `TZDate` de Lisboa.** O `toISOString()`
+  deles escreve `+01:00` e não `Z` — o mesmo instante, outro texto. Comparar
+  com `getTime()`, nunca com strings.
+
 ## Um só sítio para os horários
 
 O horário da loja vive hoje em `casa.json` e aparece no rodapé e nos dados

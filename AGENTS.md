@@ -137,8 +137,9 @@ O `build` é o que valida o `src/data/*.json` (via `zod`) e o que apanha erros d
 tipos — o `lint` sozinho deixa passar os dois. Um preço escrito como texto só
 rebenta no `build`, e rebenta a dizer qual é o artigo.
 
-O `npm test` (Vitest) existe a partir do PR que traz o motor de horários. Até lá,
-os dois primeiros chegam — e esse PR acrescenta o script `test` ao `package.json`.
+O `npm test` (Vitest) chegou com o motor de horários e corre de propósito num
+fuso que não é Lisboa nem UTC (`vitest.config.mts`): é a forma de um
+`getHours()` esquecido rebentar no teste e não em março, em produção.
 
 ## Língua
 
