@@ -54,6 +54,7 @@ const ERROS: Record<string, string> = {
   "sem-permissao": "A sessão do painel acabou. Voltar a entrar em /painel.",
   "na-vercel": "Pelo portátil só funciona com o site a correr no portátil, não no site publicado.",
   "ip-invalido": "O IP não é da rede da loja (tem de começar por 192.168., 10. ou 172.16–31.).",
+  "dados-invalidos": "A escolha do talão não é válida. Recarregar a página.",
   "sem-ligacao":
     "Não chegou à impressora. Confirmar o IP, que o portátil está no WiFi da loja, e que a impressora está ligada.",
   "sem-ligacao-browser":

@@ -32,7 +32,7 @@ import { linhasDeTeste, TESTES, type Teste } from "@/lib/talao-exemplo";
  * nunca XML vindo de fora.
  */
 
-export type ResultadoImpressaoTeste = RespostaImpressora | { ok: false; codigo: "sem-permissao" | "na-vercel" | "ip-invalido" | "sem-ligacao"; estado: null; detalhe?: string };
+export type ResultadoImpressaoTeste = RespostaImpressora | { ok: false; codigo: "sem-permissao" | "na-vercel" | "ip-invalido" | "dados-invalidos" | "sem-ligacao"; estado: null; detalhe?: string };
 
 export async function imprimirPeloPortatil(
   ip: string,
@@ -43,13 +43,9 @@ export async function imprimirPeloPortatil(
   const ctx = await contextoDoPainel();
   if (!ctx) return { ok: false, codigo: "sem-permissao", estado: null };
   if (process.env.VERCEL) return { ok: false, codigo: "na-vercel", estado: null };
-  if (
-    !ipDaRedeLocal(ip) ||
-    !TESTES.includes(teste) ||
-    !["bloco", "inteiro"].includes(fundo) ||
-    !["texto", "cp858"].includes(modo)
-  ) {
-    return { ok: false, codigo: "ip-invalido", estado: null };
+  if (!ipDaRedeLocal(ip)) return { ok: false, codigo: "ip-invalido", estado: null };
+  if (!TESTES.includes(teste) || !["bloco", "inteiro"].includes(fundo) || !["texto", "cp858"].includes(modo)) {
+    return { ok: false, codigo: "dados-invalidos", estado: null };
   }
 
   const xml = emEposPrint(linhasDeTeste(teste, fundo, ctx.agora), modo);

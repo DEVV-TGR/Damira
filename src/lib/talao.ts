@@ -1,4 +1,5 @@
 import type { Pedido } from "@/lib/dados/tipos";
+import { FUSO } from "@/lib/horarios";
 import { diaDeLisboa, diaPorExtenso, rotuloPagamento } from "@/lib/painel";
 import { horaDeLisboa } from "@/lib/painel-ligacao";
 import { formatarCent } from "@/lib/preco";
@@ -130,8 +131,8 @@ class Composicao {
   }
 }
 
-const DIA_DA_SEMANA = new Intl.DateTimeFormat("pt-PT", { weekday: "long", timeZone: "Europe/Lisbon" });
-const DATA_CURTA = new Intl.DateTimeFormat("pt-PT", { day: "2-digit", month: "2-digit", timeZone: "Europe/Lisbon" });
+const DIA_DA_SEMANA = new Intl.DateTimeFormat("pt-PT", { weekday: "long", timeZone: FUSO });
+const DATA_CURTA = new Intl.DateTimeFormat("pt-PT", { day: "2-digit", month: "2-digit", timeZone: FUSO });
 
 /** «QUINTA», «SÁBADO» — o «-feira» não cabe na faixa em letra grande. */
 const diaDaSemanaCurto = (instante: Date): string => DIA_DA_SEMANA.format(instante).split("-")[0].toUpperCase();
