@@ -74,8 +74,14 @@ LOJA_EM_TESTE=1 npx next start -H 0.0.0.0 -p 4500
 ```
 
 No portátil abre-se `http://localhost:4500/painel`; no tablet,
-`http://<IP do portátil>:4500/painel` (o `next start` mostra-o em «Network»).
-Entra-se com o PIN provisório, e depois vai-se a `/painel/talao`.
+`http://<IP do portátil>:4500/painel`. O `next start` escreve `0.0.0.0` em
+«Network», que não serve: o IP do portátil sai de `ipconfig getifaddr en0`.
+Entra-se com o PIN provisório, e depois vai-se a `/painel/talao` — a página
+não tem link no painel, escreve-se o endereço.
+
+⚠️ **Sem o `LOJA_EM_TESTE=1` no build, não há botões.** O painel diz que a
+entrada ainda não está ligada, e a página do talão volta para lá. O terminal
+do `next start` tem de ficar aberto: fechá-lo desliga o site.
 
 Dois botões, dois caminhos:
 
