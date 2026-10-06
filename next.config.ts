@@ -73,6 +73,17 @@ const CSP = [
   "object-src 'none'",
 ].join("; ");
 
+/**
+ * A página de teste da impressora (`/painel/talao`) é a única que fala com
+ * outro endereço: o browser manda o talão direto ao IP da impressora, em
+ * http://, que é como o tablet imprime se a loja tiver a TM-m30II base
+ * (`impressao.md`). Com o `connect-src 'self'` o pedido nem sai. Os IPs da loja
+ * não se conhecem aqui, e o CSP não aceita intervalos de IPs, por isso abre-se
+ * a qualquer `http:`/`https:` — só nesta página, que está atrás da entrada do
+ * painel e não mostra conteúdo de ninguém.
+ */
+const CSP_TESTE_IMPRESSORA = CSP.replace("connect-src 'self'", "connect-src 'self' http: https:");
+
 const CABECALHOS = [
   { key: "Content-Security-Policy", value: CSP },
   /* Impede o browser de adivinhar o tipo de um ficheiro em vez de acreditar no
@@ -105,7 +116,11 @@ const CABECALHOS = [
  */
 const nextConfig: NextConfig = {
   async headers() {
-    return [{ source: "/:caminho*", headers: CABECALHOS }];
+    return [
+      { source: "/:caminho*", headers: CABECALHOS },
+      /* Depois da geral: com a mesma chave, ganha a última. */
+      { source: "/painel/talao", headers: [{ key: "Content-Security-Policy", value: CSP_TESTE_IMPRESSORA }] },
+    ];
   },
 };
 
