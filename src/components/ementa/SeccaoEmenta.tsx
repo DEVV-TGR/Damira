@@ -52,30 +52,43 @@ export function SeccaoEmenta({
       aria-labelledby={`titulo-${ancora}`}
       className="relative scroll-mt-[5rem] py-[clamp(2rem,4vw,3.5rem)]"
     >
-      <div className="envolvente relative">
-        {/* ⚠️ **Aqui esteve um "01", "02", "03" antes do título**, e saiu porque
-            não numerava nada: a contagem reinicia em cada carta, por isso a
-            mesma página mostrava quatro secções "02" — uma por carta. Um número
-            que se repete não serve para referir ("vê no 02" não diz qual), e
-            estava `aria-hidden`, ou seja, já assumido como não-informação.
+      {/* ⚠️ **O título fica colado por baixo da barra da ementa** enquanto se
+          rola pela secção (#85): são noventa e cinco artigos, e a meio dos
+          doces não se sabia se eram os da casa ou os vegan sem voltar atrás.
 
-            O que ancora a secção é o filete por baixo do título. Passou a
-            **tijolo** e ganhou a contagem ao lado: são duas coisas pequenas que
-            dão à página o que ela não tinha — cor no corpo, e a dimensão de cada
-            secção antes de se começar a ler. */}
-        <div className="flex items-baseline gap-4 border-b-2 border-tijolo pb-3">
-          <h2
-            id={`titulo-${ancora}`}
-            className="titulo-display titulo-gama uppercase"
-            style={{ fontVariationSettings: '"wdth" 70, "opsz" 40' }}
-          >
-            {t(`categorias.${categoria}`)}
-          </h2>
-          <span className="ml-auto shrink-0 text-xs tabular-nums uppercase tracking-widest text-tinta-suave">
-            {t("quantosArtigos", { n: artigos.length })}
-          </span>
+          Ocupa a largura toda, com a `.envolvente` por dentro, para o fundo
+          sólido tapar os artigos que lhe passam por baixo; e o `-mt-3 pt-3` dá
+          ar entre o título e a barra quando está colado sem mexer um pixel na
+          página quando não está. Ver `.titulo-fixo-ementa` no `globals.css`. */}
+      <div className="titulo-fixo-ementa -mt-3 bg-papel pt-3">
+        <div className="envolvente">
+          {/* ⚠️ **Aqui esteve um "01", "02", "03" antes do título**, e saiu
+              porque não numerava nada: a contagem reinicia em cada carta, por
+              isso a mesma página mostrava quatro secções "02" — uma por carta.
+              Um número que se repete não serve para referir ("vê no 02" não diz
+              qual), e estava `aria-hidden`, ou seja, já assumido como
+              não-informação.
+
+              O que ancora a secção é o filete por baixo do título. Passou a
+              **tijolo** e ganhou a contagem ao lado: são duas coisas pequenas
+              que dão à página o que ela não tinha — cor no corpo, e a dimensão
+              de cada secção antes de se começar a ler. */}
+          <div className="flex items-baseline gap-4 border-b-2 border-tijolo pb-3">
+            <h2
+              id={`titulo-${ancora}`}
+              className="titulo-display titulo-gama uppercase"
+              style={{ fontVariationSettings: '"wdth" 70, "opsz" 40' }}
+            >
+              {t(`categorias.${categoria}`)}
+            </h2>
+            <span className="ml-auto shrink-0 text-xs tabular-nums uppercase tracking-widest text-tinta-suave">
+              {t("quantosArtigos", { n: artigos.length })}
+            </span>
+          </div>
         </div>
+      </div>
 
+      <div className="envolvente relative">
         {categoria === "bebidas" ? (
           /* Vinte e cinco bebidas em quatro grupos. Numa lista corrida ia-se do
              café ao milkshake sem perceber onde acabou um e começou o outro.

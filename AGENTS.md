@@ -539,6 +539,12 @@ primeiras sete vieram do Santo Burga e continuam a valer — o motor é o mesmo.
     versões do cabeçalho.** Para forjar uma sessão em local, ver a nota do
     `usePorPessoa` e usar o `encode` do `@auth/core/jwt` com o `AUTH_SECRET` e o
     sal `authjs.session-token`.
+22. **O `id` de uma âncora nunca vai num elemento `position: sticky`.** Saltar
+    para um elemento fixo leva ao sítio onde ele **está preso agora** — que,
+    depois de se ter rolado por ele, é o fim da secção e não o princípio. Desde
+    os títulos fixos da `/encomendas` (#85) os `id` vivem nas `<section>`, e o
+    título que fica preso tem um `id` à parte (`da-ementa-titulo`) só para o
+    `aria-labelledby`.
 
 O que todas têm em comum: `npm run build` passa, o `lint` passa, e só se apanham
 a olhar. **Depois de mexer em desenho, tirar capturas** — há Chromium do

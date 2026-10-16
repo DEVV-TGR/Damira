@@ -10,6 +10,8 @@ import { IrParaCompra } from "@/components/encomendas/IrParaCompra";
 import { CartaoProduto } from "@/components/encomendas/CartaoProduto";
 import { EmentaEncomendavel } from "@/components/encomendas/EmentaEncomendavel";
 import { ListaHistorico } from "@/components/encomendas/ListaHistorico";
+import { SeccoesMinimizaveis } from "@/components/encomendas/SeccoesMinimizaveis";
+import { TituloDaSeccao } from "@/components/encomendas/TituloDaSeccao";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -190,7 +192,7 @@ function Encomendas({
       <EmentaEncomendavel artigos={daEmenta} locale={locale} />
 
       {/* ── Como encomendar ──────────────────────────────────────────── */}
-      <section id="pedido" aria-labelledby="como" className="scroll-mt-24 seccao bg-tinta text-papel">
+      <section id="pedido" aria-labelledby="como" className="ancora-rente seccao bg-tinta text-papel">
         <div className="envolvente grid gap-12 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-20">
           <div>
             <h2 id="como" className="titulo-display titulo-beta max-w-[12ch]">
@@ -236,6 +238,9 @@ function Encomendas({
         </div>
       </section>
 
+      {/* Abrir a secção a que se salta, e não perder o sítio ao fechar uma a
+          meio. Não desenha nada. */}
+      <SeccoesMinimizaveis />
     </>
   );
 }
@@ -269,20 +274,28 @@ function Familia({
     <section
       id={id}
       aria-labelledby={`${id}-titulo`}
-      className={`scroll-mt-20 seccao ${fundo === "claro" ? "bg-papel-fundo" : ""}`}
+      className={`ancora-rente seccao seccao-minimizavel ${fundo === "claro" ? "bg-papel-fundo" : ""}`}
     >
-      <div className="envolvente">
-        <h2 id={`${id}-titulo`} className="titulo-display titulo-beta max-w-[16ch]">
-          {titulo}
-        </h2>
-        <p className="mt-4 max-w-[52ch] text-tinta-suave">{texto}</p>
+      <details open data-seccao className="group/seccao">
+        <TituloDaSeccao
+          id={`${id}-titulo`}
+          titulo={titulo}
+          fundo={fundo === "claro" ? "bg-papel-fundo" : "bg-papel"}
+        />
 
-        <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {produtos.map((produto) => (
-            <CartaoProduto key={produto.id} produto={produto} locale={locale} />
-          ))}
-        </ul>
-      </div>
+        <div className="envolvente">
+          <p className="mt-1 max-w-[52ch] text-tinta-suave">{texto}</p>
+
+          {/* ⚠️ `items-stretch` é o de origem da grelha, e é ele que iguala os
+              cartões de uma linha (#83): cada `<li>` estica até à mais alta e o
+              cartão enche-a com `h-full`. Um `items-start` aqui desfazia-o. */}
+          <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {produtos.map((produto) => (
+              <CartaoProduto key={produto.id} produto={produto} locale={locale} />
+            ))}
+          </ul>
+        </div>
+      </details>
     </section>
   );
 }

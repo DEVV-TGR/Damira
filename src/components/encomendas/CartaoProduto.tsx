@@ -22,6 +22,22 @@ import { FotoProduto } from "./FotoProduto";
  * botão de juntar num cartão sem essas escolhas punha no cesto uma versão do
  * produto que ninguém configurou.
  *
+ * ## ⚠️ Todos os cartões de uma linha têm a mesma altura (#83)
+ *
+ * Um nome de duas linhas ao lado de um de uma, ou um kit com frase ao lado de
+ * uma box sem ela, davam cartões em degrau, com o preço a uma altura diferente
+ * em cada um — e a comparação que a grelha existe para facilitar passava a ser
+ * um exercício de leitura. Três peças, e as três fazem falta:
+ *
+ * 1. **o cartão estica**: o `<li>` estica até à altura da linha (é o que a
+ *    grelha faz de origem) e a ligação enche-o com `h-full`;
+ * 2. **a fotografia tem proporção fixa**, 4/3 — ⚠️ e não quadrada: num cartão, a
+ *    altura de uma imagem quadrada **é** a largura da coluna (armadilha 18);
+ * 3. **o nome e a frase têm um máximo de linhas** (`line-clamp`), e o preço e o
+ *    «ver» encostam-se ao fundo com `mt-auto`. O texto cortado continua inteiro
+ *    na página do produto, que é para onde o cartão leva, e inteiro para o
+ *    leitor de ecrã, que lê o DOM e não o recorte.
+ *
  * ## `desde` nos kits de festa
  *
  * ⚠️ Um kit de festa não tem um preço, tem três — 20, 40 ou 70 pessoas. Escrever
@@ -41,7 +57,7 @@ export function CartaoProduto({
   const resumo = descricaoDe(produto, locale);
 
   return (
-    <li className="group">
+    <li className="group h-full">
       <Link
         href={caminhoDoProduto(produto.id)}
         className="flex h-full flex-col rounded-2xl border border-tinta/15 bg-papel p-4 transition-colors hover:border-tijolo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tijolo"
@@ -49,7 +65,7 @@ export function CartaoProduto({
         <FotoProduto foto={fotoDe(produto)} alt="" />
 
         <div className="mt-4 flex items-start justify-between gap-3">
-          <h3 className="titulo-display titulo-gama group-hover:text-tijolo">
+          <h3 className="titulo-display titulo-gama line-clamp-2 min-w-0 group-hover:text-tijolo">
             {nome}
           </h3>
           {produto.vegan && (
@@ -60,29 +76,33 @@ export function CartaoProduto({
         </div>
 
         {resumo && (
-          <p className="mt-2 text-sm text-tinta-suave">{resumo}</p>
+          <p className="mt-2 line-clamp-3 text-sm text-tinta-suave">{resumo}</p>
         )}
 
-        <p className="titulo-display mt-auto pt-5 text-2xl tabular-nums text-tijolo">
-          {preco === null ? (
-            <span className="text-base normal-case tracking-normal">
-              {t("sobOrcamento")}
-            </span>
-          ) : (
-            <>
-              {produto.familia === "festa" && (
-                <span className="mr-1.5 text-sm text-tinta-suave">
-                  {t("desde")}
-                </span>
-              )}
-              {formatarCent(preco, locale)}
-            </>
-          )}
-        </p>
+        {/* O preço e o «ver» num bloco só, encostado ao fundo: com o `mt-auto`
+            no preço e o «ver» solto por baixo, os dois iam juntos por acaso. */}
+        <div className="mt-auto pt-5">
+          <p className="titulo-display text-2xl tabular-nums text-tijolo">
+            {preco === null ? (
+              <span className="text-base normal-case tracking-normal">
+                {t("sobOrcamento")}
+              </span>
+            ) : (
+              <>
+                {produto.familia === "festa" && (
+                  <span className="mr-1.5 text-sm text-tinta-suave">
+                    {t("desde")}
+                  </span>
+                )}
+                {formatarCent(preco, locale)}
+              </>
+            )}
+          </p>
 
-        <span className="mt-3 text-xs font-semibold uppercase tracking-widest text-tijolo underline underline-offset-4">
-          {t("ver")}
-        </span>
+          <span className="mt-3 inline-block text-xs font-semibold uppercase tracking-widest text-tijolo underline underline-offset-4">
+            {t("ver")}
+          </span>
+        </div>
       </Link>
     </li>
   );
