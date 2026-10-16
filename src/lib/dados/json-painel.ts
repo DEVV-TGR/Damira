@@ -144,6 +144,17 @@ export function criarPainelJson(
     return { ok: true, valor: novo };
   };
 
+  /* ⚠️ Uma categoria que não está na ordem (#87) ficava órfã: fora da `/ementa`,
+     que só mostra as categorias da ordem, e sem a gerente a poder lá pôr, porque
+     a ordem só aceita uma permutação das que existem. Recusa-se à entrada. */
+  const foraDaOrdem = (categoria: string | null) =>
+    categoria !== null && !estado.ordem.categorias.includes(categoria);
+  const categoriaDesconhecida: ResultadoPainel<never> = {
+    ok: false,
+    erro: "dados-invalidos",
+    campos: ["categoria"],
+  };
+
   return {
     async produtosDoPainel() {
       return [...estado.porId.values()];
@@ -152,6 +163,7 @@ export function criarPainelJson(
     async criarProduto(entrada) {
       const lido = EsquemaEntradaProduto.safeParse(entrada);
       if (!lido.success) return invalido(lido.error);
+      if (foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
       const id = livre(emId(lido.data.nome.pt) || "produto", (candidato) => estado.porId.has(candidato));
       const produto = EsquemaProduto.parse({
         ...lido.data,
@@ -170,6 +182,7 @@ export function criarPainelJson(
       if (!atual) return naoExiste;
       const lido = EsquemaEntradaProduto.safeParse(entrada);
       if (!lido.success) return invalido(lido.error);
+      if (foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
       /* Um id de variante que o produto não tem não se aceita: era o browser a
          inventar ids, e são eles que os cestos guardam. Uma variante que falte
          na entrada sai — um cesto que a tinha passa a «variante desconhecida». */

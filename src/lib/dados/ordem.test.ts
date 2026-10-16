@@ -94,6 +94,45 @@ describe("a ordem das categorias, como a gerente a deixa", () => {
     lida.categorias.reverse();
     expect((await f.ordemDaEmenta()).categorias).toEqual(DO_IMPRESSO);
   });
+  it("um artigo não entra com uma categoria que não está na ordem — ficava órfão, fora da ementa", async () => {
+    const f = fonte();
+    const sopa = (categoria: string) => ({
+      origem: "ementa",
+      familia: "ementa",
+      nome: { pt: "Sopa do Dia", en: null },
+      descricao: null,
+      carta: "casa",
+      categoria,
+      subcategoria: null,
+      unidade: "un",
+      variantes: [{ rotulo: null, pessoas: null, precoCent: 300, composicao: [] }],
+      escolhas: [],
+      tempoProducao: { unidade: "horas", valor: 2 },
+      quantidadeMinima: 1,
+      multiplo: 1,
+      aVendaOnline: false,
+      apareceNaEmenta: true,
+      alergenios: null,
+      vegan: false,
+      semGluten: false,
+      fotos: [],
+      sinalPercent: null,
+      limite: null,
+    });
+    expect(await f.criarProduto(sopa("sopas"), GERENTE)).toEqual({
+      ok: false,
+      erro: "dados-invalidos",
+      campos: ["categoria"],
+    });
+    const criado = await f.criarProduto(sopa("pratos"), GERENTE);
+    expect(criado.ok).toBe(true);
+    if (!criado.ok) return;
+    expect(await f.editarProduto(criado.valor.id, sopa("sopas"), GERENTE)).toEqual({
+      ok: false,
+      erro: "dados-invalidos",
+      campos: ["categoria"],
+    });
+  });
 });
 
 describe("a loja recebe os produtos já pela ordem", () => {

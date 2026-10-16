@@ -677,9 +677,12 @@ export type FonteDeDados = FonteLoja & FontePainel;
 
 export type FonteLoja = {
   /**
-   * Por qualquer ordem: **quem ordena é o `index.ts`** (#87), com a ordem das
-   * categorias e os nomes por ordem alfabética (`src/lib/ordenar.ts`). Assim a
-   * base de dados não precisa de saber ordenar português.
+   * **Pela ordem do catálogo** (a `posicao`), que é a dos kits, dos bolos e das
+   * boxes. O `index.ts` reordena só os artigos com carta e categoria (#87): as
+   * categorias pela ordem da gerente e os nomes por ordem alfabética
+   * (`src/lib/ordenar.ts`). A base de dados não precisa de saber ordenar
+   * português, mas ⚠️ **não pode deixar cair o `ORDER BY posicao`**: sem ele, os
+   * kits trocam de lugar na `/encomendas` ao sabor do Postgres.
    */
   listarProdutos(filtro?: FiltroProdutos): Promise<Produto[]>;
   produtoPorId(id: string): Promise<Produto | null>;

@@ -79,9 +79,11 @@ export function OrdemCategorias({
         setGravada(resultado.valor.categorias);
         setRascunho(resultado.valor.categorias);
         setMensagem({ ok: true, texto: "Gravado. A ementa e as encomendas já mostram esta ordem." });
+        setAnuncio("Gravado. A ementa e as encomendas já mostram esta ordem.");
         router.refresh();
       } else {
         setMensagem({ ok: false, texto: MENSAGENS[resultado.erro] });
+        setAnuncio(MENSAGENS[resultado.erro]);
       }
     });
 
@@ -159,7 +161,9 @@ export function OrdemCategorias({
           </button>
         )}
         {mensagem ? (
-          <p role="status" className={`font-semibold ${mensagem.ok ? "" : "text-tijolo"}`}>
+          /* Sem `role`: quem anuncia é a região de cima, sempre montada — uma
+             região viva que nasce já com texto muitas vezes não se ouve. */
+          <p className={`font-semibold ${mensagem.ok ? "" : "text-tijolo"}`}>
             {mensagem.texto}
           </p>
         ) : (
