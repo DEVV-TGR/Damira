@@ -62,9 +62,15 @@
    páginas do sítio, e continua a apanhar o salto de teclado.
 
    O `:has()` prende isto à homepage. Nas outras duas páginas a barra continua
-   colada, que é o que lá faz sentido. */
+   colada, que é o que lá faz sentido.
+
+   ⚠️ `relative` e não `static` (#82): o menu do «Encomendas» abre para fora da
+   barra, e num elemento estático o `z-50` não conta — o painel ficava por
+   baixo da capa, que vem depois no DOM, e o toque caía nela. `relative`
+   continua sem colar e dá ao menu um bloco de contenção garantido, também
+   quando o `prefers-reduced-transparency` tira o `backdrop-filter`. */
 body:has(.cartaz) .barra-vidro {
-  position: static;
+  position: relative;
 }
 
 /* ------------------------------------------------------- os oito capítulos --

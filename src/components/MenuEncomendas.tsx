@@ -148,6 +148,11 @@ export function MenuEncomendas({ actual }: { actual: boolean }) {
         type="button"
         aria-expanded={aberto}
         aria-controls={idPainel}
+        /* O link antigo dizia que esta era a página atual, e o `aria-current` é
+           a metade disso que um leitor de ecrã ouve. ⚠️ Sem JavaScript o botão
+           não abre nada: aceita-se, porque o cesto e a compra também precisam
+           dele, e a página das encomendas continua a um link do rodapé. */
+        aria-current={actual ? "page" : undefined}
         onClick={() => setAbertoEm(aberto ? null : caminho)}
         /* `py-3.5` como o link da ementa ao lado: 45 px de alvo dentro da barra
            de altura fixa, sem mexer num píxel do desenho. */

@@ -25,13 +25,17 @@ import { Link, useRouter } from "@/i18n/navigation";
  * Lê-se no clique e não ao montar: o histórico muda depois da montagem, e
  * a resposta só interessa no instante em que alguém a pede.
  */
+const semLingua = (caminho: string) => caminho.replace(/^\/en(?=\/|$)/, "") || "/";
+
 function haPaginaDoSiteAtras(): boolean {
   if (window.history.length <= 1) return false;
 
   const [carga] = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
   if (carga) {
     try {
-      if (new URL(carga.name).pathname !== window.location.pathname) return true;
+      /* Sem o prefixo da língua: trocar de língua também navega, e uma página
+         em inglês por cima da mesma em português não é «uma página atrás». */
+      if (semLingua(new URL(carga.name).pathname) !== semLingua(window.location.pathname)) return true;
     } catch {
       /* Um `name` que não é URL não decide nada: segue para o `referrer`. */
     }
