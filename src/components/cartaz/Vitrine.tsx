@@ -1,8 +1,8 @@
-import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { VitrineGrelha } from "./VitrineGrelha";
 
 /**
- * # A vitrine: treze fotografias da casa
+ * # A vitrine: catorze fotografias da casa
  *
  * ## De onde vêm, e porque são de fiar
  *
@@ -82,30 +82,19 @@ export function Vitrine() {
         <p className="cap__texto">{t("texto")}</p>
       </div>
 
-      <ul className="vitrine__grelha" data-sc-in data-sc-stagger="40">
-        {FOTOS.map((foto) => (
-          <li
-            key={foto.ficheiro}
-            className="vitrine__celula"
-            data-larga={foto.largura === 2 ? "" : undefined}
-          >
-              <Image
-                src={`/vitrine/${foto.ficheiro}.webp`}
-                alt={t(`legendas.${foto.chave}`)}
-                width={1400}
-                height={875}
-                loading="lazy"
-                /* ⚠️ 46vw e não 90vw no telemóvel: a grelha é de duas colunas, cada
-                   célula tem meio ecrã de largura, e pedir uma imagem de ecrã
-                   inteiro a 3× (1170 px) para uma célula de 170 px era
-                   descodificar catorze fotografias com quatro vezes os píxeis
-                   necessários. É o custo mais pesado que um telemóvel paga
-                   nesta página. */
-                sizes="(max-width: 48rem) 46vw, (max-width: 72rem) 45vw, 30vw"
-              />
-          </li>
-        ))}
-      </ul>
+      {/* ⚠️ **Seis à vista, e o resto atrás de um «Ver mais»** (#80, pedido
+          da casa a 12/10/2026). As catorze continuam todas aqui; só deixam
+          de estar todas abertas à chegada. O seis não é ao acaso — ver o
+          `VitrineGrelha.tsx`. */}
+      <VitrineGrelha
+        fotos={FOTOS.map((foto) => ({
+          ficheiro: foto.ficheiro,
+          alt: t(`legendas.${foto.chave}`),
+          larga: foto.largura === 2,
+        }))}
+        visiveis={6}
+        rotuloMais={t("verMais")}
+      />
 
       {/* Dizer de quem são não é cortesia: é o que distingue estas de
           fotografia de banco de imagens, que é o que este sítio recusa. */}

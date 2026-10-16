@@ -3,7 +3,11 @@ import { Link } from "@/i18n/navigation";
 import type { Produto } from "@/lib/dados/tipos";
 
 /**
- * Capítulo IV: **o raro**. É o argumento que faz alguém atravessar Ermesinde.
+ * Capítulo II: **o raro**. É o argumento que faz alguém atravessar Ermesinde.
+ *
+ * ⚠️ **Vem logo a seguir ao silêncio, e foi a casa que o pôs lá** (reunião de
+ * 12/10/2026, #79). Esteve depois dos reels, a meio da página; a casa quer que
+ * a carta vegan se veja antes de alguém desistir de rolar.
  *
  * ## O verde entra aqui, e só aqui
  *
