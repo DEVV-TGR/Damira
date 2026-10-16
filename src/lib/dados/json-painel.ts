@@ -6,12 +6,14 @@ import {
   EsquemaEntradaProduto,
   EsquemaFiltroPedidos,
   EsquemaHorarios,
+  EsquemaOrdemCategorias,
   EsquemaProduto,
   AVISOS_TRATAVEIS,
   type AvisoTratavel,
   type ConfiguracaoDaCasa,
   type DefinicoesLoja,
   type FontePainel,
+  type OrdemEmenta,
   type Pedido,
   type Produto,
   type ResultadoPainel,
@@ -38,6 +40,8 @@ export type EstadoJson = {
   porId: Map<string, Produto>;
   configuracao: ConfiguracaoDaCasa;
   definicoes: DefinicoesLoja;
+  /** A ordem da ementa; as categorias, como a gerente as deixou (#87). */
+  ordem: OrdemEmenta;
   pedidos: Map<string, Pedido>;
   /** Referência → id do pedido. */
   porReferencia: Map<string, string>;
@@ -200,6 +204,23 @@ export function criarPainelJson(
       if (!lido.success) return invalido(lido.error);
       estado.definicoes = { ...estado.definicoes, ...lido.data };
       return { ok: true, valor: estado.definicoes };
+    },
+
+    async guardarOrdemCategorias(entrada) {
+      /* Um campo só: seja o que for que falhe, é a lista que se marca. */
+      const recusada: ResultadoPainel<never> = { ok: false, erro: "dados-invalidos", campos: ["categorias"] };
+      const lido = EsquemaOrdemCategorias.safeParse(entrada);
+      if (!lido.success) return recusada;
+      /* Uma permutação das que existem, e nada mais: uma que falte saía da
+         ementa sem ninguém dar por isso, e uma inventada era uma secção vazia.
+         Criar categorias é outra conversa, e passa pelo produto. */
+      const atuais = new Set(estado.ordem.categorias);
+      const nova = lido.data.categorias;
+      if (nova.length !== atuais.size || nova.some((categoria) => !atuais.has(categoria))) return recusada;
+      /* Um objeto novo, como nos produtos: quem leu a ordem antes fica com a
+         que leu. */
+      estado.ordem = { ...estado.ordem, categorias: [...nova] };
+      return { ok: true, valor: estado.ordem };
     },
 
     async pausarLoja(ate, { agora }) {

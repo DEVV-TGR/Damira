@@ -45,9 +45,10 @@ export const CARTAS = ["casa", "fim-de-semana", "vegan", "chocolate"] as const;
 export type Carta = (typeof CARTAS)[number];
 
 /**
- * A ordem do enum **é** a ordem em que as secções saem dentro de cada carta —
- * mudar uma linha de sítio aqui muda o site. É a ordem do impresso, que já está
- * pensada: come-se pela ordem em que vem escrito.
+ * A ordem do enum é a ordem **por defeito** em que as secções saem dentro de
+ * cada carta: a do impresso, que já está pensada — come-se pela ordem em que
+ * vem escrito. Desde #87 a gerente muda-a no painel (`guardarOrdemCategorias`),
+ * e é essa que o site mostra; daqui só sai a primeira.
  *
  * Nem toda a carta usa todas: a vegan não tem bebidas, a do chocolate só tem
  * `formatos`. Uma categoria sem artigos desaparece sozinha — ver

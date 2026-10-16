@@ -46,6 +46,10 @@ export function protegerPainel(fonte: FontePainel): FontePainel {
     guardarHorarios: exigirPapel(SO_GERENTE, (entrada: unknown, ctx) => fonte.guardarHorarios(entrada, ctx)),
     guardarDefinicoes: exigirPapel(SO_GERENTE, (entrada: unknown, ctx) => fonte.guardarDefinicoes(entrada, ctx)),
     pausarLoja: exigirPapel(EQUIPA, (ate: Date | null, ctx) => fonte.pausarLoja(ate, ctx)),
+    /* Muda o site inteiro, como um preço: é da gerente (#87). */
+    guardarOrdemCategorias: exigirPapel(SO_GERENTE, (entrada: unknown, ctx) =>
+      fonte.guardarOrdemCategorias(entrada, ctx),
+    ),
     /* Os pedidos têm nomes e telefones: mesmo as leituras pedem um papel válido. */
     listarPedidos: exigirPapel(EQUIPA, (filtro: unknown, ctx) => fonte.listarPedidos(filtro, ctx)),
     pedidoDoPainel: exigirPapel(EQUIPA, (id: string, ctx) => fonte.pedidoDoPainel(id, ctx)),

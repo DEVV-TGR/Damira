@@ -377,6 +377,11 @@ export type DefinicoesLoja = {
  */
 export type OrdemEmenta = {
   cartas: string[];
+  /**
+   * **A gerente escolhe-a no painel** (#87, `guardarOrdemCategorias`). Até ela
+   * mexer, é a do impresso. Vale para a ementa e para as encomendas; dentro de
+   * cada categoria os artigos vão por ordem alfabética (`src/lib/ordenar.ts`).
+   */
   categorias: string[];
   subcategorias: string[];
 };
@@ -513,6 +518,25 @@ export const EsquemaHorarios = z
   })
   .strict() satisfies z.ZodType<ConfiguracaoDaCasa>;
 
+/**
+ * A ordem das categorias como a gerente a grava (#87): **todas as que existem,
+ * cada uma uma vez**, pela ordem nova. Repetidas recusam-se aqui; faltar uma ou
+ * trazer uma que não existe recusa-o a fonte, que sabe quais há. Uma categoria
+ * esquecida não ia para o fim — desaparecia da ementa, porque a navegação sai
+ * desta lista (`categoriasDaCarta`).
+ */
+export const EsquemaOrdemCategorias = z
+  .object({
+    categorias: z
+      .array(z.string().min(1).max(60))
+      .min(1)
+      .max(50)
+      .refine((lista) => new Set(lista).size === lista.length, { message: "categoria repetida" }),
+  })
+  .strict();
+
+export type EntradaOrdemCategorias = z.input<typeof EsquemaOrdemCategorias>;
+
 /** O que a gerente grava em Definições. A pausa tem função própria (`pausarLoja`). */
 export const EsquemaDefinicoes = z
   .object({
@@ -586,6 +610,13 @@ export type FontePainel = {
   guardarDefinicoes(entrada: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<DefinicoesLoja>>;
   /** `null` retoma. O fim de cada opção do balcão calcula-o o `fimDaPausa` (`src/lib/painel.ts`). */
   pausarLoja(ate: Date | null, ctx: ContextoPainel): Promise<ResultadoPainel<DefinicoesLoja>>;
+  /**
+   * A ordem das categorias da ementa (#87), como `EsquemaOrdemCategorias`: uma
+   * permutação das que o `ordemDaEmenta` devolve — senão `dados-invalidos`. Só
+   * gerente. Devolve a ordem inteira, já com a nova; lê-se depois pelo
+   * `ordemDaEmenta`, como sempre.
+   */
+  guardarOrdemCategorias(entrada: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<OrdemEmenta>>;
 
   // Pedidos
 
@@ -645,6 +676,11 @@ export type FontePainel = {
 export type FonteDeDados = FonteLoja & FontePainel;
 
 export type FonteLoja = {
+  /**
+   * Por qualquer ordem: **quem ordena é o `index.ts`** (#87), com a ordem das
+   * categorias e os nomes por ordem alfabética (`src/lib/ordenar.ts`). Assim a
+   * base de dados não precisa de saber ordenar português.
+   */
   listarProdutos(filtro?: FiltroProdutos): Promise<Produto[]>;
   produtoPorId(id: string): Promise<Produto | null>;
   ordemDaEmenta(): Promise<OrdemEmenta>;

@@ -7,14 +7,16 @@ import { Atencao } from "./Atencao";
 import { Definicoes } from "./Definicoes";
 import { DetalhePedido } from "./DetalhePedido";
 import { Horarios } from "./Horarios";
+import { OrdemCategorias } from "./OrdemCategorias";
 import { PedidosGestao } from "./PedidosGestao";
 import { Produtos } from "./Produtos";
 
 /**
  * # A gestão — o que a gerente vê por cima do balcão (`painel-gerente.md`)
  *
- * Precisa de atenção, pedidos, produtos, horários, definições e equipa. Tudo
- * tem de funcionar num telemóvel — é lá que a gerente vai preencher os produtos.
+ * Precisa de atenção, pedidos, produtos, a ordem das categorias, horários,
+ * definições e equipa. Tudo tem de funcionar num telemóvel — é lá que a
+ * gerente vai preencher os produtos.
  *
  * Só é desenhada para a gerente — e as ações recusam-na a quem não é, no
  * servidor: esconder isto ao balcão não é o que protege (regra 8).
@@ -30,9 +32,11 @@ export type DadosGestao = {
   /** Todos, arquivados incluídos, para a edição de produtos. */
   produtos: Produto[];
   ordem: OrdemEmenta;
+  /** Os nomes das categorias como o site os escreve, para a ordem (#87). */
+  nomesCategorias: Record<string, string>;
 };
 
-type Secao = "atencao" | "pedidos" | "produtos" | "horarios" | "definicoes" | "equipa";
+type Secao = "atencao" | "pedidos" | "produtos" | "categorias" | "horarios" | "definicoes" | "equipa";
 
 export function Gestao({ dados }: { dados: DadosGestao }) {
   const atencao = dados.avisos.length;
@@ -48,6 +52,7 @@ export function Gestao({ dados }: { dados: DadosGestao }) {
     { id: "atencao", rotulo: atencao > 0 ? `Precisa de atenção · ${atencao}` : "Precisa de atenção" },
     { id: "pedidos", rotulo: "Pedidos" },
     { id: "produtos", rotulo: "Produtos" },
+    { id: "categorias", rotulo: "Categorias" },
     { id: "horarios", rotulo: "Horários" },
     { id: "definicoes", rotulo: "Definições" },
     { id: "equipa", rotulo: "Equipa" },
@@ -80,6 +85,9 @@ export function Gestao({ dados }: { dados: DadosGestao }) {
         {secao === "pedidos" &&
           (aberto ? <DetalhePedido id={aberto} onVoltar={() => setAberto(null)} /> : <PedidosGestao onAbrir={setAberto} />)}
         {secao === "produtos" && <Produtos produtos={dados.produtos} ordem={dados.ordem} />}
+        {secao === "categorias" && (
+          <OrdemCategorias ordem={dados.ordem} produtos={dados.produtos} nomes={dados.nomesCategorias} />
+        )}
         {secao === "horarios" && <Horarios casa={dados.casa} />}
         {secao === "definicoes" && <Definicoes definicoes={dados.definicoes} />}
         {secao === "equipa" && (
