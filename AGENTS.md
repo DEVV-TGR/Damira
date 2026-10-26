@@ -81,13 +81,14 @@ esquecerem:
 
 ### O modo de teste — e é um bloqueador de lançamento
 
-Até a casa dar o horário da cozinha e os tempos de produção, até a conta
-Stripe dela estar verificada e até haver base de dados, a loja corre no ar em
+Até a casa dar os tempos de produção (o horário da cozinha já deu: das 6h00
+às 11h00), até a conta Stripe dela estar verificada e até haver base de
+dados, a loja corre no ar em
 **modo de teste**. ⚠️ **`LOJA_EM_TESTE=1` é o único interruptor de tudo o que é
 provisório** — em local e na Vercel, sem uma segunda variável para ligar
 (decidido a 04/10; a lista vive em `src/lib/modo-teste.ts`):
 
-- os **prazos e o horário de exemplo** e os **pedidos de exemplo** que enchem o
+- os **prazos de exemplo** e os **pedidos de exemplo** que enchem o
   calendário (`src/lib/dados/exemplo.ts` — ao acaso mas sempre os mesmos, e
   contam como verdadeiros para as vagas);
 - os **pedidos de exemplo no painel** — pagos, entregues, um cancelado, um com

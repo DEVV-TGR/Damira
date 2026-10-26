@@ -4,20 +4,21 @@ import { fonteDeExemplo } from "./dados/exemplo";
 import { CATALOGO_JSON, CONFIGURACAO_JSON, criarFonteJson } from "./dados/json";
 import { afluenciaDe, confirmarLevantamento, vagasDoCesto } from "./vagas-servidor";
 
-/* Segunda, 5 de outubro de 2026, às 10h00 de Lisboa. Com a cozinha de exemplo
-   (8h–18h) e um kit de festa de 2 dias, o primeiro levantamento é quarta às
-   7h00, à abertura da loja. */
+/* Segunda, 5 de outubro de 2026, às 10h00 de Lisboa. Com a cozinha da casa
+   (6h–11h) e um kit de festa de 2 dias, o primeiro levantamento é quarta às
+   7h30, à abertura da loja. */
 const AGORA = new TZDate(2026, 9, 5, 10, 0, "Europe/Lisbon");
 const KIT = [{ produtoId: "festa-premium", varianteId: "20", quantidade: 1 }];
 
 describe("as vagas de um cesto", () => {
-  it("sem horário da cozinha nem tempos, as horas são as da loja, a partir de amanhã, e a confirmar", async () => {
+  it("sem tempos de produção, as horas são as da loja, a partir de amanhã, e a confirmar", async () => {
     const resultado = await vagasDoCesto(KIT, criarFonteJson(), AGORA);
     if (!resultado.ok) throw new Error("devia haver horas");
     expect(resultado.aConfirmar).toBe(true);
-    // amanhã às 7h00 de Lisboa, a abertura da loja — e não hoje, nem uma hora de produção inventada
-    expect(resultado.vagas[0]).toMatchObject({ data: "2026-10-06", hora: "07:00", afluencia: null });
-    expect(resultado.vagas.filter((v) => v.data === "2026-10-06")).toHaveLength(28);
+    // amanhã às 7h30 de Lisboa, a abertura da loja — e não hoje, nem uma hora de produção inventada
+    expect(resultado.vagas[0]).toMatchObject({ data: "2026-10-06", hora: "07:30", afluencia: null });
+    // das 7h30 às 19h30, de meia em meia hora: a última vaga ainda deixa meia hora de loja aberta
+    expect(resultado.vagas.filter((v) => v.data === "2026-10-06")).toHaveLength(25);
   });
 
   it("com os dados, a hora não é a confirmar", async () => {
@@ -35,9 +36,9 @@ describe("as vagas de um cesto", () => {
     const resultado = await vagasDoCesto(KIT, fonteDeExemplo(), AGORA);
     if (!resultado.ok) throw new Error("devia haver vagas");
     expect(resultado.vagas[0]).toEqual({
-      inicio: "2026-10-07T06:00:00.000Z",
+      inicio: "2026-10-07T06:30:00.000Z",
       data: "2026-10-07",
-      hora: "07:00",
+      hora: "07:30",
       livre: true,
       afluencia: "livre",
     });
@@ -46,8 +47,9 @@ describe("as vagas de um cesto", () => {
   });
 
   it("o cesto espera pelo artigo mais lento", async () => {
-    /* 24 h de cozinha a partir de segunda às 10h00: 8 h na segunda, 10 h na
-       terça, 6 h na quarta — quarta às 14h00, depois do kit (quarta às 7h00). */
+    /* Um turno de cozinha (5 h) a partir de segunda às 10h00: 1 h na segunda e
+       4 h na terça — terça às 10h00. O kit só fica pronto na quarta às 7h30, e
+       é por ele que o cesto misto espera. */
     const soCarta = await vagasDoCesto(
       [{ produtoId: "bolo-de-cenoura", varianteId: "unica", quantidade: 12 }],
       fonteDeExemplo(),
@@ -58,8 +60,8 @@ describe("as vagas de um cesto", () => {
       fonteDeExemplo(),
       AGORA,
     );
-    expect(soCarta.ok && `${soCarta.vagas[0].data} ${soCarta.vagas[0].hora}`).toBe("2026-10-07 14:00");
-    expect(misto.ok && `${misto.vagas[0].data} ${misto.vagas[0].hora}`).toBe("2026-10-07 14:00");
+    expect(soCarta.ok && `${soCarta.vagas[0].data} ${soCarta.vagas[0].hora}`).toBe("2026-10-06 10:00");
+    expect(misto.ok && `${misto.vagas[0].data} ${misto.vagas[0].hora}`).toBe("2026-10-07 07:30");
   });
 
   it("o «esgotado hoje» do balcão tira as horas de hoje ao calendário, e a confirmação recusa-as", async () => {
@@ -92,7 +94,7 @@ describe("as vagas de um cesto", () => {
     await fonte.criarPedido(
       {
         linhas: KIT,
-        levantamentoEm: "2026-10-07T06:00:00.000Z",
+        levantamentoEm: "2026-10-07T06:30:00.000Z",
         cliente: { nome: "Cliente de Teste", email: "teste@example.com" },
         chaveIdempotencia: "4f1b2c3d-1111-4222-8333-444455556666",
         armadilha: "",
@@ -100,14 +102,14 @@ describe("as vagas de um cesto", () => {
       { agora: AGORA, ip: null, contaId: null },
     );
     const resultado = await vagasDoCesto(KIT, fonte, AGORA);
-    expect(resultado.ok && resultado.vagas[0]).toMatchObject({ hora: "07:00", livre: false });
-    expect(resultado.ok && resultado.vagas[1]).toMatchObject({ hora: "07:30", livre: true });
+    expect(resultado.ok && resultado.vagas[0]).toMatchObject({ hora: "07:30", livre: false });
+    expect(resultado.ok && resultado.vagas[1]).toMatchObject({ hora: "08:00", livre: true });
   });
 });
 
 describe("confirmar a hora escolhida, ao enviar", () => {
   it("aceita uma vaga que o calendário mostrou", async () => {
-    expect(await confirmarLevantamento(KIT, new Date("2026-10-07T06:00:00Z"), fonteDeExemplo(), AGORA)).toEqual({
+    expect(await confirmarLevantamento(KIT, new Date("2026-10-07T06:30:00Z"), fonteDeExemplo(), AGORA)).toEqual({
       ok: true,
       aConfirmar: false,
     });
@@ -123,7 +125,8 @@ describe("confirmar a hora escolhida, ao enviar", () => {
   });
 
   it("recusa uma hora antes de o kit estar pronto", async () => {
-    expect(await confirmarLevantamento(KIT, new Date("2026-10-06T06:00:00Z"), fonteDeExemplo(), AGORA)).toEqual({
+    // terça às 7h30: a loja está aberta, mas o kit só fica pronto na quarta
+    expect(await confirmarLevantamento(KIT, new Date("2026-10-06T06:30:00Z"), fonteDeExemplo(), AGORA)).toEqual({
       ok: false,
       motivo: "indisponivel",
     });

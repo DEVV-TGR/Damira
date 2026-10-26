@@ -47,9 +47,9 @@ import {
  * está ligado a nenhuma página.
  *
  * ⚠️ **O que a casa ainda não deu fica `null`**, e não se inventa: o tempo de
- * produção, os alergénios, o sinal, o limite e o horário da cozinha. Sem eles o
- * calendário não se calcula, e o `criarPedido` responde `indisponivel`. Os
- * valores para trabalhar estão em `exemplo.ts`, à parte.
+ * produção, os alergénios, o sinal e o limite. Sem os tempos o calendário não se
+ * calcula, e o `criarPedido` responde `indisponivel`. Os valores para trabalhar
+ * estão em `exemplo.ts`, à parte.
  */
 
 // ——— Euros → cêntimos ———
@@ -230,12 +230,25 @@ const lojaDoCasaJson = (): HorarioSemanal => {
   return semana;
 };
 
+/* «Temos pasteleiros todos os dias das 06H00 às 11H00 mais ou menos» — a
+   Andreia, nas respostas de 11/10. É diferente do da loja, e usar o da loja no
+   lugar dele era contar como produção as horas da tarde, em que a cozinha já
+   fechou. Falta confirmar domingos e feriados; muda-se no painel. */
+const seisAsOnze = [{ abre: "06:00", fecha: "11:00" }];
+
+const COZINHA_DA_CASA: HorarioSemanal = {
+  segunda: seisAsOnze,
+  terca: seisAsOnze,
+  quarta: seisAsOnze,
+  quinta: seisAsOnze,
+  sexta: seisAsOnze,
+  sabado: seisAsOnze,
+  domingo: seisAsOnze,
+};
+
 export const CONFIGURACAO_JSON: ConfiguracaoDaCasa = {
   loja: lojaDoCasaJson(),
-  /* A Damira ainda não deu o horário da cozinha. É diferente do da loja, e
-     usar o da loja no lugar dele era prometer pastéis às 7h00 feitos numa
-     cozinha que só abre às 8h00. */
-  cozinha: null,
+  cozinha: COZINHA_DA_CASA,
   diasFechados: [],
   ...PREDEFINICOES,
   /* Os degraus que se combinaram a 04/10, até a casa os afinar no painel. Com um

@@ -9,9 +9,10 @@ import type { ConfiguracaoDaCasa, FonteDeDados, Pedido, Produto } from "./tipos"
 /**
  * # ⚠️ Valores de exemplo — **não são da casa**
  *
- * A Damira ainda não deu o horário da cozinha nem os tempos de produção, e o
- * calendário não se constrói sem eles. Estes números existem para o cesto, o
- * calendário e o checkout poderem ser feitos e testados **enquanto** ela não
+ * A Damira já deu o horário da cozinha (está no `json.ts`), mas ainda não os
+ * tempos de produção, e o calendário não se constrói sem eles. Estes números (e
+ * a cozinha de exemplo, que só entra se a da casa faltar) existem para o cesto,
+ * o calendário e o checkout poderem ser feitos e testados **enquanto** ela não
  * responde. São plausíveis e são inventados.
  *
  * Por isso vivem aqui e não no catálogo: o `json.ts` diz a verdade (`null`, por
@@ -31,9 +32,16 @@ import type { ConfiguracaoDaCasa, FonteDeDados, Pedido, Produto } from "./tipos"
  * ficheiro só tapa o que ainda estiver `null`.
  */
 
-/** Por família. A carta conta-se em horas de cozinha; o resto, em dias. */
+/**
+ * Por família. A carta conta-se em horas de cozinha; o resto, em dias.
+ *
+ * A carta leva **um turno** de cozinha (5 h, das 6h00 às 11h00): o que se pede
+ * de manhã sai no dia seguinte, e o que se pede depois das 11h00 também — é o
+ * que a casa respondeu a 11/10. Eram 24 h, contadas para uma cozinha de 10 h por
+ * dia; com a da casa davam cinco dias para uma dúzia de pastéis.
+ */
 export const TEMPOS_DE_EXEMPLO: Record<Produto["familia"], TempoProducao> = {
-  ementa: { unidade: "horas", valor: 24 },
+  ementa: { unidade: "horas", valor: 5 },
   festa: { unidade: "dias", valor: 2 },
   bolo: { unidade: "dias", valor: 3 },
   medida: { unidade: "dias", valor: 5 },
