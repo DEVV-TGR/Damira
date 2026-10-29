@@ -7,11 +7,11 @@ import type { FonteDeDados } from "./tipos";
 /**
  * # A fonte que os testes de especificação usam
  *
- * Os testes do contrato (`dados.test.ts`, `painel.test.ts`) correm duas vezes no
- * `npm test` (ver `vitest.config.mts`): uma contra a fonte dos JSON, como
- * sempre, e outra contra a da base de dados, num PGlite com o catálogo
- * importado. É a prova de que a troca no `index.ts` não muda nada para as
- * páginas (#29, #31).
+ * Os testes do contrato (`dados.test.ts`, `painel.test.ts`, `ordem.test.ts`)
+ * correm duas vezes no `npm test` (ver `vitest.config.mts`): uma contra a fonte
+ * dos JSON, como sempre, e outra contra a da base de dados, num PGlite com o
+ * catálogo importado. É a prova de que a troca no `index.ts` não muda nada para
+ * as páginas (#29, #31).
  *
  * Só para testes.
  */

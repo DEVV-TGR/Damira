@@ -139,6 +139,15 @@ ao gravar; um `jsonb` que não passe no esquema ao ler é um erro, não um dado.
 **A cozinha começa `NULL`**: a casa ainda não a deu (`horarios.md` › À espera), e
 sem ela o calendário diz «indisponível» em vez de inventar.
 
+**A ordem das categorias vive no `ordem_ementa`**, e não numa tabela à parte
+(#87). A gerente só muda a ordem, nunca o conjunto: o
+`guardarOrdemCategorias` aceita uma permutação das categorias gravadas, e é a
+própria instrução que o confere (as mesmas nos dois sentidos, com `@>`, e o
+mesmo tamanho), sem ler primeiro e escrever depois. Mexe só nas `categorias`:
+as `cartas` e as `subcategorias` ficam como vieram do impresso. O
+`criarProduto` e o `editarProduto` recusam uma categoria que não esteja na
+ordem — ficava órfã, fora da `/ementa`.
+
 ## Os pedidos
 
 ### `pedidos`
@@ -376,8 +385,8 @@ dados não se distinguia de um verdadeiro, e ia parar a um relatório de vendas.
 
 **O `npm test` dá duas voltas** (`vitest.config.mts`). A primeira, `json`, é a
 de sempre: tudo, contra a fonte dos JSON. A segunda, `bd`, corre os testes do
-contrato (`dados.test.ts`, `painel.test.ts`) contra a fonte da base de dados,
-numa cópia limpa do catálogo importado para um PGlite
+contrato (`dados.test.ts`, `painel.test.ts`, `ordem.test.ts`) contra a fonte da
+base de dados, numa cópia limpa do catálogo importado para um PGlite
 (`src/lib/dados/fontes-de-teste.ts`). É a prova de que a troca no `index.ts`
 não muda nada para as páginas.
 

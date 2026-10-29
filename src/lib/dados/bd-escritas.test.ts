@@ -1,5 +1,7 @@
 import { TZDate } from "@date-fns/tz";
+import { eq } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
+import { casa } from "@/db/esquema";
 import { loteEmTransacao } from "@/db/lote";
 import { catalogoDeTeste } from "@/db/teste";
 import { criarFonteBd } from "./bd";
@@ -355,6 +357,33 @@ describe("a casa: horários, definições e pausa", () => {
       });
     } finally {
       await fechar();
+    }
+  });
+});
+
+describe("a ordem das categorias (#87)", () => {
+  /* O resto — gravar, recusar, os órfãos — corre nas duas fontes no
+     `ordem.test.ts`. Que a conferência vive na própria instrução, e não num
+     ler-e-depois-gravar, não o mostra um teste com uma ligação só: está no
+     `bd.ts`, e prova-se na Neon (`ligar-a-neon.md`, ponto 6). */
+  it("confere-se contra o que está gravado ao gravar, e não contra o que a gerente tem no ecrã", async () => {
+    const { db, cliente } = await modelo.copia();
+    try {
+      const bd = criarFonteBd(db, loteEmTransacao(db));
+      const lida = await bd.ordemDaEmenta();
+      /* Outra gravação a meio: a lista guardada passa a ter mais uma
+         categoria do que a que a gerente tem no ecrã. */
+      const comSopas = { ...lida, categorias: [...lida.categorias, "sopas"] };
+      await db.update(casa).set({ ordemEmenta: comSopas }).where(eq(casa.id, 1));
+
+      expect(await bd.guardarOrdemCategorias({ categorias: [...lida.categorias].reverse() }, GERENTE)).toEqual({
+        ok: false,
+        erro: "dados-invalidos",
+        campos: ["categorias"],
+      });
+      expect(await bd.ordemDaEmenta()).toEqual(comSopas);
+    } finally {
+      await cliente.close();
     }
   });
 });

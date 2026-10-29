@@ -19,6 +19,7 @@ import {
   EsquemaEntradaProduto,
   EsquemaHorarios,
   EsquemaLinhaCesto,
+  EsquemaOrdemCategorias,
   EsquemaProduto,
   type FonteDeDados,
   type Produto,
@@ -62,6 +63,7 @@ export type FonteBd = Pick<
   | "guardarHorarios"
   | "guardarDefinicoes"
   | "pausarLoja"
+  | "guardarOrdemCategorias"
 >;
 
 /* Um id já usado por outro produto: o Postgres chama-lhe 23505. Vem como causa
@@ -113,6 +115,18 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
     const [linha] = await db.update(tabelaCasa).set(mudanca).where(eq(tabelaCasa.id, 1)).returning();
     if (!linha) return casa();
     return linhaParaCasa(linha);
+  };
+
+  /* ⚠️ Uma categoria que não está na ordem ficava órfã: fora da `/ementa`, e sem
+     a gerente a poder lá pôr, porque a ordem só aceita uma permutação das que
+     existem (#87). A mesma regra do `json-painel.ts`. Ler e depois gravar chega
+     aqui: a ordem muda de sítio, mas nunca ganha nem perde categorias. */
+  const foraDaOrdem = async (categoria: string | null) =>
+    categoria !== null && !(await casa()).ordem.categorias.includes(categoria);
+  const categoriaDesconhecida: ResultadoPainel<never> = {
+    ok: false,
+    erro: "dados-invalidos",
+    campos: ["categoria"],
   };
 
   return {
@@ -169,6 +183,7 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
     async criarProduto(entrada) {
       const lido = EsquemaEntradaProduto.safeParse(entrada);
       if (!lido.success) return invalido(lido.error);
+      if (await foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
       const base = emId(lido.data.nome.pt) || "produto";
 
       /* O id é o primeiro livre de `base`, `base-2`… Entre ler os ocupados e
@@ -214,6 +229,7 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
       if (!atual) return naoExiste;
       const lido = EsquemaEntradaProduto.safeParse(entrada);
       if (!lido.success) return invalido(lido.error);
+      if (await foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
       /* Um id de variante que o produto não tem não se aceita: era o browser a
          inventar ids, e são eles que os cestos guardam. Uma variante que falte
          na entrada sai. (A mesma regra do `json-painel.ts`.) */
@@ -270,6 +286,40 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
         return { ok: false, erro: "dados-invalidos", campos: ["pausaAte"] };
       }
       return { ok: true, valor: (await mudarCasa({ pausaAte: ate })).definicoes };
+    },
+
+    async guardarOrdemCategorias(entrada) {
+      /* Um campo só: seja o que for que falhe, é a lista que se marca. */
+      const recusada: ResultadoPainel<never> = { ok: false, erro: "dados-invalidos", campos: ["categorias"] };
+      const lido = EsquemaOrdemCategorias.safeParse(entrada);
+      if (!lido.success) return recusada;
+      const nova = JSON.stringify(lido.data.categorias);
+
+      /* Uma permutação das que estão gravadas, e quem o confere é a própria
+         instrução: as mesmas categorias nos dois sentidos e o mesmo tamanho. As
+         repetidas já o esquema recusou. Ler e comparar no código deixava outra
+         gravação passar pelo meio. Só as categorias mudam: as cartas e os
+         títulos das bebidas ficam como estão. */
+      /* Entre parênteses: o `->` e o `@>` têm a mesma precedência, e sem eles o
+         `nova @> atuais` lia-se `(nova @> casa) -> 'categorias'`. */
+      const atuais = sql`(${tabelaCasa.ordemEmenta} -> 'categorias')`;
+      const [linha] = await db
+        .update(tabelaCasa)
+        .set({ ordemEmenta: sql`jsonb_set(${tabelaCasa.ordemEmenta}, '{categorias}', ${nova}::jsonb)` })
+        .where(
+          and(
+            eq(tabelaCasa.id, 1),
+            sql`${atuais} @> ${nova}::jsonb`,
+            sql`${nova}::jsonb @> ${atuais}`,
+            sql`jsonb_array_length(${atuais}) = jsonb_array_length(${nova}::jsonb)`,
+          ),
+        )
+        .returning();
+      if (linha) return { ok: true, valor: linhaParaCasa(linha).ordem };
+      /* Nenhuma linha: ou não era uma permutação, ou falta importar a casa — e
+         aí o `casa()` rebenta a dizê-lo, como nas leituras. */
+      await casa();
+      return recusada;
     },
   };
 }
