@@ -18,5 +18,10 @@ export default defineConfig({
        hora certa metade do ano e o teste passa. Em Kiritimati (UTC+14) qualquer
        fuga da hora local para o cálculo muda o dia, e rebenta logo. */
     env: { TZ: "Pacific/Kiritimati" },
+    /* Os testes da base de dados arrancam um PGlite (um Postgres inteiro) por
+       ficheiro, e com os ficheiros todos em paralelo os 5 s de origem não
+       chegavam: um teste qualquer, de cada vez outro, passava o limite sem
+       nada estar errado. Um teste preso a sério continua a rebentar. */
+    testTimeout: 20_000,
   },
 });
