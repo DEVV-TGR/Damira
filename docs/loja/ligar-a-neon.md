@@ -25,26 +25,37 @@ para o `.env.local` de cada um.
 
 ## 1. Na visita (#26): criar a conta
 
-- [ ] **Conta em nome da Damira**, plano **Launch** — restauro até 7 dias; o
-      gratuito só volta 6 horas atrás (`robustez.md` › Backups). Convidar a
-      DevPlus.
-- [ ] **Postgres 18.** É a versão do PGlite em que tudo está testado; uma
-      versão diferente pode comportar-se de forma diferente justamente onde os
-      testes não olham.
-- [ ] **Região: Frankfurt** (AWS Europe Central). É a mais perto de Portugal, e
-      os dados dos clientes ficam na União Europeia (RGPD).
-- [ ] **Dois ramos:** `production` (o principal) e `desenvolvimento`, criado a
-      partir dele. ⚠️ Nunca se testa no de produção (`AGENTS.md`).
+A conta foi criada pela casa e confirmada a 29/10: a organização «Confeitaria
+Damira», com o projeto «Damira - Loja Online». A DevPlus entra como *Editor*,
+que não pode apagar o projeto — só os administradores, que são da casa.
+
+- [x] **Conta em nome da Damira**, com a DevPlus convidada.
+- [ ] **Plano Launch** — restauro até 7 dias; o gratuito, em que a conta está,
+      só volta 6 horas atrás (`robustez.md` › Backups). É a casa que paga:
+      pedir antes do lançamento.
+- [x] **Postgres 18** (18.6). É a versão do PGlite em que tudo está testado;
+      uma versão diferente pode comportar-se de forma diferente justamente onde
+      os testes não olham.
+- [x] **Região: Londres** (AWS Europe West 2). O plano era Frankfurt, e a casa
+      criou-a em Londres; ficou. Para Portugal a distância é a mesma, e o Reino
+      Unido tem decisão de adequação da UE para o RGPD, por isso os dados dos
+      clientes podem lá estar. Recriar obrigava a casa a voltar a mexer na
+      conta, e a região não se muda depois de criada.
+- [x] **Dois ramos:** `production` (o principal) e `desenvolvimento`, criado a
+      partir dele. ⚠️ Nunca se testa no de produção (`AGENTS.md`). O
+      `desenvolvimento` não se apaga sozinho (a Neon propõe apagá-lo ao fim de
+      um dia: escolher «Never»).
 
 ## 2. A região das funções na Vercel
 
-⚠️ **O repositório não define a região, e por defeito a Vercel corre as funções
-em Washington (`iad1`).** Com a base de dados em Frankfurt, cada consulta
-atravessava o Atlântico — cerca de 100 ms por ida e volta, e uma página faz
-várias.
+⚠️ **Por defeito a Vercel corre as funções em Washington (`iad1`).** Com a base
+de dados em Londres, cada consulta atravessava o Atlântico — cerca de 100 ms
+por ida e volta, e uma página faz várias.
 
-- [ ] Confirmar no painel da Vercel (Settings → Functions → Function Region) e
-      pôr **Frankfurt (`fra1`)**, a mesma da Neon.
+- [x] O `vercel.json` fixa as funções em **Londres (`lhr1`)**, a mesma região
+      da Neon. (Estava em Frankfurt, `fra1`, escrito antes de a conta existir.)
+- [ ] Depois do primeiro deploy, confirmar no painel da Vercel (Settings →
+      Functions → Function Region) que diz Londres.
 
 ## 3. As variáveis de ambiente
 
