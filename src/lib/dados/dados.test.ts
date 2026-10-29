@@ -20,7 +20,7 @@ const CONTEXTO = { agora: AGORA, ip: "203.0.113.1", contaId: null };
 const entrada = (alteracoes: Partial<EntradaPedido> = {}): EntradaPedido => ({
   linhas: [{ produtoId: "festa-premium", varianteId: "20", quantidade: 1 }],
   levantamentoEm: QUARTA_7H,
-  cliente: { nome: "Cliente de Teste", email: "teste@example.com" },
+  cliente: { nome: "Cliente de Teste", email: "teste@example.com", telefone: "+351912345678" },
   chaveIdempotencia: "4f1b2c3d-1111-4222-8333-444455556666",
   armadilha: "",
   ...alteracoes,
@@ -165,6 +165,22 @@ describe("cotar o cesto: o preço calcula-se no servidor", () => {
   let fonte: FonteDeDados;
   beforeAll(async () => {
     fonte = await fonteDaLoja();
+  });
+
+  it("um produto com sabores exige exatamente um, e dos dele; um sem sabores, nenhum", async () => {
+    /* Os folhados vegan têm sabores (Alheira, Legumes…) e vendem-se à dúzia. */
+    const folhado = (escolhas: string[]) => ({ produtoId: "vegan-folhados", varianteId: "unica", quantidade: 12, escolhas });
+    const erro = async (linha: object) => {
+      const cotado = await fonte.cotarCesto([linha]);
+      return cotado.ok ? cotado.cotacao.linhas[0].erro : cotado.erro;
+    };
+    expect(await erro(folhado(["Alheira"]))).toBeNull();
+    expect(await erro(folhado([]))).toBe("escolha-invalida");
+    expect(await erro(folhado(["Pistácio"]))).toBe("escolha-invalida");
+    expect(await erro(folhado(["Alheira", "Legumes"]))).toBe("escolha-invalida");
+    expect(await erro({ produtoId: "bolo-de-cenoura", varianteId: "unica", quantidade: 12, escolhas: ["Alheira"] })).toBe(
+      "escolha-invalida",
+    );
   });
 
   it("soma em cêntimos, e ao quilo multiplica pelos quilos", async () => {

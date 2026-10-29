@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { estimativa, idsDoItem, normalizarCesto } from "./cesto";
+import { cestoEmTexto, estimativa, idComEscolha, idsDoItem, linhasDoCesto, normalizarCesto } from "./cesto";
 import { gerarReferencia, normalizarHistorico } from "./historico";
 
 /* O cesto e o histórico vivem no `localStorage` de quem já usou o site, e o
@@ -112,3 +112,40 @@ describe("a referência", () => {
     expect(gerarReferencia(new Date("2026-12-05T23:30:00Z"))).toMatch(/^DAM-0512-/);
   });
 });
+
+describe("o sabor escolhido", () => {
+  const folhado = (escolha: string) => ({
+    id: idComEscolha("ementa:vegan-folhados", escolha),
+    produtoId: "vegan-folhados",
+    varianteId: "unica",
+    tipo: "ementa" as const,
+    nome: "Folhados",
+    variante: null,
+    precoCent: 165,
+    pessoas: null,
+    quantidade: 12,
+    unidade: "un" as const,
+    minimo: 12,
+    passo: 6,
+    notas: null,
+    escolha,
+  });
+
+  it("cada sabor é uma linha à parte, sem acentos no id", () => {
+    expect(idComEscolha("ementa:vegan-folhados", "Grão-de-bico e azeitona")).toBe("ementa:vegan-folhados~grao-de-bico-e-azeitona");
+    expect(idComEscolha("ementa:nata", null)).toBe("ementa:nata");
+    expect(folhado("Alheira").id).not.toBe(folhado("Legumes").id);
+  });
+
+  it("vai para o servidor como escolha, e o email escreve-o colado ao artigo", () => {
+    expect(linhasDoCesto([folhado("Alheira")])[0]).toMatchObject({ escolhas: ["Alheira"] });
+    const texto = cestoEmTexto([folhado("Alheira")], "pt", { semPreco: "—", estimativa: "Estimativa", aPartirDe: "A partir de" });
+    expect(texto).toContain("Folhados · Alheira");
+  });
+
+  it("um cesto guardado com o sabor continua com ele; um antigo fica sem", () => {
+    expect(normalizarCesto([folhado("Soja")])[0].escolha).toBe("Soja");
+    expect(normalizarCesto([{ ...folhado("Soja"), escolha: undefined }])[0].escolha).toBeNull();
+  });
+});
+

@@ -48,7 +48,7 @@ let chave = 0;
 const pedido = (produtoId: string, levantamentoEm: string, quantidade = 12): EntradaPedido => ({
   linhas: [{ produtoId, varianteId: "unica", quantidade }],
   levantamentoEm,
-  cliente: { nome: "Cliente de Teste", email: "teste@example.com" },
+  cliente: { nome: "Cliente de Teste", email: "teste@example.com", telefone: "+351912345678" },
   chaveIdempotencia: `4f1b2c3d-1111-4222-8333-${String(++chave).padStart(12, "0")}`,
   armadilha: "",
 });
@@ -196,6 +196,12 @@ describe("criar e editar produtos", () => {
 });
 
 describe("arquivar, tirar de venda", () => {
+  it("um valor que não é sim/não responde «dados inválidos», e não rebenta", async () => {
+    const f = await fonte();
+    const resultado = await f.arquivarProduto("festa-premium", "talvez" as unknown as boolean, GERENTE);
+    expect(resultado).toMatchObject({ ok: false, erro: "dados-invalidos" });
+  });
+
   it("arquivado sai do site e do checkout, mas não do painel; desarquivar devolve-o", async () => {
     const f = await fonte();
     await f.arquivarProduto("festa-premium", true, GERENTE);

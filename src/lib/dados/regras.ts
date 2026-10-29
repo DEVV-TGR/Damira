@@ -25,7 +25,7 @@ const noMultiplo = (quantidade: number, minimo: number, multiplo: number) => {
  * arquivado ou tirado de venda tem de vir na mesma: é aqui que se recusa.
  */
 export function cotarLinhas(
-  linhas: readonly Pick<LinhaCesto, "produtoId" | "varianteId" | "quantidade">[],
+  linhas: readonly (Pick<LinhaCesto, "produtoId" | "varianteId" | "quantidade"> & { escolhas?: readonly string[] })[],
   produtoDe: (id: string) => Produto | undefined,
 ): Cotacao {
   const cotadas = linhas.map((linha): LinhaCotada => {
@@ -42,6 +42,14 @@ export function cotarLinhas(
     const variante = produto.variantes.find((v) => v.id === linha.varianteId);
     if (!variante) return falha("variante-desconhecida");
     if (!produto.aVendaOnline || produto.arquivado || produto.foraDeVenda) return falha("fora-de-venda");
+    /* Com escolhas, exatamente uma, e das do produto: para misturar sabores,
+       uma linha por sabor (e cada uma conta o seu mínimo). Sem escolhas, nenhuma. */
+    const escolhas = linha.escolhas ?? [];
+    const escolhaCerta =
+      produto.escolhas.length === 0
+        ? escolhas.length === 0
+        : escolhas.length === 1 && produto.escolhas.includes(escolhas[0]);
+    if (!escolhaCerta) return falha("escolha-invalida");
     if (linha.quantidade < produto.quantidadeMinima - EPSILON) return falha("abaixo-do-minimo");
     if (!noMultiplo(linha.quantidade, produto.quantidadeMinima, produto.multiplo)) {
       return falha("fora-do-multiplo");

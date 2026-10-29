@@ -50,6 +50,26 @@ export type RespostaCodigo =
  */
 export type AmbitoSaida = "gerente" | "dispositivo";
 
+/** Uma sessão aberta, como a gerente a vê em «Equipa» (`painel.md` › Lembrar o dispositivo). */
+export type SessaoListada = {
+  id: string;
+  papel: Papel;
+  /** «iPad · Safari» — sai do `user-agent`. Nunca o IP. */
+  dispositivo: string;
+  desde: Date;
+  ultimoUso: Date;
+  /** A sessão do aparelho onde se está a ver. */
+  esta: boolean;
+};
+
+/**
+ * - `indisponivel`: esta entrada não o permite (a provisória: o PIN é fixo, e
+ *   uma sessão de outro aparelho não se vê nem se termina).
+ * - `dados-invalidos`: um PIN sem 4 ou 6 dígitos (#25).
+ * - `nao-existe`: a sessão já não existe.
+ */
+export type ResultadoGestaoEquipa = { ok: true } | { ok: false; erro: "indisponivel" | "dados-invalidos" | "nao-existe" };
+
 export type FonteSessao = {
   /** Se se pode entrar neste ambiente. Desligada, a página diz isso e não mostra o teclado. */
   ligada: boolean;
@@ -64,6 +84,21 @@ export type FonteSessao = {
   pedirCodigo(email: unknown, ctx: ContextoEntrada): Promise<RespostaCodigo>;
   entrarComCodigo(email: unknown, codigo: unknown, lembrar: boolean, ctx: ContextoEntrada): Promise<ResultadoEntrada>;
   sair(ambito: AmbitoSaida): Promise<void>;
+
+  // A gestão da equipa (decidido a 05/10). ⚠️ **Só a gerente**: quem chama
+  // confirma o papel da sessão no servidor antes (regra 8), como nas ações do
+  // painel. A fonte não volta a verificá-lo.
+
+  /** As sessões abertas, as da equipa e as da gerente, a mais recente primeiro. */
+  listarSessoes(agora: Date): Promise<SessaoListada[]>;
+  /** Termina uma sessão: esse aparelho volta a pedir o PIN (ou o código) no próximo uso. */
+  terminarSessao(id: string, agora: Date): Promise<ResultadoGestaoEquipa>;
+  /**
+   * Muda o PIN da equipa e **fecha todas as sessões da equipa**, num lote só
+   * (`painel.md`): é assim que se tira o acesso a quem saiu da casa. As da
+   * gerente ficam.
+   */
+  mudarPin(novo: unknown, ctx: ContextoEntrada): Promise<ResultadoGestaoEquipa>;
 };
 
 /** O que a fonte precisa dos cookies. O `index.ts` liga-o ao `next/headers`; os testes, a um `Map`. */

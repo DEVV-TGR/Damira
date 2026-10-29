@@ -189,5 +189,34 @@ export function criarSessaoProvisoria({ ambiente, cookies }: Opcoes): FonteSessa
       loja.delete(COOKIE_GERENTE);
       if (ambito === "dispositivo") loja.delete(COOKIE_EQUIPA);
     },
+
+    /* ⚠️ Sem base de dados, uma sessão é só um cookie neste aparelho: dá para
+       ver e terminar as deste aparelho, e mais nenhuma. O ecrã diz isso. */
+    async listarSessoes(agora) {
+      const loja = await cookies();
+      return (
+        [
+          ["gerente", lerSessao(loja.get(COOKIE_GERENTE), agora)],
+          ["equipa", lerSessao(loja.get(COOKIE_EQUIPA), agora)],
+        ] as const
+      ).flatMap(([id, s]) =>
+        s ? [{ id, papel: s.papel, dispositivo: "Este aparelho", desde: s.desde, ultimoUso: s.desde, esta: true }] : [],
+      );
+    },
+
+    async terminarSessao(id) {
+      const loja = await cookies();
+      const nome = id === "gerente" ? COOKIE_GERENTE : id === "equipa" ? COOKIE_EQUIPA : null;
+      if (!nome || !loja.get(nome)) return { ok: false, erro: "nao-existe" };
+      loja.delete(nome);
+      return { ok: true };
+    },
+
+    /* O PIN da entrada provisória é o do ambiente (ou o de defeito): não se muda
+       por aqui. A entrada verdadeira (#33) guarda-o com hash na base de dados. */
+    async mudarPin(novo) {
+      if (typeof novo !== "string" || !/^(\d{4}|\d{6})$/.test(novo)) return { ok: false, erro: "dados-invalidos" };
+      return { ok: false, erro: "indisponivel" };
+    },
   };
 }

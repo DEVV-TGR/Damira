@@ -7,6 +7,7 @@ import type { Pedido } from "@/lib/dados/tipos";
 import { faltaPagarCent, rotuloPagamento } from "@/lib/painel";
 import { horaDeLisboa } from "@/lib/painel-ligacao";
 import { formatarCent } from "@/lib/preco";
+import { telefoneArrumado } from "@/lib/telefone";
 import { usePainel } from "../PainelAberto";
 import { BOTAO_PRINCIPAL, BOTAO_SECUNDARIO, MENSAGENS, quantidade } from "./comum";
 
@@ -89,7 +90,7 @@ export function PedidoCartao({
             <>
               {" · "}
               <a href={`tel:${pedido.cliente.telefone}`} className="underline underline-offset-4">
-                {pedido.cliente.telefone}
+                {telefoneArrumado(pedido.cliente.telefone)}
               </a>
             </>
           )}
