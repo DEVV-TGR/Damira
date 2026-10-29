@@ -163,9 +163,9 @@ falta, faz o site mentir a alguém:
 - [ ] **Prazo de antecedência das encomendas.** Quantos dias precisa a casa para
       um kit de 20, de 40 e de 70? Sem isto, `/encomendas` diz "por confirmar" —
       e alguém vai pedir setenta doses para amanhã.
-- [ ] **Horário, dia a dia.** Temos "07h00–21h00" do cartão de contactos, sem
-      dizer a que dias se aplica. O domingo é o candidato a ser diferente. Isto
-      vai para os dados estruturados e passa a ser o horário que o Google mostra.
+- [ ] **Horário ao domingo.** A Andreia deu "07h30–20h00" a 11/10 (o cartão de
+      contactos dizia 07h00–21h00), sem dizer se o domingo é igual. Isto vai
+      para os dados estruturados e passa a ser o horário que o Google mostra.
 - [ ] **Consentimento das pessoas na fotografia da sala.** `public/fotos/04.webp`
       mostra clientes de frente e reconhecíveis. É a única imagem do site com
       pessoas identificáveis. Numa demo passa; **no ar a sério, ou a casa tem o

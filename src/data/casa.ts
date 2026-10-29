@@ -52,8 +52,9 @@ const EsquemaCasa = z.object({
    * secção; `null` num dia significa **encerrado nesse dia**. São duas coisas
    * diferentes e é de propósito que se distinguem.
    *
-   * ⚠️ O horário de 07:00–21:00 vem do cartão de contactos da casa e **está por
-   * confirmar dia a dia** — em particular o domingo. Ver o README.
+   * ⚠️ O horário de 07:30–20:00 deu-o a Andreia nas respostas de 11/10 (o
+   * cartão de contactos dizia 07:00–21:00). **Falta confirmar se o domingo é
+   * igual.** Ver o README.
    */
   horarios: z
     .object({

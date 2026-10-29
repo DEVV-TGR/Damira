@@ -358,9 +358,10 @@ export type ResultadoCriarPedido =
 // ——— A casa ———
 
 /**
- * A configuração do motor de horários, com a cozinha a poder faltar: a Damira
- * ainda não deu o horário dela (`horarios.md` › À espera). Sem cozinha não há
- * calendário, e o site diz isso em vez de inventar um.
+ * A configuração do motor de horários, com a cozinha a poder faltar. A casa já
+ * deu a dela (06:00–11:00, no `json.ts`), mas uma casa gravada sem cozinha
+ * continua a ser válida: sem cozinha não há calendário, e o site diz isso em vez
+ * de inventar um.
  */
 export type ConfiguracaoDaCasa = Omit<ConfiguracaoHorarios, "cozinha"> & {
   cozinha: HorarioSemanal | null;

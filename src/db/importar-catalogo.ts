@@ -25,8 +25,8 @@ import { casa, produtos, variantes } from "./esquema";
  * volta = `CATALOGO_JSON` (testado aqui).
  *
  * ⚠️ **Os dados de exemplo nunca entram** (`docs/loja/base-de-dados.md`): a
- * configuração é a do `CONFIGURACAO_JSON`, com a cozinha a `null`, e não a do
- * modo de teste.
+ * configuração é a do `CONFIGURACAO_JSON`, com a cozinha que a casa deu, e não a
+ * do modo de teste.
  */
 
 export type OrigemDoCatalogo = {
@@ -35,7 +35,7 @@ export type OrigemDoCatalogo = {
 };
 
 /**
- * O que sai dos JSON de hoje: o catálogo, a configuração sem cozinha, as
+ * O que sai dos JSON de hoje: o catálogo, a configuração com a cozinha da casa, as
  * definições por defeito (tudo desligado) e a ordem da ementa. Lido pela fonte
  * dos JSON, pela mesma interface que as páginas usam.
  */
