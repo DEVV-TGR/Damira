@@ -1,10 +1,10 @@
 import { useTranslations } from "next-intl";
 import type { Locale } from "@/i18n/routing";
-import type { Produto } from "@/lib/dados/tipos";
-import { porCategoria, regraDe } from "@/lib/vista";
+import type { OrdemEmenta, Produto } from "@/lib/dados/tipos";
+import { cartasComArtigos, categoriasDaCarta, porCategoria, regraDe } from "@/lib/vista";
 import { CartaoArtigo } from "./CartaoArtigo";
 import { SetaMinimizar } from "./SetaMinimizar";
-import { TituloDaSeccao } from "./TituloDaSeccao";
+import { TituloDaSeccao, TituloParaLeitores } from "./TituloDaSeccao";
 
 /**
  * # A carta, por encomenda
@@ -36,16 +36,21 @@ import { TituloDaSeccao } from "./TituloDaSeccao";
  * coisas onde as deixou.
  *
  * Os artigos chegam já filtrados — os da ementa que estão à venda online — e já
- * ordenados pelo `listarProdutos` (#87): as categorias pela ordem que a gerente
- * escolheu no painel, os artigos de cada uma por ordem alfabética. As cartas e
- * as categorias saem da ordem em que aparecem nessa lista; ordenar outra vez
- * aqui desfazia a escolha da gerente.
+ * ordenados pelo `listarProdutos` (#87): dentro de cada categoria, por ordem
+ * alfabética. ⚠️ **As cartas e as categorias saem da `ordem` da gerente, pelas
+ * mesmas funções da `/ementa`** (`cartasComArtigos`, `categoriasDaCarta`), e não
+ * da sequência em que os artigos chegaram. As duas davam o mesmo, mas só porque
+ * o `listarProdutos` ordena hoje como ordena; com a mesma função nos dois sítios
+ * é garantido. E uma categoria que não esteja na ordem fica de fora nas duas
+ * páginas, e não só numa — a entrada já a recusa (`json-painel.ts`).
  */
 export function EmentaEncomendavel({
   artigos,
+  ordem,
   locale,
 }: {
   artigos: Produto[];
+  ordem: OrdemEmenta;
   locale: Locale;
 }) {
   const t = useTranslations("encomendas.daEmenta");
@@ -62,8 +67,11 @@ export function EmentaEncomendavel({
       aria-labelledby="da-ementa-titulo"
       className="ancora-rente seccao seccao-minimizavel"
     >
+      <TituloParaLeitores id="da-ementa-titulo" nivel={2}>
+        {t("titulo")}
+      </TituloParaLeitores>
       <details open data-seccao className="group/seccao">
-        <TituloDaSeccao id="da-ementa-titulo" titulo={t("titulo")} fundo="bg-papel" />
+        <TituloDaSeccao titulo={t("titulo")} fundo="bg-papel" />
 
         <div className="envolvente">
           <p className="mt-1 max-w-[52ch] text-tinta-suave">{t("texto")}</p>
@@ -77,64 +85,71 @@ export function EmentaEncomendavel({
           </p>
 
           <div className="mt-12 space-y-14">
-            {porOrdemDeAparecer(artigos.map((a) => a.carta!)).map((carta) => (
+            {cartasComArtigos(artigos, ordem).map((carta) => (
               <div key={carta}>
                 <h3 className="titulo-display titulo-gama text-tijolo">
                   {te(`cartas.${carta}.curto`)}
                 </h3>
 
                 <div className="mt-6 space-y-8">
-                  {porOrdemDeAparecer(
-                    artigos.filter((a) => a.carta === carta).map((a) => a.categoria!),
-                  ).map((categoria) => (
-                    <details key={categoria} open className="group/categoria">
-                      {/* O título da categoria cola-se por baixo do da secção
-                          (`.titulo-fixo-categoria`) e abre e fecha a categoria,
-                          como o da secção abre e fecha a secção.
+                  {categoriasDaCarta(artigos, ordem, carta).map((categoria) => (
+                    <div key={categoria}>
+                      <TituloParaLeitores nivel={4}>
+                        {te(`cartas.${carta}.curto`)}, {te(`categorias.${categoria}`)}
+                      </TituloParaLeitores>
+                      <details open data-categoria className="group/categoria">
+                        {/* O título da categoria cola-se por baixo do da secção
+                            (`.titulo-fixo-categoria`) e abre e fecha a categoria,
+                            como o da secção abre e fecha a secção.
 
-                          ⚠️ **Leva o nome da carta à frente**: há «Doces» na
-                          carta da casa e na vegan, e colado no topo, com o
-                          título da carta já fora do ecrã, «Doces» não dizia
-                          quais (é a armadilha 8 vista de cima). */}
-                      <summary className="titulo-fixo-categoria group/sumario flex cursor-pointer list-none items-center justify-between gap-3 border-b border-tinta/15 bg-papel py-2.5 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-tijolo [&::-webkit-details-marker]:hidden">
-                        <div className="min-w-0">
-                          <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-tinta-suave">
-                            <span className="text-tijolo">
-                              {te(`cartas.${carta}.curto`)}
-                            </span>
-                            {/* O ponto é para os olhos; o leitor de ecrã ouve
-                                uma vírgula, que é uma pausa, em vez de «ponto». */}
-                            <span aria-hidden> · </span>
-                            <span className="sr-only">, </span>
-                            {te(`categorias.${categoria}`)}
-                          </h4>
-                          {/* ⚠️ **A regra vive aqui e não em cada cartão.**
-                              Escrita artigo a artigo, «mínimo 12 unidades»
-                              aparecia setenta vezes na mesma página — e um aviso
-                              repetido setenta vezes deixa de se ler ao fim da
-                              terceira. A regra é **da categoria** (ver
-                              `encomendavel.ts`), portanto é no título da
-                              categoria que ela é verdadeira uma só vez — e,
-                              colada, continua à vista enquanto se escolhe. */}
-                          <p className="mt-1 text-sm text-tinta-suave">
-                            {regraDaCategoria(artigos, categoria, t)}
-                          </p>
-                        </div>
-                        <SetaMinimizar grupo="categoria" pequena />
-                      </summary>
+                            ⚠️ **Leva o nome da carta à frente**: há «Doces» na
+                            carta da casa e na vegan, e colado no topo, com o
+                            título da carta já fora do ecrã, «Doces» não dizia
+                            quais (é a armadilha 8 vista de cima). */}
+                        <summary className="titulo-fixo-categoria group/sumario flex cursor-pointer list-none items-center justify-between gap-3 border-b border-tinta/15 bg-papel py-2.5 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-tijolo [&::-webkit-details-marker]:hidden">
+                          <div className="min-w-0">
+                            {/* Um `<p>` e não um `<h4>`: dentro do `<summary>`
+                                o título saía da lista de títulos (ver o
+                                `TituloDaSeccao`). O `<h4>` está antes do
+                                `<details>`, para os leitores de ecrã. */}
+                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-tinta-suave">
+                              <span className="text-tijolo">
+                                {te(`cartas.${carta}.curto`)}
+                              </span>
+                              {/* O ponto é para os olhos; o leitor de ecrã ouve
+                                  uma vírgula, que é uma pausa, em vez de «ponto». */}
+                              <span aria-hidden> · </span>
+                              <span className="sr-only">, </span>
+                              {te(`categorias.${categoria}`)}
+                            </p>
+                            {/* ⚠️ **A regra vive aqui e não em cada cartão.**
+                                Escrita artigo a artigo, «mínimo 12 unidades»
+                                aparecia setenta vezes na mesma página — e um aviso
+                                repetido setenta vezes deixa de se ler ao fim da
+                                terceira. A regra é **da categoria** (ver
+                                `encomendavel.ts`), portanto é no título da
+                                categoria que ela é verdadeira uma só vez — e,
+                                colada, continua à vista enquanto se escolhe. */}
+                            <p className="mt-1 text-sm text-tinta-suave">
+                              {regraDaCategoria(porCategoria(artigos, carta, categoria), t)}
+                            </p>
+                          </div>
+                          <SetaMinimizar grupo="categoria" pequena />
+                        </summary>
 
-                      {/* Duas colunas no telemóvel e seis num monitor: o cartão
-                          é estreito de propósito, e a secção tem setenta deles. */}
-                      <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                        {porCategoria(artigos, carta, categoria).map((artigo) => (
-                          <CartaoArtigo
-                            key={artigo.id}
-                            artigo={artigo}
-                            locale={locale}
-                          />
-                        ))}
-                      </ul>
-                    </details>
+                        {/* Duas colunas no telemóvel e seis num monitor: o cartão
+                            é estreito de propósito, e a secção tem setenta deles. */}
+                        <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                          {porCategoria(artigos, carta, categoria).map((artigo) => (
+                            <CartaoArtigo
+                              key={artigo.id}
+                              artigo={artigo}
+                              locale={locale}
+                            />
+                          ))}
+                        </ul>
+                      </details>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -156,17 +171,16 @@ export function EmentaEncomendavel({
  * ar de verdade.
  */
 function regraDaCategoria(
-  artigos: readonly Produto[],
-  categoria: string,
+  /** Os artigos da categoria **nesta carta**: há «doces» na da casa e na vegan,
+      e o mínimo é de cada artigo desde #40 — o primeiro doce da casa não diz o
+      mínimo dos doces vegan. */
+  artigosDaCategoria: readonly Produto[],
   t: (chave: string, valores?: Record<string, string | number>) => string,
 ): string {
-  const artigo = artigos.find((a) => a.categoria === categoria);
+  const artigo = artigosDaCategoria[0];
   const regra = artigo ? regraDe(artigo) : null;
   if (!artigo || !regra) return "";
   return artigo.unidade === "kg"
     ? t("regraKg", { minimo: regra.minimo })
     : t("regraUn", { minimo: regra.minimo, passo: regra.passo });
 }
-
-/** Cada valor uma vez, pela ordem em que aparece. */
-const porOrdemDeAparecer = (valores: readonly string[]): string[] => [...new Set(valores)];

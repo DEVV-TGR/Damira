@@ -898,6 +898,43 @@ body::after {
   z-index: 20;
 }
 
+/**
+ * O foco do teclado nunca fica por baixo dos títulos fixos (WCAG 2.4.11).
+ *
+ * Ao passar de cartão em cartão com o `Tab` (e sobretudo com `Shift+Tab`, a
+ * subir), o browser só rola se o cartão estiver fora da área à vista — e essa
+ * área desconta só o `scroll-padding-top` do documento, os 8 rem. Na
+ * `/encomendas` o que está colado no topo passa disso: o cabeçalho (4 rem), o
+ * título da secção (~5 rem, duas linhas a 320 px) e, na carta por encomenda, o
+ * da categoria (~3,5 rem). O cartão com o foco ficava escondido por baixo deles.
+ *
+ * O `scroll-margin-top` soma-se ao `scroll-padding-top`, e por isso aqui está a
+ * diferença: tudo o que está colado, menos a folga que o documento já dá. As
+ * alturas são as medidas pelo `SeccoesMinimizaveis`, e os valores de recurso
+ * são os do caso normal. ⚠️ Os títulos das próprias categorias ficam com a sua
+ * conta: colados, estão por baixo do da secção, e não do deles.
+ *
+ * ⚠️ **Isto é só metade.** O browser só usa esta margem quando decide rolar, e
+ * para decidir não a conta: um cartão a 9 rem do topo está «à vista» para ele.
+ * A outra metade é o `focusin` do `SeccoesMinimizaveis` (ponto 4), que rola o
+ * que ficou por baixo. Esta fica para sem JavaScript, e para o browser já
+ * acertar quando rola.
+ */
+details[data-seccao] :is(a[href], button, input, select, textarea, [tabindex]) {
+  scroll-margin-top: calc(
+    var(--altura-cabecalho) + var(--altura-titulo-seccao, 5rem) + var(--altura-titulo-categoria, 0px) +
+      0.75rem - var(--folga-ancoras)
+  );
+}
+details[data-categoria] {
+  --altura-titulo-categoria: 3.5rem;
+}
+details[data-seccao] summary.titulo-fixo-categoria {
+  scroll-margin-top: calc(
+    var(--altura-cabecalho) + var(--altura-titulo-seccao, 5rem) + 0.75rem - var(--folga-ancoras)
+  );
+}
+
 /* A categoria da ementa, por baixo da barra de procura e das cartas. Os 8 rem de
    recurso são a barra sem procura activa: 4 px de filetes, 24 de `padding`, a
    caixa de procura e os separadores (44 cada) e 12 entre os dois. */

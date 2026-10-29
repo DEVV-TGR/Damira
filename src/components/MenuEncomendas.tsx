@@ -3,16 +3,15 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
+import { SECCOES_ENCOMENDAS } from "@/lib/vista";
 
 /**
- * As secções da `/encomendas`, pela ordem da página. ⚠️ **São os `id` que a
- * página já tem** (`festas`, `kits-bolo`, `boxes`, `da-ementa`) — lidos, não
- * inventados: mudar um deles lá sem o mudar aqui deixa uma entrada do menu a
- * levar ao topo da página, sem erro nenhum. O «como encomendar» fica de fora:
- * não é uma família de produtos, é o fim do caminho, e o pedido da casa (#82)
- * foi pelas quatro famílias.
+ * As secções da `/encomendas`, da mesma lista que a página usa para os `id`
+ * (`SECCOES_ENCOMENDAS`). O «como encomendar» fica de fora: não é uma família de
+ * produtos, é o fim do caminho, e o pedido da casa (#82) foi pelas quatro
+ * famílias.
  */
-const SECCOES = ["festas", "kits-bolo", "boxes", "da-ementa"] as const;
+const SECCOES = SECCOES_ENCOMENDAS.filter((seccao) => seccao !== "pedido");
 
 /**
  * # O «Encomendas» do cabeçalho, que abre as secções

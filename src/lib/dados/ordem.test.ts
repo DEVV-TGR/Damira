@@ -178,7 +178,10 @@ describe("a loja recebe os produtos já pela ordem", () => {
     expect(ordenados.map((p) => p.id)).toEqual([carta[1].id, carta[0].id, kits[1].id, kits[0].id, kits[2].id]);
   });
 
-  it("uma categoria que ainda não está na ordem vai para o fim da carta, e não desaparece", () => {
+  /* Na lista ordenada vai para o fim, e as páginas não a mostram: a `/ementa` e
+     as encomendas só desenham as categorias da ordem (`categoriasDaCarta`). É
+     por isso que a entrada a recusa, mais acima. */
+  it("uma categoria que ainda não está na ordem vai para o fim da carta na lista ordenada", () => {
     const ordenados = ordenarProdutos(
       [artigo("Sopa", { categoria: "sopas" }), artigo("Tosta", { categoria: "salgados" }), artigo("Bola")],
       { cartas: ["casa"], categorias: ["salgados", "doces"] },

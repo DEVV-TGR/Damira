@@ -2,16 +2,17 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { useTranslations } from "next-intl";
 import { casa, telefoneMarcavel } from "@/data/casa";
-import { listarProdutos } from "@/lib/dados";
-import type { Produto } from "@/lib/dados/tipos";
+import { listarProdutos, ordemDaEmenta } from "@/lib/dados";
+import type { OrdemEmenta, Produto } from "@/lib/dados/tipos";
 import { routing, type Locale } from "@/i18n/routing";
 import { metadataDaPagina } from "@/lib/metadata";
+import { SECCOES_ENCOMENDAS } from "@/lib/vista";
 import { IrParaCompra } from "@/components/encomendas/IrParaCompra";
 import { CartaoProduto } from "@/components/encomendas/CartaoProduto";
 import { EmentaEncomendavel } from "@/components/encomendas/EmentaEncomendavel";
 import { ListaHistorico } from "@/components/encomendas/ListaHistorico";
 import { SeccoesMinimizaveis } from "@/components/encomendas/SeccoesMinimizaveis";
-import { TituloDaSeccao } from "@/components/encomendas/TituloDaSeccao";
+import { TituloDaSeccao, TituloParaLeitores } from "@/components/encomendas/TituloDaSeccao";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -34,9 +35,10 @@ export default async function PaginaEncomendas({
   const { locale } = await params;
   setRequestLocale(locale);
   await getTranslations({ locale, namespace: "encomendas" });
-  const [encomendas, daEmenta] = await Promise.all([
+  const [encomendas, daEmenta, ordem] = await Promise.all([
     listarProdutos({ origem: "encomendas" }),
     listarProdutos({ origem: "ementa", aVendaOnline: true }),
+    ordemDaEmenta(),
   ]);
   const daFamilia = (familia: Produto["familia"]) =>
     encomendas.filter((produto) => produto.familia === familia);
@@ -47,6 +49,7 @@ export default async function PaginaEncomendas({
       bolos={[...daFamilia("bolo"), ...daFamilia("medida")]}
       boxes={daFamilia("box")}
       daEmenta={daEmenta}
+      ordem={ordem}
       locale={locale as Locale}
     />
   );
@@ -95,12 +98,14 @@ function Encomendas({
   bolos,
   boxes,
   daEmenta,
+  ordem,
   locale,
 }: {
   festas: Produto[];
   bolos: Produto[];
   boxes: Produto[];
   daEmenta: Produto[];
+  ordem: OrdemEmenta;
   locale: Locale;
 }) {
   const t = useTranslations("encomendas");
@@ -136,7 +141,7 @@ function Encomendas({
               uma vez, no princípio, que é quando se decide para onde ir. */}
           <nav aria-label={t("indice.titulo")} className="mt-8">
             <ul className="flex flex-wrap gap-2">
-              {SECCOES.map((seccao) => (
+              {SECCOES_ENCOMENDAS.map((seccao) => (
                 <li key={seccao}>
                   <a
                     href={`#${seccao}`}
@@ -189,7 +194,7 @@ function Encomendas({
       />
 
       {/* ── A carta, por encomenda ────────────────────────────────────── */}
-      <EmentaEncomendavel artigos={daEmenta} locale={locale} />
+      <EmentaEncomendavel artigos={daEmenta} ordem={ordem} locale={locale} />
 
       {/* ── Como encomendar ──────────────────────────────────────────── */}
       <section id="pedido" aria-labelledby="como" className="ancora-rente seccao bg-tinta text-papel">
@@ -245,9 +250,6 @@ function Encomendas({
   );
 }
 
-/** As secções por que o índice do herói navega, pela ordem da página. */
-const SECCOES = ["festas", "kits-bolo", "boxes", "da-ementa", "pedido"] as const;
-
 /**
  * Uma família de produtos: título, uma frase, e a grelha de cartões.
  *
@@ -276,12 +278,11 @@ function Familia({
       aria-labelledby={`${id}-titulo`}
       className={`ancora-rente seccao seccao-minimizavel ${fundo === "claro" ? "bg-papel-fundo" : ""}`}
     >
+      <TituloParaLeitores id={`${id}-titulo`} nivel={2}>
+        {titulo}
+      </TituloParaLeitores>
       <details open data-seccao className="group/seccao">
-        <TituloDaSeccao
-          id={`${id}-titulo`}
-          titulo={titulo}
-          fundo={fundo === "claro" ? "bg-papel-fundo" : "bg-papel"}
-        />
+        <TituloDaSeccao titulo={titulo} fundo={fundo === "claro" ? "bg-papel-fundo" : "bg-papel"} />
 
         <div className="envolvente">
           <p className="mt-1 max-w-[52ch] text-tinta-suave">{texto}</p>
