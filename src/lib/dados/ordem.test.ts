@@ -1,22 +1,23 @@
 import { describe, expect, it } from "vitest";
 import { compararNomes, moverNaLista, ordenarProdutos } from "@/lib/ordenar";
-import { CATALOGO_JSON, criarFonteJson } from "./json";
+import { fonteDaLoja } from "./fontes-de-teste";
+import { CATALOGO_JSON } from "./json";
 import { protegerPainel } from "./papeis";
 import type { ContextoPainel, FonteDeDados, Produto } from "./tipos";
 
 /*
  * A ordem das categorias e a ordem alfabética dentro delas (#87). Como o
  * `painel.test.ts`, vê a fonte como o `index.ts` a expõe — com o papel
- * verificado por cima — e deve passar contra a implementação sobre a base de
- * dados.
+ * verificado por cima — e corre nas duas voltas: contra os JSON e contra a base
+ * de dados (`fontes-de-teste.ts`).
  */
 
 const AGORA = new Date("2026-10-16T09:00:00Z");
 const GERENTE: ContextoPainel = { papel: "gerente", agora: AGORA };
 const BALCAO: ContextoPainel = { papel: "funcionario", agora: AGORA };
 
-const fonte = (): FonteDeDados => {
-  const base = criarFonteJson();
+const fonte = async (): Promise<FonteDeDados> => {
+  const base = await fonteDaLoja();
   return { ...base, ...protegerPainel(base) };
 };
 
@@ -45,7 +46,7 @@ const artigo = (nome: string, alteracoes: Partial<Produto> = {}): Produto => ({
 
 describe("a ordem das categorias, como a gerente a deixa", () => {
   it("por defeito é a do impresso, e cobre todas as categorias que a ementa usa", async () => {
-    const f = fonte();
+    const f = await fonte();
     const ordem = await f.ordemDaEmenta();
     expect(ordem.categorias).toEqual(DO_IMPRESSO);
     const usadas = new Set((await f.listarProdutos({ origem: "ementa" })).map((p) => p.categoria));
@@ -53,7 +54,7 @@ describe("a ordem das categorias, como a gerente a deixa", () => {
   });
 
   it("a gerente grava, e a seguir lê-se a ordem nova — sem mexer nas cartas nem nos títulos das bebidas", async () => {
-    const f = fonte();
+    const f = await fonte();
     const antes = await f.ordemDaEmenta();
     const resultado = await f.guardarOrdemCategorias({ categorias: NOVA }, GERENTE);
     expect(resultado).toEqual({ ok: true, valor: { ...antes, categorias: NOVA } });
@@ -61,13 +62,13 @@ describe("a ordem das categorias, como a gerente a deixa", () => {
   });
 
   it("o balcão é recusado no servidor, e a ordem não muda", async () => {
-    const f = fonte();
+    const f = await fonte();
     expect(await f.guardarOrdemCategorias({ categorias: NOVA }, BALCAO)).toEqual({ ok: false, erro: "sem-permissao" });
     expect((await f.ordemDaEmenta()).categorias).toEqual(DO_IMPRESSO);
   });
 
   it("recusa o que não é uma permutação das que existem: faltar, inventar, repetir", async () => {
-    const f = fonte();
+    const f = await fonte();
     const tentativas: unknown[] = [
       { categorias: NOVA.slice(1) },
       { categorias: [...NOVA, "sopas"] },
@@ -89,13 +90,13 @@ describe("a ordem das categorias, como a gerente a deixa", () => {
   });
 
   it("quem recebe a ordem pode mexer-lhe sem mudar a da fonte", async () => {
-    const f = fonte();
+    const f = await fonte();
     const lida = await f.ordemDaEmenta();
     lida.categorias.reverse();
     expect((await f.ordemDaEmenta()).categorias).toEqual(DO_IMPRESSO);
   });
   it("um artigo não entra com uma categoria que não está na ordem — ficava órfão, fora da ementa", async () => {
-    const f = fonte();
+    const f = await fonte();
     const sopa = (categoria: string) => ({
       origem: "ementa",
       familia: "ementa",
@@ -137,7 +138,7 @@ describe("a ordem das categorias, como a gerente a deixa", () => {
 
 describe("a loja recebe os produtos já pela ordem", () => {
   it("as categorias de cada carta seguem a ordem gravada, na ementa e nas encomendas", async () => {
-    const f = fonte();
+    const f = await fonte();
     await f.guardarOrdemCategorias({ categorias: NOVA }, GERENTE);
 
     for (const filtro of [{ origem: "ementa" as const }, { origem: "ementa" as const, aVendaOnline: true }]) {
@@ -151,7 +152,7 @@ describe("a loja recebe os produtos já pela ordem", () => {
   });
 
   it("dentro de cada categoria, por ordem alfabética portuguesa", async () => {
-    const produtos = await daLoja(fonte(), { origem: "ementa" });
+    const produtos = await daLoja(await fonte(), { origem: "ementa" });
     for (const carta of new Set(produtos.map((p) => p.carta))) {
       for (const categoria of categoriasPorAparecer(produtos, carta!)) {
         const nomes = produtos.filter((p) => p.carta === carta && p.categoria === categoria).map((p) => p.nome.pt);

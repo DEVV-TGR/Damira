@@ -83,6 +83,9 @@ nosso processo. Estas ficam por provar até haver a conta:
       segundo, com duas ligações a sério (`robustez.md` › Concorrência).
 - [ ] **As escritas tudo-ou-nada pelo driver HTTP** (lotes), que o PGlite não
       imita.
+- [ ] **A ordem das categorias gravada em dois aparelhos ao mesmo tempo**: a
+      permutação confere-se na própria instrução (`guardarOrdemCategorias`),
+      e nenhuma das duas deixa a lista com categorias a mais ou a menos.
 - [ ] **O tempo de uma página** com o site na Vercel a ler da Neon.
 - [ ] **A base de dados adormece** ao fim de 5 minutos sem consultas, com o
       painel aberto: o polling não a pode acordar (regra 6 do `AGENTS.md`).
