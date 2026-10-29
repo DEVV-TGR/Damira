@@ -2,6 +2,7 @@ import { TZDate, tz } from "@date-fns/tz";
 import { addDays, format, getDay } from "date-fns";
 import type { HorarioSemanal, TempoProducao, VagaOcupada } from "@/lib/horarios";
 import { emModoDeTeste, type Ambiente } from "@/lib/modo-teste";
+import { fonteDaNeon } from "./bd-neon";
 import { CATALOGO_JSON, CONFIGURACAO_JSON, criarFonteJson, criarFonteJsonComEstado, type OpcoesFonteJson } from "./json";
 import { diaDeLisboa } from "@/lib/painel";
 import type { ConfiguracaoDaCasa, FonteDeDados, Pedido, Produto } from "./tipos";
@@ -153,6 +154,64 @@ export function fonteDeExemplo(
     return pedido;
   };
   return { ...fonte, simularPedidoPago };
+}
+
+// ——— Por cima da base de dados ———
+
+/**
+ * # O modo de teste por cima de uma fonte qualquer (decidido a 05/10, #57)
+ *
+ * Com a base de dados, a fonte é sempre ela, e o exemplo deixa de ser uma fonte
+ * à parte: passa a ser **esta camada**, que só tapa o que está `null` — os tempos
+ * de produção, a cozinha e o limite por vaga — e junta à ocupação os pedidos de
+ * exemplo do calendário, até ao limite. Os produtos que a casa preencher ficam
+ * na base de dados desde o primeiro dia, e um tempo que ela já tenha dado nunca
+ * é trocado pelo de exemplo.
+ *
+ * ⚠️ **Só tapa as leituras da loja** (`listarProdutos`, `produtoPorId`,
+ * `configuracaoDaCasa`, `ocupacao`). As do painel — `produtosDoPainel`,
+ * `configuracaoDoPainel` — passam como estão gravadas: se a gerente visse a
+ * cozinha de exemplo em «Horários», gravava-a como sendo a dela.
+ *
+ * ⚠️ **Nunca grava nada.** As escritas passam direitas à fonte de baixo, com o
+ * que a gerente escreveu.
+ */
+export function comExemplo(fonte: FonteDeDados, ambiente: Ambiente = process.env): FonteDeDados {
+  recusarEmProducao(ambiente);
+  const preencher = (produto: Produto): Produto =>
+    produto.tempoProducao ? produto : { ...produto, tempoProducao: TEMPOS_DE_EXEMPLO[produto.familia] };
+  const configuracao = async (): Promise<ConfiguracaoDaCasa> => {
+    const gravada = await fonte.configuracaoDaCasa();
+    return {
+      ...gravada,
+      cozinha: gravada.cozinha ?? COZINHA_DE_EXEMPLO,
+      limitePorVaga: gravada.limitePorVaga ?? LIMITE_POR_VAGA_DE_EXEMPLO,
+    };
+  };
+
+  return {
+    ...fonte,
+    async listarProdutos(filtro) {
+      return (await fonte.listarProdutos(filtro)).map(preencher);
+    },
+    async produtoPorId(id) {
+      const produto = await fonte.produtoPorId(id);
+      return produto && preencher(produto);
+    },
+    configuracaoDaCasa: configuracao,
+    async ocupacao(desde, ate) {
+      const [reais, config] = await Promise.all([fonte.ocupacao(desde, ate), configuracao()]);
+      const contagem = new Map(reais.map(({ inicio, pedidos }) => [inicio.getTime(), pedidos]));
+      /* Os de exemplo enchem **até** ao limite, e nunca para lá dele — a mesma
+         regra da fonte dos JSON (`ocupacaoExtra`). */
+      for (const { inicio, pedidos: n } of pedidosDeExemplo(config)(desde, ate)) {
+        const ja = contagem.get(inicio.getTime()) ?? 0;
+        const extra = config.limitePorVaga === null ? n : Math.max(0, Math.min(n, config.limitePorVaga - ja));
+        if (ja + extra > 0) contagem.set(inicio.getTime(), ja + extra);
+      }
+      return [...contagem].map(([quando, pedidos]) => ({ inicio: new Date(quando), pedidos }));
+    },
+  };
 }
 
 // ——— Pedidos de exemplo ———
@@ -412,16 +471,36 @@ export function pedidosDoPainelDeExemplo(
 }
 
 /**
- * A fonte que o site usa, conforme o ambiente. **Com o modo de teste ligado,
- * tudo o que é provisório de uma vez** (`src/lib/modo-teste.ts`): os prazos e o
- * horário de exemplo, os pedidos de exemplo no calendário e no painel. Sem ele,
- * os JSON como estão — e o calendário diz «indisponível» até haver dados.
+ * A fonte que o site usa, conforme o ambiente:
  *
- * O `agora` é o do arranque do processo: os pedidos do painel ficam presos a
- * esse dia, e um processo que atravesse a meia-noite mostra-os um dia atrás até
- * arrancar outra vez. Em modo de teste, chega.
+ * | | sem modo de teste | com modo de teste (`LOJA_EM_TESTE=1`) |
+ * |---|---|---|
+ * | **com `DATABASE_URL`** | a base de dados, como está | a base de dados, com a camada `comExemplo` por cima |
+ * | **sem `DATABASE_URL`** | os JSON, como estão | os JSON com tudo o que é provisório: prazos, horário e pedidos de exemplo, no calendário e no painel |
+ *
+ * Sem dados nem exemplo, o calendário diz «indisponível» — nunca um prazo
+ * inventado.
+ *
+ * O `agora` é o do arranque do processo: os pedidos do painel de exemplo ficam
+ * presos a esse dia, e um processo que atravesse a meia-noite mostra-os um dia
+ * atrás até arrancar outra vez. Em modo de teste, chega.
  */
-export const fonteDoAmbiente = (ambiente: Ambiente = process.env, agora: Date = new Date()): FonteDeExemplo =>
-  emModoDeTeste(ambiente)
+export const fonteDoAmbiente = (
+  ambiente: Ambiente = process.env,
+  agora: Date = new Date(),
+  /* Por argumento, para os testes porem um PGlite no lugar da Neon. */
+  criarDaBaseDeDados: (endereco: string) => FonteDeDados = fonteDaNeon,
+): FonteDeExemplo => {
+  /* ⚠️ Com a base de dados, a fonte é **sempre** ela (#57): o modo de teste é
+     só a camada por cima, e os pedidos de exemplo do painel e o «Simular pedido
+     novo» ficam na fonte dos JSON, em local e numa demonstração sem base de
+     dados. Ver `docs/loja/ligar-a-neon.md`. */
+  const endereco = ambiente.DATABASE_URL;
+  if (endereco) {
+    const daBaseDeDados = criarDaBaseDeDados(endereco);
+    return emModoDeTeste(ambiente) ? comExemplo(daBaseDeDados, ambiente) : daBaseDeDados;
+  }
+  return emModoDeTeste(ambiente)
     ? fonteDeExemplo({ pedidosDeExemplo: true, pedidosDoPainel: true }, ambiente, agora)
     : criarFonteJson();
+};
