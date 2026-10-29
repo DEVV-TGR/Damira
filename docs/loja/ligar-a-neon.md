@@ -25,26 +25,37 @@ para o `.env.local` de cada um.
 
 ## 1. Na visita (#26): criar a conta
 
-- [ ] **Conta em nome da Damira**, plano **Launch** — restauro até 7 dias; o
-      gratuito só volta 6 horas atrás (`robustez.md` › Backups). Convidar a
-      DevPlus.
-- [ ] **Postgres 18.** É a versão do PGlite em que tudo está testado; uma
-      versão diferente pode comportar-se de forma diferente justamente onde os
-      testes não olham.
-- [ ] **Região: Frankfurt** (AWS Europe Central). É a mais perto de Portugal, e
-      os dados dos clientes ficam na União Europeia (RGPD).
-- [ ] **Dois ramos:** `production` (o principal) e `desenvolvimento`, criado a
-      partir dele. ⚠️ Nunca se testa no de produção (`AGENTS.md`).
+A conta foi criada pela casa e confirmada a 29/10: a organização «Confeitaria
+Damira», com o projeto «Damira - Loja Online». A DevPlus entra como *Editor*,
+que não pode apagar o projeto — só os administradores, que são da casa.
+
+- [x] **Conta em nome da Damira**, com a DevPlus convidada.
+- [ ] **Plano Launch** — restauro até 7 dias; o gratuito, em que a conta está,
+      só volta 6 horas atrás (`robustez.md` › Backups). É a casa que paga:
+      pedir antes do lançamento.
+- [x] **Postgres 18** (18.6). É a versão do PGlite em que tudo está testado;
+      uma versão diferente pode comportar-se de forma diferente justamente onde
+      os testes não olham.
+- [x] **Região: Londres** (AWS Europe West 2). O plano era Frankfurt, e a casa
+      criou-a em Londres; ficou. Para Portugal a distância é a mesma, e o Reino
+      Unido tem decisão de adequação da UE para o RGPD, por isso os dados dos
+      clientes podem lá estar. Recriar obrigava a casa a voltar a mexer na
+      conta, e a região não se muda depois de criada.
+- [x] **Dois ramos:** `production` (o principal) e `desenvolvimento`, criado a
+      partir dele. ⚠️ Nunca se testa no de produção (`AGENTS.md`). O
+      `desenvolvimento` não se apaga sozinho (a Neon propõe apagá-lo ao fim de
+      um dia: escolher «Never»).
 
 ## 2. A região das funções na Vercel
 
-⚠️ **O repositório não define a região, e por defeito a Vercel corre as funções
-em Washington (`iad1`).** Com a base de dados em Frankfurt, cada consulta
-atravessava o Atlântico — cerca de 100 ms por ida e volta, e uma página faz
-várias.
+⚠️ **Por defeito a Vercel corre as funções em Washington (`iad1`).** Com a base
+de dados em Londres, cada consulta atravessava o Atlântico — cerca de 100 ms
+por ida e volta, e uma página faz várias.
 
-- [ ] Confirmar no painel da Vercel (Settings → Functions → Function Region) e
-      pôr **Frankfurt (`fra1`)**, a mesma da Neon.
+- [x] O `vercel.json` fixa as funções em **Londres (`lhr1`)**, a mesma região
+      da Neon. (Estava em Frankfurt, `fra1`, escrito antes de a conta existir.)
+- [ ] Depois do primeiro deploy, confirmar no painel da Vercel (Settings →
+      Functions → Function Region) que diz Londres.
 
 ## 3. As variáveis de ambiente
 
@@ -131,10 +142,13 @@ A casa começa a preencher os produtos no painel, e o que ela grava tem de ficar
       (`comExemplo`): o site fica em modo de teste até 11/11, e é nesse modo que
       ela vai preencher. Nada de exemplo chega à base de dados, e o painel vê a
       casa como está gravada.
-- [ ] **A entrada verdadeira da gerente** (#33): o PIN da entrada provisória
-      está escrito no código, num repositório público. O que falta está no
-      ponto 8.
-- [ ] A conta Resend da Damira, para o código da gerente chegar por email (#26).
+- [x] **A entrada verdadeira da gerente** (#33), ligada pela `DATABASE_URL`:
+      o PIN da entrada provisória está escrito no código, num repositório
+      público, e ela não liga com a base de dados. Falta só o que é da Vercel
+      (ponto 8).
+- [ ] A conta Resend da Damira, para o código da gerente chegar por email (#26)
+      — **criada com o email da gerente**, para o código lhe chegar antes de o
+      domínio estar verificado (ponto 8).
 
 ## 8. A entrada no painel (#33) — o que falta
 
@@ -152,12 +166,25 @@ existem; o resto está aqui, por quem o faz.
 - [x] **O comando para definir o PIN da equipa**: `npm run painel:pin`. É a
       forma de pôr o **primeiro** PIN, antes de haver gerente com sessão;
       depois, muda-se no ecrã «Equipa» da gestão.
-- [ ] **Ligá-la** no `src/lib/sessao-painel/index.ts` — é a única linha que muda.
-      O `criarSessaoBd` recebe: a base de dados e o `loteNeon`; os cookies do
-      `next/headers` (como hoje); os emails do `EMAILS_GERENTE`; o envio do
-      código pelo Resend (como o `src/lib/email.ts`, sem nunca registar o email);
-      o `user-agent` dos cabeçalhos, para a lista de sessões; e `producao` para
-      os cookies `secure`.
+- [x] **Ligá-la**: o `src/lib/sessao-painel/escolher.ts` escolhe a verdadeira
+      quando há `DATABASE_URL` — a mesma variável da fonte dos dados, por isso
+      as duas entram juntas, no mesmo deploy. Sem ela, a provisória, como até
+      aqui.
+
+**O que a entrada verdadeira lê da Vercel:**
+
+| Variável | Para quê | Sem ela |
+|---|---|---|
+| `DATABASE_URL` | liga-a (e à fonte dos dados) | a provisória |
+| `EMAILS_GERENTE` | quem pode ser gerente | ⚠️ **ninguém é gerente** — não há valor por defeito |
+| `RESEND_API_KEY` | o envio do código da gerente | a entrada da gerente diz que não está disponível; a do PIN funciona |
+| `EMAIL_REMETENTE` | o remetente, de um domínio verificado | `onboarding@resend.dev`, que **só entrega a quem criou a conta Resend** |
+
+⚠️ **O código da gerente antes de o domínio estar verificado.** O remetente de
+testes do Resend só entrega ao email com que se criou a conta. **Se a conta
+Resend da casa for criada com o email da gerente**, o código chega-lhe mesmo
+sem domínio — e chega para o dia 14. Com o domínio verificado, põe-se o
+`EMAIL_REMETENTE` e passa a entregar a qualquer gerente da lista.
 
 ### No contrato e no ecrã (Gonçalo)
 

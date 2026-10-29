@@ -1,14 +1,14 @@
 import "server-only";
-import { cookies } from "next/headers";
-import { criarSessaoProvisoria } from "./provisoria";
+import { cookies, headers } from "next/headers";
+import { entradaDoAmbiente } from "./escolher";
 import type { FonteSessao, LojaDeCookies } from "./tipos";
 
 /**
  * # A entrada no painel
  *
- * A página e as ações do painel só falam com isto. Hoje do outro lado está a
- * entrada provisória; a verdadeira, sobre a base de dados, entra aqui na #33 —
- * **é a única linha que muda**. Ver `tipos.ts`.
+ * A página e as ações do painel só falam com isto. Do outro lado está a entrada
+ * **verdadeira** quando há base de dados (`DATABASE_URL`), e a **provisória**
+ * quando não há — quem escolhe é o `escolher.ts`. Ver `tipos.ts`.
  *
  * ⚠️ Os cookies só se escrevem em ações do servidor e em rotas, nunca ao
  * desenhar uma página: o `sessaoAtual` só lê, e é por isso que pode ser chamado
@@ -24,4 +24,8 @@ const lojaDoNext = async (): Promise<LojaDeCookies> => {
   };
 };
 
-export const sessao: FonteSessao = criarSessaoProvisoria({ ambiente: process.env, cookies: lojaDoNext });
+export const sessao: FonteSessao = entradaDoAmbiente({
+  ambiente: process.env,
+  cookies: lojaDoNext,
+  dispositivo: async () => (await headers()).get("user-agent"),
+});
