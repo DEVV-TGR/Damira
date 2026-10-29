@@ -12,11 +12,26 @@ import { Provar } from "@/components/cartaz/Provar";
 import { Encomendar } from "@/components/cartaz/Encomendar";
 import { Raro } from "@/components/cartaz/Raro";
 import { Festa } from "@/components/cartaz/Festa";
-import { Colofao } from "@/components/cartaz/Colofao";
 import { routing, type Locale } from "@/i18n/routing";
 import { listarProdutos, ordemDaEmenta } from "@/lib/dados";
 import "../cartaz-motor.css";
 import "../cartaz.css";
+
+/* ⚠️ **Capítulos ocultos, e não apagados.** Na reunião com a casa a 12/10/2026
+   (#79) ficou decidido que a página acaba nos reels: a ementa, as encomendas e
+   o «encomendar» saem da página inicial **por agora**. Os componentes, o CSS e
+   os textos ficam todos — é para voltarem.
+
+   Mostrar um outra vez é tirá-lo daqui; esconder também os reels é acrescentar
+   `"cap-reels"`. As secções e o fólio saem os dois desta lista, e por isso não
+   se desencontram (o fólio mede pelos `id`).
+
+   ⚠️ **Os numerais não são automáticos**: vêm do `messages/*.json` e seguem a
+   ordem visível. Os três ocultos guardam VII, VIII e IX, que é o que lhes cabe
+   se voltarem os três pela ordem em que estão. Voltar só um deles, ou esconder
+   os reels, obriga a renumerar lá. */
+const OCULTOS: ReadonlySet<string> = new Set(["cap-provar", "cap-festa", "cap-encomendar"]);
+const visivel = (id: string) => !OCULTOS.has(id);
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -47,10 +62,25 @@ export function generateStaticParams() {
  * uma fotografia a encher o ecrã. Uma gramática que proíbe o pico é a
  * gramática errada, por muito que o nome assente.
  *
+ * ## ⚠️ O que mudou a 12/10/2026, na reunião com a casa
+ *
+ * - **A página acaba nos reels.** A ementa, as encomendas e o «encomendar»
+ *   estão ocultos (ver `OCULTOS`, acima) — não apagados (#79).
+ * - **O raro (vegan) subiu** para logo a seguir ao silêncio, antes do pão, e
+ *   passou a capítulo II. O pão é o III (#79).
+ * - **A morada (capítulo X, o colofão) saiu de vez**, com o mapa. A morada,
+ *   o horário e o telefone vivem no rodapé (#81).
+ * - **A vitrine mostra seis fotografias** e um «Ver mais» (#80).
+ *
+ * Grande parte do que segue descreve a página como foi construída. Onde já
+ * não é verdade, diz-se.
+ *
  * ## A sequência, e porque é esta
  *
  * *A porta* → *o pão* → *as mãos* → *o raro* → *a festa* → *a morada*. Não é
  * uma ordem que eu tenha proposto: é a que o cliente ditou na entrevista.
+ * ⚠️ **Hoje é outra**, e também foi a casa que a ditou: *a porta* → *o raro*
+ * → *o pão* → *as mãos* → *a vitrine* → *os reels*.
  *
  * A folha de rosto vem antes de tudo porque a gramática a exige — tipografia
  * no papel, **sem imagem acima da dobra**. É a mudança mais visível em relação
@@ -70,6 +100,10 @@ export function generateStaticParams() {
  * papel → papel-fundo → tinta → estampa → papel → papel-fundo → verde →
  * tijolo → tinta.
  *
+ * ⚠️ Hoje: tijolo → papel-fundo → tinta → **verde** → papel → estampa →
+ * papel-fundo → papel → tinta. Continua sem dois iguais seguidos, e o verde
+ * continua a aparecer uma vez só.
+ *
  * Seis fundos distintos, todos da paleta medida dos impressos, **sem uma cor
  * nova**. Nunca dois iguais seguidos. O verde aparece uma vez só, no capítulo
  * vegan, que é a regra do `AGENTS.md` cumprida à letra.
@@ -86,17 +120,19 @@ export function generateStaticParams() {
  * vitrine em diante tudo são secções normais com escalonamento curto, e não
  * actos presos. Informação lê-se depressa; experiência é que ocupa espaço. Os
  * únicos actos presos da página continuam a ser três: o pão, a carta vegan e o
- * colofão.
+ * colofão. ⚠️ Desde 12/10/2026 são seis capítulos e não dez, o colofão saiu e
+ * o pão já não é preso: os actos presos visíveis são o raro e os reels.
  *
  * ## As quatro secções que respondem a "para que serve o sítio"
  *
- * - **IV a vitrine** — catorze fotografias do álbum da própria casa;
- * - **V os reels** — seis lugares para o vídeo do Instagram, hoje vazios e a
+ * - **V a vitrine** — catorze fotografias do álbum da própria casa, seis à
+ *   vista e as outras atrás de um «Ver mais»;
+ * - **VI os reels** — seis lugares para o vídeo do Instagram, hoje vazios e a
  *   dizê-lo;
  * - **VII a ementa** — as quatro cartas e um preço real de cada, para a
- *   pergunta *quanto custa* ter resposta sem sair da página;
+ *   pergunta *quanto custa* ter resposta sem sair da página (⚠️ oculta);
  * - **IX encomendar** — as três vias, em blocos grandes, porque o cliente pediu
- *   que isto se usasse tanto aos vinte como aos setenta anos.
+ *   que isto se usasse tanto aos vinte como aos setenta anos (⚠️ oculta).
  *
  * ## O que já não está aqui
  *
@@ -123,18 +159,22 @@ export default async function PaginaInicial({
      são texto traduzido, e uma constante ao lado do componente ficava numa
      língua só. Os `id` têm de bater certo com os das `<section>` — é por eles
      que o fólio mede a posição e salta. */
-  const capitulos: CapituloDoFolio[] = [
+  const todos: CapituloDoFolio[] = [
     { id: "cap-porta", numeral: t("porta.numeral"), titulo: t("porta.olho") },
+    { id: "cap-raro", numeral: t("raro.numeral"), titulo: t("raro.olho") },
+    /* Sem marcador: só muda a cor do fio no título do pão, que sem isto
+       herdava o papel do vegan e desaparecia em cima do papel. Ver o
+       `cartaz.css`. */
+    { id: "cap-pao-titulo", numeral: "", titulo: "", marcador: false },
     { id: "cap-pao", numeral: t("pao.numeral"), titulo: t("pao.olho") },
     { id: "cap-maos", numeral: t("maos.numeral"), titulo: t("maos.olho") },
     { id: "cap-vitrine", numeral: t("vitrine.numeral"), titulo: t("vitrine.olho") },
     { id: "cap-reels", numeral: t("reels.numeral"), titulo: t("reels.olho") },
-    { id: "cap-raro", numeral: t("raro.numeral"), titulo: t("raro.olho") },
     { id: "cap-provar", numeral: t("provar.numeral"), titulo: t("provar.olho") },
     { id: "cap-festa", numeral: t("festa.numeral"), titulo: t("festa.olho") },
     { id: "cap-encomendar", numeral: t("encomendar.numeral"), titulo: t("encomendar.olho") },
-    { id: "cap-colofao", numeral: t("colofao.numeral"), titulo: t("colofao.olho") },
   ];
+  const capitulos = todos.filter((c) => visivel(c.id));
 
   return (
     <div id="cartaz" className="cartaz">
@@ -144,15 +184,18 @@ export default async function PaginaInicial({
       <FolhaDeRosto />
       <Porta />
       <Silencio />
+      <Raro ementa={ementa} />
       <Pao />
       <Maos />
       <Vitrine />
-      <Reels />
-      <Raro ementa={ementa} />
-      <Provar ementa={ementa} ordem={ordem} locale={locale as Locale} />
-      <Festa ementa={ementa} encomendas={encomendas} locale={locale as Locale} />
-      <Encomendar />
-      <Colofao />
+      {visivel("cap-reels") && <Reels />}
+      {visivel("cap-provar") && (
+        <Provar ementa={ementa} ordem={ordem} locale={locale as Locale} />
+      )}
+      {visivel("cap-festa") && (
+        <Festa ementa={ementa} encomendas={encomendas} locale={locale as Locale} />
+      )}
+      {visivel("cap-encomendar") && <Encomendar />}
     </div>
   );
 }

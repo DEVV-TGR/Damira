@@ -18,8 +18,10 @@ import { Marca } from "@/components/Marca";
  *
  * A primeira versão tinha três colunas de texto pequeno — morada, contacto,
  * redes — e nada mais, porque o fecho da página inicial mostrava a marca em
- * grande logo acima. Esse fecho já não existe, a página inicial passou a
- * acabar num colofão, e a ementa e as encomendas nunca tiveram fecho nenhum.
+ * grande logo acima. Esse fecho já não existe — nem o colofão que o substituiu,
+ * que saiu a pedido da casa (#81, 12/10/2026): **a página inicial acaba agora
+ * nos reels, e o rodapé é o único sítio dela com morada, horário e mapa**. A
+ * ementa e as encomendas nunca tiveram fecho nenhum.
  * O cliente pediu um rodapé melhor, e o que faltava era concreto:
  *
  * - **a marca**, porque é o único sítio das três páginas onde o nome da casa

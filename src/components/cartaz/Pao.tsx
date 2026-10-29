@@ -2,11 +2,15 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 
 /**
- * # Capítulo II: **o pão**. É o pico da página.
+ * # Capítulo III: **o pão**. É o pico da página.
  *
  * O cliente escolheu-o na entrevista: *o pão a encher o ecrã*. Continua a ser a
- * única fotografia que ocupa o ecrã inteiro, continua a vir a seguir ao
- * silêncio, e continua sem uma letra por cima.
+ * única fotografia que ocupa o ecrã inteiro, e continua sem uma letra por cima.
+ *
+ * ⚠️ **Já não vem logo a seguir ao silêncio.** Desde a reunião com a casa a
+ * 12/10/2026 (#79) o capítulo vegan subiu para entre os dois, e o pão passou de
+ * II a III. A frase do silêncio continua a anunciá-lo; foi a casa que quis o
+ * vegan mais acima.
  *
  * ## ⚠️ Deixou de ser um acto preso, e foi o cliente que o pediu
  *
@@ -41,7 +45,14 @@ export function Pao() {
           Com o título em cima, a fotografia fica entre o seu nome e o capítulo
           seguinte, que é o padrão de todos os outros capítulos. A legenda
           pequena continua por baixo da estampa, onde uma legenda vive. */}
-      <section className="cap cap--legenda cap--legenda--antes" aria-labelledby="pao">
+      {/* O `id` não é para o fólio (o marcador do pão continua na estampa):
+          é para o fio do vapor mudar de cor aqui. Ver `cap-pao-titulo` no
+          `cartaz.css`. */}
+      <section
+        id="cap-pao-titulo"
+        className="cap cap--legenda cap--legenda--antes"
+        aria-labelledby="pao"
+      >
         <div className="cap__caixa" data-sc-in data-sc-stagger="50">
           <p className="cap__olho">
             <span className="cap__numeral">{t("numeral")}</span> {t("olho")}

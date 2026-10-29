@@ -5,6 +5,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { Marca } from "./Marca";
 import { BotaoConta } from "./conta/BotaoConta";
+import { MenuEncomendas } from "./MenuEncomendas";
 
 /**
  * Cliente por causa do seletor de idioma, que precisa de saber em que página
@@ -85,6 +86,12 @@ export function Cabecalho({ locale }: { locale: Locale }) {
               não traz desenho novo, usa o que a casa tem. */}
           {SECOES.map((seccao) => {
             const actual = caminho === seccao;
+            /* As encomendas abrem um menu com as secções da página (#82). Fica
+               dentro do mesmo `map` para o «estou nesta página» continuar a ser
+               decidido num sítio só. Ver `MenuEncomendas.tsx`. */
+            if (seccao === "/encomendas") {
+              return <MenuEncomendas key={seccao} actual={actual} />;
+            }
             return (
               <Link
                 key={seccao}
@@ -100,7 +107,7 @@ export function Cabecalho({ locale }: { locale: Locale }) {
                     : "hover:text-tijolo"
                 }`}
               >
-                {t(seccao.slice(1) as "ementa" | "encomendas")}
+                {t("ementa")}
               </Link>
             );
           })}

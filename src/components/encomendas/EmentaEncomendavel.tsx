@@ -3,6 +3,8 @@ import type { Locale } from "@/i18n/routing";
 import type { Produto } from "@/lib/dados/tipos";
 import { porCategoria, regraDe } from "@/lib/vista";
 import { CartaoArtigo } from "./CartaoArtigo";
+import { SetaMinimizar } from "./SetaMinimizar";
+import { TituloDaSeccao } from "./TituloDaSeccao";
 
 /**
  * # A carta, por encomenda
@@ -49,67 +51,96 @@ export function EmentaEncomendavel({
   const te = useTranslations("ementa");
 
   return (
-    <section aria-labelledby="da-ementa" className="seccao">
-      <div className="envolvente">
-        <h2
-          id="da-ementa"
-          className="scroll-mt-24 titulo-display titulo-beta max-w-[18ch]"
-        >
-          {t("titulo")}
-        </h2>
-        <p className="mt-4 max-w-[52ch] text-tinta-suave">{t("texto")}</p>
+    /* ⚠️ **O `id="da-ementa"` passou do `<h2>` para a `<section>`**, com o
+       mesmo valor: o índice do herói e o menu do cabeçalho continuam a saltar
+       para `#da-ementa`. O `<h2>` passou a viver num título colado, e um salto
+       para um elemento colado aterra onde ele está colado — que, com a secção já
+       passada, é o fundo dela. */
+    <section
+      id="da-ementa"
+      aria-labelledby="da-ementa-titulo"
+      className="ancora-rente seccao seccao-minimizavel"
+    >
+      <details open data-seccao className="group/seccao">
+        <TituloDaSeccao id="da-ementa-titulo" titulo={t("titulo")} fundo="bg-papel" />
 
-        {/* ⚠️ **O aviso do mínimo vem antes da grelha e não depois.** Depois
-            chega tarde: nessa altura a pessoa já juntou, já se enganou na
-            expectativa, e o que lê parece letra pequena a desdizer o que acabou
-            de fazer. */}
-        <p className="mt-5 max-w-[52ch] rounded-xl border border-tijolo/30 bg-tijolo/5 px-5 py-4 text-sm">
-          {t("aviso")}
-        </p>
+        <div className="envolvente">
+          <p className="mt-1 max-w-[52ch] text-tinta-suave">{t("texto")}</p>
 
-        <div className="mt-12 space-y-14">
-          {porOrdemDeAparecer(artigos.map((a) => a.carta!)).map((carta) => (
-            <div key={carta}>
-              <h3 className="titulo-display titulo-gama text-tijolo">
-                {te(`cartas.${carta}.curto`)}
-              </h3>
+          {/* ⚠️ **O aviso do mínimo vem antes da grelha e não depois.** Depois
+              chega tarde: nessa altura a pessoa já juntou, já se enganou na
+              expectativa, e o que lê parece letra pequena a desdizer o que acabou
+              de fazer. */}
+          <p className="mt-5 max-w-[52ch] rounded-xl border border-tijolo/30 bg-tijolo/5 px-5 py-4 text-sm">
+            {t("aviso")}
+          </p>
 
-              <div className="mt-6 space-y-10">
-                {porOrdemDeAparecer(
-                  artigos.filter((a) => a.carta === carta).map((a) => a.categoria!),
-                ).map((categoria) => (
-                  <div key={categoria}>
-                    <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-tinta-suave">
-                      {te(`categorias.${categoria}`)}
-                    </h4>
-                    {/* ⚠️ **A regra vive aqui e não em cada cartão.** Escrita
-                        artigo a artigo, «mínimo 12 unidades» aparecia setenta
-                        vezes na mesma página — e um aviso repetido setenta vezes
-                        deixa de se ler ao fim da terceira. A regra é **da
-                        categoria** (ver `encomendavel.ts`), portanto é no título
-                        da categoria que ela é verdadeira uma só vez. */}
-                    <p className="mt-1 text-sm text-tinta-suave">
-                      {regraDaCategoria(artigos, categoria, t)}
-                    </p>
+          <div className="mt-12 space-y-14">
+            {porOrdemDeAparecer(artigos.map((a) => a.carta!)).map((carta) => (
+              <div key={carta}>
+                <h3 className="titulo-display titulo-gama text-tijolo">
+                  {te(`cartas.${carta}.curto`)}
+                </h3>
 
-                    {/* Duas colunas no telemóvel e seis num monitor: o cartão é
-                        estreito de propósito, e a secção tem setenta deles. */}
-                    <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                      {porCategoria(artigos, carta, categoria).map((artigo) => (
-                        <CartaoArtigo
-                          key={artigo.id}
-                          artigo={artigo}
-                          locale={locale}
-                        />
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+                <div className="mt-6 space-y-8">
+                  {porOrdemDeAparecer(
+                    artigos.filter((a) => a.carta === carta).map((a) => a.categoria!),
+                  ).map((categoria) => (
+                    <details key={categoria} open className="group/categoria">
+                      {/* O título da categoria cola-se por baixo do da secção
+                          (`.titulo-fixo-categoria`) e abre e fecha a categoria,
+                          como o da secção abre e fecha a secção.
+
+                          ⚠️ **Leva o nome da carta à frente**: há «Doces» na
+                          carta da casa e na vegan, e colado no topo, com o
+                          título da carta já fora do ecrã, «Doces» não dizia
+                          quais (é a armadilha 8 vista de cima). */}
+                      <summary className="titulo-fixo-categoria group/sumario flex cursor-pointer list-none items-center justify-between gap-3 border-b border-tinta/15 bg-papel py-2.5 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-tijolo [&::-webkit-details-marker]:hidden">
+                        <div className="min-w-0">
+                          <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-tinta-suave">
+                            <span className="text-tijolo">
+                              {te(`cartas.${carta}.curto`)}
+                            </span>
+                            {/* O ponto é para os olhos; o leitor de ecrã ouve
+                                uma vírgula, que é uma pausa, em vez de «ponto». */}
+                            <span aria-hidden> · </span>
+                            <span className="sr-only">, </span>
+                            {te(`categorias.${categoria}`)}
+                          </h4>
+                          {/* ⚠️ **A regra vive aqui e não em cada cartão.**
+                              Escrita artigo a artigo, «mínimo 12 unidades»
+                              aparecia setenta vezes na mesma página — e um aviso
+                              repetido setenta vezes deixa de se ler ao fim da
+                              terceira. A regra é **da categoria** (ver
+                              `encomendavel.ts`), portanto é no título da
+                              categoria que ela é verdadeira uma só vez — e,
+                              colada, continua à vista enquanto se escolhe. */}
+                          <p className="mt-1 text-sm text-tinta-suave">
+                            {regraDaCategoria(artigos, categoria, t)}
+                          </p>
+                        </div>
+                        <SetaMinimizar grupo="categoria" pequena />
+                      </summary>
+
+                      {/* Duas colunas no telemóvel e seis num monitor: o cartão
+                          é estreito de propósito, e a secção tem setenta deles. */}
+                      <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                        {porCategoria(artigos, carta, categoria).map((artigo) => (
+                          <CartaoArtigo
+                            key={artigo.id}
+                            artigo={artigo}
+                            locale={locale}
+                          />
+                        ))}
+                      </ul>
+                    </details>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      </details>
     </section>
   );
 }
