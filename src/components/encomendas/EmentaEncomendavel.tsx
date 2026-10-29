@@ -32,13 +32,14 @@ import { TituloDaSeccao } from "./TituloDaSeccao";
  * resumo, e cinco colunas em ecrã largo contra três. São setenta contra doze.
  * Ver `CartaoArtigo`.
  *
- * ⚠️ **A ordem é a das cartas e a do impresso**, e não alfabética nem por preço:
- * é a mesma ordem da página da ementa, e quem vem de lá encontra as coisas onde
- * as deixou.
+ * ⚠️ **A ordem é a mesma da página da ementa**, e quem vem de lá encontra as
+ * coisas onde as deixou.
  *
- * Os artigos chegam já filtrados — os da ementa que estão à venda online — e
- * pela ordem do catálogo. As cartas e as categorias saem da ordem em que
- * aparecem nessa lista, que é a ordem do impresso.
+ * Os artigos chegam já filtrados — os da ementa que estão à venda online — e já
+ * ordenados pelo `listarProdutos` (#87): as categorias pela ordem que a gerente
+ * escolheu no painel, os artigos de cada uma por ordem alfabética. As cartas e
+ * as categorias saem da ordem em que aparecem nessa lista; ordenar outra vez
+ * aqui desfazia a escolha da gerente.
  */
 export function EmentaEncomendavel({
   artigos,

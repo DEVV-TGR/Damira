@@ -6,12 +6,14 @@ import {
   EsquemaEntradaProduto,
   EsquemaFiltroPedidos,
   EsquemaHorarios,
+  EsquemaOrdemCategorias,
   EsquemaProduto,
   AVISOS_TRATAVEIS,
   type AvisoTratavel,
   type ConfiguracaoDaCasa,
   type DefinicoesLoja,
   type FontePainel,
+  type OrdemEmenta,
   type Pedido,
   type Produto,
   type ResultadoPainel,
@@ -38,6 +40,8 @@ export type EstadoJson = {
   porId: Map<string, Produto>;
   configuracao: ConfiguracaoDaCasa;
   definicoes: DefinicoesLoja;
+  /** A ordem da ementa; as categorias, como a gerente as deixou (#87). */
+  ordem: OrdemEmenta;
   pedidos: Map<string, Pedido>;
   /** Referência → id do pedido. */
   porReferencia: Map<string, string>;
@@ -140,6 +144,17 @@ export function criarPainelJson(
     return { ok: true, valor: novo };
   };
 
+  /* ⚠️ Uma categoria que não está na ordem (#87) ficava órfã: fora da `/ementa`,
+     que só mostra as categorias da ordem, e sem a gerente a poder lá pôr, porque
+     a ordem só aceita uma permutação das que existem. Recusa-se à entrada. */
+  const foraDaOrdem = (categoria: string | null) =>
+    categoria !== null && !estado.ordem.categorias.includes(categoria);
+  const categoriaDesconhecida: ResultadoPainel<never> = {
+    ok: false,
+    erro: "dados-invalidos",
+    campos: ["categoria"],
+  };
+
   return {
     async produtosDoPainel() {
       return [...estado.porId.values()];
@@ -148,6 +163,7 @@ export function criarPainelJson(
     async criarProduto(entrada) {
       const lido = EsquemaEntradaProduto.safeParse(entrada);
       if (!lido.success) return invalido(lido.error);
+      if (foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
       const id = livre(emId(lido.data.nome.pt) || "produto", (candidato) => estado.porId.has(candidato));
       const produto = EsquemaProduto.parse({
         ...lido.data,
@@ -166,6 +182,7 @@ export function criarPainelJson(
       if (!atual) return naoExiste;
       const lido = EsquemaEntradaProduto.safeParse(entrada);
       if (!lido.success) return invalido(lido.error);
+      if (foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
       /* Um id de variante que o produto não tem não se aceita: era o browser a
          inventar ids, e são eles que os cestos guardam. Uma variante que falte
          na entrada sai — um cesto que a tinha passa a «variante desconhecida». */
@@ -200,6 +217,23 @@ export function criarPainelJson(
       if (!lido.success) return invalido(lido.error);
       estado.definicoes = { ...estado.definicoes, ...lido.data };
       return { ok: true, valor: estado.definicoes };
+    },
+
+    async guardarOrdemCategorias(entrada) {
+      /* Um campo só: seja o que for que falhe, é a lista que se marca. */
+      const recusada: ResultadoPainel<never> = { ok: false, erro: "dados-invalidos", campos: ["categorias"] };
+      const lido = EsquemaOrdemCategorias.safeParse(entrada);
+      if (!lido.success) return recusada;
+      /* Uma permutação das que existem, e nada mais: uma que falte saía da
+         ementa sem ninguém dar por isso, e uma inventada era uma secção vazia.
+         Criar categorias é outra conversa, e passa pelo produto. */
+      const atuais = new Set(estado.ordem.categorias);
+      const nova = lido.data.categorias;
+      if (nova.length !== atuais.size || nova.some((categoria) => !atuais.has(categoria))) return recusada;
+      /* Um objeto novo, como nos produtos: quem leu a ordem antes fica com a
+         que leu. */
+      estado.ordem = { ...estado.ordem, categorias: [...nova] };
+      return { ok: true, valor: estado.ordem };
     },
 
     async pausarLoja(ate, { agora }) {

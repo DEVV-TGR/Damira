@@ -9,6 +9,7 @@ import {
   editarProduto,
   guardarDefinicoes,
   guardarHorarios,
+  guardarOrdemCategorias,
   listarPedidos,
   pedidoDoPainel,
   reagendarPedido,
@@ -116,6 +117,19 @@ export async function gravarProduto(id: string | null, entrada: unknown) {
 /** «Apagar» no painel. Os pedidos antigos continuam a apontar para ele. */
 export async function arquivar(id: string, arquivado: boolean) {
   const resultado = await comSessao((ctx) => arquivarProduto(id, arquivado, ctx));
+  if (resultado.ok) revalidatePath("/", "layout");
+  return resultado;
+}
+
+// ——— A ordem das categorias (#87) ———
+
+/**
+ * A ordem por que as categorias aparecem na ementa e nas encomendas. Como um
+ * produto, muda páginas estáticas: sem revalidar, o site continuava na ordem
+ * antiga até ao próximo deploy.
+ */
+export async function gravarOrdemCategorias(categorias: string[]) {
+  const resultado = await comSessao((ctx) => guardarOrdemCategorias({ categorias }, ctx));
   if (resultado.ok) revalidatePath("/", "layout");
   return resultado;
 }

@@ -29,6 +29,7 @@ import {
   type FonteLoja,
   type GrupoComposicao,
   type LinhaCotada,
+  type OrdemEmenta,
   type Pedido,
   type Produto,
   type ResultadoCriarPedido,
@@ -251,6 +252,14 @@ const DEFINICOES_JSON: DefinicoesLoja = {
   pausaAte: null,
 };
 
+/* A ordem do impresso (`src/data/ementa.ts`), até a gerente mexer nas
+   categorias (#87). As cartas e os títulos das bebidas continuam fixos. */
+const ORDEM_JSON: OrdemEmenta = {
+  cartas: [...CARTAS],
+  categorias: [...CATEGORIAS],
+  subcategorias: [...SUBCATEGORIAS],
+};
+
 // ——— A referência ———
 
 const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -281,6 +290,7 @@ export type OpcoesFonteJson = {
   catalogo?: readonly Produto[];
   configuracao?: ConfiguracaoDaCasa;
   definicoes?: DefinicoesLoja;
+  ordem?: OrdemEmenta;
   /**
    * Pedidos que contam para a ocupação sem estarem no `Map` — os de exemplo do
    * modo de teste (`exemplo.ts`). Somam-se aos verdadeiros **dentro da fonte**,
@@ -315,6 +325,7 @@ export function criarFonteJsonComEstado(opcoes: OpcoesFonteJson = {}): { fonte: 
     porId: new Map((opcoes.catalogo ?? CATALOGO_JSON).map((produto) => [produto.id, produto])),
     configuracao: opcoes.configuracao ?? CONFIGURACAO_JSON,
     definicoes: opcoes.definicoes ?? DEFINICOES_JSON,
+    ordem: opcoes.ordem ?? ORDEM_JSON,
     pedidos: new Map((opcoes.pedidos ?? []).map((pedido) => [pedido.id, pedido])),
     porReferencia: new Map((opcoes.pedidos ?? []).map((pedido) => [pedido.referencia, pedido.id])),
     versao: 0,
@@ -405,7 +416,10 @@ export function criarFonteJsonComEstado(opcoes: OpcoesFonteJson = {}): { fonte: 
     },
 
     async ordemDaEmenta() {
-      return { cartas: [...CARTAS], categorias: [...CATEGORIAS], subcategorias: [...SUBCATEGORIAS] };
+      /* Cópias: quem a recebe pode mexer-lhe (o painel move categorias num
+         rascunho) sem mudar a da fonte. */
+      const { cartas, categorias, subcategorias } = estado.ordem;
+      return { cartas: [...cartas], categorias: [...categorias], subcategorias: [...subcategorias] };
     },
 
     async configuracaoDaCasa() {

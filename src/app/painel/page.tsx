@@ -18,6 +18,7 @@ import { FUSO } from "@/lib/horarios";
 import { contarPorPreencher, esgotadoHoje, organizarBalcao } from "@/lib/painel";
 import { VERSAO_DO_SITE, versaoEmCache } from "@/lib/painel-versao";
 import { sessao } from "@/lib/sessao-painel";
+import mensagensPt from "../../../messages/pt.json";
 
 /**
  * # `/painel` — uma página, dois papéis (`painel.md`)
@@ -115,6 +116,10 @@ export default async function Painel({ searchParams }: { searchParams: Promise<{
                   definicoes,
                   produtos,
                   ordem: await ordemDaEmenta(),
+                  /* Só os nomes das categorias, e não as traduções inteiras:
+                     o painel não passa pelo `next-intl`, e isto vai para o
+                     browser. */
+                  nomesCategorias: mensagensPt.ementa.categorias,
                 }
               : null
           }

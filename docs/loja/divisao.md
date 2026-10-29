@@ -73,7 +73,8 @@ com o modo de teste ligado (`LOJA_EM_TESTE=1`, ver `src/lib/modo-teste.ts`), que
 mostra uma faixa a dizê-lo.
 
 O contrato tem duas metades: a **loja** (`FonteLoja`) e o **painel**
-(`FontePainel`, #30) — produtos, esgotados, horários, definições, pausa e os
+(`FontePainel`, #30) — produtos, esgotados, horários, definições, pausa, a ordem
+das categorias (#87) e os
 pedidos (listar, entregar, desfazer, precisa de atenção, versão do polling). A
 metade do painel está em memória em `json-painel.ts`, sobre o mesmo estado da
 loja, e não persiste. ⚠️ **O papel verifica-se em `papeis.ts`**, antes de a fonte
