@@ -5,6 +5,7 @@ import { EntradaPainel } from "@/components/painel/EntradaPainel";
 import { PainelAberto } from "@/components/painel/PainelAberto";
 import {
   configuracaoDaCasa,
+  configuracaoDoPainel,
   definicoesLoja,
   listarPedidos,
   ordemDaEmenta,
@@ -18,6 +19,7 @@ import { FUSO } from "@/lib/horarios";
 import { contarPorPreencher, esgotadoHoje, organizarBalcao } from "@/lib/painel";
 import { VERSAO_DO_SITE, versaoEmCache } from "@/lib/painel-versao";
 import { sessao } from "@/lib/sessao-painel";
+import mensagensPt from "../../../messages/pt.json";
 
 /**
  * # `/painel` — uma página, dois papéis (`painel.md`)
@@ -66,8 +68,11 @@ export default async function Painel({ searchParams }: { searchParams: Promise<{
   }
 
   const ctx: ContextoPainel = { papel: atual.papel, agora };
-  const [casa, definicoes, produtos, pedidos] = await Promise.all([
+  const [casa, casaGravada, definicoes, produtos, pedidos] = await Promise.all([
     configuracaoDaCasa(),
+    /* ⚠️ «Horários» edita a casa **como está gravada**: no modo de teste, a da
+       loja traz a cozinha de exemplo, e gravá-la fazia-a passar por da casa. */
+    configuracaoDoPainel(ctx),
     definicoesLoja(),
     produtosDoPainel(ctx),
     pedidosDoBalcao(ctx),
@@ -111,10 +116,14 @@ export default async function Painel({ searchParams }: { searchParams: Promise<{
                   avisos: atencao.valor,
                   pedidosDosAvisos,
                   porPreencher: contarPorPreencher(produtos),
-                  casa,
+                  casa: casaGravada,
                   definicoes,
                   produtos,
                   ordem: await ordemDaEmenta(),
+                  /* Só os nomes das categorias, e não as traduções inteiras:
+                     o painel não passa pelo `next-intl`, e isto vai para o
+                     browser. */
+                  nomesCategorias: mensagensPt.ementa.categorias,
                 }
               : null
           }

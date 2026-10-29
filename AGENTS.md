@@ -55,6 +55,8 @@ dela** — e o `pedidos.md`, que é o contrato de que todos dependem.
 | Talão e impressora | `impressao.md` |
 | Bolos personalizados | `bolos-personalizados.md` |
 | Concorrência, limites, erros, cache, logs, backups | `robustez.md` |
+| Base de dados: tabelas, contadores, migração | `base-de-dados.md` |
+| **Ligar a Neon: o que falta fazer e confirmar com a conta** | `ligar-a-neon.md` |
 
 ### As regras que não se negociam
 
@@ -91,17 +93,30 @@ provisório** — em local e na Vercel, sem uma segunda variável para ligar
 - os **prazos de exemplo** e os **pedidos de exemplo** que enchem o
   calendário (`src/lib/dados/exemplo.ts` — ao acaso mas sempre os mesmos, e
   contam como verdadeiros para as vagas);
-- os **pedidos de exemplo no painel** — pagos, entregues, um cancelado, um com
-  dinheiro em falta, um que chegou tarde, um duplicado —, relativos ao dia de hoje,
-  e o botão **«Simular pedido novo»** no balcão, para ouvir o som e ver o alarme
-  do talão sem haver pagamentos;
-- a **entrada provisória do painel**, com o PIN `123456` e o email da equipa como
-  gerente. ⚠️ Estão escritos no código, num repositório público: é a troca
-  aceite para o modo de teste ligar com uma variável só, e só há dados de
-  exemplo do outro lado. Sai com a entrada verdadeira (#33);
+- **sem base de dados**, os **pedidos de exemplo no painel** — pagos, entregues,
+  um cancelado, um com dinheiro em falta, um que chegou tarde, um duplicado —,
+  relativos ao dia de hoje, e o botão **«Simular pedido novo»** no balcão, para
+  ouvir o som e ver o alarme do talão sem haver pagamentos;
+- **sem base de dados**, a **entrada provisória do painel**, com o PIN `123456`
+  e o email da equipa como gerente. ⚠️ Estão escritos no código, num
+  repositório público: é a troca aceite para o modo de teste ligar com uma
+  variável só, e só há dados de exemplo do outro lado. Sai com a entrada
+  verdadeira (#33);
 - o Stripe de teste;
 - e os avisos que o dizem: **uma faixa no topo de todas as páginas** da loja
   (`src/components/FaixaModoTeste.tsx`) e outra no topo do painel.
+
+⚠️ **Com a base de dados (`DATABASE_URL`), a fonte é sempre ela** (decidido a
+05/10, #57). O modo de teste passa a ser uma **camada por cima**
+(`comExemplo`, em `exemplo.ts`) que só tapa o que falta nas leituras da loja —
+os tempos, a cozinha, o limite por vaga — e junta os pedidos de exemplo ao
+calendário. ⚠️ **Nunca grava nada**, e o painel lê a casa e os produtos **como
+estão gravados** (`configuracaoDoPainel`, `produtosDoPainel`): se a gerente
+visse a cozinha de exemplo em «Horários», gravava-a como sendo a dela. Os
+pedidos de exemplo do painel ficam nos JSON; no ar, testa-se comprando com os
+cartões de teste do Stripe. E ⚠️ **a entrada provisória não liga com a base de
+dados** — o PIN dela é público, e o painel gravava a sério: até a verdadeira
+estar ligada, o painel fica trancado.
 
 ⚠️ **A faixa não se apaga** enquanto o interruptor estiver ligado — é ela que
 impede o site de afirmar um prazo que a casa não deu. E ⚠️ **desligar o
@@ -141,8 +156,9 @@ que as torna falsas:
 
 ### Base de dados
 
-- Neon, com o driver HTTP (`@neondatabase/serverless`) e [ORM a decidir na
-  primeira chamada — proposta: Drizzle].
+- Neon, com o driver HTTP (`@neondatabase/serverless`), e Drizzle como ORM —
+  proposto em `docs/loja/base-de-dados.md`, fecha-se na revisão da #27. O
+  esquema inteiro, e porquê, está lá.
 - Tabelas e colunas em português, `snake_case` (`pedidos`, `linhas_pedido`);
   no TypeScript, `camelCase`.
 - **Alterações ao esquema vão num PR só para isso.** Nunca uma migração escondida
@@ -540,6 +556,12 @@ primeiras sete vieram do Santo Burga e continuam a valer — o motor é o mesmo.
     versões do cabeçalho.** Para forjar uma sessão em local, ver a nota do
     `usePorPessoa` e usar o `encode` do `@auth/core/jwt` com o `AUTH_SECRET` e o
     sal `authjs.session-token`.
+22. **O `id` de uma âncora nunca vai num elemento `position: sticky`.** Saltar
+    para um elemento fixo leva ao sítio onde ele **está preso agora** — que,
+    depois de se ter rolado por ele, é o fim da secção e não o princípio. Desde
+    os títulos fixos da `/encomendas` (#85) os `id` vivem nas `<section>`, e o
+    título que fica preso tem um `id` à parte (`da-ementa-titulo`) só para o
+    `aria-labelledby`.
 
 O que todas têm em comum: `npm run build` passa, o `lint` passa, e só se apanham
 a olhar. **Depois de mexer em desenho, tirar capturas** — há Chromium do

@@ -124,6 +124,37 @@ lançamento, e é o que nos diz quando podemos fazer os testes reais.
 pedidos antigos continuam a apontar para ele. Um produto apagado a sério deixava
 pedidos pagos a referir uma coisa que não existe.
 
+### Ordem das categorias
+
+Pedido da casa a 12/10 (#87). No separador **Categorias**, a gerente escolhe a
+ordem em que as categorias aparecem — na ementa e na secção «Da carta, por
+encomenda» das encomendas. **Dentro de cada categoria, os produtos ficam por
+ordem alfabética**, e isso não se escolhe: ninguém ordena noventa e cinco
+artigos à mão num telemóvel. Não há subcategorias para ordenar (os títulos das
+bebidas ficam na ordem do impresso), e as cartas também não se ordenam.
+
+- **Subir e descer, sem arrastar.** Arrastar num telemóvel briga com a rolagem,
+  não se faz com o teclado e pede uma biblioteca. Cada categoria tem os dois
+  botões; o foco acompanha a categoria que se move, e um leitor de ecrã ouve
+  para que lugar ela foi.
+- A ordem muda num rascunho e **só vai para o site ao gravar**. Gravar revalida
+  as páginas, como um preço.
+- ⚠️ **Grava-se a lista inteira, e tem de ser uma permutação das categorias que
+  existem.** Uma categoria que faltasse não ia para o fim — desaparecia da
+  ementa, porque a navegação sai desta lista. O servidor recusa listas com
+  categorias a menos, a mais ou repetidas.
+- ⚠️ **Só a gerente**: o papel verifica-se no servidor (`papeis.ts`), como nos
+  produtos.
+- **Alfabética é a portuguesa** (`localeCompare` com `pt`, em
+  `src/lib/ordenar.ts`): «Éclair» vem antes de «Tosta», e «Pão» antes de
+  «pastel». Ordena-se pelo nome português também na página inglesa.
+- Ordena-se **na fronteira** (`listarProdutos` do `index.ts`), e não nos
+  componentes nem na base de dados: as páginas recebem a lista já ordenada, e
+  ninguém depende da colação do Postgres. Os produtos de encomenda (kits, boxes)
+  não têm categoria e ficam pela ordem do catálogo.
+- Por defeito, até a gerente mexer, é a ordem do impresso (`CATEGORIAS`, em
+  `src/data/ementa.ts`).
+
 ### Fotos
 
 - Reduzidas **no browser** (WebP, ~1600 px), enviadas diretamente para o Vercel
@@ -153,6 +184,12 @@ até quantos dias à frente.
 
 - Mudar o PIN da equipa — termina todas as sessões de funcionário.
 - Lista de dispositivos com sessão aberta; terminar qualquer um.
+
+No contrato da entrada (`FonteSessao`, decidido a 05/10): `listarSessoes`,
+`terminarSessao` e `mudarPin`, só para a gerente — a ação confirma o papel no
+servidor antes de chegar à entrada. O PIN tem 4 ou 6 dígitos (#25). Com a
+entrada provisória, só se veem as sessões do próprio aparelho e o PIN é fixo, e
+o ecrã di-lo. A implementação sobre a base de dados é do Sobral (#33).
 
 (Ver `painel.md`.)
 

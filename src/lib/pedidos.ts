@@ -1,8 +1,9 @@
-import { z } from "zod";
-
 import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale/pt";
+import { parsePhoneNumberFromString } from "libphonenumber-js/max";
+import { z } from "zod";
+import { telefoneArrumado } from "@/lib/telefone";
 
 /**
  * O pedido que sai da página de compra (`/encomendas/pedido`): o que se valida
@@ -55,6 +56,31 @@ const dataNaoPassada = (agora: Date) =>
  * Os dados da página de compra. As mensagens de erro são chaves de
  * `encomendas.formulario.erros`, em PT e EN.
  */
+/**
+ * O número escrito, para o país escolhido, em E.164 — ou `null` se não for um
+ * telefone válido desse país. ⚠️ **Os metadados completos** (`/max`): os pequenos
+ * aceitavam um `811 222 333` português. Este ficheiro só corre no servidor; os
+ * componentes importam dele apenas tipos.
+ */
+export function telefoneValido(texto: string, pais: string): string | null {
+  const numero = parsePhoneNumberFromString(texto, (pais || "PT") as Parameters<typeof parsePhoneNumberFromString>[1]);
+  return numero?.isValid() ? numero.number : null;
+}
+
+/**
+ * Até quando a loja está em pausa, escrito para o cliente: «11:30», ou
+ * «amanhã… às 07:00» quando é outro dia. `null` se não está em pausa. Sempre em
+ * hora de Lisboa (regra 3), seja qual for a língua.
+ */
+export function quandoVoltaALoja(pausaAte: Date | null, agora: Date, locale: string): string | null {
+  if (!pausaAte || pausaAte.getTime() <= agora.getTime()) return null;
+  const dia = (d: Date) => format(d, "yyyy-MM-dd", { in: tz("Europe/Lisbon") });
+  const hora = new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Lisbon" }).format(pausaAte);
+  if (dia(pausaAte) === dia(agora)) return hora;
+  const quando = new Intl.DateTimeFormat(locale, { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Lisbon" }).format(pausaAte);
+  return `${quando}, ${hora}`;
+}
+
 export const esquemaCompra = (agora: Date) =>
   z.object({
     nome: z.string().trim().min(2, "nome-curto").max(120),
@@ -63,7 +89,9 @@ export const esquemaCompra = (agora: Date) =>
     email: z.email("email-invalido").max(200),
     /* Obrigatório também: é por ele que o balcão liga quando alguma coisa muda,
        e o talão leva-o. */
-    telefone: z.string().trim().min(9, "telefone-curto").max(40),
+    telefone: z.string().trim().min(1, "telefone-curto").max(40),
+    /** O país do seletor (`PT`, `ES`…). O número valida-se para ele. */
+    pais: z.string().regex(/^[A-Z]{2}$/).default("PT"),
     nif: z
       .union([z.string().trim().regex(/^\d{9}$/, "nif-invalido"), z.literal("")])
       .default(""),
@@ -75,6 +103,16 @@ export const esquemaCompra = (agora: Date) =>
      * letra pequena também não — por isso é um campo obrigatório e não um aviso.
      */
     consentimento: z.literal(true, { message: "consentimento" }),
+  })
+  /* O telefone sai daqui já em E.164 (`+351911222333`), que é como o contrato
+     o guarda (`pedidos.md` › O cliente). */
+  .transform((dados, ctx) => {
+    const telefone = telefoneValido(dados.telefone, dados.pais);
+    if (telefone === null && dados.telefone !== "") {
+      ctx.addIssue({ code: "custom", path: ["telefone"], message: "telefone-invalido" });
+      return z.NEVER;
+    }
+    return { ...dados, telefone: telefone ?? dados.telefone };
   });
 
 export type DadosCompra = z.infer<ReturnType<typeof esquemaCompra>>;
@@ -149,7 +187,7 @@ export function corpoDaCompra(pedido: {
     ...seccao("Cliente", [
       `Nome:      ${dados.nome}`,
       `Email:     ${dados.email}`,
-      `Telefone:  ${dados.telefone}`,
+      `Telefone:  ${telefoneArrumado(dados.telefone)}`,
       `NIF:       ${ou(dados.nif)}`,
     ]),
     ...seccao("O que leva", [pedido.cesto]),

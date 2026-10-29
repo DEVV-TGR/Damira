@@ -1,5 +1,6 @@
 import "server-only";
 import { fonteDoAmbiente, type FonteDeExemplo } from "./exemplo";
+import { ordenarProdutos } from "@/lib/ordenar";
 import { protegerPainel } from "./papeis";
 import type { FonteDeDados } from "./tipos";
 
@@ -26,8 +27,16 @@ import type { FonteDeDados } from "./tipos";
    lugar dos JSON. */
 const fonte: FonteDeExemplo = fonteDoAmbiente();
 
-export const listarProdutos: FonteDeDados["listarProdutos"] = (filtro) =>
-  fonte.listarProdutos(filtro);
+/**
+ * Já pela ordem da loja (#87): as categorias como a gerente as ordenou, e os
+ * artigos de cada uma por ordem alfabética. Ordena-se aqui, e não na fonte,
+ * para valer seja qual for a fonte — e para as páginas receberem a lista pronta
+ * em vez de cada componente a ordenar à sua maneira.
+ */
+export const listarProdutos: FonteDeDados["listarProdutos"] = async (filtro) => {
+  const [produtos, ordem] = await Promise.all([fonte.listarProdutos(filtro), fonte.ordemDaEmenta()]);
+  return ordenarProdutos(produtos, ordem);
+};
 
 export const produtoPorId: FonteDeDados["produtoPorId"] = (id) => fonte.produtoPorId(id);
 
@@ -67,6 +76,8 @@ const painel = protegerPainel(fonte);
 
 /** Todos os produtos, arquivados incluídos. O balcão também os vê, para os esgotar. */
 export const produtosDoPainel = painel.produtosDoPainel;
+/** A casa como está gravada, para «Horários»: nunca com os valores de exemplo. */
+export const configuracaoDoPainel = painel.configuracaoDoPainel;
 export const criarProduto = painel.criarProduto;
 export const editarProduto = painel.editarProduto;
 /** «Apagar» no painel. Nunca se apaga a sério: os pedidos antigos apontam para ele. */
@@ -79,6 +90,8 @@ export const guardarHorarios = painel.guardarHorarios;
 export const guardarDefinicoes = painel.guardarDefinicoes;
 /** Do balcão, para quando a cozinha está cheia. O fim calcula-o o `fimDaPausa` (`src/lib/painel.ts`). */
 export const pausarLoja = painel.pausarLoja;
+/** A ordem das categorias da ementa (#87). Só a gerente. Lê-se pelo `ordemDaEmenta`. */
+export const guardarOrdemCategorias = painel.guardarOrdemCategorias;
 export const listarPedidos = painel.listarPedidos;
 export const pedidoDoPainel = painel.pedidoDoPainel;
 /** `pago → entregue`, condicional. Com dinheiro em falta, só com `faltaCobrada`. */

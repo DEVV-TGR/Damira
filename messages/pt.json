@@ -9,6 +9,8 @@
     "inicio": "Início",
     "ementa": "Ementa",
     "encomendas": "Encomendas",
+    "todasEncomendas": "Ver todas as encomendas",
+    "voltarAtras": "Voltar atrás",
     "saltarParaConteudo": "Saltar para o conteúdo",
     "mudarIdioma": "English"
   },
@@ -100,25 +102,26 @@
     },
     "silencio": "Lá dentro, às sete da manhã, está a sair o pão.",
     "pao": {
-      "numeral": "II",
+      "numeral": "III",
       "olho": "O pão",
       "titulo": "Pão da aldeia",
       "legenda": "Pães da aldeia acabados de cozer, na vitrine da loja.",
       "nota": "É o negócio que dá o nome à casa, e é o desenho que está na placa da porta."
     },
     "maos": {
-      "numeral": "III",
+      "numeral": "IV",
       "olho": "As mãos",
       "titulo": "Feito aqui, à mão, uma a uma",
       "texto": "As tarteletes de morango levam o brilho com pincel, tartelete a tartelete, na bancada da loja. Não chega nada numa caixa para ser aberta ao balcão.",
       "legenda": "Tarteletes de morango a serem montadas, numa bandeja."
     },
     "vitrine": {
-      "numeral": "IV",
+      "numeral": "V",
       "olho": "A vitrine",
       "titulo": "A casa, fotografada pela casa",
       "texto": "Catorze fotografias do álbum da Damira. O que está na montra, o que sai da cozinha, e a sala à hora de almoço.",
       "credito": "Fotografias da Confeitaria e Pão Quente Damira.",
+      "verMais": "Ver mais",
       "legendas": {
         "montra": "Pão de alfarroba e outros pães, na montra da loja.",
         "folhados": "Folhados salgados numa travessa, acabados de sair.",
@@ -137,7 +140,7 @@
       }
     },
     "reels": {
-      "numeral": "V",
+      "numeral": "VI",
       "olho": "Os vídeos",
       "titulo": "Os reels da casa",
       "texto": "O que a Damira publica em vídeo, sempre em formato vertical. Toque para abrir no Instagram.",
@@ -149,7 +152,7 @@
       "seguir": "Seguir {utilizador}"
     },
     "raro": {
-      "numeral": "VI",
+      "numeral": "II",
       "olho": "O raro",
       "titulo": "Mais de metade da ementa é vegan",
       "de": "de {total} artigos",
@@ -214,18 +217,6 @@
         "accao": "Abrir o mapa"
       },
       "nota": "As festas e os bolos pedem antecedência. Quanto mais cedo disser a data, mais fácil é acertar o resto."
-    },
-    "colofao": {
-      "numeral": "X",
-      "olho": "A morada",
-      "titulo": "Venha cá",
-      "horario": "Todos os dias, das {abre} às {fecha}",
-      "correr": "Fica na <mapa>{morada}</mapa>. Para ver a carta antes de vir, <ementa>a ementa está aqui</ementa>. Para festa ou bolo com data, <encomendas>as encomendas estão aqui</encomendas>.",
-      "fim": "Confeitaria e Pão Quente Damira, desde 1996.",
-      "verMapa": "Ver o mapa",
-      "mapaTitulo": "Mapa com a localização da {nome}",
-      "mapaNota": "O mapa é do Google e só carrega quando carregar no botão.",
-      "abrirNoMaps": "Abrir no Google Maps"
     }
   },
   "casa": {
@@ -368,7 +359,8 @@
         "detalhe": "O que precisa",
         "detalhePlaceholder": "Um bolo de chocolate com frutos vermelhos, para 15 pessoas, com o nome «Matilde» em cima.",
         "consentimento": "Autorizo que os meus dados sejam usados para responder a este pedido. Não são usados para mais nada nem partilhados.",
-        "armadilha": "Deixe este campo em branco"
+        "armadilha": "Deixe este campo em branco",
+        "pais": "País"
       },
       "erros": {
         "nome-curto": "Escreva o seu nome.",
@@ -381,7 +373,9 @@
         "vaga-indisponivel": "Essa hora já não está disponível. Escolha outra.",
         "email-invalido": "Escreva um email válido — é para lá que vai a referência.",
         "telefone-curto": "Escreva um telefone — ligamos se for preciso acertar alguma coisa.",
-        "nif-invalido": "O NIF tem nove algarismos."
+        "nif-invalido": "O NIF tem nove algarismos.",
+        "telefone-invalido": "Confira o número: não parece um telefone válido do país escolhido.",
+        "loja-em-pausa": "A loja está em pausa até {quando}: a cozinha está cheia. Pode encomendar a partir dessa hora."
       },
       "sucesso": {
         "titulo": "Pedido enviado.",
@@ -426,7 +420,14 @@
       "notas": "Quer acrescentar alguma coisa?",
       "notasDica": "Recheio, cor, o nome a escrever no bolo, alergias.",
       "tipoDoCesto": "Vem do que juntou ao pedido. Para mudar, altere o cesto.",
-      "juntarArtigo": "Juntar {nome} ao pedido"
+      "juntarArtigo": "Juntar {nome} ao pedido",
+      "escolha": {
+        "titulo": "Qual sabor?",
+        "ajuda": "Cada sabor entra como uma linha à parte, com a sua quantidade mínima.",
+        "cancelar": "Cancelar",
+        "rotulo": "Sabor",
+        "falta": "Escolha o sabor primeiro."
+      }
     },
     "daEmenta": {
       "titulo": "Da carta, por encomenda",
@@ -483,7 +484,8 @@
       "vazioTexto": "Junte ao pedido o que quiser, nas encomendas ou na ementa, e volte aqui.",
       "irEncomendas": "Ver as encomendas",
       "rever": "Rever e encomendar",
-      "reverTexto": "Já tem artigos no pedido. Escolhe a hora de levantamento e os seus dados no passo seguinte."
+      "reverTexto": "Já tem artigos no pedido. Escolhe a hora de levantamento e os seus dados no passo seguinte.",
+      "pausa": "A loja está em pausa até {quando}: a cozinha está cheia. Pode encomendar a partir dessa hora."
     }
   },
   "bolos": {

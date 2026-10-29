@@ -1,12 +1,13 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { TZDate } from "@date-fns/tz";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import ementaJson from "@/data/ementa.json";
 import encomendasJson from "@/data/encomendas.json";
 import { fonteDeExemplo, fonteDoAmbiente } from "./exemplo";
+import { fonteDaLoja, NA_BASE_DE_DADOS } from "./fontes-de-teste";
 import { CATALOGO_JSON, CONFIGURACAO_JSON, criarFonteJson } from "./json";
-import { FORMATO_REFERENCIA, type EntradaPedido } from "./tipos";
+import { FORMATO_REFERENCIA, type EntradaPedido, type FonteDeDados } from "./tipos";
 
 /* Segunda, 5 de outubro de 2026, às 10h00 de Lisboa. Os kits de festa de
    exemplo levam 2 dias de cozinha (terça e quarta): o primeiro levantamento é
@@ -19,13 +20,14 @@ const CONTEXTO = { agora: AGORA, ip: "203.0.113.1", contaId: null };
 const entrada = (alteracoes: Partial<EntradaPedido> = {}): EntradaPedido => ({
   linhas: [{ produtoId: "festa-premium", varianteId: "20", quantidade: 1 }],
   levantamentoEm: QUARTA_7H30,
-  cliente: { nome: "Cliente de Teste", email: "teste@example.com" },
+  cliente: { nome: "Cliente de Teste", email: "teste@example.com", telefone: "+351912345678" },
   chaveIdempotencia: "4f1b2c3d-1111-4222-8333-444455556666",
   armadilha: "",
   ...alteracoes,
 });
 
-describe("o catálogo, tal como sai dos JSON", () => {
+/* Só na volta dos JSON: é a fonte dos JSON; a importação compara-a com a base de dados (importar-catalogo.test.ts). */
+describe.skipIf(NA_BASE_DE_DADOS)("o catálogo, tal como sai dos JSON", () => {
   it("tem os 95 artigos da ementa e os 12 produtos de encomenda, com ids únicos", () => {
     expect(CATALOGO_JSON.filter((p) => p.origem === "ementa")).toHaveLength(95);
     expect(CATALOGO_JSON.filter((p) => p.origem === "encomendas")).toHaveLength(12);
@@ -146,16 +148,17 @@ describe("o catálogo, tal como sai dos JSON", () => {
 
 describe("as leituras", () => {
   it("filtram por origem e por família", async () => {
-    const fonte = criarFonteJson();
+    const fonte = await fonteDaLoja();
     expect(await fonte.listarProdutos({ familia: "festa" })).toHaveLength(3);
     expect(await fonte.listarProdutos({ origem: "ementa", aVendaOnline: true })).toHaveLength(70);
     expect(await fonte.produtoPorId("nao-existe")).toBeNull();
   });
 
   it("dão a ordem da ementa, que não é a do catálogo, e cobre todas as cartas e categorias", async () => {
-    const ordem = await criarFonteJson().ordemDaEmenta();
+    const fonte = await fonteDaLoja();
+    const ordem = await fonte.ordemDaEmenta();
     expect(ordem.categorias.slice(0, 4)).toEqual(["pausa", "salgados", "pratos", "doces"]);
-    const ementa = await criarFonteJson().listarProdutos({ origem: "ementa" });
+    const ementa = await fonte.listarProdutos({ origem: "ementa" });
     for (const produto of ementa) {
       expect(ordem.cartas).toContain(produto.carta);
       expect(ordem.categorias).toContain(produto.categoria);
@@ -165,7 +168,26 @@ describe("as leituras", () => {
 });
 
 describe("cotar o cesto: o preço calcula-se no servidor", () => {
-  const fonte = criarFonteJson();
+  let fonte: FonteDeDados;
+  beforeAll(async () => {
+    fonte = await fonteDaLoja();
+  });
+
+  it("um produto com sabores exige exatamente um, e dos dele; um sem sabores, nenhum", async () => {
+    /* Os folhados vegan têm sabores (Alheira, Legumes…) e vendem-se à dúzia. */
+    const folhado = (escolhas: string[]) => ({ produtoId: "vegan-folhados", varianteId: "unica", quantidade: 12, escolhas });
+    const erro = async (linha: object) => {
+      const cotado = await fonte.cotarCesto([linha]);
+      return cotado.ok ? cotado.cotacao.linhas[0].erro : cotado.erro;
+    };
+    expect(await erro(folhado(["Alheira"]))).toBeNull();
+    expect(await erro(folhado([]))).toBe("escolha-invalida");
+    expect(await erro(folhado(["Pistácio"]))).toBe("escolha-invalida");
+    expect(await erro(folhado(["Alheira", "Legumes"]))).toBe("escolha-invalida");
+    expect(await erro({ produtoId: "bolo-de-cenoura", varianteId: "unica", quantidade: 12, escolhas: ["Alheira"] })).toBe(
+      "escolha-invalida",
+    );
+  });
 
   it("soma em cêntimos, e ao quilo multiplica pelos quilos", async () => {
     const resultado = await fonte.cotarCesto([
@@ -210,7 +232,8 @@ describe("cotar o cesto: o preço calcula-se no servidor", () => {
   });
 });
 
-describe("criar o pedido", () => {
+/* Só na volta dos JSON: os pedidos ainda não estão na base de dados. */
+describe.skipIf(NA_BASE_DE_DADOS)("criar o pedido", () => {
   it("sem os tempos da casa, responde indisponível em vez de inventar", async () => {
     const resultado = await criarFonteJson().criarPedido(entrada(), CONTEXTO);
     expect(resultado).toEqual({ ok: false, erro: "indisponivel" });
@@ -312,7 +335,8 @@ describe("criar o pedido", () => {
   });
 });
 
-describe("os valores de exemplo", () => {
+/* Só na volta dos JSON: o modo de teste ainda não fica por cima da base de dados (revisão do #57). */
+describe.skipIf(NA_BASE_DE_DADOS)("os valores de exemplo", () => {
   const original = process.env.VERCEL_ENV;
   afterEach(() => {
     process.env.VERCEL_ENV = original;
@@ -338,7 +362,8 @@ describe("os valores de exemplo", () => {
   });
 });
 
-describe("os tipos não trazem dados para o browser", () => {
+/* Só na volta dos JSON: lê o tipos.ts, não depende da fonte. */
+describe.skipIf(NA_BASE_DE_DADOS)("os tipos não trazem dados para o browser", () => {
   it("tipos.ts só importa zod e tipos", () => {
     const fonte = readFileSync(fileURLToPath(new URL("./tipos.ts", import.meta.url)), "utf8");
     const imports = [...fonte.matchAll(/^import (type )?[\s\S]*?from "([^"]+)";$/gm)];
@@ -349,7 +374,8 @@ describe("os tipos não trazem dados para o browser", () => {
   });
 });
 
-describe("o interruptor LOJA_EM_TESTE escolhe a fonte", () => {
+/* Só na volta dos JSON: o modo de teste ainda não fica por cima da base de dados (revisão do #57). */
+describe.skipIf(NA_BASE_DE_DADOS)("o interruptor LOJA_EM_TESTE escolhe a fonte", () => {
   it("desligado, os tempos e o limite ficam por preencher, e o calendário não se calcula", async () => {
     const fonte = fonteDoAmbiente({ VERCEL_ENV: "production" });
     expect((await fonte.configuracaoDaCasa()).limitePorVaga).toBeNull();
@@ -370,7 +396,8 @@ describe("o interruptor LOJA_EM_TESTE escolhe a fonte", () => {
   });
 });
 
-describe("os pedidos de exemplo do modo de teste", () => {
+/* Só na volta dos JSON: o modo de teste ainda não fica por cima da base de dados (revisão do #57). */
+describe.skipIf(NA_BASE_DE_DADOS)("os pedidos de exemplo do modo de teste", () => {
   const desde = new Date("2026-10-05T00:00:00Z");
   const ate = new Date("2026-11-04T23:00:00Z");
   const ligado = { VERCEL_ENV: "production", LOJA_EM_TESTE: "1" };

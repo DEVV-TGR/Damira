@@ -196,11 +196,25 @@
 
 /* ── Base ─────────────────────────────────────────────────────────────── */
 
+/* As alturas do que fica fixo no topo, para quem se tem de colar por baixo
+   (ver «Títulos fixos», no fim deste ficheiro). Fora do `@theme` porque não são
+   tokens de desenho: são medidas de composição, e o `@theme` deixa de fora do
+   CSS final as variáveis que nenhum utilitário usa. */
+:root {
+  /* ⚠️ **É o `h-16` do `Cabecalho.tsx`, escrito outra vez.** O CSS não o
+     consegue ler de lá: se a barra mudar de altura, muda nos dois sítios, ou os
+     títulos fixos ficam com uma fresta ou por baixo dela. */
+  --altura-cabecalho: 4rem;
+  /* O `scroll-padding-top` do documento, com nome para se poder descontar (ver
+     `.ancora-rente`). */
+  --folga-ancoras: 8rem;
+}
+
 html {
   scroll-behavior: smooth;
   /* Cabeçalho (4rem) mais a navegação da ementa (~3rem), e uma folga. Sem isto,
      saltar para uma secção esconde-lhe o título por baixo das duas barras. */
-  scroll-padding-top: 8rem;
+  scroll-padding-top: var(--folga-ancoras);
 }
 
 body {
@@ -845,4 +859,76 @@ body::after {
   .carril-tele > *:last-child {
     margin-inline-end: var(--goteira, 1.25rem);
   }
+}
+
+/* ── Títulos fixos e secções que se minimizam ───────────────────────────── */
+
+/**
+ * Na `/encomendas` e na `/ementa`, o título da secção — e o da categoria, por
+ * baixo dele — fica colado ao topo enquanto se rola por ela (#85), para se saber
+ * sempre onde se está. Na `/encomendas` esse título é também o `<summary>` que
+ * abre e fecha a secção (#84): é o mesmo elemento, e é por isso que quem está a
+ * meio de setenta artigos fecha a categoria sem ter de voltar ao princípio dela.
+ *
+ * ⚠️ **Fora de `@layer`, e por isso estas classes ganham aos utilitários**
+ * (armadilha 6). Não escrever `relative`, `top-*` ou `z-*` ao lado delas: perdem
+ * em silêncio. O resto — fundo, `padding`, `flex` — vai em utilitários, porque
+ * aqui só se declara a posição.
+ *
+ * ⚠️ **O `top` de quem se empilha por baixo depende da altura de quem está por
+ * cima**, e essa altura muda com o ecrã e com a língua (um título de secção
+ * parte em duas linhas a 320 px e não a 1440). Por isso não está escrita aqui:
+ * mede-a no browser quem a conhece — o `SeccoesMinimizaveis` mede o título de
+ * cada secção das encomendas, a `NavegacaoEmenta` mede-se a si própria — e o
+ * valor de recurso é o do caso normal, para a página não partir sem JavaScript.
+ *
+ * As camadas: cabeçalho 50, barra da ementa 40, título de secção 30, título de
+ * categoria 20. Cada uma passa por baixo da que tem por cima, e nunca o contrário.
+ */
+.titulo-fixo {
+  position: sticky;
+  top: var(--altura-cabecalho);
+  z-index: 30;
+}
+
+/* A categoria da carta por encomenda, por baixo do título da secção. */
+.titulo-fixo-categoria {
+  position: sticky;
+  top: calc(var(--altura-cabecalho) + var(--altura-titulo-seccao, 5rem));
+  z-index: 20;
+}
+
+/* A categoria da ementa, por baixo da barra de procura e das cartas. Os 8 rem de
+   recurso são a barra sem procura activa: 4 px de filetes, 24 de `padding`, a
+   caixa de procura e os separadores (44 cada) e 12 entre os dois. */
+.titulo-fixo-ementa {
+  position: sticky;
+  top: calc(var(--altura-cabecalho) + var(--altura-barra-ementa, 8rem));
+  z-index: 20;
+}
+
+/**
+ * Uma secção a que se salta e que aterra rente ao cabeçalho, em vez de a 8 rem
+ * dele.
+ *
+ * O `scroll-padding-top` do documento é para quem tem o título no topo da caixa;
+ * uma secção das encomendas tem 4 a 8 rem de ar por cima do título, e somado aos
+ * 8 rem dava o título a meio do ecrã. Descontar a folga põe o princípio da
+ * secção — a cor dela — logo por baixo do cabeçalho, e o título no sítio de
+ * onde vai ficar fixo.
+ */
+.ancora-rente {
+  scroll-margin-top: calc(var(--altura-cabecalho) - var(--folga-ancoras));
+}
+
+/**
+ * Uma secção fechada perde o ar de secção.
+ *
+ * Fechada, sobra-lhe uma linha — o título —, e com os 4 a 8 rem da `.seccao` por
+ * cima e por baixo eram quatro secções fechadas a ocupar um ecrã inteiro de
+ * nada, que é o contrário do que quem as fechou queria. ⚠️ Tem de ser aqui e não
+ * num utilitário: a `.seccao` está fora de camada e ganhava-lhe (armadilha 14).
+ */
+.seccao-minimizavel:not(:has(> details[open])) {
+  padding-block: clamp(1rem, 3vw, 1.75rem);
 }

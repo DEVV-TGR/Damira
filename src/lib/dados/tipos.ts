@@ -171,7 +171,14 @@ export const EsquemaCliente = z
     nome: z.string().trim().min(1).max(120),
     /** Obrigatório: é para lá que vai a confirmação com a referência. */
     email: z.email().max(200),
-    telefone: z.string().trim().max(30).nullable().default(null),
+    /**
+     * **Obrigatório**: é por ele que o balcão liga a um cliente que não aparece
+     * (`pedidos.md` › O cliente). Em **E.164** (`+351911222333`): a página
+     * escolhe o país, valida o número para esse país (`libphonenumber-js`) e
+     * manda-o já assim. Aqui confere-se só a forma, para o tipo não trazer a
+     * biblioteca para o browser (há um teste que o vigia).
+     */
+    telefone: z.string().regex(/^\+[1-9]\d{6,14}$/, "telefone em E.164"),
     nif: z
       .string()
       .regex(/^\d{9}$/)
@@ -211,12 +218,19 @@ export type ContextoPedido = {
 
 // ——— A cotação: o preço que o servidor calcula ———
 
+/**
+ * - `escolha-invalida`: o produto tem escolhas (sabores) e a linha não traz
+ *   **exatamente uma** que exista nele — ou não tem escolhas e a linha traz
+ *   alguma. O browser não decide o que é válido (regra 1): um sabor inventado
+ *   chegava à cozinha impresso no talão.
+ */
 export type ErroLinha =
   | "produto-desconhecido"
   | "variante-desconhecida"
   | "fora-de-venda"
   | "abaixo-do-minimo"
-  | "fora-do-multiplo";
+  | "fora-do-multiplo"
+  | "escolha-invalida";
 
 export type LinhaCotada = {
   produtoId: string;
@@ -344,9 +358,10 @@ export type ResultadoCriarPedido =
 // ——— A casa ———
 
 /**
- * A configuração do motor de horários, com a cozinha a poder faltar: a Damira
- * ainda não deu o horário dela (`horarios.md` › À espera). Sem cozinha não há
- * calendário, e o site diz isso em vez de inventar um.
+ * A configuração do motor de horários, com a cozinha a poder faltar. A casa já
+ * deu a dela (06:00–11:00, no `json.ts`), mas uma casa gravada sem cozinha
+ * continua a ser válida: sem cozinha não há calendário, e o site diz isso em vez
+ * de inventar um.
  */
 export type ConfiguracaoDaCasa = Omit<ConfiguracaoHorarios, "cozinha"> & {
   cozinha: HorarioSemanal | null;
@@ -377,6 +392,11 @@ export type DefinicoesLoja = {
  */
 export type OrdemEmenta = {
   cartas: string[];
+  /**
+   * **A gerente escolhe-a no painel** (#87, `guardarOrdemCategorias`). Até ela
+   * mexer, é a do impresso. Vale para a ementa e para as encomendas; dentro de
+   * cada categoria os artigos vão por ordem alfabética (`src/lib/ordenar.ts`).
+   */
   categorias: string[];
   subcategorias: string[];
 };
@@ -513,6 +533,25 @@ export const EsquemaHorarios = z
   })
   .strict() satisfies z.ZodType<ConfiguracaoDaCasa>;
 
+/**
+ * A ordem das categorias como a gerente a grava (#87): **todas as que existem,
+ * cada uma uma vez**, pela ordem nova. Repetidas recusam-se aqui; faltar uma ou
+ * trazer uma que não existe recusa-o a fonte, que sabe quais há. Uma categoria
+ * esquecida não ia para o fim — desaparecia da ementa, porque a navegação sai
+ * desta lista (`categoriasDaCarta`).
+ */
+export const EsquemaOrdemCategorias = z
+  .object({
+    categorias: z
+      .array(z.string().min(1).max(60))
+      .min(1)
+      .max(50)
+      .refine((lista) => new Set(lista).size === lista.length, { message: "categoria repetida" }),
+  })
+  .strict();
+
+export type EntradaOrdemCategorias = z.input<typeof EsquemaOrdemCategorias>;
+
 /** O que a gerente grava em Definições. A pausa tem função própria (`pausarLoja`). */
 export const EsquemaDefinicoes = z
   .object({
@@ -574,8 +613,20 @@ export type AvisoAtencao =
  * chamadas que já passaram. O que vem do browser entra como `unknown`.
  */
 export type FontePainel = {
-  /** Todos, arquivados incluídos. */
+  /**
+   * Todos, arquivados incluídos. ⚠️ **Como estão gravados**: no modo de teste,
+   * os tempos de exemplo tapam o que está por preencher só nas leituras da loja,
+   * nunca aqui — senão a gerente gravava um tempo inventado como se fosse dela.
+   */
   produtosDoPainel(ctx: ContextoPainel): Promise<Produto[]>;
+  /**
+   * A configuração da casa **como está gravada** — a que a gerente vê e edita em
+   * «Horários». ⚠️ No modo de teste, o `configuracaoDaCasa` da loja tapa a
+   * cozinha e o limite que faltam com os de exemplo, para o calendário
+   * funcionar; se o painel lesse esse, a gerente gravava a cozinha de exemplo
+   * como sendo a dela. Os dois papéis leem-na.
+   */
+  configuracaoDoPainel(ctx: ContextoPainel): Promise<ConfiguracaoDaCasa>;
   criarProduto(entrada: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<Produto>>;
   editarProduto(id: string, entrada: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<Produto>>;
   arquivarProduto(id: string, arquivado: boolean, ctx: ContextoPainel): Promise<ResultadoPainel<Produto>>;
@@ -586,6 +637,13 @@ export type FontePainel = {
   guardarDefinicoes(entrada: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<DefinicoesLoja>>;
   /** `null` retoma. O fim de cada opção do balcão calcula-o o `fimDaPausa` (`src/lib/painel.ts`). */
   pausarLoja(ate: Date | null, ctx: ContextoPainel): Promise<ResultadoPainel<DefinicoesLoja>>;
+  /**
+   * A ordem das categorias da ementa (#87), como `EsquemaOrdemCategorias`: uma
+   * permutação das que o `ordemDaEmenta` devolve — senão `dados-invalidos`. Só
+   * gerente. Devolve a ordem inteira, já com a nova; lê-se depois pelo
+   * `ordemDaEmenta`, como sempre.
+   */
+  guardarOrdemCategorias(entrada: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<OrdemEmenta>>;
 
   // Pedidos
 
@@ -621,7 +679,10 @@ export type FontePainel = {
    * nunca mais do que o pago online ainda por devolver. Liberta a vaga.
    */
   cancelarPedido(id: string, reembolsoCent: number, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
-  /** Um reembolso sem cancelar (um artigo que faltou), num pedido pago ou entregue. */
+  /**
+   * Um reembolso sem cancelar (um artigo que faltou), num pedido **pago,
+   * entregue ou cancelado** — cancelado sem reembolso e devolvido mais tarde.
+   */
   reembolsarPedido(id: string, valorCent: number, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
   /**
    * Um número que muda sempre que um pedido muda. É o que o painel pergunta de
@@ -645,6 +706,14 @@ export type FontePainel = {
 export type FonteDeDados = FonteLoja & FontePainel;
 
 export type FonteLoja = {
+  /**
+   * **Pela ordem do catálogo** (a `posicao`), que é a dos kits, dos bolos e das
+   * boxes. O `index.ts` reordena só os artigos com carta e categoria (#87): as
+   * categorias pela ordem da gerente e os nomes por ordem alfabética
+   * (`src/lib/ordenar.ts`). A base de dados não precisa de saber ordenar
+   * português, mas ⚠️ **não pode deixar cair o `ORDER BY posicao`**: sem ele, os
+   * kits trocam de lugar na `/encomendas` ao sabor do Postgres.
+   */
   listarProdutos(filtro?: FiltroProdutos): Promise<Produto[]>;
   produtoPorId(id: string): Promise<Produto | null>;
   ordemDaEmenta(): Promise<OrdemEmenta>;

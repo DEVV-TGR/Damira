@@ -45,6 +45,12 @@ describe("quando liga: com o modo de teste, e só com ele", () => {
     expect(await semModo.pedirCodigo("ana@example.com", CTX)).toEqual({ ok: false, erro: "indisponivel" });
   });
 
+  it("com a base de dados, não liga: o PIN daqui é público, e o painel gravava a sério", async () => {
+    const comBase = criar({ ...LOCAL, DATABASE_URL: "postgres://teste" }).sessao;
+    expect(comBase.ligada).toBe(false);
+    expect(await comBase.entrarComPin("246810", CTX)).toEqual({ ok: false, erro: "indisponivel" });
+  });
+
   it("só com LOJA_EM_TESTE=1, no ar, liga com o PIN 123456 e o email da equipa como gerente", async () => {
     const { sessao } = criar({ NODE_ENV: "production", LOJA_EM_TESTE: "1" });
     expect(sessao.ligada).toBe(true);
@@ -205,3 +211,33 @@ describe("sair", () => {
     expect(await sessao.sessaoAtual(AGORA)).toBeNull();
   });
 });
+
+describe("a gestão da equipa, na entrada provisória", () => {
+  it("lista as sessões deste aparelho — e só essas, porque são cookies", async () => {
+    const { sessao } = criar();
+    await sessao.entrarComPin("246810", CTX);
+    const pedido = await sessao.pedirCodigo("ana@example.com", CTX);
+    if (!pedido.ok || !pedido.codigoDeTeste) throw new Error("devia haver código");
+    await sessao.entrarComCodigo("ana@example.com", pedido.codigoDeTeste, false, CTX);
+    const lista = await sessao.listarSessoes(AGORA);
+    expect(lista.map((s) => [s.id, s.papel, s.esta])).toEqual([
+      ["gerente", "gerente", true],
+      ["equipa", "funcionario", true],
+    ]);
+  });
+
+  it("terminar a da gerente deixa a da equipa; uma que não existe diz que não existe", async () => {
+    const { sessao } = criar();
+    await sessao.entrarComPin("246810", CTX);
+    expect(await sessao.terminarSessao("gerente", AGORA)).toEqual({ ok: false, erro: "nao-existe" });
+    expect(await sessao.terminarSessao("equipa", AGORA)).toEqual({ ok: true });
+    expect(await sessao.sessaoAtual(AGORA)).toBeNull();
+  });
+
+  it("o PIN da entrada provisória não se muda, mas um PIN mal escrito é recusado antes", async () => {
+    const { sessao } = criar();
+    expect(await sessao.mudarPin("12", CTX)).toEqual({ ok: false, erro: "dados-invalidos" });
+    expect(await sessao.mudarPin("1234", CTX)).toEqual({ ok: false, erro: "indisponivel" });
+  });
+});
+

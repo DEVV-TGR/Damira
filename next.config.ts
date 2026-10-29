@@ -10,16 +10,13 @@ const withNextIntl = createNextIntlPlugin();
  * abaixo) e o Vercel Analytics serve o script a partir de `/_vercel/insights/`,
  * que é a mesma origem.
  *
- * ⚠️ **O mapa do Google entrou, e entrou com uma condição.** O `frame-src`
- * abre-se ao `www.google.com` — e só a esse — para o `<iframe>` do Maps na
- * página inicial. O `img-src` não precisa de mudar: o que está dentro do
- * iframe é outro documento, com a política do Google e não a nossa.
- *
- * A condição: **o iframe só é criado quando a pessoa carrega em «ver o mapa»**
- * (ver `Mapa.tsx`). Até lá o Google não vê quem visita o site, o que é o que
- * mantém o resto desta CSP verdadeiro. Um mapa carregado à entrada da página
- * punha um terceiro a seguir todas as visitas, e arrastava consentimento de
- * cookies atrás.
+ * **Não há `frame-src`, e por isso nenhum `<iframe>` de fora carrega.** Houve
+ * um, o mapa do Google no fecho da página inicial, criado só depois de um
+ * clique. O fecho saiu a pedido da casa (#81, 12/10/2026) e o mapa com ele; a
+ * morada e o «ver no mapa» do rodapé são um link, que não precisa de CSP. Se
+ * um mapa voltar a entrar, a condição continua a ser a mesma: o iframe só se
+ * cria quando a pessoa o pede, senão o Google vê todas as visitas e arrasta
+ * consentimento de cookies atrás.
  *
  * ⚠️ **O `'unsafe-inline'` no `script-src` tira à CSP quase toda a proteção
  * contra XSS**, e é preciso porque o Next injeta os scripts de arranque e o
@@ -65,8 +62,6 @@ const CSP = [
   "img-src 'self' data: blob:",
   "font-src 'self'",
   "connect-src 'self'",
-  /* Só o mapa, e só depois de um clique. Ver o cabeçalho. */
-  "frame-src https://www.google.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

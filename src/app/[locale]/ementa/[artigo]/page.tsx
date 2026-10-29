@@ -22,6 +22,7 @@ import {
 import { FotoProduto } from "@/components/encomendas/FotoProduto";
 import { ComprarProduto } from "@/components/encomendas/ComprarProduto";
 import { BotaoJuntar } from "@/components/encomendas/BotaoJuntar";
+import { VoltarAtras } from "@/components/VoltarAtras";
 
 export async function generateStaticParams() {
   const ementa = await listarProdutos({ origem: "ementa" });
@@ -209,6 +210,7 @@ function Detalhe({ artigo, locale }: { artigo: Produto; locale: Locale }) {
                         <BotaoJuntar
                           variante="compacta"
                           locale={locale}
+                          escolhas={artigo.escolhas}
                           item={{
                             id: `ementa:${artigo.id}:${v.id}`,
                             produtoId: artigo.id,
@@ -246,6 +248,7 @@ function Detalhe({ artigo, locale }: { artigo: Produto; locale: Locale }) {
             {regra && variantesVisiveis(artigo).length === 0 ? (
               <>
                 <ComprarProduto
+                  escolhas={artigo.escolhas}
                   id={`ementa:${artigo.id}`}
                   produtoId={artigo.id}
                   tipo="ementa"
@@ -290,6 +293,10 @@ function Detalhe({ artigo, locale }: { artigo: Produto; locale: Locale }) {
           </div>
         </div>
       </div>
+
+      {/* O «voltar» fixo (#86), no fim de propósito: no teclado o link do topo
+          já é o primeiro, e este fica para quem chegou ao fim. */}
+      <VoltarAtras para="/ementa" />
     </div>
   );
 }

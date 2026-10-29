@@ -2,6 +2,7 @@
 
 import * as dados from "@/lib/dados";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import {
   arquivarProduto,
   cancelarPedido,
@@ -9,6 +10,7 @@ import {
   editarProduto,
   guardarDefinicoes,
   guardarHorarios,
+  guardarOrdemCategorias,
   listarPedidos,
   pedidoDoPainel,
   reagendarPedido,
@@ -18,6 +20,7 @@ import {
 import { ESTADOS_PEDIDO, type AvisoTratavel, type EstadoPedido } from "@/lib/dados/tipos";
 import { intervaloDeDias } from "@/lib/painel";
 import { comSessao, contextoDoPainel } from "@/lib/painel-servidor";
+import { sessao } from "@/lib/sessao-painel";
 import { horasDaLoja } from "@/lib/vagas-servidor";
 
 /**
@@ -118,4 +121,45 @@ export async function arquivar(id: string, arquivado: boolean) {
   const resultado = await comSessao((ctx) => arquivarProduto(id, arquivado, ctx));
   if (resultado.ok) revalidatePath("/", "layout");
   return resultado;
+}
+
+// ——— A ordem das categorias (#87) ———
+
+/**
+ * A ordem por que as categorias aparecem na ementa e nas encomendas. Como um
+ * produto, muda páginas estáticas: sem revalidar, o site continuava na ordem
+ * antiga até ao próximo deploy.
+ */
+export async function gravarOrdemCategorias(categorias: string[]) {
+  const resultado = await comSessao((ctx) => guardarOrdemCategorias({ categorias }, ctx));
+  if (resultado.ok) revalidatePath("/", "layout");
+  return resultado;
+}
+
+// ——— Equipa e dispositivos (`painel.md`) ———
+// ⚠️ Só a gerente: o papel lê-se da sessão aqui, antes de chegar à entrada.
+
+async function soGerente() {
+  const ctx = await contextoDoPainel();
+  return ctx?.papel === "gerente" ? ctx : null;
+}
+
+export async function sessoesDaEquipa() {
+  const ctx = await soGerente();
+  if (!ctx) return { ok: false as const, erro: "sem-permissao" as const };
+  return { ok: true as const, valor: await sessao.listarSessoes(ctx.agora), provisoria: sessao.provisoria };
+}
+
+export async function terminarSessao(id: string) {
+  const ctx = await soGerente();
+  if (!ctx) return { ok: false as const, erro: "sem-permissao" as const };
+  return sessao.terminarSessao(id, ctx.agora);
+}
+
+/** Muda o PIN e fecha as sessões da equipa: é assim que se tira o acesso a quem saiu. */
+export async function mudarPinDaEquipa(novo: string) {
+  const ctx = await soGerente();
+  if (!ctx) return { ok: false as const, erro: "sem-permissao" as const };
+  const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || null;
+  return sessao.mudarPin(novo, { agora: ctx.agora, ip });
 }

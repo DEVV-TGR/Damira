@@ -21,6 +21,7 @@ import {
 } from "@/lib/vista";
 import { FotoProduto } from "@/components/encomendas/FotoProduto";
 import { ComprarProduto } from "@/components/encomendas/ComprarProduto";
+import { VoltarAtras } from "@/components/VoltarAtras";
 
 /** Uma página por produto e por língua, todas geradas no `build`. */
 export async function generateStaticParams() {
@@ -198,6 +199,7 @@ function Detalhe({ produto, locale }: { produto: Produto; locale: Locale }) {
               <Conteudo produto={produto} locale={locale} />
 
               <ComprarProduto
+                escolhas={produto.escolhas}
                 id={produto.id}
                 produtoId={produto.id}
                 tipo={tipoDoPedido(produto)}
@@ -220,6 +222,10 @@ function Detalhe({ produto, locale }: { produto: Produto; locale: Locale }) {
       </div>
 
       {produto.familia === "medida" && <CatalogoDoBolo locale={locale} />}
+
+      {/* O «voltar» fixo (#86), no fim do documento de propósito: no teclado o
+          link do topo já é o primeiro, e este fica para quem chegou ao fim. */}
+      <VoltarAtras para="/encomendas" />
     </>
   );
 }

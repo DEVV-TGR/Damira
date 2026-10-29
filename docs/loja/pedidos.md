@@ -97,6 +97,11 @@ Cada linha do pedido guarda o id do produto e da variante **e também** o nome, 
 variante e as escolhas em texto, a unidade e o preço unitário **tal como estavam
 no momento do pedido**, mais a quantidade e as notas do cliente.
 
+**As escolhas** (sabores, recheios) confirmam-se no servidor: um produto com
+escolhas leva **exatamente uma** por linha, e das dele; um sem escolhas, nenhuma
+(`escolha-invalida`). Para misturar sabores, uma linha por sabor, e cada uma
+conta o seu mínimo — 12 de alheira e 12 de legumes (decidido a 05/10).
+
 ⚠️ **Nunca se recalcula um pedido antigo a partir do produto atual.** A gerente
 muda preços e nomes quando quer; um pedido de ontem tem de continuar a dizer o
 que se pagou ontem — no painel, no talão reimpresso e em qualquer reembolso.
@@ -104,6 +109,11 @@ que se pagou ontem — no painel, no talão reimpresso e em qualquer reembolso.
 ## O cliente
 
 Nome, email, telefone, NIF (opcional) e o id da conta (opcional).
+
+**O telefone é obrigatório** — é por ele que o balcão liga a quem não aparece.
+A página escolhe o país (🇵🇹 +351 por defeito), valida o número para esse país e
+guarda-o em **E.164** (`+351911222333`); mostra-se arrumado como o país manda
+(`+351 911 222 333`). Decidido a 05/10.
 
 ⚠️ **A conta nunca é obrigatória para pedir.** É a primeira regra do `AGENTS.md`
 para a conta de cliente e continua a valer com pagamento. (Cancelar pelo site é
@@ -121,6 +131,10 @@ uma ajuda, não uma garantia.
 Um pedido `pendente` **ocupa** a vaga e as quantidades enquanto espera pelo
 pagamento; se expirar ou for cancelado, liberta-as, na mesma transação que muda
 o estado (ver `robustez.md`).
+
+⚠️ **Um pedido `entregue` continua a ocupar a vaga** (decidido a 05/10): gastou a
+capacidade daquela hora, e o «desfazer» — que o devolve a `pago` — nunca pode
+esbarrar no limite. Só `cancelado` e `expirado` libertam.
 
 «Levantam hoje», no balcão, é o dia de levantamento em hora de Lisboa — **não** o
 dia em que o pedido entrou. O que tem de **começar a ser feito** hoje é outra
