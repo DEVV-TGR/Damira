@@ -73,15 +73,31 @@ export function SeccaoEmenta({
               **tijolo** e ganhou a contagem ao lado: são duas coisas pequenas
               que dão à página o que ela não tinha — cor no corpo, e a dimensão
               de cada secção antes de se começar a ler. */}
+          {/* ⚠️ **O nome da carta vai ao lado da contagem**, porque colado o
+              título diz só «Doces»: há doces na carta da casa e na vegan, e com
+              uma procura activa as abas das cartas escondem-se e as secções das
+              quatro cartas seguem-se umas às outras (é a armadilha 8 vista de
+              cima, que o `EmentaEncomendavel` já resolvia). Ao lado e não por
+              cima do título, para o título fixo não ganhar uma linha; e no `<h2>`
+              também, escondida, para a lista de títulos do leitor de ecrã não
+              ter quatro «Doces» iguais. */}
           <div className="flex items-baseline gap-4 border-b-2 border-tijolo pb-3">
             <h2
               id={`titulo-${ancora}`}
               className="titulo-display titulo-gama uppercase"
               style={{ fontVariationSettings: '"wdth" 70, "opsz" 40' }}
             >
+              <span className="sr-only">{t(`cartas.${carta}.curto`)}, </span>
               {t(`categorias.${categoria}`)}
             </h2>
-            <span className="ml-auto shrink-0 text-xs tabular-nums uppercase tracking-widest text-tinta-suave">
+            {/* `min-w-0` e não `shrink-0`: «Sábado e domingo · 12 artigos» não cabe
+                ao lado de «Salgados» a 320 px, e aí parte em duas linhas em vez
+                de empurrar a página para o lado (armadilha 16). */}
+            <span className="ml-auto min-w-0 text-right text-xs tabular-nums uppercase tracking-widest text-tinta-suave">
+              <span aria-hidden className="text-tijolo">
+                {t(`cartas.${carta}.curto`)}
+              </span>
+              <span aria-hidden> · </span>
               {t("quantosArtigos", { n: artigos.length })}
             </span>
           </div>

@@ -32,6 +32,15 @@ export type FotoDaVitrine = {
  * pelo React, um quadro depois de as células existirem (para a transição do
  * motor ter de onde partir) e com o mesmo escalonamento de 40 ms.
  *
+ * ⚠️ **E o motor pode chegar antes da hidratação.** Quem recarrega com a
+ * rolagem já na vitrine, ou num aparelho lento, tem a grelha no ecrã antes de o
+ * React acabar de hidratar esta parte: o motor escreve o `sc-in` na lista e nas
+ * células e o `transitionDelay` nelas, e o React encontra atributos que não
+ * escreveu. Não é defeito — não os volta a escrever, e é isso que se quer —,
+ * por isso o aviso é calado nos elementos onde o motor escreve, e só neles
+ * (o `suppressHydrationWarning` vale para os atributos do próprio elemento, não
+ * para os filhos).
+ *
  * ## O foco vai para a primeira fotografia nova
  *
  * O botão some-se depois de usado, e um foco num elemento que deixou de existir
@@ -64,7 +73,13 @@ export function VitrineGrelha({
 
   return (
     <>
-      <ul id="vitrine-grelha" className="vitrine__grelha" data-sc-in data-sc-stagger="40">
+      <ul
+        id="vitrine-grelha"
+        className="vitrine__grelha"
+        data-sc-in
+        data-sc-stagger="40"
+        suppressHydrationWarning
+      >
         {mostradas.map((foto, i) => {
           const nova = i >= visiveis;
           return (
@@ -78,6 +93,7 @@ export function VitrineGrelha({
               className={nova && entraram ? "vitrine__celula sc-in" : "vitrine__celula"}
               style={nova ? { transitionDelay: `${(i - visiveis) * 40}ms` } : undefined}
               data-larga={foto.larga ? "" : undefined}
+              suppressHydrationWarning
             >
               <Image
                 src={`/vitrine/${foto.ficheiro}.webp`}

@@ -3,6 +3,7 @@
 import type { MouseEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
+import { routing } from "@/i18n/routing";
 
 /**
  * Se há página do site para onde voltar, sem sair dele.
@@ -14,18 +15,31 @@ import { Link, useRouter } from "@/i18n/navigation";
  * conta as páginas de outros sites no mesmo separador — quem chega de uma
  * pesquisa tem dois, e um `back()` levava-o de volta à pesquisa.
  *
- * Por isso três perguntas, pela ordem:
+ * Por isso quatro perguntas, pela ordem:
  *
  * 1. Sem história nenhuma (separador novo), não há para onde voltar.
- * 2. Se a página que **carregou** o documento não é esta, houve navegação
+ * 2. Se se trocou de língua desde a carga, o `back()` não serve (ver abaixo).
+ * 3. Se a página que **carregou** o documento não é esta, houve navegação
  *    dentro do site desde então — há uma página nossa atrás.
- * 3. Se esta foi a que carregou, só há uma página nossa atrás se o `referrer`
+ * 4. Se esta foi a que carregou, só há uma página nossa atrás se o `referrer`
  *    for da mesma origem (uma carga completa vinda do site, ou um recarregar).
+ *
+ * ⚠️ **Trocar de língua também navega, e deixa a página anterior na outra
+ * língua.** Abrir a `/ementa`, entrar num artigo e passar para inglês deixa no
+ * histórico o mesmo artigo em português: o `back()` desfazia só a troca, e a
+ * pessoa ficava no artigo em vez de voltar à lista. O histórico não diz o que
+ * está na entrada anterior, por isso, depois de uma troca, vai-se pela lista na
+ * língua de agora — perde-se a posição na lista, mas nunca se cai no sítio
+ * errado nem na língua que se acabou de recusar.
  *
  * Lê-se no clique e não ao montar: o histórico muda depois da montagem, e
  * a resposta só interessa no instante em que alguém a pede.
  */
-const semLingua = (caminho: string) => caminho.replace(/^\/en(?=\/|$)/, "") || "/";
+const linguaDe = (caminho: string): string =>
+  routing.locales.find(
+    (lingua) =>
+      lingua !== routing.defaultLocale && (caminho === `/${lingua}` || caminho.startsWith(`/${lingua}/`)),
+  ) ?? routing.defaultLocale;
 
 function haPaginaDoSiteAtras(): boolean {
   if (window.history.length <= 1) return false;
@@ -33,9 +47,9 @@ function haPaginaDoSiteAtras(): boolean {
   const [carga] = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
   if (carga) {
     try {
-      /* Sem o prefixo da língua: trocar de língua também navega, e uma página
-         em inglês por cima da mesma em português não é «uma página atrás». */
-      if (semLingua(new URL(carga.name).pathname) !== semLingua(window.location.pathname)) return true;
+      const caminhoDaCarga = new URL(carga.name).pathname;
+      if (linguaDe(caminhoDaCarga) !== linguaDe(window.location.pathname)) return false;
+      if (caminhoDaCarga !== window.location.pathname) return true;
     } catch {
       /* Um `name` que não é URL não decide nada: segue para o `referrer`. */
     }

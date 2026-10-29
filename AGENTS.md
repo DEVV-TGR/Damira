@@ -543,8 +543,21 @@ primeiras sete vieram do Santo Burga e continuam a valer — o motor é o mesmo.
     para um elemento fixo leva ao sítio onde ele **está preso agora** — que,
     depois de se ter rolado por ele, é o fim da secção e não o princípio. Desde
     os títulos fixos da `/encomendas` (#85) os `id` vivem nas `<section>`, e o
-    título que fica preso tem um `id` à parte (`da-ementa-titulo`) só para o
-    `aria-labelledby`.
+    `id` do `aria-labelledby` (`da-ementa-titulo`) vive num `<h2>` à parte,
+    fora do título que fica preso (ver a 23).
+23. **Um título dentro de um `<summary>` sai da lista de títulos.** É marcação
+    válida, mas os browsers expõem o `<summary>` como botão, e o que está dentro
+    de um botão passa a texto dele: no VoiceOver e no NVDA, as quatro secções
+    da `/encomendas` desapareciam da navegação por títulos. O `<h2>` vai antes
+    do `<details>`, só para leitores de ecrã (`TituloParaLeitores`), e o
+    `<summary>` mostra o mesmo texto num `<span>`.
+24. **O browser não conta o `scroll-margin-top` para decidir se rola até ao
+    foco.** Usa-o para saber até onde rolar, mas para decidir se é preciso só
+    desconta o `scroll-padding-top` do documento: um cartão a 9 rem do topo
+    está «à vista» para ele e por baixo de dois títulos fixos para quem olha.
+    Com títulos colados que somam mais do que a folga do documento, quem
+    garante o foco à vista é JavaScript (o `focusin` do `SeccoesMinimizaveis`),
+    e mede-se com `Shift+Tab` a subir por uma grelha inteira, não com um clique.
 
 O que todas têm em comum: `npm run build` passa, o `lint` passa, e só se apanham
 a olhar. **Depois de mexer em desenho, tirar capturas** — há Chromium do
