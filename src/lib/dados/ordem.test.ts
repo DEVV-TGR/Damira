@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compararNomes, moverNaLista, ordenarProdutos } from "@/lib/ordenar";
+import { compararNomes, listarPelaOrdem, moverNaLista, ordenarProdutos } from "@/lib/ordenar";
 import { fonteDaLoja } from "./fontes-de-teste";
 import { CATALOGO_JSON } from "./json";
 import { protegerPainel } from "./papeis";
@@ -24,10 +24,23 @@ const fonte = async (): Promise<FonteDeDados> => {
 const DO_IMPRESSO = ["pausa", "salgados", "pratos", "doces", "bebidas", "bolos-inteiros", "formatos"];
 const NOVA = ["doces", "bolos-inteiros", "salgados", "pausa", "pratos", "bebidas", "formatos"];
 
-/* O que a loja recebe: o mesmo que o `listarProdutos` do `index.ts`, que é
-   `server-only` e não se importa num teste. */
-const daLoja = async (f: FonteDeDados, filtro: Parameters<FonteDeDados["listarProdutos"]>[0]) =>
-  ordenarProdutos(await f.listarProdutos(filtro), await f.ordemDaEmenta());
+/* O que a loja recebe: o `listarPelaOrdem` é o que o `listarProdutos` do
+   `index.ts` chama — o `index.ts` é `server-only` e não se importa num teste. */
+const daLoja = (f: FonteDeDados, filtro: Parameters<FonteDeDados["listarProdutos"]>[0]) =>
+  listarPelaOrdem(f, filtro);
+
+/* A fonte com um contador nas leituras da ordem. */
+const contarLeiturasDaOrdem = (f: Pick<FonteDeDados, "listarProdutos" | "ordemDaEmenta">) => {
+  const contagem = { leituras: 0 };
+  const contada = {
+    listarProdutos: f.listarProdutos,
+    ordemDaEmenta: () => {
+      contagem.leituras++;
+      return f.ordemDaEmenta();
+    },
+  };
+  return { contada, contagem };
+};
 
 /* As categorias pela ordem em que aparecem numa lista, como as lê a secção
    «Da carta, por encomenda» (`EmentaEncomendavel`). */
@@ -185,6 +198,37 @@ describe("a loja recebe os produtos já pela ordem", () => {
       { cartas: ["casa"], categorias: ["salgados", "doces"] },
     );
     expect(ordenados.map((p) => p.nome.pt)).toEqual(["Tosta", "Bola", "Sopa"]);
+  });
+});
+
+describe("a ordem só se lê quando há artigos da carta para ordenar", () => {
+  /* Com a base de dados, cada leitura é uma consulta: os kits, as boxes e cada
+     página de produto de encomenda não têm nada que a ordem mude. */
+  it("uma lista sem artigos da carta não lê a ordem, e vem como a fonte a deu", async () => {
+    const f = await fonte();
+    const { contada, contagem } = contarLeiturasDaOrdem(f);
+    const kits = await listarPelaOrdem(contada, { origem: "encomendas" });
+    expect(contagem.leituras).toBe(0);
+    expect(kits.length).toBeGreaterThan(0);
+    expect(kits).toEqual(await f.listarProdutos({ origem: "encomendas" }));
+  });
+
+  it("uma lista com artigos da carta lê-a uma vez", async () => {
+    const { contada, contagem } = contarLeiturasDaOrdem(await fonte());
+    await listarPelaOrdem(contada, { origem: "ementa" });
+    expect(contagem.leituras).toBe(1);
+  });
+
+  it("decide pelo que veio e não pelo filtro: um produto de encomenda com carta e categoria ordena-se", async () => {
+    /* O esquema só obriga a ementa a ter carta; não proíbe uma box de a ter. */
+    const box = (nome: string) => artigo(nome, { origem: "encomendas", familia: "box" });
+    const { contada, contagem } = contarLeiturasDaOrdem({
+      listarProdutos: async () => [box("Tosta"), box("Bola")],
+      ordemDaEmenta: async () => ({ cartas: ["casa"], categorias: ["doces"], subcategorias: [] }),
+    });
+    const ordenados = await listarPelaOrdem(contada, { origem: "encomendas" });
+    expect(ordenados.map((p) => p.nome.pt)).toEqual(["Bola", "Tosta"]);
+    expect(contagem.leituras).toBe(1);
   });
 });
 

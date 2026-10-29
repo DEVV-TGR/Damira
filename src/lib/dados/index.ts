@@ -1,6 +1,6 @@
 import "server-only";
 import { fonteDoAmbiente, type FonteDeExemplo } from "./exemplo";
-import { ordenarProdutos } from "@/lib/ordenar";
+import { listarPelaOrdem } from "@/lib/ordenar";
 import { protegerPainel } from "./papeis";
 import type { FonteDeDados } from "./tipos";
 
@@ -30,12 +30,10 @@ const fonte: FonteDeExemplo = fonteDoAmbiente();
  * Já pela ordem da loja (#87): as categorias como a gerente as ordenou, e os
  * artigos de cada uma por ordem alfabética. Ordena-se aqui, e não na fonte,
  * para valer seja qual for a fonte — e para as páginas receberem a lista pronta
- * em vez de cada componente a ordenar à sua maneira.
+ * em vez de cada componente a ordenar à sua maneira. A ordem só se lê quando há
+ * artigos da carta na lista (`listarPelaOrdem`).
  */
-export const listarProdutos: FonteDeDados["listarProdutos"] = async (filtro) => {
-  const [produtos, ordem] = await Promise.all([fonte.listarProdutos(filtro), fonte.ordemDaEmenta()]);
-  return ordenarProdutos(produtos, ordem);
-};
+export const listarProdutos: FonteDeDados["listarProdutos"] = (filtro) => listarPelaOrdem(fonte, filtro);
 
 export const produtoPorId: FonteDeDados["produtoPorId"] = (id) => fonte.produtoPorId(id);
 

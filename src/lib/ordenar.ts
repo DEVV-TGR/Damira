@@ -1,4 +1,4 @@
-import type { OrdemEmenta, Produto } from "@/lib/dados/tipos";
+import type { FiltroProdutos, FonteLoja, OrdemEmenta, Produto } from "@/lib/dados/tipos";
 
 /**
  * # A ordem por que a loja mostra os produtos (#87)
@@ -30,6 +30,9 @@ const posicaoEm = (lista: readonly string[], valor: string): number => {
   return i === -1 ? lista.length : i;
 };
 
+/* Só os artigos com carta e categoria se ordenam; os outros ficam onde vêm. */
+const temLugarNaCarta = (produto: Produto): boolean => produto.carta !== null && produto.categoria !== null;
+
 /**
  * Pela ordem das cartas, depois pela das categorias, depois pelo nome em
  * português. ⚠️ **Os produtos sem categoria — os de encomenda — não se
@@ -46,8 +49,8 @@ export function ordenarProdutos(
 ): Produto[] {
   const chegada = new Map(produtos.map((produto, i) => [produto, i]));
   return [...produtos].sort((a, b) => {
-    const aTem = a.carta !== null && a.categoria !== null;
-    const bTem = b.carta !== null && b.categoria !== null;
+    const aTem = temLugarNaCarta(a);
+    const bTem = temLugarNaCarta(b);
     if (!aTem || !bTem) {
       if (aTem !== bTem) return aTem ? -1 : 1;
       return chegada.get(a)! - chegada.get(b)!;
@@ -63,6 +66,28 @@ export function ordenarProdutos(
       a.id.localeCompare(b.id)
     );
   });
+}
+
+/**
+ * O `listarProdutos` da loja: os produtos da fonte, já pela ordem acima. É o
+ * que o `index.ts` de `src/lib/dados/` expõe, e vive aqui para se poder testar
+ * (o `index.ts` é `server-only`).
+ *
+ * ⚠️ **A ordem só se lê se houver artigos da carta para ordenar.** Com a base de
+ * dados cada leitura é uma consulta, e os kits, as boxes e cada página de
+ * produto de encomenda não têm nada que ela mude. Decide-se pelo que veio e não
+ * pelo filtro: o esquema não proíbe um produto de encomenda de ter carta, e um
+ * filtro que parecesse «sem carta» deixava-o por ordenar sem ninguém dar por
+ * isso. As duas leituras deixam de ir em paralelo, mas as páginas são
+ * estáticas: a espera é da geração, não de quem abre a página.
+ */
+export async function listarPelaOrdem(
+  fonte: Pick<FonteLoja, "listarProdutos" | "ordemDaEmenta">,
+  filtro?: FiltroProdutos,
+): Promise<Produto[]> {
+  const produtos = await fonte.listarProdutos(filtro);
+  if (!produtos.some(temLugarNaCarta)) return produtos;
+  return ordenarProdutos(produtos, await fonte.ordemDaEmenta());
 }
 
 /**
