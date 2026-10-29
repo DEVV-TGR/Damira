@@ -207,6 +207,9 @@ papel:
 | `bolos.json` | catálogo de massas, recheios, coberturas | **não tem preços nenhuns** |
 | `casa.json` | morada, telefone, horário, entregas | é um objeto, não uma lista |
 
+Há ainda `marca.json` (nome e redes, fonte única do cabeçalho e do rodapé) e
+`redes.json` (os *reels*): auxiliares, não fazem parte desta divisão.
+
 ⚠️ **Não juntar a encomenda à ementa.** Um kit para setenta pessoas ao lado de um
 croissant é o que leva alguém a aparecer ao sábado à espera de o levar debaixo do
 braço. A separação está no site como duas páginas e aqui como dois ficheiros.
@@ -266,7 +269,7 @@ Deixou de ser verdade em duas etapas, e o aviso ficou para trás nas duas: vale
 a pena lembrar que um ficheiro de instruções desactualizado engana com mais
 autoridade do que um ficheiro vazio.
 
-Hoje há **dezanove fotografias**, todas do álbum publicado pela própria casa e
+Hoje há **vinte e uma fotografias**, todas do álbum publicado pela própria casa e
 todas com a marca de água dela — que é o critério de origem, e não a
 composição:
 
@@ -275,8 +278,9 @@ composição:
 | `public/fotos/` | 5 | a fachada, a vitrine, as mãos, os bombons, o prato |
 | `public/vitrine/` | 16 | o álbum de gestão, importado inteiro |
 
-Os originais estão em `originais/fotos`, `originais/heroi` e
-`originais/fotos-gestao`. Importam-se assim:
+Os originais vivem em `originais/fotos`, `originais/heroi` e
+`originais/fotos-gestao`, mas ⚠️ **`originais/` não é versionado** (`.gitignore`):
+um clone novo não os tem, e pedem-se ao DevPlus. Importam-se assim:
 
 ```bash
 npm run fotos -- originais/fotos-gestao public/vitrine   # 1600 px, WebP
@@ -367,7 +371,7 @@ de apresentação, sem dados, estão em `src/lib/vista.ts`.
 
 ⚠️ **As fotografias dos produtos estão vazias em todos, e não se preenchem com o
 que há.**
-Existem dezanove fotografias da casa, e **nenhuma é deste kit ou desta box**.
+Existem vinte e uma fotografias da casa, e **nenhuma é deste kit ou desta box**.
 Numa página de produto qualquer imagem se lê como sendo o produto: pôr ali a
 montra vista da rua é anunciar uma coisa e entregar outra, e é a mesma regra que
 proíbe banco de imagens no resto do site. O `FotoProduto` guarda o espaço e diz
@@ -547,9 +551,9 @@ primeiras sete vieram do Santo Burga e continuam a valer — o motor é o mesmo.
     `aria-labelledby`.
 
 O que todas têm em comum: `npm run build` passa, o `lint` passa, e só se apanham
-a olhar. **Depois de mexer em desenho, tirar capturas** — há Chromium do
-Playwright em cache nesta máquina, em
-`~/Library/Caches/ms-playwright/chromium-1234/chrome-mac-arm64/`.
+a olhar. **Depois de mexer em desenho, tirar capturas** — com o Chromium do
+Playwright (`npx playwright install chromium`, uma vez por máquina; fica na
+cache do Playwright do utilizador, que muda com o sistema).
 
 ## A página inicial é um cartaz em capítulos
 
