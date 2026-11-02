@@ -25,7 +25,7 @@ não fica entregue às definições do painel do Stripe.
 
 ⚠️ **Porquê explícita.** Se alguém ligar o Multibanco no painel do Stripe, ele
 aparecia no nosso checkout — e uma referência Multibanco pode ser paga horas ou
-dias depois, muito depois de o pedido expirar aos 30 minutos. A proposta excluiu-o
+dias depois, muito depois de o pedido expirar aos 31 minutos. A proposta excluiu-o
 por isso mesmo.
 
 **MB WAY:** a confirmação é imediata, como num cartão. Limites que convém saber:
@@ -47,9 +47,11 @@ por isso mesmo.
 3. Cria a sessão do Stripe:
    - **`price_data` com os valores da base de dados**, linha a linha. Não se criam
      produtos no Stripe: o catálogo vive num sítio só, o nosso.
-   - **Expira em 31 minutos** — o mínimo que o Stripe aceita é 30, e um minuto de
-     folga evita uma recusa por relógios desacertados. Os nossos 30 minutos de
-     `pedidos.md` continuam a ser a regra.
+   - **Expira em `criadoEm + 31 min`**, e esse é também o prazo do pedido
+     (`pedidos.md`): um prazo só, contado de quando o pedido nasceu e não de
+     quando a sessão se cria. O Stripe exige pelo menos 30 minutos a partir da
+     criação da sessão; o minuto de folga cobre os segundos entre uma coisa e a
+     outra, e relógios desacertados.
    - Referência do pedido nos metadados e em `client_reference_id`.
    - Email do cliente pré-preenchido; língua `pt` ou `en`, conforme o site.
    - Chave de idempotência com o id do pedido: dois cliques não criam duas sessões.
@@ -69,11 +71,14 @@ faturas — a faturação é manual (o talão leva o NIF, se o cliente o deu).
 - **Pagou** → página de sucesso com «A confirmar o pagamento…», que pergunta ao
   nosso servidor de dois em dois segundos até o pedido estar `pago`, e depois
   mostra a referência. Normalmente são segundos.
-- **Voltou atrás** → o servidor expira a sessão no Stripe e o pedido passa logo a
-  `expirado`.
+- **Voltou atrás** → o servidor expira a sessão no Stripe e só depois o pedido
+  passa a `expirado`. Só uma sessão aberta se expira, e uma sessão expirada já
+  não se paga: por esta ordem, a vaga nunca sai enquanto alguém a pode pagar. Se
+  o Stripe recusar porque a sessão já foi paga, o pedido não expira — pergunta-se
+  a sessão ao Stripe e segue para a `marcarPago`, como na verificação periódica.
 
 ⚠️ **Porquê expirar logo.** Um pedido `pendente` ocupa a vaga e as quantidades
-durante 30 minutos. Quem volta atrás para mudar uma coisa e tenta outra vez
+durante 31 minutos. Quem volta atrás para mudar uma coisa e tenta outra vez
 encontrava a última vaga ocupada… pelo seu próprio pedido abandonado.
 
 ## Confirmar: o webhook
@@ -160,7 +165,9 @@ o mesmo pagamento.
 ## Testes antes do lançamento
 
 Com o Vitest, o que não depende do Stripe: cálculo do sinal e do resto, a
-transição `marcarPago` com eventos repetidos, fora de ordem e depois da expiração.
+transição `marcarPago` com eventos repetidos, fora de ordem e depois da expiração;
+o prazo do pedido e o `expires_at` da sessão a darem o mesmo instante; e o voltar
+atrás com a sessão já paga a acabar em `pago`, e não em `expirado`.
 
 No ambiente de teste, com o Stripe CLI e na loja:
 
@@ -169,7 +176,14 @@ No ambiente de teste, com o Stripe CLI e na loja:
 - Apple Pay num iPhone verdadeiro;
 - sessão que expira; voltar atrás no checkout;
 - webhook repetido (`stripe events resend`) — um talão só;
-- pagamento confirmado depois de o pedido expirar → `chegouTarde`;
+- pagamento confirmado depois de o pedido expirar → `chegouTarde`: com o
+  `stripe listen` parado, abrir o checkout e só pagar perto do fim dos 31
+  minutos; passado o prazo, criar outro pedido (é ele que corre a limpeza) e
+  chamar à mão a verificação periódica, que apanha o primeiro — ela só olha para
+  os pagamentos dos últimos 30 minutos, e um pagamento feito logo no início já
+  lá não estava;
+- MB WAY ainda a aprovar quando a sessão expira (o `+351911111112` só aprova ao
+  fim de ~30 s): ver se o Stripe ainda o aceita — se aceitar, é um `chegouTarde`;
 - reembolso total e parcial.
 
 Já em modo real, na loja: um pagamento com cartão, um com MB WAY (e ver o que a

@@ -75,7 +75,7 @@ memória não servem: na Vercel cada pedido pode cair numa instância diferente.
 | Fotos dos bolos personalizados | por pedido e por IP |
 
 ⚠️ **Porquê limitar a criação de pedidos.** Um pedido pendente reserva vaga e
-quantidades durante 30 minutos. Sem limite, um robô — ou alguém com má intenção
+quantidades durante 31 minutos. Sem limite, um robô — ou alguém com má intenção
 — esvaziava o calendário da loja sem pagar um cêntimo. O campo-armadilha que já
 existe em `pedidos.ts` continua.
 
