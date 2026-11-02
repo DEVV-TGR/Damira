@@ -163,7 +163,9 @@ que as torna falsas:
 - **Alterações ao esquema vão num PR só para isso.** Nunca uma migração escondida
   dentro de uma funcionalidade.
 - Desenvolvimento e produção são bases diferentes (ramos da Neon). Nunca testar
-  contra a de produção.
+  contra a de produção — com uma exceção: o site no ar em modo de teste, até ao
+  lançamento, compra com cartões de teste contra ela (`pagamentos.md` ›
+  Ambientes). Os pedidos que isso deixa lá saem das contas no lançamento.
 
 ### Revisão
 

@@ -128,8 +128,10 @@ outro onde ela é obrigatória; apanha o básico onde não é.
    (plano Launch), Resend. A verificação do Stripe demora: começar cedo.
 5. **Marketing** — fazer a ponte com quem trata do marketing da casa.
 6. **Advogada** — levar os textos legais e trazer a aprovação.
-7. **Testes na loja e formação** — incluindo um reembolso de MB WAY com o saldo
-   baixo (ver `pagamentos.md`).
+7. **Testes na loja e formação** — nas sandboxes do Stripe, com o tablet, e
+   depois a primeira venda verdadeira. As falhas, o reembolso sem saldo
+   incluído, ensaiam-se nas sandboxes: o Stripe proíbe testar em modo real (ver
+   `pagamentos.md` › Testes).
 
 ## Etapas
 

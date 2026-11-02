@@ -16,7 +16,9 @@ variáveis, a ordem dos passos — está em `ligar-a-neon.md`.
 ## As ferramentas
 
 - **Neon**, com o driver HTTP (`@neondatabase/serverless`). Dois ramos:
-  desenvolvimento e produção. Nunca se testa contra o de produção.
+  desenvolvimento e produção. Nunca se testa contra o de produção, com a
+  exceção do site no ar em modo de teste até ao lançamento (`pagamentos.md` ›
+  Ambientes).
 - **Drizzle** como ORM. O esquema escreve-se em TypeScript em `src/db/` (que o
   `CODEOWNERS` já protege) e o `drizzle-kit` gera as migrações em SQL, que vão no
   PR e se leem como SQL. Funciona com o driver HTTP da Neon e com o PGlite.
