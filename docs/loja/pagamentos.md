@@ -383,14 +383,12 @@ cliente na aprovação.
 Para fechar antes da #42. O que mudar o contrato vai primeiro ao `pedidos.md`, e
 o que mudar o esquema vai num PR só para isso.
 
-1. **Os estados do reembolso.** Um reembolso que falha começa `succeeded` (o
-   cartão `…5126`), e isso é `concluido → falhado`, que o `pedidos.md` não prevê:
-   o `reembolsadoCent` desce e o reservado volta. Proposta para os cinco estados
-   do Stripe: `pending` e `requires_action` → `pendente`; `succeeded` →
-   `concluido`; `failed` e `canceled` → `falhado`, guardando o estado do Stripe e
-   o motivo. As transições só andam para a frente, e um reembolso feito no painel
-   do Stripe entra no pedido. ⚠️ Não se sabe se um MB WAY sem saldo passa por
-   `succeeded` antes de falhar: o `…5126` é de cartão.
+1. **Os estados do reembolso** — proposto no #100, que muda o `pedidos.md`: os
+   cinco estados do Stripe em três, a transição `concluido → falhado` (um
+   reembolso que falha pode começar `succeeded`, como o cartão `…5126`), só para a
+   frente, e o reembolso feito no painel do Stripe a entrar no pedido. Quando o
+   #100 entrar, este ponto sai daqui. ⚠️ Não se sabe se um MB WAY sem saldo passa
+   por `succeeded` antes de falhar: o `…5126` é de cartão.
 2. **A `marcarPago` num lote sem leituras.** Somar à vaga se o pedido estava
    `expirado` e depois mudar o pedido, em duas instruções, tem uma corrida: duas
    chamadas ao mesmo tempo leem as duas «expirado» e somam duas vezes. Proposta,
