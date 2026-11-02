@@ -52,6 +52,13 @@ por isso mesmo.
      quando a sessão se cria. O Stripe exige pelo menos 30 minutos a partir da
      criação da sessão; o minuto de folga cobre os segundos entre uma coisa e a
      outra, e relógios desacertados.
+
+     ⚠️ **Quando já não dá** — a criação da sessão falhou, e o «Tentar outra
+     vez» chega mais de um minuto depois de o pedido nascer —, não se estica o
+     prazo só do lado do Stripe. O pedido, que ainda não tem sessão e que por isso
+     ninguém pode pagar, passa logo a `expirado` e liberta a vaga; a ação devolve
+     um erro próprio, e o «Tentar outra vez» seguinte já leva uma chave de
+     idempotência nova, que cria um pedido novo.
    - Referência do pedido nos metadados e em `client_reference_id`.
    - Email do cliente pré-preenchido; língua `pt` ou `en`, conforme o site.
    - Chave de idempotência com o id do pedido: dois cliques não criam duas sessões.
