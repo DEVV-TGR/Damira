@@ -12,6 +12,7 @@ import {
   reembolso,
   sessao,
 } from "./teste-stripe";
+import type { AcaoPagar } from "./eventos";
 import { tratarWebhook } from "./webhook";
 
 /*
@@ -322,5 +323,28 @@ describe("os eventos", () => {
       expect.anything(),
       expect.objectContaining({ paymentIntentId: "pi_test_a1b2c3", chargeId: "ch_test_a1b2c3", valorCent: 4250 }),
     );
+  });
+});
+
+/* O «voltar atrás» do #38 encontra a sessão já paga, pergunta-a ao Stripe e
+   chama a mesma `marcarPago`, sem evento (`pagamentos.md` › Voltar do Stripe).
+   A falsa segue o contrato que a verdadeira vai ter de seguir. */
+describe("a marcarPago sem evento: o voltar atrás do #38", () => {
+  const pagamento: AcaoPagar = {
+    tipo: "pagar",
+    pedidoId: PEDIDO,
+    referencia: "DAM-0311-4F7K",
+    sessaoId: "cs_test_a1b2c3",
+    montanteCent: 4250,
+    moeda: "eur",
+    paymentIntentId: "pi_test_a1b2c3",
+    livemode: false,
+  };
+
+  it("paga uma vez, sem registar evento nenhum; a segunda chamada é sem-efeito, e não repetido", async () => {
+    const fonte = fonteFalsa({ [PEDIDO]: "pendente" });
+    expect(await fonte.marcarPago(null, pagamento)).toEqual({ resultado: "mudou", estado: "pago", chegouTarde: false });
+    expect(await fonte.marcarPago(null, pagamento)).toEqual({ resultado: "sem-efeito", estado: "pago" });
+    expect(fonte.eventos.size).toBe(0);
   });
 });

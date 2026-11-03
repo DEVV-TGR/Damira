@@ -120,7 +120,7 @@ export type PedidoFalso = { estado: EstadoPedido; chegouTarde: boolean };
 export type FonteFalsa = FonteWebhook & {
   pedidos: Map<string, PedidoFalso>;
   eventos: Map<string, RegistoEvento>;
-  chamadas: { metodo: keyof FonteWebhook; evento: string }[];
+  chamadas: { metodo: keyof FonteWebhook; evento: string | null }[];
 };
 
 /**
@@ -142,11 +142,14 @@ export function fonteFalsa(pedidos: Record<string, EstadoPedido> = {}): FonteFal
       metodo: keyof FonteWebhook,
       efeito: (pedido: PedidoFalso, acao: A) => ResultadoWebhook,
     ) =>
-    async (evento: RegistoEvento, acao: A): Promise<ResultadoWebhook> => {
-      chamadas.push({ metodo, evento: evento.id });
-      if (eventos.has(evento.id)) return { resultado: "repetido" };
+    async (evento: RegistoEvento | null, acao: A): Promise<ResultadoWebhook> => {
+      chamadas.push({ metodo, evento: evento?.id ?? null });
+      /* Sem evento (o «voltar atrás» do #38) não há registo: fica só a condição do estado. */
+      if (evento) {
+        if (eventos.has(evento.id)) return { resultado: "repetido" };
+        eventos.set(evento.id, evento);
+      }
       const pedido = acao.pedidoId === null ? undefined : estado.get(acao.pedidoId);
-      eventos.set(evento.id, evento);
       if (!pedido) return { resultado: "pedido-desconhecido" };
       return efeito(pedido, acao);
     };

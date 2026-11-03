@@ -67,8 +67,14 @@ export type FonteWebhook = {
    * ocupar a vaga mesmo acima do limite («Pago ganha sempre a expirado»,
    * `pedidos.md`). Em qualquer outro estado, nada. O talão, o som e os emails
    * saem **desta transição**, nunca do evento.
+   *
+   * `evento` é `null` quando a confirmação não vem de um evento: o «voltar
+   * atrás» do #38, que encontra a sessão já paga e a pergunta ao Stripe
+   * (`pagamentos.md` › Voltar do Stripe). É a mesma porta, e não uma segunda.
+   * Sem evento não há linha em `eventos_stripe`, e a idempotência fica só na
+   * condição do estado: a segunda chamada dá `sem-efeito`, nunca `repetido`.
    */
-  marcarPago(evento: RegistoEvento, pagamento: AcaoPagar): Promise<ResultadoWebhook>;
+  marcarPago(evento: RegistoEvento | null, pagamento: AcaoPagar): Promise<ResultadoWebhook>;
   /** `pendente → expirado`, libertando a vaga. Um pedido pago nunca volta atrás. */
   expirarPendente(evento: RegistoEvento, expiracao: AcaoExpirar): Promise<ResultadoWebhook>;
   /**
