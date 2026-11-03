@@ -98,7 +98,12 @@ para expirar o checkout de ninguém.
 
 ## Confirmar: o webhook
 
-`src/app/api/stripe/webhook/route.ts`.
+`src/app/api/stripe/webhook/route.ts`, que só liga as peças: a leitura dos
+eventos e a passagem a ação estão em `src/lib/pagamentos/eventos.ts`, o
+tratamento em `webhook.ts`, e os dados vão pela `FonteWebhook` (`tipos.ts`).
+⚠️ Até a implementação sobre a Neon entrar (`fonte.ts`), a rota verifica a
+assinatura e responde **503**: o Stripe volta a tentar, e nada é dado por
+tratado.
 
 - Lê o corpo **em bruto** (`await req.text()`) e verifica a assinatura com o
   segredo do webhook. Um pedido sem assinatura válida é recusado.
@@ -288,8 +293,12 @@ que só o Stripe faz, e correm à mão.
 - **O webhook testa-se com assinaturas verdadeiras**, feitas no próprio teste com
   o `generateTestHeaderString` do SDK e um segredo de teste: a rota inteira, sem
   rede. Para provar que se lê o corpo em bruto, assina-se um corpo com espaços e
-  envia-se compactado: um `JSON.parse` seguido de `JSON.stringify` de um corpo já
-  compacto dá os mesmos bytes, e o teste passava sem provar nada.
+  envia-se **tal como foi assinado**, como o Stripe faz: só passa quem não o
+  refaz, porque um `JSON.parse` seguido de `JSON.stringify` compacta-o e a
+  assinatura deixa de bater. Com um corpo já compacto, as duas formas dão os
+  mesmos bytes, e o teste passava sem provar nada. ⚠️ Enviá-lo compactado dá 400
+  com as duas: prova que a assinatura é sobre os bytes, mas não a leitura em
+  bruto.
 - **Um teste pequeno do adaptador verdadeiro**, com o cliente do SDK trocado por
   um que só regista: confere os parâmetros que lhe chegam. A porta falsa não
   prova que a verdadeira envia o que deve.
@@ -302,7 +311,7 @@ que só o Stripe faz, e correm à mão.
 | Sinal (#38) | uma linha só, com `Math.round(total × % / 100)`; o arredondamento nos meios cêntimos; 100 %; um sinal abaixo do mínimo que o Stripe cobra (0,50 €) → erro claro antes do checkout; um cesto com produtos de percentagens diferentes (ver «Em aberto», 6). A soma sinal + resto não se testa: o resto é `total − sinal`, e o teste seria tautológico |
 | Voltar atrás (#38) | expira no Stripe **antes** de mudar o pedido; sessão já paga → `pago`, e não `expirado`; sessão já expirada → `expirado`; o Stripe em baixo → o pedido fica `pendente` e a vaga não sai; abrir o endereço (GET) não expira nada; um token de outro pedido, ou fora de validade, é recusado |
 | `marcarPago` (#42) | `pendente` → `pago`, com `pagoOnlineCent` do `amount_total`; `expirado` → `pago` + `chegouTarde`, a voltar a ocupar mesmo acima do limite; `pago`, `entregue`, `cancelado` → nada; duas chamadas → uma transição e um email de cada; `unpaid` → nada; duas linhas do mesmo produto, com escolhas diferentes → as quantidades somam-se antes de tocar no contador; a sessão encontrada pelo `pedidoId`, sem `stripe_session_id` gravado → associa-se, depois de conferida; montante ou moeda que não batem → o pagamento fica registado e há aviso |
-| Webhook (#42) | sem assinatura, outro segredo, corpo assinado com espaços e enviado compactado, assinatura fora da tolerância → 400; evento repetido → 200, nada, e o painel volta a ser avisado; `completed` sem `paid` → nada; `async_payment_failed` → nunca paga; `expired` depois de `completed` → continua `pago`; `completed` depois de `expired` → `chegouTarde`; `pedidoId` que não existe aqui → 200 e nada; `livemode` trocado → nada; um tipo que tratamos, mas que o zod não lê → 5xx; um tipo que não tratamos → 200 |
+| Webhook (#42) | sem assinatura, outro segredo, corpo assinado com espaços e enviado compactado, assinatura fora da tolerância → 400; o mesmo corpo com espaços, enviado como foi assinado → 200; evento repetido → 200, nada, e o painel volta a ser avisado; `completed` sem `paid` → nada; `async_payment_failed` → nunca paga; `expired` depois de `completed` → continua `pago`; `completed` depois de `expired` → `chegouTarde`; `pedidoId` que não existe aqui → 200 e nada; `livemode` trocado → nada; um tipo que tratamos, mas que o zod não lê → 5xx; um tipo que não tratamos → 200 |
 | Emails (#42) | a transição grava os emails por enviar; o Resend aceita e o processo morre antes de os marcar enviados → a nova tentativa leva a mesma chave e não duplica (o Resend deduplica durante 24 horas) |
 | Verificação periódica (#43) | **sem pagamentos no Stripe, a fonte de dados não é chamada** — um espião prova a regra 6; um pagamento que o webhook perdeu → `pago` + aviso; um já tratado → nada; janelas com sobreposição; pagina até ao fim; o *heartbeat* só no fim de uma execução que acabou — com o Stripe em baixo, ou um erro a meio da paginação, não, e é assim que o alarme dispara |
 | Reembolsos e cancelamento (#49) | parcial → `pendente`, o reservado sobe e o `reembolsadoCent` não; dois que juntos passam o pago → o segundo recusado pelo `CHECK`; a mesma chave não pede dois; a resposta do Stripe perdida → o reservado não se liberta e não se pede outro; `succeeded` → `concluido`; `failed` → `falhado`, e o reservado devolve-o; `failed` seguido de um `succeeded` antigo → não volta atrás; um reembolso feito no painel do Stripe → entra no pedido; cancelar pela gerente com reembolso total, parcial ou nenhum; pelo cliente só com sessão, com a opção ligada e dentro do prazo; um funcionário a reembolsar → recusado no servidor; disputa → aviso, que continua lá depois do levantamento |
