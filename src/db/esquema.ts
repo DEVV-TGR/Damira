@@ -1,9 +1,10 @@
-import { sql } from "drizzle-orm";
+import { type SQL, sql } from "drizzle-orm";
 import {
   bigint,
   boolean,
   check,
   date,
+  index,
   integer,
   jsonb,
   numeric,
@@ -14,7 +15,9 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
-import type { GrupoComposicao, OrdemEmenta } from "@/lib/dados/tipos";
+/* Relativo e não `@/`: estes são valores, e o `drizzle-kit` carrega este ficheiro
+   sem os atalhos do `tsconfig`. */
+import { AVISOS_TRATAVEIS, ESTADOS_PEDIDO, type GrupoComposicao, type OrdemEmenta } from "../lib/dados/tipos";
 import type { DiaFechado, HorarioSemanal } from "@/lib/horarios";
 
 /**
@@ -285,4 +288,338 @@ export const limites = pgTable(
     primaryKey({ columns: [t.chave, t.janela] }),
     check("limites_contagem", sql`${t.contagem} >= 0`),
   ],
+);
+
+// ——— Os pedidos (`pedidos.md`, o contrato) ———
+
+/**
+ * Um pedido. Os campos são os do `EsquemaPedido`; os que o contrato não tem
+ * («só da base de dados») servem regras que já estão escritas e o browser nunca
+ * os vê. O porquê de cada um está em `base-de-dados.md` › Os pedidos.
+ *
+ * ⚠️ **As transições não vivem aqui**, vivem nos `UPDATE … WHERE estado = …` da
+ * fonte. O que vive aqui é o que tem de ser verdade em **qualquer** estado: um
+ * pedido pago tem a data em que foi pago, um cancelado diz quem o cancelou.
+ */
+export const pedidos = pgTable(
+  "pedidos",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    referencia: text("referencia").notNull().unique(),
+    estado: text("estado").notNull(),
+    criadoEm: instante("criado_em").notNull(),
+    levantamentoEm: instante("levantamento_em").notNull(),
+    pagoEm: instante("pago_em"),
+    impressoEm: instante("impresso_em"),
+    entregueEm: instante("entregue_em"),
+    canceladoEm: instante("cancelado_em"),
+    reagendadoEm: instante("reagendado_em"),
+    /** O cliente vive no pedido: é a fotografia do momento, não uma conta. */
+    clienteNome: text("cliente_nome").notNull(),
+    clienteEmail: text("cliente_email").notNull(),
+    clienteTelefone: text("cliente_telefone").notNull(),
+    clienteNif: text("cliente_nif"),
+    /** O id da conta Google, se o cliente tinha sessão. Sai da sessão, nunca do formulário. */
+    contaId: text("conta_id"),
+    observacoes: text("observacoes"),
+    totalCent: integer("total_cent").notNull(),
+    modoPagamento: text("modo_pagamento").notNull(),
+    pagoOnlineCent: integer("pago_online_cent").notNull().default(0),
+    chegouTarde: boolean("chegou_tarde").notNull().default(false),
+    canceladoPor: text("cancelado_por"),
+    avisosTratados: text("avisos_tratados").array().notNull().default(sql`'{}'`),
+    /** A mesma chave devolve o mesmo pedido (`robustez.md` › Envios duplicados). */
+    chaveIdempotencia: uuid("chave_idempotencia").notNull().unique(),
+    /** Para os limites por IP. Nunca vai para o painel. */
+    ip: text("ip"),
+    stripeSessionId: text("stripe_session_id").unique(),
+    /** O nome e a referência sem acentos e em minúsculas, para a pesquisa. */
+    procura: text("procura").notNull(),
+    /**
+     * O que já foi devolvido **ou está a caminho**: a trava dos reembolsos ao
+     * mesmo tempo (`base-de-dados.md`). Não é o `reembolsadoCent` do contrato.
+     */
+    reembolsoReservadoCent: integer("reembolso_reservado_cent").notNull().default(0),
+    /**
+     * ⚠️ **Um pedido feito com `LOJA_EM_TESTE=1`**, pago com cartões de teste.
+     * Sem valor por defeito, de propósito: quem cria o pedido tem de dizer o que
+     * ele é. E não muda depois de nascer — um gatilho recusa-o (migração
+     * `0003`) —, porque é por ele que o lançamento os tira das contas
+     * (`pagamentos.md` › Ambientes).
+     */
+    deTeste: boolean("de_teste").notNull(),
+  },
+  (t) => [
+    check("pedidos_estado", sql`${t.estado} in (${umDe(ESTADOS_PEDIDO)})`),
+    check("pedidos_referencia", sql`${t.referencia} ~ '^DAM-[0-9]{4}-[A-HJ-NP-Z2-9]{4}$'`),
+    /* E.164, como o `EsquemaCliente`: é por ele que o balcão liga. */
+    check("pedidos_telefone", sql`${t.clienteTelefone} ~ '^\\+[1-9][0-9]{6,14}$'`),
+    check("pedidos_nif", sql`${t.clienteNif} ~ '^[0-9]{9}$'`),
+    check("pedidos_modo_pagamento", sql`${t.modoPagamento} in (${umDe(["total", "sinal"])})`),
+    /* ⚠️ Fica de fora `pago_online_cent <= total_cent`: um montante que não bate
+       ainda não tem regra (`pagamentos.md` › Em aberto, 8), e um `CHECK` que
+       recusasse um pagamento recebido perdia um pedido pago. */
+    check("pedidos_valores", sql`${t.totalCent} >= 0 and ${t.pagoOnlineCent} >= 0`),
+    check(
+      "pedidos_reembolso_reservado",
+      sql`${t.reembolsoReservadoCent} >= 0 and ${t.reembolsoReservadoCent} <= ${t.pagoOnlineCent}`,
+    ),
+    /* Só se cancela um pedido pago, e nada volta de expirado ou de pago para
+       trás de pago: ter a data do pagamento é o mesmo que ter sido pago. */
+    check(
+      "pedidos_pago_em",
+      sql`(${t.pagoEm} is not null) = (${t.estado} in (${umDe(["pago", "entregue", "cancelado"])}))`,
+    ),
+    check("pedidos_entregue_em", sql`${t.estado} <> 'entregue' or ${t.entregueEm} is not null`),
+    /* Cancelado é final: quando, por quem, e o estado, os três ou nenhum. */
+    check(
+      "pedidos_cancelado",
+      sql`(${t.estado} = 'cancelado') = (${t.canceladoEm} is not null) and (${t.canceladoEm} is null) = (${t.canceladoPor} is null)`,
+    ),
+    check("pedidos_cancelado_por", sql`${t.canceladoPor} in (${umDe(["cliente", "gerente"])})`),
+    /* Só chega tarde quem chegou: um pagamento. */
+    check("pedidos_chegou_tarde", sql`not ${t.chegouTarde} or ${t.pagoEm} is not null`),
+    check(
+      "pedidos_avisos_tratados",
+      sql`${t.avisosTratados} <@ array[${umDe(AVISOS_TRATAVEIS)}]::text[]`,
+    ),
+    /* As listas do balcão: por estado, pela hora de levantamento. */
+    index("pedidos_estado_levantamento").on(t.estado, t.levantamentoEm),
+    /* O arquivo e os pedidos da gerente, por cursor. */
+    index("pedidos_criado_em_id").on(t.criadoEm, t.id),
+    /* O histórico da conta e os possíveis duplicados. */
+    index("pedidos_cliente_email").on(t.clienteEmail),
+    /* Os limites de criar pedidos (`robustez.md` › Limites): só contam os
+       pendentes, por isso os índices só os têm a eles. */
+    index("pedidos_pendentes_por_ip").on(t.ip).where(sql`${t.estado} = 'pendente'`),
+    index("pedidos_pendentes_por_email").on(t.clienteEmail).where(sql`${t.estado} = 'pendente'`),
+  ],
+);
+
+/**
+ * Uma linha do pedido: ⚠️ **uma cópia** do nome, da variante e do preço desse
+ * dia. Nunca se lê o nome nem o preço através do produto — um pedido antigo diz
+ * o que se pagou nesse dia (`pedidos.md`).
+ */
+export const linhasPedido = pgTable(
+  "linhas_pedido",
+  {
+    pedidoId: uuid("pedido_id")
+      .notNull()
+      .references(() => pedidos.id),
+    /** A ordem do cesto. */
+    posicao: integer("posicao").notNull(),
+    /* Para o produto há chave estrangeira, porque nenhum produto se apaga. Para
+       a variante não: a gerente pode tirar um escalão, e o pedido de ontem
+       continua a tê-lo. */
+    produtoId: text("produto_id")
+      .notNull()
+      .references(() => produtos.id),
+    varianteId: text("variante_id").notNull(),
+    nome: text("nome").notNull(),
+    variante: text("variante"),
+    escolhas: text("escolhas").array().notNull().default(sql`'{}'`),
+    unidade: text("unidade").notNull(),
+    /* `numeric`: ao quilo pede-se meio quilo. */
+    quantidade: numeric("quantidade", { mode: "number" }).notNull(),
+    precoUnitarioCent: integer("preco_unitario_cent").notNull(),
+    totalCent: integer("total_cent").notNull(),
+    notas: text("notas"),
+  },
+  (t) => [
+    /* É também o índice `linhas_pedido(pedido_id)` do `robustez.md`. */
+    primaryKey({ columns: [t.pedidoId, t.posicao] }),
+    check("linhas_pedido_posicao", sql`${t.posicao} >= 0`),
+    check("linhas_pedido_unidade", sql`${t.unidade} in (${umDe(["un", "kg"])})`),
+    check("linhas_pedido_quantidade", sql`${t.quantidade} > 0`),
+    check("linhas_pedido_precos", sql`${t.precoUnitarioCent} >= 0 and ${t.totalCent} >= 0`),
+  ],
+);
+
+/** Os cinco estados de um reembolso no Stripe, e os três do pedido em que caem (`pedidos.md` › Reembolsos). */
+const ESTADOS_STRIPE_DO_REEMBOLSO = {
+  pendente: ["pending", "requires_action"],
+  concluido: ["succeeded"],
+  falhado: ["failed", "canceled"],
+} as const;
+
+/**
+ * Um reembolso. O `id` é nosso, e é a chave de idempotência que vai ao Stripe;
+ * o do Stripe fica no `stripe_refund_id` quando ele responde ou o webhook o traz.
+ *
+ * ⚠️ **Um reembolso `pendente` sem `stripe_refund_id` é trabalho por fazer**:
+ * gravou-se antes de se chamar o Stripe, na mesma transação que soma ao
+ * `reembolso_reservado_cent`, e repete-se com a mesma chave. Não há uma tabela
+ * de trabalho pendente para os reembolsos porque seria guardar o mesmo facto em
+ * dois sítios (`pagamentos.md` › Em aberto, 3).
+ */
+export const reembolsos = pgTable(
+  "reembolsos",
+  {
+    id: text("id").primaryKey(),
+    pedidoId: uuid("pedido_id")
+      .notNull()
+      .references(() => pedidos.id),
+    valorCent: integer("valor_cent").notNull(),
+    estado: text("estado").notNull(),
+    pedidoEm: instante("pedido_em").notNull(),
+    stripeRefundId: text("stripe_refund_id").unique(),
+    /** Qual dos cinco do Stripe. `NULL` até o Stripe dizer alguma coisa. */
+    estadoStripe: text("estado_stripe"),
+    /**
+     * O `failure_reason` do Stripe, ou um motivo nosso quando fomos nós a dá-lo
+     * por falhado (um reembolso do painel do Stripe que não deixou caber o nosso).
+     */
+    motivo: text("motivo"),
+    /**
+     * A gerente viu a falha e decidiu. ⚠️ **Por reembolso, e não no
+     * `avisos_tratados` do pedido**: um segundo reembolso falhado no mesmo pedido
+     * ficava escondido pelo primeiro, já tratado.
+     */
+    falhaTratadaEm: instante("falha_tratada_em"),
+  },
+  (t) => [
+    check("reembolsos_valor", sql`${t.valorCent} > 0`),
+    check("reembolsos_estado", sql`${t.estado} in (${umDe(Object.keys(ESTADOS_STRIPE_DO_REEMBOLSO))})`),
+    /* O mapeamento do `pedidos.md`, na base de dados: um `succeeded` gravado
+       como `falhado` é recusado, venha de onde vier. */
+    check(
+      "reembolsos_estado_stripe",
+      sql.join(
+        [
+          sql`${t.estadoStripe} is null`,
+          ...Object.entries(ESTADOS_STRIPE_DO_REEMBOLSO).map(
+            ([nosso, doStripe]) => sql`(${t.estado} = ${sql.raw(`'${nosso}'`)} and ${t.estadoStripe} in (${umDe(doStripe)}))`,
+          ),
+        ],
+        sql` or `,
+      ),
+    ),
+    check("reembolsos_falha_tratada", sql`${t.falhaTratadaEm} is null or ${t.estado} = 'falhado'`),
+    /* A soma do `reembolsadoCent` e a lista do painel leem os reembolsos de um pedido. */
+    index("reembolsos_pedido").on(t.pedidoId),
+  ],
+);
+
+/**
+ * Os emails por enviar: o de confirmação ao cliente, o aviso à loja. Gravam-se
+ * **na mesma transação** que os origina — a passagem a `pago`, o cancelamento —
+ * e só depois se enviam (`pagamentos.md` › Em aberto, 3). Se o envio falhar, ou o
+ * processo morrer a meio, a linha fica, e repete-se quando a base de dados já
+ * estiver acordada por outra razão.
+ *
+ * O `id` é a chave de idempotência que vai ao Resend: a repetição de um envio que
+ * já tinha sido aceite não manda dois emails. Não há chave única «natural»
+ * (pedido, modelo, destinatário) porque o mesmo email pode ter de sair duas
+ * vezes — o pedido reagendado duas vezes. O que impede o duplicado é a transição
+ * só acontecer uma vez.
+ */
+export const emailsPorEnviar = pgTable(
+  "emails_por_enviar",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    pedidoId: uuid("pedido_id")
+      .notNull()
+      .references(() => pedidos.id),
+    /** Qual é o email («pago-cliente», «pago-loja»…). Os nomes são da #42. */
+    modelo: text("modelo").notNull(),
+    destinatario: text("destinatario").notNull(),
+    criadoEm: instante("criado_em").notNull(),
+    tentativas: integer("tentativas").notNull().default(0),
+    ultimaTentativaEm: instante("ultima_tentativa_em"),
+    /** O que o Resend respondeu da última vez, para o painel mostrar. */
+    ultimoErro: text("ultimo_erro"),
+    enviadoEm: instante("enviado_em"),
+  },
+  (t) => [
+    check("emails_por_enviar_modelo", sql`${t.modelo} <> '' and ${t.destinatario} <> ''`),
+    check("emails_por_enviar_tentativas", sql`${t.tentativas} >= 0`),
+    check("emails_por_enviar_datas", sql`${t.enviadoEm} is null or ${t.enviadoEm} >= ${t.criadoEm}`),
+    /* O que falta enviar, do mais antigo para o mais novo. */
+    index("emails_por_enviar_pendentes").on(t.criadoEm).where(sql`${t.enviadoEm} is null`),
+  ],
+);
+
+// ——— As vagas e as quantidades: a última decide-a a base de dados ———
+
+/*
+ * Os três contadores (`base-de-dados.md` › Vagas e quantidades). Criar o pedido
+ * soma-lhes no mesmo lote que o insere; se a soma passar o limite, o `CHECK`
+ * falha e o lote cai inteiro. O limite é **copiado** para a linha porque um
+ * `CHECK` não lê outra tabela.
+ */
+const ocupadasNoLimite = (ocupadas: SQL, limite: SQL) => sql`${limite} is null or ${ocupadas} <= ${limite}`;
+
+/** Uma vaga de levantamento, pelo instante em que começa (a 25/10 a 01:00 repete-se). */
+export const vagas = pgTable(
+  "vagas",
+  {
+    inicio: instante("inicio").primaryKey(),
+    ocupadas: integer("ocupadas").notNull().default(0),
+    /** `NULL` é sem limite: o interruptor da gerente desligado. */
+    limite: integer("limite"),
+  },
+  (t) => [
+    check("vagas_ocupadas", sql`${t.ocupadas} >= 0`),
+    check("vagas_limite", sql`${t.limite} >= 0`),
+    check("vagas_no_limite", ocupadasNoLimite(sql`${t.ocupadas}`, sql`${t.limite}`)),
+  ],
+);
+
+/** O limite «por dia» de um produto. O dia é o de levantamento (decidido a 05/10). */
+export const quantidadesDia = pgTable(
+  "quantidades_dia",
+  {
+    produtoId: text("produto_id")
+      .notNull()
+      .references(() => produtos.id),
+    dia: date("dia", { mode: "string" }).notNull(),
+    ocupadas: numeric("ocupadas", { mode: "number" }).notNull().default(0),
+    limite: integer("limite"),
+  },
+  (t) => [
+    primaryKey({ columns: [t.produtoId, t.dia] }),
+    check("quantidades_dia_ocupadas", sql`${t.ocupadas} >= 0`),
+    check("quantidades_dia_limite", sql`${t.limite} >= 0`),
+    check("quantidades_dia_no_limite", ocupadasNoLimite(sql`${t.ocupadas}`, sql`${t.limite}`)),
+  ],
+);
+
+/** O limite «total» de um produto: uma edição limitada, por exemplo. */
+export const quantidadesTotal = pgTable(
+  "quantidades_total",
+  {
+    produtoId: text("produto_id")
+      .primaryKey()
+      .references(() => produtos.id),
+    ocupadas: numeric("ocupadas", { mode: "number" }).notNull().default(0),
+    limite: integer("limite"),
+  },
+  (t) => [
+    check("quantidades_total_ocupadas", sql`${t.ocupadas} >= 0`),
+    check("quantidades_total_limite", sql`${t.limite} >= 0`),
+    check("quantidades_total_no_limite", ocupadasNoLimite(sql`${t.ocupadas}`, sql`${t.limite}`)),
+  ],
+);
+
+// ——— O Stripe (`pagamentos.md`) ———
+
+/**
+ * Os eventos do Stripe já tratados. Um evento repetido bate na chave primária e
+ * faz cair o lote inteiro: é **só essa violação** que quer dizer «repetido».
+ */
+export const eventosStripe = pgTable(
+  "eventos_stripe",
+  {
+    id: text("id").primaryKey(),
+    tipo: text("tipo").notNull(),
+    /**
+     * A versão da API em que o evento veio. Um evento nunca muda depois de
+     * criado: uma retentativa que chega depois de uma subida da API vem na forma
+     * antiga. O Stripe pode mandá-la vazia em eventos antigos.
+     */
+    apiVersion: text("api_version"),
+    recebidoEm: instante("recebido_em").notNull(),
+  },
+  (t) => [check("eventos_stripe_id", sql`${t.id} like 'evt\\_%'`)],
 );
