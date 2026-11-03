@@ -2,6 +2,9 @@
 
 import { useEffect } from "react";
 
+/** O ar, em píxeis, entre o último título colado e o elemento com o foco. */
+const FOLGA_DO_FOCO = 8;
+
 /**
  * O que as secções minimizáveis da `/encomendas` precisam de JavaScript para
  * fazer — e é só o que o `<details>` não faz sozinho. Abrir e fechar não está
@@ -35,6 +38,16 @@ import { useEffect } from "react";
  * secção, e esse título parte em duas linhas num telemóvel e não num monitor (e
  * em inglês, noutros sítios). Medido aqui, o `top` delas é sempre certo; o valor
  * de recurso do `globals.css` é para sem JavaScript.
+ *
+ * ## 4. O foco do teclado nunca fica por baixo dos títulos fixos
+ *
+ * WCAG 2.4.11. O `scroll-margin-top` do `globals.css` põe o cartão no sítio
+ * certo quando o browser rola — mas o browser só rola quando acha que o cartão
+ * está fora de vista, e para essa conta só desconta o `scroll-padding-top` do
+ * documento (8 rem). Um cartão a 9 rem do topo está «à vista» para ele e por
+ * baixo do título da categoria para quem olha: com `Shift+Tab`, a subir pela
+ * grelha, era quase sempre assim. Aqui mede-se o que está colado por cima do
+ * elemento com o foco e rola-se a diferença.
  */
 export function SeccoesMinimizaveis() {
   useEffect(() => {
@@ -114,22 +127,55 @@ export function SeccoesMinimizaveis() {
       if (desvio < 0) window.scrollBy({ top: desvio, behavior: "instant" });
     };
 
+    /* A da categoria também, para o foco do teclado não ficar por baixo dela
+       (ver «O foco do teclado nunca fica por baixo dos títulos fixos», no
+       `globals.css`). */
     const medidor = new ResizeObserver((entradas) => {
       for (const entrada of entradas) {
         const sumario = entrada.target as HTMLElement;
-        sumario.parentElement?.style.setProperty(
-          "--altura-titulo-seccao",
+        const detalhes = sumario.parentElement;
+        detalhes?.style.setProperty(
+          detalhes.hasAttribute("data-seccao") ? "--altura-titulo-seccao" : "--altura-titulo-categoria",
           `${sumario.getBoundingClientRect().height}px`,
         );
       }
     });
-    for (const sumario of document.querySelectorAll("details[data-seccao] > summary")) {
+    for (const sumario of document.querySelectorAll(
+      "details[data-seccao] > summary, details[data-categoria] > summary",
+    )) {
       medidor.observe(sumario);
     }
+
+    const aoFocar = (evento: FocusEvent) => {
+      const alvo = evento.target;
+      // Só o teclado: um clique num cartão à vista não tem nada que o tape.
+      if (!(alvo instanceof HTMLElement) || alvo.matches("summary") || !alvo.matches(":focus-visible")) {
+        return;
+      }
+      const seccao = alvo.closest("details[data-seccao]");
+      if (!seccao) return;
+      /* Depois da rolagem do próprio browser, e antes de se pintar: corrige-se
+         só o que ele deixou por baixo. */
+      requestAnimationFrame(() => {
+        /* ⚠️ **As alturas dos títulos, e não onde eles estão agora.** Com o
+           elemento acima do ecrã, o título da categoria ainda não está colado:
+           medir-lhe a posição dava uma correção curta, e depois de rolar ele
+           colava-se por cima do elemento que se queria mostrar. */
+        const sumarios = [
+          seccao.querySelector(":scope > summary"),
+          alvo.closest("details[data-categoria]")?.querySelector(":scope > summary"),
+        ];
+        let tapa = document.querySelector("header")?.getBoundingClientRect().bottom ?? 0;
+        for (const sumario of sumarios) tapa += sumario?.getBoundingClientRect().height ?? 0;
+        const falta = tapa + FOLGA_DO_FOCO - alvo.getBoundingClientRect().top;
+        if (falta > 0) window.scrollBy({ top: -falta, behavior: "instant" });
+      });
+    };
 
     // O `toggle` não sobe pela árvore; na fase de captura chega na mesma.
     document.addEventListener("toggle", aoAlternar, true);
     document.addEventListener("click", aoClicar, true);
+    document.addEventListener("focusin", aoFocar);
     window.addEventListener("hashchange", aoMudarHash);
     // Com o JavaScript ainda a chegar, o browser já tentou o salto do URL.
     aoMudarHash();
@@ -138,6 +184,7 @@ export function SeccoesMinimizaveis() {
       medidor.disconnect();
       document.removeEventListener("toggle", aoAlternar, true);
       document.removeEventListener("click", aoClicar, true);
+      document.removeEventListener("focusin", aoFocar);
       window.removeEventListener("hashchange", aoMudarHash);
     };
   }, []);

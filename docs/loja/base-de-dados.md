@@ -16,7 +16,9 @@ variáveis, a ordem dos passos — está em `ligar-a-neon.md`.
 ## As ferramentas
 
 - **Neon**, com o driver HTTP (`@neondatabase/serverless`). Dois ramos:
-  desenvolvimento e produção. Nunca se testa contra o de produção.
+  desenvolvimento e produção. Nunca se testa contra o de produção, com a
+  exceção do site no ar em modo de teste até ao lançamento (`pagamentos.md` ›
+  Ambientes).
 - **Drizzle** como ORM. O esquema escreve-se em TypeScript em `src/db/` (que o
   `CODEOWNERS` já protege) e o `drizzle-kit` gera as migrações em SQL, que vão no
   PR e se leem como SQL. Funciona com o driver HTTP da Neon e com o PGlite.
@@ -136,8 +138,10 @@ restrição impede que um erro crie a segunda.
 nenhuma consulta SQL pergunta por um dia da semana. O `EsquemaHorarios` valida-os
 ao gravar; um `jsonb` que não passe no esquema ao ler é um erro, não um dado.
 
-**A cozinha começa `NULL`**: a casa ainda não a deu (`horarios.md` › À espera), e
-sem ela o calendário diz «indisponível» em vez de inventar.
+**A cozinha entra com a importação**: 06:00–11:00 todos os dias, como a casa
+respondeu a 11/10 (`CONFIGURACAO_JSON`). A coluna continua a aceitar `NULL`, e
+sem cozinha o calendário diz «indisponível» em vez de inventar. A cozinha de
+exemplo do modo de teste só tapa esse `NULL` na loja, e nunca é gravada.
 
 **A ordem das categorias vive no `ordem_ementa`**, e não numa tabela à parte
 (#87). A gerente só muda a ordem, nunca o conjunto: o
@@ -307,8 +311,9 @@ estava.
 
 ## Expirar sem tarefa agendada
 
-Um `pendente` com mais de 30 minutos passa a `expirado` e liberta a vaga. Quem o
-faz, por ordem:
+Um `pendente` com mais de 31 minutos passa a `expirado` e liberta a vaga. ⚠️ Nunca
+antes: os 31 minutos são o prazo da sessão do Stripe, e até lá o cliente ainda
+pode pagar (`pedidos.md`). Quem o faz, por ordem:
 
 1. o regresso do cliente que voltou atrás no checkout, e o webhook
    `checkout.session.expired` (`pagamentos.md`, do Gonçalo);

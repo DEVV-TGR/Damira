@@ -83,13 +83,14 @@ esquecerem:
 
 ### O modo de teste — e é um bloqueador de lançamento
 
-Até a casa dar o horário da cozinha e os tempos de produção, até a conta
-Stripe dela estar verificada e até haver base de dados, a loja corre no ar em
+Até a casa dar os tempos de produção (o horário da cozinha já deu: das 6h00
+às 11h00), até a conta Stripe dela estar verificada e até haver base de
+dados, a loja corre no ar em
 **modo de teste**. ⚠️ **`LOJA_EM_TESTE=1` é o único interruptor de tudo o que é
 provisório** — em local e na Vercel, sem uma segunda variável para ligar
 (decidido a 04/10; a lista vive em `src/lib/modo-teste.ts`):
 
-- os **prazos e o horário de exemplo** e os **pedidos de exemplo** que enchem o
+- os **prazos de exemplo** e os **pedidos de exemplo** que enchem o
   calendário (`src/lib/dados/exemplo.ts` — ao acaso mas sempre os mesmos, e
   contam como verdadeiros para as vagas);
 - **sem base de dados**, os **pedidos de exemplo no painel** — pagos, entregues,
@@ -163,7 +164,9 @@ que as torna falsas:
 - **Alterações ao esquema vão num PR só para isso.** Nunca uma migração escondida
   dentro de uma funcionalidade.
 - Desenvolvimento e produção são bases diferentes (ramos da Neon). Nunca testar
-  contra a de produção.
+  contra a de produção — com uma exceção: o site no ar em modo de teste, até ao
+  lançamento, compra com cartões de teste contra ela (`pagamentos.md` ›
+  Ambientes). Os pedidos que isso deixa lá saem das contas no lançamento.
 
 ### Revisão
 
@@ -222,6 +225,9 @@ papel:
 | `encomendas.json` | kits de festa, kits de bolo, boxes | tem data, antecedência e orçamento |
 | `bolos.json` | catálogo de massas, recheios, coberturas | **não tem preços nenhuns** |
 | `casa.json` | morada, telefone, horário, entregas | é um objeto, não uma lista |
+
+Há ainda `marca.json` (nome e redes, fonte única do cabeçalho e do rodapé) e
+`redes.json` (os *reels*): auxiliares, não fazem parte desta divisão.
 
 ⚠️ **Não juntar a encomenda à ementa.** Um kit para setenta pessoas ao lado de um
 croissant é o que leva alguém a aparecer ao sábado à espera de o levar debaixo do
@@ -282,7 +288,7 @@ Deixou de ser verdade em duas etapas, e o aviso ficou para trás nas duas: vale
 a pena lembrar que um ficheiro de instruções desactualizado engana com mais
 autoridade do que um ficheiro vazio.
 
-Hoje há **dezanove fotografias**, todas do álbum publicado pela própria casa e
+Hoje há **vinte e uma fotografias**, todas do álbum publicado pela própria casa e
 todas com a marca de água dela — que é o critério de origem, e não a
 composição:
 
@@ -291,8 +297,9 @@ composição:
 | `public/fotos/` | 5 | a fachada, a vitrine, as mãos, os bombons, o prato |
 | `public/vitrine/` | 16 | o álbum de gestão, importado inteiro |
 
-Os originais estão em `originais/fotos`, `originais/heroi` e
-`originais/fotos-gestao`. Importam-se assim:
+Os originais vivem em `originais/fotos`, `originais/heroi` e
+`originais/fotos-gestao`, mas ⚠️ **`originais/` não é versionado** (`.gitignore`):
+um clone novo não os tem, e pedem-se ao DevPlus. Importam-se assim:
 
 ```bash
 npm run fotos -- originais/fotos-gestao public/vitrine   # 1600 px, WebP
@@ -383,7 +390,7 @@ de apresentação, sem dados, estão em `src/lib/vista.ts`.
 
 ⚠️ **As fotografias dos produtos estão vazias em todos, e não se preenchem com o
 que há.**
-Existem dezanove fotografias da casa, e **nenhuma é deste kit ou desta box**.
+Existem vinte e uma fotografias da casa, e **nenhuma é deste kit ou desta box**.
 Numa página de produto qualquer imagem se lê como sendo o produto: pôr ali a
 montra vista da rua é anunciar uma coisa e entregar outra, e é a mesma regra que
 proíbe banco de imagens no resto do site. O `FotoProduto` guarda o espaço e diz
@@ -559,13 +566,26 @@ primeiras sete vieram do Santo Burga e continuam a valer — o motor é o mesmo.
     para um elemento fixo leva ao sítio onde ele **está preso agora** — que,
     depois de se ter rolado por ele, é o fim da secção e não o princípio. Desde
     os títulos fixos da `/encomendas` (#85) os `id` vivem nas `<section>`, e o
-    título que fica preso tem um `id` à parte (`da-ementa-titulo`) só para o
-    `aria-labelledby`.
+    `id` do `aria-labelledby` (`da-ementa-titulo`) vive num `<h2>` à parte,
+    fora do título que fica preso (ver a 23).
+23. **Um título dentro de um `<summary>` sai da lista de títulos.** É marcação
+    válida, mas os browsers expõem o `<summary>` como botão, e o que está dentro
+    de um botão passa a texto dele: no VoiceOver e no NVDA, as quatro secções
+    da `/encomendas` desapareciam da navegação por títulos. O `<h2>` vai antes
+    do `<details>`, só para leitores de ecrã (`TituloParaLeitores`), e o
+    `<summary>` mostra o mesmo texto num `<span>`.
+24. **O browser não conta o `scroll-margin-top` para decidir se rola até ao
+    foco.** Usa-o para saber até onde rolar, mas para decidir se é preciso só
+    desconta o `scroll-padding-top` do documento: um cartão a 9 rem do topo
+    está «à vista» para ele e por baixo de dois títulos fixos para quem olha.
+    Com títulos colados que somam mais do que a folga do documento, quem
+    garante o foco à vista é JavaScript (o `focusin` do `SeccoesMinimizaveis`),
+    e mede-se com `Shift+Tab` a subir por uma grelha inteira, não com um clique.
 
 O que todas têm em comum: `npm run build` passa, o `lint` passa, e só se apanham
-a olhar. **Depois de mexer em desenho, tirar capturas** — há Chromium do
-Playwright em cache nesta máquina, em
-`~/Library/Caches/ms-playwright/chromium-1234/chrome-mac-arm64/`.
+a olhar. **Depois de mexer em desenho, tirar capturas** — com o Chromium do
+Playwright (`npx playwright install chromium`, uma vez por máquina; fica na
+cache do Playwright do utilizador, que muda com o sistema).
 
 ## A página inicial é um cartaz em capítulos
 

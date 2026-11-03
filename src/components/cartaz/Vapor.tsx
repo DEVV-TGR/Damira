@@ -242,6 +242,21 @@ export function Vapor({
     };
   }, [capitulos]);
 
+  /* ⚠️ **O marcador aceso não é o chão activo.** Um capítulo sem marcador muda
+     a cor do fio, mas no fólio acende-se o capítulo **seguinte** com número:
+     o único que existe é o título do pão, que é a abertura do III («III · O
+     pão» está escrito nele). Sem isto, enquanto o título estava no ecrã, o
+     fólio ficava sem número aceso nenhum. Se não houver seguinte, vale o
+     anterior. */
+  const comMarcador = (i: number) => i >= 0 && i < capitulos.length && capitulos[i].marcador !== false;
+  let activoNoFolio = activo;
+  if (activo >= 0 && !comMarcador(activo)) {
+    let i = activo + 1;
+    while (i < capitulos.length && !comMarcador(i)) i++;
+    if (i < capitulos.length) activoNoFolio = i;
+    else while (activoNoFolio >= 0 && !comMarcador(activoNoFolio)) activoNoFolio--;
+  }
+
   const saltar = (id: string) => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -280,7 +295,7 @@ export function Vapor({
               key={c.id}
               style={{ top: `${(marcas[i] ?? 0) * 100}%` }}
               data-passado={i < passados ? "" : undefined}
-              data-activo={i === activo ? "" : undefined}
+              data-activo={i === activoNoFolio ? "" : undefined}
             >
               {/* ⚠️ **O nome do capítulo vai no `aria-label` e não só na
                   etiqueta que aparece com o rato.** A etiqueta é ajuda visual

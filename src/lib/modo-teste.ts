@@ -8,7 +8,8 @@
  * ⚠️ **É o único interruptor de tudo o que é provisório** (decidido a 04/10):
  * nada do que está abaixo pede uma segunda variável para se ver. Ligado:
  *
- * - **prazos e horário de exemplo** no calendário (`src/lib/dados/exemplo.ts`);
+ * - **prazos de exemplo** no calendário (`src/lib/dados/exemplo.ts`); o horário
+ *   da cozinha já é o da casa;
  * - **pedidos de exemplo no calendário**, que dão cor aos dias e enchem horas
  *   (`pedidosDeExemplo`, no mesmo ficheiro);
  * - **sem base de dados**, **pedidos de exemplo no painel**: pagos, entregues,

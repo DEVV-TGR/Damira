@@ -5,6 +5,7 @@ import { loteEmTransacao } from "@/db/lote";
 import { catalogoDeTeste } from "@/db/teste";
 import { criarFonteBd, pedidosAindaNaoGuardados } from "./bd";
 import { comExemplo, COZINHA_DE_EXEMPLO, fonteDoAmbiente, LIMITE_POR_VAGA_DE_EXEMPLO, TEMPOS_DE_EXEMPLO } from "./exemplo";
+import { CONFIGURACAO_JSON } from "./json";
 import { EsquemaProduto, type ContextoPainel, type EntradaProduto, type FonteDeDados, type Produto } from "./tipos";
 
 /**
@@ -49,13 +50,18 @@ describe("a camada tapa só as leituras da loja", () => {
     expect(doPainel.every((p) => p.tempoProducao === null)).toBe(true);
   });
 
-  it("a casa da loja tem a cozinha e o limite de exemplo; a do painel, como está gravada", async () => {
+  it("a casa da loja tem o limite de exemplo, e a cozinha continua a da casa; a do painel, como está gravada", async () => {
     const fonte = comExemplo(await daBaseDeDados(), EM_TESTE);
+    /* A cozinha que a casa deu nunca é trocada pela de exemplo: a camada só tapa
+       o que está `null`. */
     expect(await fonte.configuracaoDaCasa()).toMatchObject({
-      cozinha: COZINHA_DE_EXEMPLO,
+      cozinha: CONFIGURACAO_JSON.cozinha,
       limitePorVaga: LIMITE_POR_VAGA_DE_EXEMPLO,
     });
-    expect(await fonte.configuracaoDoPainel(GERENTE)).toMatchObject({ cozinha: null, limitePorVaga: null });
+    expect(await fonte.configuracaoDoPainel(GERENTE)).toMatchObject({
+      cozinha: CONFIGURACAO_JSON.cozinha,
+      limitePorVaga: null,
+    });
   });
 
   it("o calendário tem pedidos de exemplo, e nenhuma hora passa o limite", async () => {
@@ -67,12 +73,14 @@ describe("a camada tapa só as leituras da loja", () => {
 });
 
 describe("nada de exemplo chega à base de dados", () => {
-  it("a gerente grava os horários, e a cozinha continua por dar", async () => {
+  it("a gerente grava os horários sem cozinha, e a de exemplo não fica gravada", async () => {
     const fonte = comExemplo(await daBaseDeDados(), EM_TESTE);
-    /* O que o «Horários» lhe mostra — a casa gravada — com uma coisa mudada. */
+    /* O que o «Horários» lhe mostra — a casa gravada — com a cozinha tirada e o
+       Natal fechado. A importação já traz a cozinha da casa; é tirando-a que se
+       vê que a de exemplo só tapa o buraco na loja e nunca chega à gravação. */
     const gravada = await fonte.configuracaoDoPainel(GERENTE);
     const resultado = await fonte.guardarHorarios(
-      { ...gravada, diasFechados: [{ data: "2026-12-25", fecha: "ambas" }] },
+      { ...gravada, cozinha: null, diasFechados: [{ data: "2026-12-25", fecha: "ambas" }] },
       GERENTE,
     );
     expect(resultado.ok).toBe(true);
@@ -119,15 +127,15 @@ describe("a fonte que o site escolhe", () => {
 
   it("com DATABASE_URL e o modo de teste: a base de dados, com a camada por cima — e sem os pedidos de exemplo do painel", async () => {
     const fonte = fonteDoAmbiente({ ...EM_TESTE, DATABASE_URL: "postgres://teste" }, AGORA, await comBase());
-    expect((await fonte.configuracaoDaCasa()).cozinha).toEqual(COZINHA_DE_EXEMPLO);
-    expect((await fonte.configuracaoDoPainel(GERENTE)).cozinha).toBeNull();
+    expect((await fonte.configuracaoDaCasa()).limitePorVaga).toBe(LIMITE_POR_VAGA_DE_EXEMPLO);
+    expect((await fonte.configuracaoDoPainel(GERENTE)).limitePorVaga).toBeNull();
     expect(fonte.simularPedidoPago).toBeUndefined();
     expect(await fonte.listarPedidos({}, GERENTE)).toMatchObject({ ok: true, valor: { pedidos: [] } });
   });
 
   it("com DATABASE_URL e sem o modo de teste: a base de dados como está", async () => {
     const fonte = fonteDoAmbiente({ DATABASE_URL: "postgres://teste" }, AGORA, await comBase());
-    expect((await fonte.configuracaoDaCasa()).cozinha).toBeNull();
+    expect(await fonte.configuracaoDaCasa()).toMatchObject({ cozinha: CONFIGURACAO_JSON.cozinha, limitePorVaga: null });
   });
 
   it("sem DATABASE_URL e com o modo de teste: os JSON, com os pedidos de exemplo do painel, como até aqui", async () => {

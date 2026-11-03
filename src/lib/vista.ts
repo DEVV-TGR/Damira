@@ -64,6 +64,16 @@ export const tipoDoPedido = (produto: Produto): TipoPedido =>
 export const caminhoDoProduto = (id: string): string => `/encomendas/${id}`;
 
 /**
+ * As secções da `/encomendas`, pela ordem da página: os `id` das `<section>`, e
+ * por onde navegam o índice do herói e o menu do «Encomendas» do cabeçalho
+ * (#82). ⚠️ **Uma lista só para os dois**: o menu tinha uma cópia, e mudar um
+ * `id` na página sem a mudar lá deixava uma entrada a levar ao topo, sem erro
+ * nenhum. O «pedido» é a última: o índice mostra-a, o menu não (ver
+ * `MenuEncomendas`).
+ */
+export const SECCOES_ENCOMENDAS = ["festas", "kits-bolo", "boxes", "da-ementa", "pedido"] as const;
+
+/**
  * ⚠️ **A página de um artigo fica debaixo de `/ementa`, e não de
  * `/encomendas`**, mesmo quando o artigo se encomenda: é a separação de sempre
  * (ver o `AGENTS.md`). O que a página diz é que se pode encomendar; o endereço

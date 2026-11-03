@@ -8,17 +8,25 @@ import { BotaoConta } from "./conta/BotaoConta";
 import { MenuEncomendas } from "./MenuEncomendas";
 
 /**
+ * As duas secções de topo, por ordem de leitura. Uma lista e não dois `<Link>`
+ * escritos à mão: o estado de página actual tem de ser decidido da mesma
+ * maneira para as duas, e duplicar a condição é como uma delas fica para trás.
+ *
+ * ⚠️ **Cada uma com o seu nome e o seu desenho.** O `map` tinha o menu das
+ * encomendas como caso especial lá dentro e escrevia «Ementa» em todas as
+ * outras entradas: com duas dava certo, e uma terceira secção aparecia na barra
+ * a chamar-se «Ementa». Agora quem decide é a entrada.
+ */
+const SECOES = [
+  { caminho: "/ementa", nome: "ementa", menu: false },
+  { caminho: "/encomendas", nome: "encomendas", menu: true },
+] as const;
+
+/**
  * Cliente por causa do seletor de idioma, que precisa de saber em que página
  * está para trocar de língua **sem sair dela** — mandar sempre para a homepage é
  * o erro clássico, e faz o visitante perder o sítio onde ia.
  */
-/**
- * As duas secções de topo, por ordem de leitura. Uma lista e não dois `<Link>`
- * escritos à mão: o estado de página actual tem de ser decidido da mesma
- * maneira para as duas, e duplicar a condição é como uma delas fica para trás.
- */
-const SECOES = ["/ementa", "/encomendas"] as const;
-
 export function Cabecalho({ locale }: { locale: Locale }) {
   const t = useTranslations("nav");
   /**
@@ -85,17 +93,17 @@ export function Cabecalho({ locale }: { locale: Locale }) {
               as ligações dos contactos e do rodapé já sublinham — o estado novo
               não traz desenho novo, usa o que a casa tem. */}
           {SECOES.map((seccao) => {
-            const actual = caminho === seccao;
+            const actual = caminho === seccao.caminho;
             /* As encomendas abrem um menu com as secções da página (#82). Fica
                dentro do mesmo `map` para o «estou nesta página» continuar a ser
                decidido num sítio só. Ver `MenuEncomendas.tsx`. */
-            if (seccao === "/encomendas") {
-              return <MenuEncomendas key={seccao} actual={actual} />;
+            if (seccao.menu) {
+              return <MenuEncomendas key={seccao.caminho} actual={actual} />;
             }
             return (
               <Link
-                key={seccao}
-                href={seccao}
+                key={seccao.caminho}
+                href={seccao.caminho}
                 aria-current={actual ? "page" : undefined}
                 /* `py-3.5` e não a classe `.alvo-toque`: aqui o espaço sai de
                    graça, porque a barra tem altura fixa (`h-16`) e os itens
@@ -107,7 +115,7 @@ export function Cabecalho({ locale }: { locale: Locale }) {
                     : "hover:text-tijolo"
                 }`}
               >
-                {t("ementa")}
+                {t(seccao.nome)}
               </Link>
             );
           })}

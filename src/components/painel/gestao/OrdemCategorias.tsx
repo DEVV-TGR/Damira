@@ -40,11 +40,14 @@ export function OrdemCategorias({
      substitui se não houver nada por gravar. */
   const doServidor = ordem.categorias.join("\n");
   const [base, setBase] = useState(doServidor);
+  /* ⚠️ **Uma conta só para «há alterações por gravar».** Eram duas — um `join`
+     aqui e um `some` mais abaixo —, e a do `some` não via uma lista mais curta
+     do que a outra. */
+  const mudou = diferentes(rascunho, gravada);
   if (base !== doServidor) {
-    const porGravar = rascunho.join("\n") !== gravada.join("\n");
     setBase(doServidor);
     setGravada(ordem.categorias);
-    if (!porGravar) setRascunho(ordem.categorias);
+    if (!mudou) setRascunho(ordem.categorias);
   }
   const [anuncio, setAnuncio] = useState("");
   const [mensagem, setMensagem] = useState<{ ok: boolean; texto: string } | null>(null);
@@ -54,7 +57,6 @@ export function OrdemCategorias({
   const nomeDe = (categoria: string) => nomes[categoria] ?? categoria;
   const quantos = (categoria: string) =>
     produtos.filter((p) => !p.arquivado && p.familia === "ementa" && p.categoria === categoria).length;
-  const mudou = rascunho.some((categoria, i) => categoria !== gravada[i]);
 
   const mover = (i: number, sentido: -1 | 1) => {
     const categoria = rascunho[i];
@@ -78,8 +80,11 @@ export function OrdemCategorias({
       if (resultado.ok) {
         setGravada(resultado.valor.categorias);
         setRascunho(resultado.valor.categorias);
-        setMensagem({ ok: true, texto: "Gravado. A ementa e as encomendas já mostram esta ordem." });
-        setAnuncio("Gravado. A ementa e as encomendas já mostram esta ordem.");
+        /* Sem «a ementa já mostra esta ordem»: na implementação provisória a
+           ordem vive na memória de uma instância, e a página pode ser gerada
+           noutra. Com a base de dados volta a poder dizer-se. */
+        setMensagem({ ok: true, texto: "Gravado." });
+        setAnuncio("Ordem gravada.");
         router.refresh();
       } else {
         setMensagem({ ok: false, texto: MENSAGENS[resultado.erro] });
@@ -173,3 +178,6 @@ export function OrdemCategorias({
     </section>
   );
 }
+
+const diferentes = (a: readonly string[], b: readonly string[]): boolean =>
+  a.length !== b.length || a.some((valor, i) => valor !== b[i]);
