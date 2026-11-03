@@ -22,8 +22,9 @@ import type { FonteDeDados } from "./tipos";
  */
 
 /* O modo de teste (`LOJA_EM_TESTE=1`, ver `src/lib/modo-teste.ts`) liga os
-   tempos e a cozinha de exemplo, para o calendário funcionar antes de a casa os
-   dar. Quando vier a base de dados, é aqui que ela entra no lugar dos JSON. */
+   tempos de exemplo, para o calendário funcionar antes de a casa os dar; a
+   cozinha já é a da casa. Quando vier a base de dados, é aqui que ela entra no
+   lugar dos JSON. */
 const fonte: FonteDeExemplo = fonteDoAmbiente();
 
 /**

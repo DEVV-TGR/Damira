@@ -1,5 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { COZINHA_DE_EXEMPLO } from "@/lib/dados/exemplo";
+import { CONFIGURACAO_JSON } from "@/lib/dados/json";
 import { lerCasa, lerCatalogo } from "./catalogo";
 import { casa, produtos, variantes } from "./esquema";
 import { compararCatalogo, importarCatalogo, origemDosJson } from "./importar-catalogo";
@@ -27,9 +29,12 @@ describe("a importação dos JSON", () => {
     expect(await compararCatalogo(db, origem)).toEqual([]);
   });
 
-  it("a casa vem sem cozinha, com tudo desligado: nada de exemplo entra", async () => {
+  it("a casa vem com a cozinha que deu, e o resto desligado: nada de exemplo entra", async () => {
     const lida = await lerCasa(db);
-    expect(lida?.configuracao.cozinha).toBeNull();
+    /* A cozinha é a da casa (06:00–11:00, respostas de 11/10), e não a de
+       exemplo do modo de teste. */
+    expect(lida?.configuracao.cozinha).toEqual(CONFIGURACAO_JSON.cozinha);
+    expect(lida?.configuracao.cozinha).not.toEqual(COZINHA_DE_EXEMPLO);
     expect(lida?.configuracao.limitePorVaga).toBeNull();
     expect(lida?.definicoes).toEqual({
       aceitarCancelamentosSite: false,

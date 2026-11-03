@@ -136,8 +136,10 @@ restrição impede que um erro crie a segunda.
 nenhuma consulta SQL pergunta por um dia da semana. O `EsquemaHorarios` valida-os
 ao gravar; um `jsonb` que não passe no esquema ao ler é um erro, não um dado.
 
-**A cozinha começa `NULL`**: a casa ainda não a deu (`horarios.md` › À espera), e
-sem ela o calendário diz «indisponível» em vez de inventar.
+**A cozinha entra com a importação**: 06:00–11:00 todos os dias, como a casa
+respondeu a 11/10 (`CONFIGURACAO_JSON`). A coluna continua a aceitar `NULL`, e
+sem cozinha o calendário diz «indisponível» em vez de inventar. A cozinha de
+exemplo do modo de teste só tapa esse `NULL` na loja, e nunca é gravada.
 
 **A ordem das categorias vive no `ordem_ementa`**, e não numa tabela à parte
 (#87). A gerente só muda a ordem, nunca o conjunto: o

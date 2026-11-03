@@ -149,7 +149,9 @@ passam para a base de dados com o catálogo**, e o site lê da mesma fonte.
 
 ## À espera da Damira
 
-- Horário da cozinha, por dia da semana
+- Se a cozinha (06:00–11:00) e a loja (07:30–20:00) fazem o mesmo horário ao
+  domingo e nos feriados. Os dois horários vieram das respostas de 11/10, e
+  hoje valem para todos os dias da semana
 - Limite de pedidos por vaga (e se existe)
 - Até quantos dias à frente se pode encomendar
 - Dias de fecho e férias já previstos
