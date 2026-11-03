@@ -26,13 +26,13 @@ email, no talão e no painel. Única na base de dados.
 | `pendente` | checkout aberto, à espera de pagamento | servidor, ao criar | não | não |
 | `pago` | o Stripe confirmou o pagamento | **só a confirmação do Stripe** — o webhook, ou a verificação periódica que pergunta ao Stripe (ver `pagamentos.md`) | sim | sim, uma vez |
 | `entregue` | o cliente levantou | balcão, com um toque | sim, no arquivo | não |
-| `expirado` | 30 min sem pagamento, ou o cliente voltou atrás no checkout | servidor | não | não |
+| `expirado` | 31 min sem pagamento — o prazo da sessão do Stripe —, ou o cliente voltou atrás no checkout | servidor | não | não |
 | `cancelado` | cancelado pela gerente ou pelo cliente | ver «Cancelar» | sim, riscado | talão de cancelamento |
 
 Transições permitidas — **e mais nenhuma**:
 
 - `pendente → pago` · `pendente → expirado`
-- `expirado → pago` (ver o primeiro ⚠️ abaixo)
+- `expirado → pago` (ver «Pago ganha sempre a expirado», abaixo)
 - `pago → entregue`
 - `entregue → pago` — pelo balcão nos primeiros 5 minutos (desfazer um toque por
   engano); pela gerente a qualquer momento
@@ -41,10 +41,25 @@ Transições permitidas — **e mais nenhuma**:
   site», e só até à hora em que a produção tem de começar (ver `horarios.md`).
   Depois disso o botão desaparece e o cliente liga para a loja.
 
+⚠️ **O pedido só expira quando o Stripe já não aceita o pagamento.** O prazo é
+um só, `criadoEm + 31 min`, e é o `expires_at` da sessão do Stripe
+(`pagamentos.md`). Decidido a 02/11: até aí eram dois — 30 minutos nossos e 31
+do Stripe —, e no minuto entre eles o cliente via o relógio do Stripe ainda a
+correr, pagava, e a vaga já tinha sido libertada. Com um prazo só, a vaga não sai
+enquanto alguém a pode pagar. Pelo mesmo motivo, quem expira um pedido antes do
+prazo — o «voltar atrás» — expira primeiro a sessão no Stripe.
+
 ⚠️ **Pago ganha sempre a expirado.** Se o Stripe confirmar o pagamento de um
-pedido que já tinha expirado — o cliente pagou aos 29:59 e o webhook chegou
-depois —, o pedido passa a `pago` na mesma e fica marcado `chegouTarde`. A vaga
-e as quantidades podem já ter sido libertadas; a gerente vê o aviso e decide.
+pedido que já tinha expirado, o pedido passa a `pago` na mesma e fica marcado
+`chegouTarde`. Com um prazo só, o relógio deixa de o provocar; sobram dois casos:
+o cliente pagou a horas e o aviso só chegou depois do prazo (o webhook em baixo,
+um segredo trocado — apanha-o a verificação periódica), e, a confirmar nos testes
+(`pagamentos.md`), um MB WAY que ainda estava a ser aprovado na app quando a
+sessão expirou. Em nenhum dos dois o atrasado é o cliente, e por isso **não se
+recusa o pagamento**: reembolsá-lo e pedir um pedido novo era castigar o cliente
+por uma falha nossa, custava à casa a comissão (o Stripe não a devolve) e, nos
+primeiros dias, sem saldo, o reembolso do MB WAY falhava. A vaga e as
+quantidades podem já ter sido libertadas; a gerente vê o aviso e decide.
 **Um pedido pago nunca se perde**, nem que isso custe um bolo a mais na cozinha.
 
 ⚠️ **O browser nunca marca um pedido como pago.** A página de sucesso do

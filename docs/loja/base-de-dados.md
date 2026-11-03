@@ -309,8 +309,9 @@ estava.
 
 ## Expirar sem tarefa agendada
 
-Um `pendente` com mais de 30 minutos passa a `expirado` e liberta a vaga. Quem o
-faz, por ordem:
+Um `pendente` com mais de 31 minutos passa a `expirado` e liberta a vaga. ⚠️ Nunca
+antes: os 31 minutos são o prazo da sessão do Stripe, e até lá o cliente ainda
+pode pagar (`pedidos.md`). Quem o faz, por ordem:
 
 1. o regresso do cliente que voltou atrás no checkout, e o webhook
    `checkout.session.expired` (`pagamentos.md`, do Gonçalo);
