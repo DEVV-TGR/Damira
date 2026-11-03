@@ -152,6 +152,9 @@ bebidas ficam na ordem do impresso), e as cartas também não se ordenam.
   componentes nem na base de dados: as páginas recebem a lista já ordenada, e
   ninguém depende da colação do Postgres. Os produtos de encomenda (kits, boxes)
   não têm categoria e ficam pela ordem do catálogo.
+- **As duas páginas desenham as cartas e as categorias pela mesma função**
+  (`cartasComArtigos` e `categoriasDaCarta`, em `src/lib/vista.ts`), a partir da
+  ordem gravada: a ementa e a carta por encomenda nunca divergem.
 - Por defeito, até a gerente mexer, é a ordem do impresso (`CATEGORIAS`, em
   `src/data/ementa.ts`).
 
