@@ -1,12 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { tz } from "@date-fns/tz";
-import { format } from "date-fns";
 import { casa, DIAS_DA_SEMANA } from "@/data/casa";
 import { CARTAS, CATEGORIAS, ementa, SUBCATEGORIAS, type Artigo } from "@/data/ementa";
 import type { Box, KitBolo, Linha } from "@/data/encomendas";
 import { regraDe } from "@/lib/encomendavel";
 import {
-  FUSO,
   PREDEFINICOES,
   validarLevantamento,
   type ArtigoDoCesto,
@@ -18,7 +15,7 @@ import { PRODUTOS, type Produto as ProdutoDasEncomendas } from "@/lib/produtos";
 import mensagensEn from "../../../messages/en.json";
 import mensagensPt from "../../../messages/pt.json";
 import { criarPainelJson, type EstadoJson } from "./json-painel";
-import { cotarLinhas } from "./regras";
+import { cotarLinhas, gerarReferencia } from "./regras";
 import {
   EsquemaEntradaPedido,
   EsquemaLinhaCesto,
@@ -271,20 +268,6 @@ const ORDEM_JSON: OrdemEmenta = {
   cartas: [...CARTAS],
   categorias: [...CATEGORIAS],
   subcategorias: [...SUBCATEGORIAS],
-};
-
-// ——— A referência ———
-
-const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-
-/* ⚠️ O dia é o de **Lisboa**. O `gerarReferencia` do `historico.ts` usa o dia
-   UTC, e entre a meia-noite e a uma da manhã de verão dá o dia anterior — é a
-   regra 3 do AGENTS.md vista do lado da referência. Corrige-se no PR que liga
-   as páginas a esta fronteira; aqui já nasce certo. */
-const gerarReferencia = (agora: Date): string => {
-  let sufixo = "";
-  for (let i = 0; i < 4; i++) sufixo += ALFABETO[Math.floor(Math.random() * ALFABETO.length)];
-  return `DAM-${format(agora, "ddMM", { in: tz(FUSO) })}-${sufixo}`;
 };
 
 // ——— A fonte ———

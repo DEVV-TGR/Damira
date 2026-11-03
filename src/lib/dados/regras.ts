@@ -1,4 +1,7 @@
+import { tz } from "@date-fns/tz";
+import { format } from "date-fns";
 import type { z } from "zod";
+import { FUSO } from "@/lib/horarios";
 import type { Cotacao, EsquemaEntradaProduto, LinhaCesto, LinhaCotada, Produto, ResultadoPainel } from "./tipos";
 
 /**
@@ -125,3 +128,37 @@ export const comIds = (variantes: EntradaLida["variantes"]): Produto["variantes"
     return { ...variante, id };
   });
 };
+
+// ——— O pedido ———
+
+/**
+ * **O prazo de um pedido por pagar: 31 minutos**, contados de quando nasceu
+ * (`pedidos.md`, decidido a 02/11). É também o `expires_at` da sessão do Stripe
+ * (`pagamentos.md`): um prazo só, para a vaga nunca sair enquanto alguém a pode
+ * pagar. O Stripe exige pelo menos 30 minutos; o minuto a mais cobre os
+ * segundos entre criar o pedido e criar a sessão.
+ */
+export const PRAZO_DO_PEDIDO_MS = 31 * 60_000;
+
+const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+/**
+ * A referência de balcão, `DAM-DDMM-XXXX`, sem letras que se confundem ao
+ * telefone. ⚠️ O dia é o **de Lisboa**, e o `agora` entra por argumento: entre a
+ * meia-noite e a uma da manhã de verão, o dia UTC é o anterior (regra 3 do
+ * AGENTS.md). Única na base de dados: quem a gera tenta outra se colidir.
+ */
+export const gerarReferencia = (agora: Date): string => {
+  let sufixo = "";
+  for (let i = 0; i < 4; i++) sufixo += ALFABETO[Math.floor(Math.random() * ALFABETO.length)];
+  return `DAM-${format(agora, "ddMM", { in: tz(FUSO) })}-${sufixo}`;
+};
+
+/**
+ * O texto por onde o painel procura um pedido: o nome e a referência, sem
+ * acentos e em minúsculas. Escreve-se uma vez, ao criar, e é o que deixa
+ * encontrar «a encomenda da Márcia» escrevendo `marcia`
+ * (`base-de-dados.md` › Os pedidos).
+ */
+export const textoDeProcura = (nome: string, referencia: string): string =>
+  `${nome} ${referencia}`.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
