@@ -85,6 +85,9 @@ faturas — a faturação é manual (o talão leva o NIF, se o cliente o deu).
   não se paga: por esta ordem, a vaga nunca sai enquanto alguém a pode pagar. Se
   o Stripe recusar porque a sessão já foi paga, o pedido não expira — pergunta-se
   a sessão ao Stripe e segue para a `marcarPago`, como na verificação periódica.
+  Lê-se e decide-se como no webhook (`lerSessao` e `acaoDaSessao`, em
+  `src/lib/pagamentos/eventos.ts`), e a `marcarPago` recebe `null` no lugar do
+  evento.
 
 ⚠️ **Porquê expirar logo.** Um pedido `pendente` ocupa a vaga e as quantidades
 durante 31 minutos. Quem volta atrás para mudar uma coisa e tenta outra vez

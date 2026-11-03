@@ -26,7 +26,15 @@ export const OUTRO_PEDIDO = "0a9b8c7d-6e5f-4a3b-8c2d-1e0f9a8b7c6d";
 
 type Sessao = Pick<
   Stripe.Checkout.Session,
-  "object" | "id" | "payment_status" | "amount_total" | "currency" | "payment_intent" | "client_reference_id" | "metadata"
+  | "object"
+  | "id"
+  | "payment_status"
+  | "amount_total"
+  | "currency"
+  | "payment_intent"
+  | "client_reference_id"
+  | "metadata"
+  | "livemode"
 >;
 
 export const sessao = (campos: Partial<Sessao> = {}): Sessao => ({
@@ -38,6 +46,7 @@ export const sessao = (campos: Partial<Sessao> = {}): Sessao => ({
   payment_intent: "pi_test_a1b2c3",
   client_reference_id: "DAM-0311-4F7K",
   metadata: { pedidoId: PEDIDO, referencia: "DAM-0311-4F7K" },
+  livemode: false,
   ...campos,
 });
 

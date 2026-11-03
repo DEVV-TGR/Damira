@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   TIPOS_TRATADOS,
+  acaoDaSessao,
   acaoDoEvento,
   estadoDoReembolso,
   lerEnvelope,
   lerObjeto,
+  lerSessao,
   type EventoLido,
 } from "./eventos";
 import { PEDIDO, disputa, evento, reembolso, sessao } from "./teste-stripe";
@@ -47,6 +49,12 @@ describe("de evento a ação", () => {
 
   it("async_payment_succeeded → pagar", () => {
     expect(acao(evento("checkout.session.async_payment_succeeded", sessao())).tipo).toBe("pagar");
+  });
+
+  it("async_payment_succeeded com a sessão por pagar rebenta: 5xx, e nunca 200 a um pagamento que aconteceu", () => {
+    expect(() =>
+      acao(evento("checkout.session.async_payment_succeeded", sessao({ payment_status: "unpaid" }))),
+    ).toThrow(/por pagar/);
   });
 
   it("async_payment_failed → expirar, e nunca pagar", () => {
@@ -116,6 +124,36 @@ describe("de evento a ação", () => {
       moeda: "eur",
       motivo: "fraudulent",
     });
+  });
+});
+
+/* O «voltar atrás» do #38 vai buscar a sessão ao Stripe quando a encontra já
+   paga, e tem de a ler e decidir como o webhook (`pagamentos.md` › Voltar do
+   Stripe). */
+describe("a sessão sem o evento: o voltar atrás do #38", () => {
+  const lida = (objeto: unknown) => {
+    const leitura = lerSessao(JSON.parse(JSON.stringify(objeto)));
+    if (!leitura.success) throw leitura.error;
+    return leitura.data;
+  };
+
+  it("lê-se e decide-se como no completed", () => {
+    expect(acaoDaSessao(lida(sessao()))).toEqual(acao(evento("checkout.session.completed", sessao())));
+    expect(acaoDaSessao(lida(sessao({ payment_status: "unpaid" })))).toEqual({
+      tipo: "nada",
+      porque: "sessao-por-pagar",
+    });
+    expect(acaoDaSessao(lida(sessao({ metadata: null })))).toEqual({ tipo: "nada", porque: "sessao-de-fora" });
+  });
+
+  it("o modo é o da sessão", () => {
+    expect(acaoDaSessao(lida(sessao({ livemode: true })))).toMatchObject({ tipo: "pagar", livemode: true });
+  });
+
+  it("um payment_intent expandido não se lê: pede-se a sessão sem expand", () => {
+    expect(lerSessao({ ...sessao(), payment_intent: { id: "pi_test_a1b2c3", object: "payment_intent" } }).success).toBe(
+      false,
+    );
   });
 });
 

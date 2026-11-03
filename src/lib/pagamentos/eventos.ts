@@ -66,6 +66,7 @@ const EsquemaSessao = z.object({
   payment_intent: z.string().nullable(),
   client_reference_id: z.string().nullable(),
   metadata: Metadados,
+  livemode: z.boolean(),
 }) satisfies z.ZodType<
   Pick<
     Stripe.Checkout.Session,
@@ -77,8 +78,20 @@ const EsquemaSessao = z.object({
     | "payment_intent"
     | "client_reference_id"
     | "metadata"
+    | "livemode"
   >
 >;
+
+export type Sessao = z.infer<typeof EsquemaSessao>;
+
+/**
+ * A sessão do Stripe, lida. É a mesma leitura nos dois caminhos que confirmam
+ * um pagamento: o webhook e o «voltar atrás» do #38, que encontra a sessão já
+ * paga e a vai buscar com `checkout.sessions.retrieve` (`pagamentos.md` ›
+ * Voltar do Stripe). ⚠️ Sem `expand` do `payment_intent`: expandido, vem um
+ * objeto em vez do id, e a sessão não se lê.
+ */
+export const lerSessao = (objeto: unknown) => EsquemaSessao.safeParse(objeto);
 
 /** Os cinco estados de um reembolso no Stripe. Um sexto, que não conhecemos, não se lê: dá 5xx e alerta. */
 const ESTADOS_STRIPE_DO_REEMBOLSO = ["pending", "requires_action", "succeeded", "failed", "canceled"] as const;
@@ -117,7 +130,6 @@ const EsquemaDisputa = z.object({
   Pick<Stripe.Dispute, "object" | "id" | "amount" | "currency" | "reason" | "charge" | "payment_intent">
 >;
 
-type Sessao = z.infer<typeof EsquemaSessao>;
 type ReembolsoStripe = z.infer<typeof EsquemaReembolsoStripe>;
 type Disputa = z.infer<typeof EsquemaDisputa>;
 
@@ -152,7 +164,7 @@ export function lerObjeto(envelope: Envelope): LeituraDoObjeto {
     case "checkout.session.async_payment_succeeded":
     case "checkout.session.async_payment_failed":
     case "checkout.session.expired": {
-      const lido = EsquemaSessao.safeParse(objeto);
+      const lido = lerSessao(objeto);
       return lido.success
         ? { leitura: "evento", evento: { ...comum, tipo, sessao: lido.data } }
         : { leitura: "objeto-invalido", erro: lido.error };
@@ -192,6 +204,7 @@ export type AcaoPagar = {
   /* Para ligar ao pedido um reembolso ou uma disputa que não pedimos (ver a
      descrição do PR). */
   paymentIntentId: string | null;
+  /* O da sessão. No webhook é o do evento, que a rota já conferiu com o modo da loja. */
   livemode: boolean;
 };
 
@@ -268,6 +281,33 @@ const pedidoIdDe = (metadados: Record<string, string> | null): string | null => 
 };
 
 /**
+ * Uma sessão paga → `pagar`; o resto → `nada`. As regras de quando uma sessão
+ * paga vivem só aqui: o webhook e o «voltar atrás» do #38 passam os dois por
+ * esta função, e depois pela mesma `marcarPago`.
+ */
+export function acaoDaSessao(sessao: Sessao): AcaoPagar | AcaoNada {
+  const pedidoId = pedidoIdDe(sessao.metadata);
+  if (pedidoId === null) return { tipo: "nada", porque: "sessao-de-fora" };
+  if (sessao.payment_status !== "paid") return { tipo: "nada", porque: "sessao-por-pagar" };
+  /* Uma sessão de pagamento traz sempre os dois. Se faltarem, é uma forma que
+     não sabemos ler: rebenta, e no webhook a rota responde 5xx em vez de dar
+     por tratado um pagamento que não se tratou. */
+  if (sessao.amount_total === null || sessao.currency === null) {
+    throw new Error(`${sessao.id}: sessão paga sem montante ou sem moeda`);
+  }
+  return {
+    tipo: "pagar",
+    pedidoId,
+    referencia: sessao.client_reference_id,
+    sessaoId: sessao.id,
+    montanteCent: sessao.amount_total,
+    moeda: sessao.currency,
+    paymentIntentId: sessao.payment_intent,
+    livemode: sessao.livemode,
+  };
+}
+
+/**
  * O que fazer com um evento (`pagamentos.md` › O que faz com cada evento). Não
  * decide se o pedido muda — isso é da fonte, que conhece o estado dele; decide
  * só a pergunta que se lhe faz.
@@ -275,29 +315,16 @@ const pedidoIdDe = (metadados: Record<string, string> | null): string | null => 
 export function acaoDoEvento(evento: EventoLido): AcaoWebhook {
   switch (evento.tipo) {
     case "checkout.session.completed":
+      return acaoDaSessao(evento.sessao);
     case "checkout.session.async_payment_succeeded": {
-      const { sessao } = evento;
-      const pedidoId = pedidoIdDe(sessao.metadata);
-      if (pedidoId === null) return { tipo: "nada", porque: "sessao-de-fora" };
-      if (evento.tipo === "checkout.session.completed" && sessao.payment_status !== "paid") {
-        return { tipo: "nada", porque: "sessao-por-pagar" };
+      const acao = acaoDaSessao(evento.sessao);
+      /* O Stripe manda este evento com a sessão já `paid`. Se não vier, é uma
+         forma que não sabemos ler, como acima: 5xx, e nunca 200 a um pagamento
+         que o Stripe diz que aconteceu. */
+      if (acao.tipo === "nada" && acao.porque === "sessao-por-pagar") {
+        throw new Error(`${evento.id}: pagamento assíncrono confirmado com a sessão por pagar`);
       }
-      /* Uma sessão de pagamento traz sempre os dois. Se faltarem, é uma forma
-         que não sabemos ler: rebenta, e a rota responde 5xx em vez de dar por
-         tratado um pagamento que não se tratou. */
-      if (sessao.amount_total === null || sessao.currency === null) {
-        throw new Error(`${evento.id}: sessão paga sem montante ou sem moeda`);
-      }
-      return {
-        tipo: "pagar",
-        pedidoId,
-        referencia: sessao.client_reference_id,
-        sessaoId: sessao.id,
-        montanteCent: sessao.amount_total,
-        moeda: sessao.currency,
-        paymentIntentId: sessao.payment_intent,
-        livemode: evento.livemode,
-      };
+      return acao;
     }
     case "checkout.session.async_payment_failed":
     case "checkout.session.expired": {

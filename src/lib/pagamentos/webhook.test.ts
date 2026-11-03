@@ -236,7 +236,7 @@ describe("os eventos", () => {
     it("e um evento real numa loja aberta ao público passa", async () => {
       const fonte = fonteFalsa({ [PEDIDO]: "pendente" });
       await enviar(
-        evento("checkout.session.completed", sessao(), { livemode: true }),
+        evento("checkout.session.completed", sessao({ livemode: true }), { livemode: true }),
         dependencias({ fonte, emTeste: false }),
       );
       expect(fonte.pedidos.get(PEDIDO)?.estado).toBe("pago");
