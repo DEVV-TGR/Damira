@@ -2,6 +2,7 @@ import { TZDate, tz } from "@date-fns/tz";
 import { addDays, format, getDay } from "date-fns";
 import type { HorarioSemanal, TempoProducao, VagaOcupada } from "@/lib/horarios";
 import { emModoDeTeste, type Ambiente } from "@/lib/modo-teste";
+import type { OpcoesDaFonteBd } from "./bd";
 import { fonteDaNeon } from "./bd-neon";
 import { CATALOGO_JSON, CONFIGURACAO_JSON, criarFonteJson, criarFonteJsonComEstado, type OpcoesFonteJson } from "./json";
 import { diaDeLisboa } from "@/lib/painel";
@@ -497,7 +498,7 @@ export const fonteDoAmbiente = (
   ambiente: Ambiente = process.env,
   agora: Date = new Date(),
   /* Por argumento, para os testes porem um PGlite no lugar da Neon. */
-  criarDaBaseDeDados: (endereco: string) => FonteDeDados = fonteDaNeon,
+  criarDaBaseDeDados: (endereco: string, opcoes: OpcoesDaFonteBd) => FonteDeDados = fonteDaNeon,
 ): FonteDeExemplo => {
   /* ⚠️ Com a base de dados, a fonte é **sempre** ela (#57): o modo de teste é
      só a camada por cima, e os pedidos de exemplo do painel e o «Simular pedido
@@ -505,8 +506,15 @@ export const fonteDoAmbiente = (
      dados. Ver `docs/loja/ligar-a-neon.md`. */
   const endereco = ambiente.DATABASE_URL;
   if (endereco) {
-    const daBaseDeDados = criarDaBaseDeDados(endereco);
-    return emModoDeTeste(ambiente) ? comExemplo(daBaseDeDados, ambiente) : daBaseDeDados;
+    const emTeste = emModoDeTeste(ambiente);
+    /* ⚠️ O `criarPedido` lê pela **vista**, e não pela base de dados crua: no
+       modo de teste é ela que tem os tempos de exemplo, e um pedido conferido
+       sem eles dava sempre «indisponível» enquanto o calendário mostrava vagas.
+       É uma função porque a vista só existe depois da fonte que embrulha: só é
+       chamada ao criar um pedido, quando as duas já existem. */
+    const daBaseDeDados = criarDaBaseDeDados(endereco, { deTeste: emTeste, leitura: () => vista });
+    const vista = emTeste ? comExemplo(daBaseDeDados, ambiente) : daBaseDeDados;
+    return vista;
   }
   return emModoDeTeste(ambiente)
     ? fonteDeExemplo({ pedidosDeExemplo: true, pedidosDoPainel: true }, ambiente, agora)

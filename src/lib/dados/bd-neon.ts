@@ -2,7 +2,7 @@ import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import type { BaseDeDados } from "@/db/catalogo";
 import { loteNeon, type ExecutarLote } from "@/db/lote";
-import { criarFonteBd, pedidosAindaNaoGuardados } from "./bd";
+import { montarFonteBd, type OpcoesDaFonteBd } from "./bd";
 import type { FonteDeDados } from "./tipos";
 
 /**
@@ -17,9 +17,9 @@ import type { FonteDeDados } from "./tipos";
  * `DATABASE_URL`; com o modo de teste ligado, põe-lhe por cima a camada de
  * exemplo (`comExemplo`). Ver `docs/loja/ligar-a-neon.md`.
  */
-export function fonteDaNeon(endereco: string): FonteDeDados {
+export function fonteDaNeon(endereco: string, opcoes: OpcoesDaFonteBd): FonteDeDados {
   const { db, emLote } = baseDaNeon(endereco);
-  return { ...pedidosAindaNaoGuardados, ...criarFonteBd(db, emLote) };
+  return montarFonteBd(db, emLote, opcoes);
 }
 
 /**

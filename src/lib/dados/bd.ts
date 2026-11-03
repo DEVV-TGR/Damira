@@ -13,6 +13,7 @@ import {
 import { casa as tabelaCasa, produtos, variantes } from "@/db/esquema";
 import type { ExecutarLote } from "@/db/lote";
 import { diaDeLisboa } from "@/lib/painel";
+import { criarPedidosBd, type LeituraDoPedido, type OpcoesDosPedidos } from "./bd-pedidos";
 import { comIds, cotarLinhas, emId, invalido, livre, naoExiste } from "./regras";
 import {
   EsquemaDefinicoes,
@@ -33,10 +34,11 @@ import {
  * páginas não dão pela troca: é a mesma interface, e as regras partilhadas
  * (`regras.ts`) são as mesmas.
  *
- * ⚠️ **Ainda só a metade do catálogo e da casa.** Os pedidos esperam pelas
- * tabelas deles (`docs/loja/base-de-dados.md` › Em aberto), e esta fonte ainda
- * não está ligada ao site: liga-se no `index.ts` quando houver conta Neon
- * (`docs/loja/ligar-a-neon.md`). Até lá vive testada ao lado da dos JSON.
+ * Aqui vivem o catálogo e a casa. Os pedidos da loja — criar, a ocupação, a
+ * referência — estão em `bd-pedidos.ts`; os do painel ainda não estão
+ * (`pedidosAindaNaoGuardados`, abaixo). Quem junta tudo é o `montarFonteBd`, e
+ * quem a escolhe para o site é o `fonteDoAmbiente`, quando há `DATABASE_URL`
+ * (`docs/loja/ligar-a-neon.md`).
  *
  * ⚠️ **Nada daqui vai para cache** por iniciativa própria. As páginas públicas
  * são estáticas e revalidam-se quando a gerente grava (`painel-gerente.md`); as
@@ -332,23 +334,19 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
 }
 
 /**
- * # Os pedidos, enquanto não estão na base de dados
+ * # O painel dos pedidos, enquanto não está na base de dados
  *
- * As tabelas dos pedidos vêm num PR de esquema seu (`base-de-dados.md`). Até lá,
- * com a base de dados ligada, o site responde **a verdade**: não há pedidos
- * guardados — até ao Stripe (#38) eles chegam por email. O balcão abre vazio,
- * «Precisa de atenção» não aparece, e o calendário só conta os de exemplo do
- * modo de teste. Os pedidos de exemplo do painel e o «Simular pedido novo»
- * ficam só na fonte dos JSON (#57).
+ * Os pedidos da loja já estão (`bd-pedidos.ts`: criar, a ocupação, a
+ * referência). Os do painel vêm noutro PR, e até lá o painel responde **a
+ * verdade** do lado dele: o balcão abre vazio e «Precisa de atenção» não
+ * aparece. Os pedidos de exemplo do painel e o «Simular pedido novo» ficam só na
+ * fonte dos JSON (#57).
  *
- * Saem quando os pedidos entrarem na base de dados — cada função passa a ser a
- * verdadeira, e esta lista encolhe até desaparecer.
+ * Cada função sai daqui quando passar a ser a verdadeira, e esta lista encolhe
+ * até desaparecer.
  */
 export const pedidosAindaNaoGuardados: Pick<
   FonteDeDados,
-  | "ocupacao"
-  | "criarPedido"
-  | "pedidoPorReferencia"
   | "listarPedidos"
   | "pedidoDoPainel"
   | "marcarEntregue"
@@ -358,12 +356,7 @@ export const pedidosAindaNaoGuardados: Pick<
   | "reagendarPedido"
   | "cancelarPedido"
   | "reembolsarPedido"
-  | "versaoPedidos"
 > = {
-  ocupacao: async () => [],
-  /* Ninguém o chama até ao Stripe (#38); e sem pedidos guardados, não há como. */
-  criarPedido: async () => ({ ok: false, erro: "indisponivel" }),
-  pedidoPorReferencia: async () => null,
   listarPedidos: async () => ({ ok: true, valor: { pedidos: [], seguinte: null } }),
   pedidoDoPainel: async () => naoExiste,
   marcarEntregue: async () => naoExiste,
@@ -373,6 +366,27 @@ export const pedidosAindaNaoGuardados: Pick<
   reagendarPedido: async () => naoExiste,
   cancelarPedido: async () => naoExiste,
   reembolsarPedido: async () => naoExiste,
-  versaoPedidos: async () => 0,
 };
+
+export type OpcoesDaFonteBd = Omit<OpcoesDosPedidos, "leitura"> & {
+  /**
+   * Por onde o `criarPedido` lê os produtos, a casa e as vagas. Sem ela, pela
+   * própria fonte; com o modo de teste, quem monta passa a vista com os
+   * exemplos por cima (`fonteDoAmbiente`).
+   */
+  leitura?: () => LeituraDoPedido;
+};
+
+/**
+ * A fonte inteira sobre a base de dados: o catálogo e a casa, os pedidos da
+ * loja, e o que falta do painel. É a mesma no site (`fonteDaNeon`) e nos testes.
+ */
+export function montarFonteBd(db: BaseDeDados, emLote: ExecutarLote, opcoes: OpcoesDaFonteBd): FonteDeDados {
+  const fonte: FonteDeDados = {
+    ...pedidosAindaNaoGuardados,
+    ...criarFonteBd(db, emLote),
+    ...criarPedidosBd(db, emLote, { ...opcoes, leitura: opcoes.leitura ?? (() => fonte) }),
+  };
+  return fonte;
+}
 
