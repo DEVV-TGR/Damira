@@ -15,11 +15,11 @@ Vê pelo `git config user.email` ou pelo utilizador do GitHub:
 
 ## O que entra e o que fica de fora
 
-**Entra:** loja com pagamento (cartão, Apple Pay, Google Pay, MB WAY), calendário
-de levantamento, painel do balcão e da gerente, impressão de talões, conta de
-cliente com histórico no servidor e cancelamento (interruptor da gerente), bolos
-personalizados (feitos já, escondidos da venda até a casa decidir), textos legais
-e aviso de cookies.
+**Entra:** loja com pagamento (cartão, Apple Pay, Google Pay, MB WAY, PayPal e
+Revolut Pay — ver `pagamentos.md`), calendário de levantamento, painel do balcão
+e da gerente, impressão de talões, conta de cliente com histórico no servidor e
+cancelamento (interruptor da gerente), bolos personalizados (feitos já,
+escondidos da venda até a casa decidir), textos legais e aviso de cookies.
 
 **Fica de fora — não construir:** faturação automática (é manual), entregas ao
 domicílio, relatórios de vendas (mas os dados guardam-se desde o primeiro
@@ -125,7 +125,8 @@ outro onde ela é obrigatória; apanha o básico onde não é.
 3. **Conteúdo dos produtos** — a casa preenche fotos, alergénios e tempos de
    produção no painel. Os testes reais só acontecem depois disso; acompanhar.
 4. **Contas em nome da Damira** — Stripe (com verificação da empresa), Neon
-   (plano Launch), Resend. A verificação do Stripe demora: começar cedo.
+   (plano Launch), Resend, e a conta PayPal da casa, ligada ao Stripe para o
+   PayPal funcionar em modo real. A verificação do Stripe demora: começar cedo.
 5. **Marketing** — fazer a ponte com quem trata do marketing da casa.
 6. **Advogada** — levar os textos legais e trazer a aprovação.
 7. **Testes na loja e formação** — nas sandboxes do Stripe, com o tablet, e
