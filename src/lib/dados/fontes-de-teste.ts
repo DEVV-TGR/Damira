@@ -1,6 +1,6 @@
 import { loteEmTransacao } from "@/db/lote";
 import { catalogoDeTeste } from "@/db/teste";
-import { criarFonteBd, type FonteBd } from "./bd";
+import { montarFonteBd, type FonteBd } from "./bd";
 import { criarFonteJson } from "./json";
 import type { FonteDeDados } from "./tipos";
 
@@ -24,15 +24,12 @@ export const NA_BASE_DE_DADOS = process.env.FONTE_DOS_TESTES === "bd";
 let modelo: ReturnType<typeof catalogoDeTeste> | undefined;
 
 /**
- * Os pedidos ainda não estão na base de dados (esperam pelas tabelas deles —
- * `docs/loja/base-de-dados.md`). Chamá-los rebenta a dizê-lo: um teste que
- * precise deles tem de saltar a volta da base de dados de propósito, e não
- * passar a correr contra os JSON sem ninguém dar por isso.
+ * O painel dos pedidos ainda não está na base de dados (os da loja já estão:
+ * `bd-pedidos.ts`). Chamá-los rebenta a dizê-lo: um teste que precise deles tem
+ * de saltar a volta da base de dados de propósito, e não passar a correr contra
+ * os JSON sem ninguém dar por isso.
  */
 const PEDIDOS = [
-  "ocupacao",
-  "criarPedido",
-  "pedidoPorReferencia",
   "listarPedidos",
   "pedidoDoPainel",
   "marcarEntregue",
@@ -42,7 +39,6 @@ const PEDIDOS = [
   "reagendarPedido",
   "cancelarPedido",
   "reembolsarPedido",
-  "versaoPedidos",
 ] as const satisfies readonly Exclude<keyof FonteDeDados, keyof FonteBd>[];
 
 const semPedidos = Object.fromEntries(
@@ -58,7 +54,7 @@ const semPedidos = Object.fromEntries(
 export async function fonteDaBaseDeDados(): Promise<FonteDeDados> {
   modelo ??= catalogoDeTeste();
   const { db } = await (await modelo).copia();
-  return { ...semPedidos, ...criarFonteBd(db, loteEmTransacao(db)) };
+  return { ...montarFonteBd(db, loteEmTransacao(db), { deTeste: false }), ...semPedidos };
 }
 
 /** A fonte da loja desta volta: a dos JSON, ou a da base de dados. */

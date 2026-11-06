@@ -3,7 +3,7 @@ import { addDays } from "date-fns";
 import { afterAll, describe, expect, it } from "vitest";
 import { loteEmTransacao } from "@/db/lote";
 import { catalogoDeTeste } from "@/db/teste";
-import { criarFonteBd, pedidosAindaNaoGuardados } from "./bd";
+import { montarFonteBd, pedidosAindaNaoGuardados, type OpcoesDaFonteBd } from "./bd";
 import { comExemplo, COZINHA_DE_EXEMPLO, fonteDoAmbiente, LIMITE_POR_VAGA_DE_EXEMPLO, TEMPOS_DE_EXEMPLO } from "./exemplo";
 import { CONFIGURACAO_JSON } from "./json";
 import { EsquemaProduto, type ContextoPainel, type EntradaProduto, type FonteDeDados, type Produto } from "./tipos";
@@ -34,9 +34,9 @@ const entradaDe = (produto: Produto, mudanca: Partial<EntradaProduto> = {}): Ent
 });
 
 /* A base de dados como o site a teria, numa cópia limpa do catálogo importado. */
-async function daBaseDeDados(): Promise<FonteDeDados> {
+async function daBaseDeDados(opcoes: OpcoesDaFonteBd = { deTeste: false }): Promise<FonteDeDados> {
   const { db } = await modelo.copia();
-  return { ...pedidosAindaNaoGuardados, ...criarFonteBd(db, loteEmTransacao(db)) };
+  return montarFonteBd(db, loteEmTransacao(db), opcoes);
 }
 
 describe("a camada tapa só as leituras da loja", () => {
@@ -105,24 +105,22 @@ describe("nada de exemplo chega à base de dados", () => {
   });
 });
 
-describe("os pedidos, enquanto não estão na base de dados", () => {
-  it("o painel vê zero pedidos, sem avisos, e o site não cria pedidos guardados", async () => {
+describe("o painel dos pedidos, enquanto não está na base de dados", () => {
+  it("vê zero pedidos e nenhum aviso (os pedidos da loja já estão: `pedidos-bd.test.ts`)", async () => {
     const fonte = await daBaseDeDados();
     expect(await fonte.listarPedidos({}, GERENTE)).toEqual({ ok: true, valor: { pedidos: [], seguinte: null } });
     expect(await fonte.precisaDeAtencao(GERENTE)).toEqual({ ok: true, valor: [] });
     expect(await fonte.versaoPedidos()).toBe(0);
     expect(await fonte.marcarEntregue("qualquer", false, GERENTE)).toEqual({ ok: false, erro: "nao-existe" });
-    expect(await fonte.criarPedido({}, { agora: AGORA, ip: null, contaId: null })).toEqual({
-      ok: false,
-      erro: "indisponivel",
-    });
   });
 });
 
 describe("a fonte que o site escolhe", () => {
+  /* Como o `fonteDaNeon`: monta a fonte com as opções que o `fonteDoAmbiente`
+     lhe dá — o `de_teste` e a leitura do pedido. */
   const comBase = async () => {
-    const fonte = await daBaseDeDados();
-    return () => fonte;
+    const { db } = await modelo.copia();
+    return (_endereco: string, opcoes: OpcoesDaFonteBd) => montarFonteBd(db, loteEmTransacao(db), opcoes);
   };
 
   it("com DATABASE_URL e o modo de teste: a base de dados, com a camada por cima — e sem os pedidos de exemplo do painel", async () => {
