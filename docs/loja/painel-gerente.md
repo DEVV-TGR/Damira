@@ -163,7 +163,14 @@ bebidas ficam na ordem do impresso), e as cartas também não se ordenam.
 - Reduzidas **no browser** (WebP, ~1600 px), enviadas diretamente para o Vercel
   Blob. Uma foto de telemóvel tem 3–8 MB e as funções da Vercel recusam pedidos
   acima de ~4,5 MB: se a foto passar pelo nosso servidor, o envio falha.
-- Trocar uma foto apaga a antiga do Blob.
+  O servidor só dá um token curto, em `/painel/fotos` (`src/lib/fotos.ts`), e só à
+  gerente: WebP ou JPEG, até 8 MB, dez minutos. No componente, é o `enviarFoto`
+  (`src/lib/fotos-envio.ts`), que devolve o endereço para gravar com o produto.
+- Trocar uma foto apaga a antiga do Blob, depois de gravar o produto. Se apagar
+  falhar, fica uma foto esquecida no Blob e um erro no log, e o produto continua
+  gravado.
+- ⚠️ **A CSP só abre ao Blob em `/painel`** (`next.config.ts`). O resto do site
+  recebe as fotos pelo otimizador de imagens, que é a mesma origem.
 - As fotos que já existem em `public/` passam para o Blob na migração, para
   haver um sítio só de onde vêm as fotos.
 

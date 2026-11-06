@@ -18,6 +18,7 @@ import {
   tratarAviso,
 } from "@/lib/dados";
 import { ESTADOS_PEDIDO, type AvisoTratavel, type EstadoPedido } from "@/lib/dados/tipos";
+import { apagarFotos, fotosQueSairam } from "@/lib/fotos";
 import { intervaloDeDias } from "@/lib/painel";
 import { comSessao, contextoDoPainel } from "@/lib/painel-servidor";
 import { sessao } from "@/lib/sessao-painel";
@@ -111,8 +112,16 @@ export async function horasParaMudar(data: string) {
  * o tinha avisa que o preço mudou.
  */
 export async function gravarProduto(id: string | null, entrada: unknown) {
+  /* Antes de gravar, para saber que fotos saem. Quem pode gravar decide-o a
+     fronteira, a seguir: isto só lê um produto público. */
+  const antes = id ? await dados.produtoPorId(id) : null;
   const resultado = await comSessao((ctx) => (id ? editarProduto(id, entrada, ctx) : criarProduto(entrada, ctx)));
-  if (resultado.ok) revalidatePath("/", "layout");
+  if (resultado.ok) {
+    revalidatePath("/", "layout");
+    /* Depois de gravar, e nunca antes: um produto a apontar para uma foto apagada
+       é pior do que uma foto esquecida no Blob. */
+    await apagarFotos(fotosQueSairam(antes?.fotos ?? [], resultado.valor.fotos));
+  }
   return resultado;
 }
 

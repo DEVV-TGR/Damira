@@ -68,6 +68,18 @@ const CSP = [
   "object-src 'none'",
 ].join("; ");
 
+/**
+ * A mesma CSP, com a porta aberta ao Vercel Blob **só no painel**: é de lá que a
+ * gerente envia as fotos, diretamente do browser (`src/lib/fotos.ts`), e é lá que
+ * vê as miniaturas. O resto do site continua sem falar com ninguém de fora: as
+ * fotos dos produtos chegam-lhe pelo otimizador de imagens, que é a mesma origem.
+ */
+const BLOB = "https://*.public.blob.vercel-storage.com";
+const CSP_DO_PAINEL = CSP.replace("img-src 'self' data: blob:", `img-src 'self' data: blob: ${BLOB}`).replace(
+  "connect-src 'self'",
+  `connect-src 'self' https://vercel.com ${BLOB}`,
+);
+
 const CABECALHOS = [
   { key: "Content-Security-Policy", value: CSP },
   /* Impede o browser de adivinhar o tipo de um ficheiro em vez de acreditar no
@@ -92,15 +104,24 @@ const CABECALHOS = [
 ];
 
 /**
- * Sem `images.remotePatterns`, e é de propósito: **todas as fotografias vivem em
- * `public/`**. A tentação é apontar às imagens do Instagram ou das lojas do Uber
- * Eats e poupar o trabalho de as descarregar — mas essas mudam de URL sem aviso
- * e desaparecem quando um post é apagado, e o site ficava com buracos que
- * ninguém dá por eles.
+ * Um `images.remotePatterns` só, e é de propósito: **as fotografias vivem em
+ * `public/` ou no Vercel Blob da casa** (as dos produtos, #32), e em mais lado
+ * nenhum. A tentação é apontar às imagens do Instagram ou das lojas do Uber Eats e
+ * poupar o trabalho de as descarregar — mas essas mudam de URL sem aviso e
+ * desaparecem quando um post é apagado, e o site ficava com buracos que ninguém dá
+ * por eles.
  */
 const nextConfig: NextConfig = {
+  images: {
+    /* Só o Blob da casa, e nenhum outro: ver o comentário de cima. */
+    remotePatterns: [{ protocol: "https", hostname: "*.public.blob.vercel-storage.com" }],
+  },
   async headers() {
-    return [{ source: "/:caminho*", headers: CABECALHOS }];
+    return [
+      { source: "/:caminho*", headers: CABECALHOS },
+      /* Depois da geral: entre regras iguais, ganha a última. */
+      { source: "/painel/:caminho*", headers: [{ key: "Content-Security-Policy", value: CSP_DO_PAINEL }] },
+    ];
   },
 };
 
