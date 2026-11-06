@@ -130,7 +130,7 @@ const pedido = (id: string, alteracoes: Partial<Pedido> = {}): Pedido => ({
   estado: "pago",
   criadoEm: lisboa(10, 5, 9),
   levantamentoEm: lisboa(10, 8, 15),
-  cliente: { nome: "Cliente", email: "cliente@example.com", telefone: null, nif: null, contaId: null },
+  cliente: { nome: "Cliente", email: "cliente@example.com", telefone: "+351910000001", nif: null, contaId: null },
   linhas: [linha("kit")],
   observacoes: null,
   totalCent: 1000,

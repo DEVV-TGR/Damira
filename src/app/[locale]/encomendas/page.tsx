@@ -2,14 +2,17 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { useTranslations } from "next-intl";
 import { casa, telefoneMarcavel } from "@/data/casa";
-import { listarProdutos } from "@/lib/dados";
-import type { Produto } from "@/lib/dados/tipos";
+import { listarProdutos, ordemDaEmenta } from "@/lib/dados";
+import type { OrdemEmenta, Produto } from "@/lib/dados/tipos";
 import { routing, type Locale } from "@/i18n/routing";
 import { metadataDaPagina } from "@/lib/metadata";
+import { SECCOES_ENCOMENDAS } from "@/lib/vista";
 import { IrParaCompra } from "@/components/encomendas/IrParaCompra";
 import { CartaoProduto } from "@/components/encomendas/CartaoProduto";
 import { EmentaEncomendavel } from "@/components/encomendas/EmentaEncomendavel";
 import { ListaHistorico } from "@/components/encomendas/ListaHistorico";
+import { SeccoesMinimizaveis } from "@/components/encomendas/SeccoesMinimizaveis";
+import { TituloDaSeccao, TituloParaLeitores } from "@/components/encomendas/TituloDaSeccao";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -32,9 +35,10 @@ export default async function PaginaEncomendas({
   const { locale } = await params;
   setRequestLocale(locale);
   await getTranslations({ locale, namespace: "encomendas" });
-  const [encomendas, daEmenta] = await Promise.all([
+  const [encomendas, daEmenta, ordem] = await Promise.all([
     listarProdutos({ origem: "encomendas" }),
     listarProdutos({ origem: "ementa", aVendaOnline: true }),
+    ordemDaEmenta(),
   ]);
   const daFamilia = (familia: Produto["familia"]) =>
     encomendas.filter((produto) => produto.familia === familia);
@@ -45,6 +49,7 @@ export default async function PaginaEncomendas({
       bolos={[...daFamilia("bolo"), ...daFamilia("medida")]}
       boxes={daFamilia("box")}
       daEmenta={daEmenta}
+      ordem={ordem}
       locale={locale as Locale}
     />
   );
@@ -93,12 +98,14 @@ function Encomendas({
   bolos,
   boxes,
   daEmenta,
+  ordem,
   locale,
 }: {
   festas: Produto[];
   bolos: Produto[];
   boxes: Produto[];
   daEmenta: Produto[];
+  ordem: OrdemEmenta;
   locale: Locale;
 }) {
   const t = useTranslations("encomendas");
@@ -134,7 +141,7 @@ function Encomendas({
               uma vez, no princípio, que é quando se decide para onde ir. */}
           <nav aria-label={t("indice.titulo")} className="mt-8">
             <ul className="flex flex-wrap gap-2">
-              {SECCOES.map((seccao) => (
+              {SECCOES_ENCOMENDAS.map((seccao) => (
                 <li key={seccao}>
                   <a
                     href={`#${seccao}`}
@@ -187,10 +194,10 @@ function Encomendas({
       />
 
       {/* ── A carta, por encomenda ────────────────────────────────────── */}
-      <EmentaEncomendavel artigos={daEmenta} locale={locale} />
+      <EmentaEncomendavel artigos={daEmenta} ordem={ordem} locale={locale} />
 
       {/* ── Como encomendar ──────────────────────────────────────────── */}
-      <section id="pedido" aria-labelledby="como" className="scroll-mt-24 seccao bg-tinta text-papel">
+      <section id="pedido" aria-labelledby="como" className="ancora-rente seccao bg-tinta text-papel">
         <div className="envolvente grid gap-12 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-20">
           <div>
             <h2 id="como" className="titulo-display titulo-beta max-w-[12ch]">
@@ -236,12 +243,12 @@ function Encomendas({
         </div>
       </section>
 
+      {/* Abrir a secção a que se salta, e não perder o sítio ao fechar uma a
+          meio. Não desenha nada. */}
+      <SeccoesMinimizaveis />
     </>
   );
 }
-
-/** As secções por que o índice do herói navega, pela ordem da página. */
-const SECCOES = ["festas", "kits-bolo", "boxes", "da-ementa", "pedido"] as const;
 
 /**
  * Uma família de produtos: título, uma frase, e a grelha de cartões.
@@ -269,20 +276,27 @@ function Familia({
     <section
       id={id}
       aria-labelledby={`${id}-titulo`}
-      className={`scroll-mt-20 seccao ${fundo === "claro" ? "bg-papel-fundo" : ""}`}
+      className={`ancora-rente seccao seccao-minimizavel ${fundo === "claro" ? "bg-papel-fundo" : ""}`}
     >
-      <div className="envolvente">
-        <h2 id={`${id}-titulo`} className="titulo-display titulo-beta max-w-[16ch]">
-          {titulo}
-        </h2>
-        <p className="mt-4 max-w-[52ch] text-tinta-suave">{texto}</p>
+      <TituloParaLeitores id={`${id}-titulo`} nivel={2}>
+        {titulo}
+      </TituloParaLeitores>
+      <details open data-seccao className="group/seccao">
+        <TituloDaSeccao titulo={titulo} fundo={fundo === "claro" ? "bg-papel-fundo" : "bg-papel"} />
 
-        <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {produtos.map((produto) => (
-            <CartaoProduto key={produto.id} produto={produto} locale={locale} />
-          ))}
-        </ul>
-      </div>
+        <div className="envolvente">
+          <p className="mt-1 max-w-[52ch] text-tinta-suave">{texto}</p>
+
+          {/* ⚠️ `items-stretch` é o de origem da grelha, e é ele que iguala os
+              cartões de uma linha (#83): cada `<li>` estica até à mais alta e o
+              cartão enche-a com `h-full`. Um `items-start` aqui desfazia-o. */}
+          <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {produtos.map((produto) => (
+              <CartaoProduto key={produto.id} produto={produto} locale={locale} />
+            ))}
+          </ul>
+        </div>
+      </details>
     </section>
   );
 }

@@ -18,6 +18,7 @@ import { PRODUTOS, type Produto as ProdutoDasEncomendas } from "@/lib/produtos";
 import mensagensEn from "../../../messages/en.json";
 import mensagensPt from "../../../messages/pt.json";
 import { criarPainelJson, type EstadoJson } from "./json-painel";
+import { cotarLinhas } from "./regras";
 import {
   EsquemaEntradaPedido,
   EsquemaLinhaCesto,
@@ -28,7 +29,7 @@ import {
   type FonteDeDados,
   type FonteLoja,
   type GrupoComposicao,
-  type LinhaCotada,
+  type OrdemEmenta,
   type Pedido,
   type Produto,
   type ResultadoCriarPedido,
@@ -47,9 +48,9 @@ import {
  * está ligado a nenhuma página.
  *
  * ⚠️ **O que a casa ainda não deu fica `null`**, e não se inventa: o tempo de
- * produção, os alergénios, o sinal, o limite e o horário da cozinha. Sem eles o
- * calendário não se calcula, e o `criarPedido` responde `indisponivel`. Os
- * valores para trabalhar estão em `exemplo.ts`, à parte.
+ * produção, os alergénios, o sinal e o limite. Sem os tempos o calendário não se
+ * calcula, e o `criarPedido` responde `indisponivel`. Os valores para trabalhar
+ * estão em `exemplo.ts`, à parte.
  */
 
 // ——— Euros → cêntimos ———
@@ -230,12 +231,25 @@ const lojaDoCasaJson = (): HorarioSemanal => {
   return semana;
 };
 
+/* «Temos pasteleiros todos os dias das 06H00 às 11H00 mais ou menos» — a
+   Andreia, nas respostas de 11/10. É diferente do da loja, e usar o da loja no
+   lugar dele era contar como produção as horas da tarde, em que a cozinha já
+   fechou. Falta confirmar domingos e feriados; muda-se no painel. */
+const seisAsOnze = [{ abre: "06:00", fecha: "11:00" }];
+
+const COZINHA_DA_CASA: HorarioSemanal = {
+  segunda: seisAsOnze,
+  terca: seisAsOnze,
+  quarta: seisAsOnze,
+  quinta: seisAsOnze,
+  sexta: seisAsOnze,
+  sabado: seisAsOnze,
+  domingo: seisAsOnze,
+};
+
 export const CONFIGURACAO_JSON: ConfiguracaoDaCasa = {
   loja: lojaDoCasaJson(),
-  /* A Damira ainda não deu o horário da cozinha. É diferente do da loja, e
-     usar o da loja no lugar dele era prometer pastéis às 7h00 feitos numa
-     cozinha que só abre às 8h00. */
-  cozinha: null,
+  cozinha: COZINHA_DA_CASA,
   diasFechados: [],
   ...PREDEFINICOES,
   /* Os degraus que se combinaram a 04/10, até a casa os afinar no painel. Com um
@@ -249,6 +263,14 @@ const DEFINICOES_JSON: DefinicoesLoja = {
   devolverSinalAoCancelar: false,
   valorMinimoCent: null,
   pausaAte: null,
+};
+
+/* A ordem do impresso (`src/data/ementa.ts`), até a gerente mexer nas
+   categorias (#87). As cartas e os títulos das bebidas continuam fixos. */
+const ORDEM_JSON: OrdemEmenta = {
+  cartas: [...CARTAS],
+  categorias: [...CATEGORIAS],
+  subcategorias: [...SUBCATEGORIAS],
 };
 
 // ——— A referência ———
@@ -267,20 +289,16 @@ const gerarReferencia = (agora: Date): string => {
 
 // ——— A fonte ———
 
-/* Um passo de 0,5 kg em vírgula flutuante: 1,5 / 0,5 dá 3 certinho, mas não é
-   preciso esperar muito por um 0,1 + 0,2. */
-const EPSILON = 1e-9;
-const noMultiplo = (quantidade: number, minimo: number, multiplo: number) => {
-  const passos = (quantidade - minimo) / multiplo;
-  return Math.abs(passos - Math.round(passos)) < EPSILON;
-};
-
-const ATIVOS = new Set<Pedido["estado"]>(["pendente", "pago"]);
+/* O `entregue` continua a ocupar a vaga: gastou a capacidade daquela hora, e o
+   «desfazer» nunca pode esbarrar no limite (`pedidos.md` › O levantamento). Só o
+   cancelado e o expirado a libertam. */
+const ATIVOS = new Set<Pedido["estado"]>(["pendente", "pago", "entregue"]);
 
 export type OpcoesFonteJson = {
   catalogo?: readonly Produto[];
   configuracao?: ConfiguracaoDaCasa;
   definicoes?: DefinicoesLoja;
+  ordem?: OrdemEmenta;
   /**
    * Pedidos que contam para a ocupação sem estarem no `Map` — os de exemplo do
    * modo de teste (`exemplo.ts`). Somam-se aos verdadeiros **dentro da fonte**,
@@ -315,6 +333,7 @@ export function criarFonteJsonComEstado(opcoes: OpcoesFonteJson = {}): { fonte: 
     porId: new Map((opcoes.catalogo ?? CATALOGO_JSON).map((produto) => [produto.id, produto])),
     configuracao: opcoes.configuracao ?? CONFIGURACAO_JSON,
     definicoes: opcoes.definicoes ?? DEFINICOES_JSON,
+    ordem: opcoes.ordem ?? ORDEM_JSON,
     pedidos: new Map((opcoes.pedidos ?? []).map((pedido) => [pedido.id, pedido])),
     porReferencia: new Map((opcoes.pedidos ?? []).map((pedido) => [pedido.referencia, pedido.id])),
     versao: 0,
@@ -327,45 +346,9 @@ export function criarFonteJsonComEstado(opcoes: OpcoesFonteJson = {}): { fonte: 
      versão antiga. */
   const porChave = new Map<string, string>();
 
-  const cotar = (linhas: ReturnType<typeof EsquemaLinhaCesto.parse>[]): Cotacao => {
-    const cotadas = linhas.map((linha): LinhaCotada => {
-      const base = { produtoId: linha.produtoId, varianteId: linha.varianteId, quantidade: linha.quantidade };
-      const falha = (erro: LinhaCotada["erro"]): LinhaCotada => ({
-        ...base,
-        precoUnitarioCent: null,
-        totalCent: null,
-        erro,
-      });
-
-      const produto = porId.get(linha.produtoId);
-      if (!produto) return falha("produto-desconhecido");
-      const variante = produto.variantes.find((v) => v.id === linha.varianteId);
-      if (!variante) return falha("variante-desconhecida");
-      if (!produto.aVendaOnline || produto.arquivado || produto.foraDeVenda) return falha("fora-de-venda");
-      if (linha.quantidade < produto.quantidadeMinima - EPSILON) return falha("abaixo-do-minimo");
-      if (!noMultiplo(linha.quantidade, produto.quantidadeMinima, produto.multiplo)) {
-        return falha("fora-do-multiplo");
-      }
-
-      const preco = variante.precoCent;
-      return {
-        ...base,
-        precoUnitarioCent: preco,
-        /* Ao quilo, 1,5 kg a 1700 cêntimos são 2550: arredonda-se uma vez, no
-           total da linha, e é sempre um inteiro. */
-        totalCent: preco === null ? null : Math.round(preco * linha.quantidade),
-        erro: null,
-      };
-    });
-
-    const validas = cotadas.filter((linha) => linha.erro === null);
-    return {
-      linhas: cotadas,
-      totalCent: validas.reduce((soma, linha) => soma + (linha.totalCent ?? 0), 0),
-      semPreco: validas.filter((linha) => linha.totalCent === null).length,
-      valida: validas.length === cotadas.length,
-    };
-  };
+  /* A regra é a de `regras.ts`, a mesma que a fonte da base de dados usa. */
+  const cotar = (linhas: ReturnType<typeof EsquemaLinhaCesto.parse>[]): Cotacao =>
+    cotarLinhas(linhas, (id) => porId.get(id));
 
   const ocupacaoEntre = (desde: Date, ate: Date): VagaOcupada[] => {
     const contagem = new Map<number, number>();
@@ -405,7 +388,10 @@ export function criarFonteJsonComEstado(opcoes: OpcoesFonteJson = {}): { fonte: 
     },
 
     async ordemDaEmenta() {
-      return { cartas: [...CARTAS], categorias: [...CATEGORIAS], subcategorias: [...SUBCATEGORIAS] };
+      /* Cópias: quem a recebe pode mexer-lhe (o painel move categorias num
+         rascunho) sem mudar a da fonte. */
+      const { cartas, categorias, subcategorias } = estado.ordem;
+      return { cartas: [...cartas], categorias: [...categorias], subcategorias: [...subcategorias] };
     },
 
     async configuracaoDaCasa() {

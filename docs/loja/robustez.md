@@ -75,7 +75,7 @@ memória não servem: na Vercel cada pedido pode cair numa instância diferente.
 | Fotos dos bolos personalizados | por pedido e por IP |
 
 ⚠️ **Porquê limitar a criação de pedidos.** Um pedido pendente reserva vaga e
-quantidades durante 30 minutos. Sem limite, um robô — ou alguém com má intenção
+quantidades durante 31 minutos. Sem limite, um robô — ou alguém com má intenção
 — esvaziava o calendário da loja sem pagar um cêntimo. O campo-armadilha que já
 existe em `pedidos.ts` continua.
 
@@ -144,9 +144,12 @@ calmo de um tablet desligado.
   - `pedidos(email)` — histórico e possíveis duplicados
   - `linhas_pedido(pedido_id)`
   - `eventos_stripe(id)` chave primária
-  - `sessoes(token)` único · `limites(chave, janela)` único
-  - `produtos(slug)` único
-  - contadores: `(dia, hora)` e `(produto, dia)` únicos
+  - `sessoes_painel(token_hash)` único · `limites(chave, janela)` único
+  - `produtos(id)` — o próprio código (`nata`), que é a chave primária
+  - contadores: `vagas(inicio)`, `quantidades_dia(produto, dia)` e
+    `quantidades_total(produto)` únicos — a vaga pelo instante em que começa,
+    e não por «dia + hora», que se repete na mudança de hora
+    (`base-de-dados.md`)
 
   Os índices únicos são também a última barreira contra duplicados.
 - **Paginação por cursor** (`criado_em`, `id`) no arquivo do balcão, nos pedidos

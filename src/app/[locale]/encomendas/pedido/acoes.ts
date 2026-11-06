@@ -2,14 +2,14 @@
 
 import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { cestoEmTexto, estimativa, pessoasSugeridas, tipoSugerido } from "@/lib/cesto";
-import { configuracaoDaCasa, cotarCesto, ocupacao, produtoPorId } from "@/lib/dados";
+import { configuracaoDaCasa, cotarCesto, definicoesLoja, ocupacao, produtoPorId } from "@/lib/dados";
 import { enviarEmailDePedido } from "@/lib/email";
 import { gerarReferencia } from "@/lib/historico";
 import { emModoDeTeste } from "@/lib/modo-teste";
 import { itensDoServidor } from "@/lib/pedido-servidor";
-import { corpoDaCompra, DESTINO_PEDIDOS, esquemaCompra, type TipoPedido } from "@/lib/pedidos";
+import { corpoDaCompra, DESTINO_PEDIDOS, esquemaCompra, quandoVoltaALoja, type TipoPedido } from "@/lib/pedidos";
 import { confirmarLevantamento } from "@/lib/vagas-servidor";
 
 /** O que fica no histórico do browser. O total é **o do servidor**. */
@@ -57,6 +57,12 @@ export async function enviarCompra(_anterior: Resultado, dados: FormData): Promi
      apanhado é ensiná-lo a contornar. */
   if (String(dados.get("armadilha") ?? "").length > 0) return { estado: "enviado" };
 
+  /* ⚠️ **A pausa do balcão trava os pedidos** (revisão do #66): é para quando a
+     cozinha está cheia. A página já desliga o botão; aqui confirma-se, porque um
+     botão desligado não protege nada. */
+  const volta = quandoVoltaALoja((await definicoesLoja()).pausaAte, agora, await getLocale());
+  if (volta) return { estado: "erro", campos: { geral: t("erros.loja-em-pausa", { quando: volta }) } };
+
   let linhas: unknown = null;
   try {
     linhas = JSON.parse(String(dados.get("linhas") ?? ""));
@@ -85,6 +91,7 @@ export async function enviarCompra(_anterior: Resultado, dados: FormData): Promi
     nome: dados.get("nome") ?? "",
     email: dados.get("email") ?? "",
     telefone: dados.get("telefone") ?? "",
+    pais: dados.get("pais") ?? "PT",
     nif: dados.get("nif") ?? "",
     observacoes: dados.get("observacoes") ?? "",
     data,

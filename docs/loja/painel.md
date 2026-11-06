@@ -34,9 +34,14 @@ chegue a uma acção de reembolso tem de receber uma recusa, não um reembolso.
 - 6 dígitos, definido e mudado pela gerente. Guarda-se com *hash*, nunca em
   claro.
 - ⚠️ **Tentativas limitadas, na base de dados.** Cinco erros seguidos bloqueiam
-  esse dispositivo durante 15 minutos. O contador vive na base de dados e não em
-  memória: na Vercel cada pedido pode cair numa instância diferente, e um limite
-  em memória não limita nada.
+  esse **IP** até ao fim da janela de 15 minutos em que aconteceram. O contador
+  vive na base de dados e não em memória: na Vercel cada pedido pode cair numa
+  instância diferente, e um limite em memória não limita nada.
+  - **Por IP, e não por dispositivo**: antes de entrar não há nada que
+    identifique o dispositivo, e um cookie apagava-se para fugir ao limite.
+  - **A tentativa conta-se antes de o PIN ser conferido.** Vinte tentativas
+    mandadas ao mesmo tempo dão cinco conferidas, e não vinte.
+  - Ver `src/lib/sessao-painel/bd.ts` e `base-de-dados.md` › A entrada no painel.
 - **Mudar o PIN termina todas as sessões de funcionário**, em todos os
   dispositivos. É assim que se tira o acesso a quem saiu da casa.
 
@@ -115,6 +120,9 @@ ecrãs não mudam.
 - **Liga com o modo de teste (`LOJA_EM_TESTE=1`), e só com ele**, em local e no
   ar: é o mesmo interruptor de todos os dados provisórios. Sem ele, o painel diz
   que a entrada ainda não está ligada.
+- ⚠️ **E nunca com a base de dados** (`DATABASE_URL`): aí o painel grava os
+  produtos a sério, e o PIN daqui é público. Até a entrada verdadeira estar
+  ligada, o painel fica trancado (`provisoria.ts`).
 - ⚠️ **Valores por defeito no código** (decidido a 04/10): PIN `123456`, o email
   da equipa (`developerplusteam@gmail.com`) como gerente e um segredo fixo, que
   não é segredo nenhum. O repositório é público, por isso quem o lê entra no

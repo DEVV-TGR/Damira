@@ -99,6 +99,7 @@ export function CartaoArtigo({
           <BotaoJuntar
             variante="compacta"
             locale={locale}
+            escolhas={artigo.escolhas}
             item={{
               id: `ementa:${artigo.id}`,
               produtoId: artigo.id,

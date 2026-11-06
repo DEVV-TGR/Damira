@@ -8,6 +8,15 @@ export type CapituloDoFolio = {
   /** O numeral romano. É fólio de peça impressa, não contador de secções. */
   numeral: string;
   titulo: string;
+  /**
+   * `false` para uma secção que muda o chão do fio sem ter marcador no fólio.
+   *
+   * ⚠️ Existe porque a cor do fio é a do **último capítulo que passou**, e uma
+   * secção sem capítulo herda-a. Quase sempre isso serve; quando o capítulo
+   * anterior tem um fio da mesma cor que o fundo da secção seguinte, o fio
+   * desaparece. É o caso do título do pão depois do vegan (papel sobre papel).
+   */
+  marcador?: false;
 };
 
 /* ---------------------------------------------------------------- o gesto --
@@ -95,10 +104,11 @@ const TRACOS = [traco(30, 0), traco(60, 1), traco(90, 0)];
  *    navegação a sério e não um indicador;
  * 3. **vapor do pão** — no pico, os traços engrossam e clareiam, porque é ali
  *    que o vapor tem de onde sair: o pão está a encher o ecrã;
- * 4. **marca** — no colofão o fio da margem apaga-se e as mesmas três ondas
- *    desenham-se à escala do logótipo (ver `Colofao.tsx`), fechando em
- *    travamento exacto. O fio que correu a página inteira acaba por ser a
- *    assinatura.
+ * 4. ~~**marca**~~ — no colofão as mesmas três ondas desenhavam-se à escala
+ *    do logótipo, fechando em travamento exacto. ⚠️ **O colofão saiu a
+ *    12/10/2026** (#81, pedido da casa), e com ele este quarto papel: a página
+ *    acaba agora nos reels, que usam o `VaporMarca` como lugar vazio. Se o fecho
+ *    voltar, é aqui que se volta a ligar.
  *
  * ## O que aqui não se faz
  *
@@ -232,6 +242,21 @@ export function Vapor({
     };
   }, [capitulos]);
 
+  /* ⚠️ **O marcador aceso não é o chão activo.** Um capítulo sem marcador muda
+     a cor do fio, mas no fólio acende-se o capítulo **seguinte** com número:
+     o único que existe é o título do pão, que é a abertura do III («III · O
+     pão» está escrito nele). Sem isto, enquanto o título estava no ecrã, o
+     fólio ficava sem número aceso nenhum. Se não houver seguinte, vale o
+     anterior. */
+  const comMarcador = (i: number) => i >= 0 && i < capitulos.length && capitulos[i].marcador !== false;
+  let activoNoFolio = activo;
+  if (activo >= 0 && !comMarcador(activo)) {
+    let i = activo + 1;
+    while (i < capitulos.length && !comMarcador(i)) i++;
+    if (i < capitulos.length) activoNoFolio = i;
+    else while (activoNoFolio >= 0 && !comMarcador(activoNoFolio)) activoNoFolio--;
+  }
+
   const saltar = (id: string) => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -265,12 +290,12 @@ export function Vapor({
 
       <nav className="vapor__folio" aria-label={rotuloNavegacao}>
         <ol>
-          {capitulos.map((c, i) => (
+          {capitulos.map((c, i) => c.marcador === false ? null : (
             <li
               key={c.id}
               style={{ top: `${(marcas[i] ?? 0) * 100}%` }}
               data-passado={i < passados ? "" : undefined}
-              data-activo={i === activo ? "" : undefined}
+              data-activo={i === activoNoFolio ? "" : undefined}
             >
               {/* ⚠️ **O nome do capítulo vai no `aria-label` e não só na
                   etiqueta que aparece com o rato.** A etiqueta é ajuda visual
@@ -297,7 +322,7 @@ export function Vapor({
   );
 }
 
-/** Os mesmos três traços, à escala do logótipo. Ver `Colofao.tsx`. */
+/** Os mesmos três traços, à escala do logótipo. Hoje só os reels o usam. */
 export function VaporMarca({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 120 130" aria-hidden>

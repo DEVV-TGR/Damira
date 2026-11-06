@@ -26,13 +26,13 @@ email, no talão e no painel. Única na base de dados.
 | `pendente` | checkout aberto, à espera de pagamento | servidor, ao criar | não | não |
 | `pago` | o Stripe confirmou o pagamento | **só a confirmação do Stripe** — o webhook, ou a verificação periódica que pergunta ao Stripe (ver `pagamentos.md`) | sim | sim, uma vez |
 | `entregue` | o cliente levantou | balcão, com um toque | sim, no arquivo | não |
-| `expirado` | 30 min sem pagamento, ou o cliente voltou atrás no checkout | servidor | não | não |
+| `expirado` | 31 min sem pagamento — o prazo da sessão do Stripe —, ou o cliente voltou atrás no checkout | servidor | não | não |
 | `cancelado` | cancelado pela gerente ou pelo cliente | ver «Cancelar» | sim, riscado | talão de cancelamento |
 
 Transições permitidas — **e mais nenhuma**:
 
 - `pendente → pago` · `pendente → expirado`
-- `expirado → pago` (ver o primeiro ⚠️ abaixo)
+- `expirado → pago` (ver «Pago ganha sempre a expirado», abaixo)
 - `pago → entregue`
 - `entregue → pago` — pelo balcão nos primeiros 5 minutos (desfazer um toque por
   engano); pela gerente a qualquer momento
@@ -41,10 +41,25 @@ Transições permitidas — **e mais nenhuma**:
   site», e só até à hora em que a produção tem de começar (ver `horarios.md`).
   Depois disso o botão desaparece e o cliente liga para a loja.
 
+⚠️ **O pedido só expira quando o Stripe já não aceita o pagamento.** O prazo é
+um só, `criadoEm + 31 min`, e é o `expires_at` da sessão do Stripe
+(`pagamentos.md`). Decidido a 02/11: até aí eram dois — 30 minutos nossos e 31
+do Stripe —, e no minuto entre eles o cliente via o relógio do Stripe ainda a
+correr, pagava, e a vaga já tinha sido libertada. Com um prazo só, a vaga não sai
+enquanto alguém a pode pagar. Pelo mesmo motivo, quem expira um pedido antes do
+prazo — o «voltar atrás» — expira primeiro a sessão no Stripe.
+
 ⚠️ **Pago ganha sempre a expirado.** Se o Stripe confirmar o pagamento de um
-pedido que já tinha expirado — o cliente pagou aos 29:59 e o webhook chegou
-depois —, o pedido passa a `pago` na mesma e fica marcado `chegouTarde`. A vaga
-e as quantidades podem já ter sido libertadas; a gerente vê o aviso e decide.
+pedido que já tinha expirado, o pedido passa a `pago` na mesma e fica marcado
+`chegouTarde`. Com um prazo só, o relógio deixa de o provocar; sobram dois casos:
+o cliente pagou a horas e o aviso só chegou depois do prazo (o webhook em baixo,
+um segredo trocado — apanha-o a verificação periódica), e, a confirmar nos testes
+(`pagamentos.md`), um MB WAY que ainda estava a ser aprovado na app quando a
+sessão expirou. Em nenhum dos dois o atrasado é o cliente, e por isso **não se
+recusa o pagamento**: reembolsá-lo e pedir um pedido novo era castigar o cliente
+por uma falha nossa, custava à casa a comissão (o Stripe não a devolve) e, nos
+primeiros dias, sem saldo, o reembolso do MB WAY falhava. A vaga e as
+quantidades podem já ter sido libertadas; a gerente vê o aviso e decide.
 **Um pedido pago nunca se perde**, nem que isso custe um bolo a mais na cozinha.
 
 ⚠️ **O browser nunca marca um pedido como pago.** A página de sucesso do
@@ -97,6 +112,11 @@ Cada linha do pedido guarda o id do produto e da variante **e também** o nome, 
 variante e as escolhas em texto, a unidade e o preço unitário **tal como estavam
 no momento do pedido**, mais a quantidade e as notas do cliente.
 
+**As escolhas** (sabores, recheios) confirmam-se no servidor: um produto com
+escolhas leva **exatamente uma** por linha, e das dele; um sem escolhas, nenhuma
+(`escolha-invalida`). Para misturar sabores, uma linha por sabor, e cada uma
+conta o seu mínimo — 12 de alheira e 12 de legumes (decidido a 05/10).
+
 ⚠️ **Nunca se recalcula um pedido antigo a partir do produto atual.** A gerente
 muda preços e nomes quando quer; um pedido de ontem tem de continuar a dizer o
 que se pagou ontem — no painel, no talão reimpresso e em qualquer reembolso.
@@ -104,6 +124,11 @@ que se pagou ontem — no painel, no talão reimpresso e em qualquer reembolso.
 ## O cliente
 
 Nome, email, telefone, NIF (opcional) e o id da conta (opcional).
+
+**O telefone é obrigatório** — é por ele que o balcão liga a quem não aparece.
+A página escolhe o país (🇵🇹 +351 por defeito), valida o número para esse país e
+guarda-o em **E.164** (`+351911222333`); mostra-se arrumado como o país manda
+(`+351 911 222 333`). Decidido a 05/10.
 
 ⚠️ **A conta nunca é obrigatória para pedir.** É a primeira regra do `AGENTS.md`
 para a conta de cliente e continua a valer com pagamento. (Cancelar pelo site é
@@ -121,6 +146,10 @@ uma ajuda, não uma garantia.
 Um pedido `pendente` **ocupa** a vaga e as quantidades enquanto espera pelo
 pagamento; se expirar ou for cancelado, liberta-as, na mesma transação que muda
 o estado (ver `robustez.md`).
+
+⚠️ **Um pedido `entregue` continua a ocupar a vaga** (decidido a 05/10): gastou a
+capacidade daquela hora, e o «desfazer» — que o devolve a `pago` — nunca pode
+esbarrar no limite. Só `cancelado` e `expirado` libertam.
 
 «Levantam hoje», no balcão, é o dia de levantamento em hora de Lisboa — **não** o
 dia em que o pedido entrou. O que tem de **começar a ser feito** hoje é outra
@@ -151,17 +180,19 @@ que só existe na base de dados é um bolo feito para ninguém.
 ⚠️ **O Stripe não devolve a comissão de um pagamento reembolsado.** Cada
 cancelamento reembolsado custa à casa a comissão do pagamento original.
 
-⚠️ **Um reembolso pode falhar.** Os reembolsos saem do saldo Stripe da casa; sem
-saldo, o de cartão fica pendente e o de MB WAY falha. O estado do reembolso vem
-do webhook do Stripe e não do pedido que fizemos, e o painel mostra à gerente um
-reembolso falhado como falhado (ver `pagamentos.md`).
+⚠️ **Um reembolso pode falhar** — e até depois de ter sido dado como concluído
+(ver «Reembolsos»). Os reembolsos saem do saldo Stripe da casa; sem saldo, o de
+cartão fica pendente e o de MB WAY falha. O estado do reembolso vem do webhook do
+Stripe e não do pedido que fizemos, e o painel mostra à gerente um reembolso
+falhado como falhado (ver `pagamentos.md`).
 
 ## Reembolsos
 
 O pedido guarda **cada reembolso** (`reembolsos`): o valor, o estado
-(`pendente`, `concluido`, `falhado`) e quando foi pedido. O `reembolsadoCent` é
-a soma dos `concluido` — e é tudo o que se calcula a partir deles. O estado vem
-do Stripe (`pagamentos.md`); um `falhado` aparece em «Precisa de atenção».
+(`pendente`, `concluido`, `falhado`), quando foi pedido, e **o estado e o motivo
+como o Stripe os deu** (`estadoStripe`, `motivo`). O `reembolsadoCent` é a soma
+dos `concluido` — e é tudo o que se calcula a partir deles. O estado vem do
+Stripe (`pagamentos.md`); um `falhado` aparece em «Precisa de atenção».
 
 A gerente reembolsa **sem cancelar** (`reembolsarPedido`) quando o pedido segue
 mas alguma coisa correu mal — um artigo que faltou. Nunca mais do que o que foi
@@ -169,6 +200,47 @@ pago online e ainda não foi devolvido.
 
 ⚠️ Até ao Stripe (#49), a implementação provisória dá o reembolso como
 `concluido` logo, e o painel diz que é simulado.
+
+### Os estados, e de onde vêm
+
+O Stripe tem cinco estados para um reembolso, e o pedido tem três. Decidido a
+02/11:
+
+| No Stripe | No pedido |
+|---|---|
+| `pending`, `requires_action` | `pendente` |
+| `succeeded` | `concluido` |
+| `failed`, `canceled` | `falhado` |
+
+O `estadoStripe` guarda qual dos cinco foi, e o `motivo` guarda o
+`failure_reason` do Stripe quando ele o dá. Para a gerente, «cancelado no
+Stripe», «sem saldo» e «cartão expirado» não são a mesma coisa, e cada um
+decide-se de maneira diferente.
+
+Transições permitidas — **e mais nenhuma**:
+
+- `pendente → concluido` · `pendente → falhado`
+- `concluido → falhado`
+
+⚠️ **Um reembolso concluído pode falhar depois.** Está na documentação do
+Stripe: um reembolso pode começar `succeeded` e passar a `failed` mais tarde, com
+o evento `refund.failed` (o cartão de teste `…5126` faz exatamente isso). Quando
+acontece, o `reembolsadoCent` desce — afinal o dinheiro não voltou —, o
+reservado devolve-o na mesma instrução (`base-de-dados.md` › Reembolsos ao mesmo
+tempo), e o aviso `reembolso-falhado` aparece, depois de a gerente já o ter visto
+como feito.
+
+⚠️ **Só para a frente, e `falhado` é final.** O Stripe não garante a ordem dos
+eventos: um `succeeded` antigo que chega depois de um `failed` não faz nada.
+
+⚠️ **Não se sabe se um reembolso de MB WAY sem saldo passa por `succeeded`**
+antes de falhar, ou se falha logo: o `…5126` é de cartão. As duas formas cabem
+nestas transições, e o ensaio nas sandboxes diz qual é (`pagamentos.md` ›
+Testes).
+
+**Um reembolso que não pedimos** — feito diretamente no painel do Stripe — entra
+no pedido quando o webhook o traz, com o estado que tiver. O pedido diz o
+dinheiro que voltou de facto, e não só o que pedimos pelo painel.
 
 ## Mudar o levantamento
 

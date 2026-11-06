@@ -1,4 +1,3 @@
-import type { z } from "zod";
 import { validarLevantamento, type VagaOcupada } from "@/lib/horarios";
 import { avisosDosPedidos, diaDeLisboa, faltaPagarCent, porDevolverCent } from "@/lib/painel";
 import {
@@ -6,16 +5,19 @@ import {
   EsquemaEntradaProduto,
   EsquemaFiltroPedidos,
   EsquemaHorarios,
+  EsquemaOrdemCategorias,
   EsquemaProduto,
   AVISOS_TRATAVEIS,
   type AvisoTratavel,
   type ConfiguracaoDaCasa,
   type DefinicoesLoja,
   type FontePainel,
+  type OrdemEmenta,
   type Pedido,
   type Produto,
   type ResultadoPainel,
 } from "./tipos";
+import { comIds, emId, invalido, livre, naoExiste } from "./regras";
 
 /**
  * # O painel sobre os JSON — em memória, como os pedidos
@@ -38,6 +40,8 @@ export type EstadoJson = {
   porId: Map<string, Produto>;
   configuracao: ConfiguracaoDaCasa;
   definicoes: DefinicoesLoja;
+  /** A ordem da ementa; as categorias, como a gerente as deixou (#87). */
+  ordem: OrdemEmenta;
   pedidos: Map<string, Pedido>;
   /** Referência → id do pedido. */
   porReferencia: Map<string, string>;
@@ -45,59 +49,11 @@ export type EstadoJson = {
   versao: number;
 };
 
-const invalido = (erro: z.ZodError): ResultadoPainel<never> => ({
-  ok: false,
-  erro: "dados-invalidos",
-  campos: [...new Set(erro.issues.flatMap((issue) => (issue.path.length > 0 ? [String(issue.path[0])] : [])))],
-});
-
-const naoExiste: ResultadoPainel<never> = { ok: false, erro: "nao-existe" };
-
-/* «Bolo de Bolacha» → `bolo-de-bolacha`. Os acentos saem, porque o id vai no
-   URL e um `pão` partilhado por mensagem chega como `p%C3%A3o`. */
-const emId = (texto: string): string =>
-  texto
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60)
-    .replace(/-+$/, "");
-
-/* O primeiro livre de `base`, `base-2`, `base-3`… */
-const livre = (base: string, ocupados: (id: string) => boolean): string => {
-  if (!ocupados(base)) return base;
-  let n = 2;
-  while (ocupados(`${base}-${n}`)) n++;
-  return `${base}-${n}`;
-};
-
-type EntradaLida = z.output<typeof EsquemaEntradaProduto>;
-
 /* «Márcia», «marcia» e «MARCIA» são a mesma pessoa ao telefone. */
 const paraProcura = (texto: string) =>
   texto.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 
 const CINCO_MINUTOS = 5 * 60_000;
-
-/* Uma variante nova ganha id a partir do que a distingue: o número de pessoas,
-   o rótulo, ou `unica` se for a única. As que já tinham id guardam-no. */
-const comIds = (variantes: EntradaLida["variantes"]): Produto["variantes"] => {
-  const usados = new Set(variantes.flatMap((v) => (v.id ? [v.id] : [])));
-  return variantes.map((variante) => {
-    if (variante.id) return { ...variante, id: variante.id };
-    const base =
-      variante.pessoas !== null
-        ? String(variante.pessoas)
-        : variante.rotulo
-          ? emId(variante.rotulo.pt) || "variante"
-          : "unica";
-    const id = livre(base, (candidato) => usados.has(candidato));
-    usados.add(id);
-    return { ...variante, id };
-  });
-};
 
 
 const centValido = (valor: unknown, maximo: number, podeSerZero: boolean): valor is number =>
@@ -135,12 +91,33 @@ export function criarPainelJson(
   const alterar = (id: string, mudanca: Partial<Produto>): ResultadoPainel<Produto> => {
     const atual = estado.porId.get(id);
     if (!atual) return naoExiste;
-    const novo = EsquemaProduto.parse({ ...atual, ...mudanca });
-    estado.porId.set(id, novo);
-    return { ok: true, valor: novo };
+    /* `safeParse`: um valor errado responde `dados-invalidos`, e nunca rebenta
+       para o browser (`robustez.md` › Erros). */
+    const lido = EsquemaProduto.safeParse({ ...atual, ...mudanca });
+    if (!lido.success) return invalido(lido.error);
+    estado.porId.set(id, lido.data);
+    return { ok: true, valor: lido.data };
+  };
+
+  /* ⚠️ Uma categoria que não está na ordem (#87) ficava órfã: fora da `/ementa`,
+     que só mostra as categorias da ordem, e sem a gerente a poder lá pôr, porque
+     a ordem só aceita uma permutação das que existem. Recusa-se à entrada. */
+  const foraDaOrdem = (categoria: string | null) =>
+    categoria !== null && !estado.ordem.categorias.includes(categoria);
+  const categoriaDesconhecida: ResultadoPainel<never> = {
+    ok: false,
+    erro: "dados-invalidos",
+    campos: ["categoria"],
   };
 
   return {
+    /* Nos JSON não há nada gravado: a configuração é a do estado em memória
+       (com os valores de exemplo dentro, no modo de teste sem base de dados —
+       e nada disso sobrevive a um arranque). */
+    async configuracaoDoPainel() {
+      return estado.configuracao;
+    },
+
     async produtosDoPainel() {
       return [...estado.porId.values()];
     },
@@ -148,6 +125,7 @@ export function criarPainelJson(
     async criarProduto(entrada) {
       const lido = EsquemaEntradaProduto.safeParse(entrada);
       if (!lido.success) return invalido(lido.error);
+      if (foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
       const id = livre(emId(lido.data.nome.pt) || "produto", (candidato) => estado.porId.has(candidato));
       const produto = EsquemaProduto.parse({
         ...lido.data,
@@ -166,6 +144,7 @@ export function criarPainelJson(
       if (!atual) return naoExiste;
       const lido = EsquemaEntradaProduto.safeParse(entrada);
       if (!lido.success) return invalido(lido.error);
+      if (foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
       /* Um id de variante que o produto não tem não se aceita: era o browser a
          inventar ids, e são eles que os cestos guardam. Uma variante que falte
          na entrada sai — um cesto que a tinha passa a «variante desconhecida». */
@@ -200,6 +179,23 @@ export function criarPainelJson(
       if (!lido.success) return invalido(lido.error);
       estado.definicoes = { ...estado.definicoes, ...lido.data };
       return { ok: true, valor: estado.definicoes };
+    },
+
+    async guardarOrdemCategorias(entrada) {
+      /* Um campo só: seja o que for que falhe, é a lista que se marca. */
+      const recusada: ResultadoPainel<never> = { ok: false, erro: "dados-invalidos", campos: ["categorias"] };
+      const lido = EsquemaOrdemCategorias.safeParse(entrada);
+      if (!lido.success) return recusada;
+      /* Uma permutação das que existem, e nada mais: uma que falte saía da
+         ementa sem ninguém dar por isso, e uma inventada era uma secção vazia.
+         Criar categorias é outra conversa, e passa pelo produto. */
+      const atuais = new Set(estado.ordem.categorias);
+      const nova = lido.data.categorias;
+      if (nova.length !== atuais.size || nova.some((categoria) => !atuais.has(categoria))) return recusada;
+      /* Um objeto novo, como nos produtos: quem leu a ordem antes fica com a
+         que leu. */
+      estado.ordem = { ...estado.ordem, categorias: [...nova] };
+      return { ok: true, valor: estado.ordem };
     },
 
     async pausarLoja(ate, { agora }) {

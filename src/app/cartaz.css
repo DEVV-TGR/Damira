@@ -62,9 +62,15 @@
    páginas do sítio, e continua a apanhar o salto de teclado.
 
    O `:has()` prende isto à homepage. Nas outras duas páginas a barra continua
-   colada, que é o que lá faz sentido. */
+   colada, que é o que lá faz sentido.
+
+   ⚠️ `relative` e não `static` (#82): o menu do «Encomendas» abre para fora da
+   barra, e num elemento estático o `z-50` não conta — o painel ficava por
+   baixo da capa, que vem depois no DOM, e o toque caía nela. `relative`
+   continua sem colar e dá ao menu um bloco de contenção garantido, também
+   quando o `prefers-reduced-transparency` tira o `backdrop-filter`. */
 body:has(.cartaz) .barra-vidro {
-  position: static;
+  position: relative;
 }
 
 /* ------------------------------------------------------- os oito capítulos --
@@ -167,12 +173,6 @@ body:has(.cartaz) .barra-vidro {
   background: var(--color-tijolo);
   --sc-ink: var(--color-papel);
   --sc-ink-soft: var(--suave-sobre-tijolo);
-  color: var(--sc-ink);
-}
-.cap--colofao {
-  background: var(--color-tinta);
-  --sc-ink: var(--color-papel);
-  --sc-ink-soft: var(--suave-sobre-tinta);
   color: var(--sc-ink);
 }
 
@@ -460,67 +460,6 @@ body:has(.cartaz) .barra-vidro {
   margin: 0;
 }
 
-/* --------------------------------------------------------- VI · o colofão -- */
-.colofao__palco {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 2rem;
-  background: var(--color-tinta);
-  padding-inline: var(--margem-vapor) clamp(1.25rem, 5vw, 5rem);
-}
-/* O fecho do movimento de assinatura: as mesmas três ondas, à escala do
-   logótipo, com o traçado conduzido pelo progresso deste acto. A marca
-   desenha-se sozinha à medida que a página acaba. */
-.colofao__marca {
-  width: clamp(3rem, 6vw, 4.75rem);
-  height: auto;
-  color: var(--color-tijolo);
-}
-.colofao__marca path {
-  stroke-dasharray: 1;
-  stroke-dashoffset: calc(1 - var(--sc-p, 0));
-}
-.colofao__caixa {
-  max-width: 44rem;
-}
-.colofao__corrido {
-  font-size: clamp(1rem, 0.95rem + 0.4vw, 1.2rem);
-  line-height: 1.7;
-  margin: 1.5rem 0 0;
-  max-width: 52ch;
-  text-wrap: pretty;
-}
-.colofao__corrido a {
-  text-decoration: underline;
-  text-underline-offset: 0.24em;
-  text-decoration-thickness: 1px;
-  color: var(--color-papel);
-}
-.colofao__corrido a:hover {
-  text-decoration-thickness: 3px;
-}
-.colofao__horario {
-  font-size: 0.9rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--sc-ink-soft);
-  margin: 1.75rem 0 0;
-}
-.colofao__fim {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  font-size: 0.85rem;
-  color: var(--sc-ink-soft);
-  margin: 0.6rem 0 0;
-}
-.colofao__fim a {
-  color: var(--color-papel);
-  text-decoration: underline;
-  text-underline-offset: 0.24em;
-}
-
 /* ===========================================================================
    O VAPOR — o movimento de assinatura
 
@@ -600,9 +539,15 @@ body:has(.cartaz) .barra-vidro {
   --fio: var(--color-papel);
   --chao: var(--color-tijolo);
 }
-.vapor[data-capitulo-activo="cap-colofao"] {
-  --fio: var(--color-papel);
-  --chao: var(--color-tinta);
+/* ⚠️ **O título do pão é um chão sem marcador, e existe por causa do vegan.**
+   Desde 12/10/2026 o capítulo vegan vem logo antes do pão (#79), e o título
+   do pão é papel: sem esta entrada o fio herdava o papel do vegan e
+   desaparecia em cima do papel durante meio ecrã. Antes da mudança herdava o
+   tijolo da porta e via-se — ninguém tinha de pensar nisto. Ver
+   `marcador: false` em `Vapor.tsx`. */
+.vapor[data-capitulo-activo="cap-pao-titulo"] {
+  --fio: var(--color-tijolo);
+  --chao: var(--color-papel);
 }
 
 /* Durante o silêncio o fio fica em tijolo sobre a tinta, que dá 2,36:1 e
@@ -721,9 +666,10 @@ body:has(.cartaz) .barra-vidro {
 /* ------------------------------------------------------------ telemóvel --
    O fólio com títulos não cabe num ecrã de 390 px, e o fio numa margem de
    6 rem comia um sexto da largura útil. Fica o fio, estreito, e os marcadores
-   como pontos. É navegação a menos, e é por isso que o colofão repete todas as
-   ligações em texto corrido: **o que carrega o sentido da página não pode
-   viver só onde há rato.** */
+   como pontos. É navegação a menos, e é por isso que os capítulos levam as
+   suas ligações em texto e o rodapé repete as três páginas, a morada e o
+   horário: **o que carrega o sentido da página não pode viver só onde há
+   rato.** (O colofão, que fazia isto em texto corrido, saiu a 12/10/2026, #81.) */
 @media (max-width: 48rem) {
   .cartaz {
     /* Larga o suficiente para o fio não encostar à berma do conteúdo, estreita
@@ -825,6 +771,18 @@ body:has(.cartaz) .barra-vidro {
   border-radius: 2px;
   background: var(--color-papel-fundo);
   aspect-ratio: 4 / 3;
+}
+/* A primeira fotografia que o «Ver mais» revela recebe o foco (ver
+   `VitrineGrelha.tsx`). O contorno fica por fora: o `overflow: hidden` da
+   célula corta os filhos, não o contorno dela própria. */
+.vitrine__celula:focus-visible {
+  outline: 3px solid var(--color-tijolo);
+  outline-offset: 3px;
+}
+/* O botão é o `.cap__accao` simples, só contorno na cor do texto: é uma acção
+   secundária e não deve competir com as fotografias que estão por cima. */
+.vitrine__mais {
+  margin: clamp(1.5rem, 3vw, 2.25rem) 0 0;
 }
 .vitrine__celula img {
   width: 100%;
@@ -1153,7 +1111,6 @@ body:has(.cartaz) .barra-vidro {
      num telemóvel lê-se com o braço esticado, e metade de quem vai usar isto
      não quer esticar o braço. */
   .cap__texto,
-  .colofao__corrido,
   .via__detalhe,
   .provar__exemplo {
     font-size: 1.05rem;
@@ -1267,68 +1224,6 @@ body:has(.cartaz) .barra-vidro {
     width: 46vw;
   }
 }
-
-/* ------------------------------------------------------------- X · o mapa -- */
-.colofao__mapa {
-  display: grid;
-  gap: 0.75rem;
-  margin-top: 2rem;
-  max-width: 44rem;
-}
-.colofao__mapa iframe {
-  width: 100%;
-  aspect-ratio: 16 / 10;
-  border: 0;
-  border-radius: 3px;
-  background: var(--color-papel-fundo);
-}
-/* O botão tem a forma do mapa que vai substituir, para não haver salto de
-   maquetização quando o iframe entra. */
-.colofao__mapaBotao {
-  display: grid;
-  place-content: center;
-  gap: 0.35rem;
-  justify-items: center;
-  width: 100%;
-  aspect-ratio: 16 / 10;
-  border: 2px dashed color-mix(in oklab, var(--color-papel) 30%, transparent);
-  border-radius: 3px;
-  background: color-mix(in oklab, var(--color-papel) 6%, transparent);
-  color: var(--color-papel);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 160ms var(--sc-ease-out, ease-out);
-}
-.colofao__mapaBotao:hover,
-.colofao__mapaBotao:focus-visible {
-  background: color-mix(in oklab, var(--color-papel) 12%, transparent);
-}
-.colofao__mapaBotao small {
-  font-weight: 400;
-  font-size: 0.85rem;
-  color: var(--suave-sobre-tinta);
-  max-width: 32ch;
-  text-align: center;
-}
-.colofao__mapaPino {
-  width: 1.1rem;
-  height: 1.1rem;
-  border-radius: 50% 50% 50% 0;
-  background: var(--color-tijolo);
-  rotate: -45deg;
-  margin-bottom: 0.5rem;
-}
-.colofao__mapaLigacao {
-  justify-self: start;
-  text-decoration: underline;
-  text-underline-offset: 0.24em;
-  color: var(--color-papel);
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-}
-
 
 /* ------------------------------------------- II · o título antes do pão --
    O cabeçalho do capítulo vem antes da estampa (ver `Pao.tsx`). Menos ar por

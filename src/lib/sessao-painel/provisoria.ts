@@ -67,7 +67,11 @@ const iguais = (a: string, b: string): boolean => {
 };
 
 export function criarSessaoProvisoria({ ambiente, cookies }: Opcoes): FonteSessao {
-  const ligada = emModoDeTeste(ambiente);
+  /* ⚠️ **Nunca com a base de dados.** Com a `DATABASE_URL`, o painel grava os
+     produtos a sério — e o PIN daqui está escrito no código, num repositório
+     público: qualquer um os editava. Trancado é melhor do que aberto: sem a
+     entrada verdadeira ligada (#33), o painel diz que a entrada não está. */
+  const ligada = emModoDeTeste(ambiente) && !ambiente.DATABASE_URL;
   /* Um PIN do ambiente que não seja de seis dígitos cai no de defeito, em vez
      de deixar o painel sem entrada. */
   const pin = /^\d{6}$/.test(ambiente.PAINEL_PIN_TESTE ?? "") ? ambiente.PAINEL_PIN_TESTE! : PIN_DE_TESTE;
@@ -188,6 +192,35 @@ export function criarSessaoProvisoria({ ambiente, cookies }: Opcoes): FonteSessa
       const loja = await cookies();
       loja.delete(COOKIE_GERENTE);
       if (ambito === "dispositivo") loja.delete(COOKIE_EQUIPA);
+    },
+
+    /* ⚠️ Sem base de dados, uma sessão é só um cookie neste aparelho: dá para
+       ver e terminar as deste aparelho, e mais nenhuma. O ecrã diz isso. */
+    async listarSessoes(agora) {
+      const loja = await cookies();
+      return (
+        [
+          ["gerente", lerSessao(loja.get(COOKIE_GERENTE), agora)],
+          ["equipa", lerSessao(loja.get(COOKIE_EQUIPA), agora)],
+        ] as const
+      ).flatMap(([id, s]) =>
+        s ? [{ id, papel: s.papel, dispositivo: "Este aparelho", desde: s.desde, ultimoUso: s.desde, esta: true }] : [],
+      );
+    },
+
+    async terminarSessao(id) {
+      const loja = await cookies();
+      const nome = id === "gerente" ? COOKIE_GERENTE : id === "equipa" ? COOKIE_EQUIPA : null;
+      if (!nome || !loja.get(nome)) return { ok: false, erro: "nao-existe" };
+      loja.delete(nome);
+      return { ok: true };
+    },
+
+    /* O PIN da entrada provisória é o do ambiente (ou o de defeito): não se muda
+       por aqui. A entrada verdadeira (#33) guarda-o com hash na base de dados. */
+    async mudarPin(novo) {
+      if (typeof novo !== "string" || !/^(\d{4}|\d{6})$/.test(novo)) return { ok: false, erro: "dados-invalidos" };
+      return { ok: false, erro: "indisponivel" };
     },
   };
 }

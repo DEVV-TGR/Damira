@@ -2,7 +2,7 @@
 
 Site da Confeitaria Damira — pastelaria, padaria e cozinha em Ermesinde, aberta
 desde 1996. Next.js 16 (App Router), `next-intl` em português e inglês, Tailwind
-v4, conteúdo em ficheiros JSON validados por `zod`. Sem base de dados e sem CMS.
+v4, conteúdo em ficheiros JSON validados por `zod`. Sem CMS; a base de dados chega com a loja online (ver `docs/loja/`).
 
 Nasceu de um *fork* do [Santo Burga](https://github.com/DEVV-TGR/SantoBurga): a
 infraestrutura é a mesma, o conteúdo e o modelo de dados não. As decisões que
@@ -20,12 +20,16 @@ npm run dev
 | `npm run dev` | servidor de desenvolvimento em `localhost:3000` |
 | `npm run build` | build de produção — **valida os JSON e os tipos** |
 | `npm run lint` | ESLint |
+| `npm test` | testes (Vitest), a correr num fuso que não é Lisboa nem UTC |
 | `npm run marca` | extrai logótipo e ondas do PDF para `public/marca/` |
 | `npm run icons` | gera favicon e ícones a partir de `public/marca/ondas.png` |
 | `npm run fotos -- <origem> <destino>` | importa fotografias: 1600 px, WebP |
 
-Antes de dar trabalho por pronto, correr **`npm run lint` e `npm run build`** —
-o `build` é o único que valida o conteúdo.
+Precisa de **Node 22.12 ou mais recente** (o Vitest 5 não arranca com menos);
+`.nvmrc` fixa a versão.
+
+Antes de dar trabalho por pronto, correr **`npm run lint`, `npm run build` e
+`npm test`** — o `build` é o único que valida o conteúdo.
 
 ## As páginas
 
@@ -163,9 +167,9 @@ falta, faz o site mentir a alguém:
 - [ ] **Prazo de antecedência das encomendas.** Quantos dias precisa a casa para
       um kit de 20, de 40 e de 70? Sem isto, `/encomendas` diz "por confirmar" —
       e alguém vai pedir setenta doses para amanhã.
-- [ ] **Horário, dia a dia.** Temos "07h00–21h00" do cartão de contactos, sem
-      dizer a que dias se aplica. O domingo é o candidato a ser diferente. Isto
-      vai para os dados estruturados e passa a ser o horário que o Google mostra.
+- [ ] **Horário ao domingo.** A Andreia deu "07h30–20h00" a 11/10 (o cartão de
+      contactos dizia 07h00–21h00), sem dizer se o domingo é igual. Isto vai
+      para os dados estruturados e passa a ser o horário que o Google mostra.
 - [ ] **Consentimento das pessoas na fotografia da sala.** `public/fotos/04.webp`
       mostra clientes de frente e reconhecíveis. É a única imagem do site com
       pessoas identificáveis. Numa demo passa; **no ar a sério, ou a casa tem o

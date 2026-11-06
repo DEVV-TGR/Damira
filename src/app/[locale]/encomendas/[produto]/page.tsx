@@ -21,6 +21,7 @@ import {
 } from "@/lib/vista";
 import { FotoProduto } from "@/components/encomendas/FotoProduto";
 import { ComprarProduto } from "@/components/encomendas/ComprarProduto";
+import { VoltarAtras } from "@/components/VoltarAtras";
 
 /** Uma página por produto e por língua, todas geradas no `build`. */
 export async function generateStaticParams() {
@@ -165,12 +166,12 @@ function Detalhe({ produto, locale }: { produto: Produto; locale: Locale }) {
 
           {/* ⚠️ **`min-w-0` nas duas colunas, e não é decoração.** Um filho de
               grelha tem `min-width: auto`, ou seja **recusa-se a encolher abaixo
-              do conteúdo** — e a tabela de escalões tem largura mínima para as
-              três colunas caberem. Sem isto, a coluna esticava-se aos 352 px da
-              tabela e a **página inteira** ganhava rolagem horizontal a 320 px,
-              apesar de a tabela já viver dentro de um `overflow-x-auto` que era
-              suposto tratar disso. Só na página dos kits de festa; as outras não
-              têm tabela e davam verde. */}
+              do conteúdo** — e a tabela de escalões tem o mínimo das quatro
+              colunas. Sem isto, a coluna esticava-se até à tabela (eram 352 px,
+              quando ela tinha `min-w`) e a **página inteira** ganhava rolagem
+              horizontal a 320 px, apesar de a tabela já viver dentro de um
+              `overflow-x-auto` que era suposto tratar disso. Só na página dos
+              kits de festa; as outras não têm tabela e davam verde. */}
           <div className="mt-8 grid gap-10 lg:grid-cols-2 lg:gap-16">
             <div className="min-w-0">
               {/* ⚠️ **Colada ao topo enquanto se rola.** A tabela de um kit de
@@ -198,6 +199,7 @@ function Detalhe({ produto, locale }: { produto: Produto; locale: Locale }) {
               <Conteudo produto={produto} locale={locale} />
 
               <ComprarProduto
+                escolhas={produto.escolhas}
                 id={produto.id}
                 produtoId={produto.id}
                 tipo={tipoDoPedido(produto)}
@@ -220,6 +222,10 @@ function Detalhe({ produto, locale }: { produto: Produto; locale: Locale }) {
       </div>
 
       {produto.familia === "medida" && <CatalogoDoBolo locale={locale} />}
+
+      {/* O «voltar» fixo (#86), no fim do documento de propósito: no teclado o
+          link do topo já é o primeiro, e este fica para quem chegou ao fim. */}
+      <VoltarAtras para="/encomendas" />
     </>
   );
 }
@@ -313,8 +319,17 @@ function TabelaEscaloes({
     return nomes;
   };
 
+  /* ⚠️ **Sem largura mínima, e com um intervalo à esquerda de cada coluna de
+     números.** A tabela tinha `min-w-[22rem]` (352 px), mais do que cabe em
+     qualquer telemóvel abaixo dos 414 px: rolava de lado entre 2 e 72 px, sem
+     nada que o dissesse, e a coluna dos setenta ficava cortada a meio da
+     palavra — a 320 px nem se via. E sem o intervalo as colunas encostavam-se:
+     «1 unidade2 unidades». Abaixo do `sm`, letra, preços e intervalo encolhem
+     para as quatro colunas caberem nos 280 px de um ecrã de 320: o mínimo vem
+     de «Hambúrgueres», de «unidades» e dos preços, que não partem. Medido a
+     320, 340, 360, 375, 390 e 414, nos três kits e nas duas línguas. */
   return (
-    <table className="w-full min-w-[22rem] border-collapse text-sm">
+    <table className="w-full border-collapse text-[0.8125rem] sm:text-sm">
       <thead>
         <tr className="border-b border-tinta/20">
           {/* ⚠️ Vazio, e não «o que leva» outra vez: o título da secção está
@@ -324,7 +339,7 @@ function TabelaEscaloes({
             <span className="sr-only">{t("oQueLeva")}</span>
           </th>
           {escaloes.map((e) => (
-            <th key={e.pessoas} className="py-2 text-right tabular-nums">
+            <th key={e.pessoas} className="py-2 pl-1.5 text-right tabular-nums sm:pl-3">
               {t("paraPessoas", { n: e.pessoas })}
             </th>
           ))}
@@ -348,7 +363,7 @@ function TabelaEscaloes({
           {escaloes.map((e) => (
             <td
               key={e.pessoas}
-              className="titulo-display py-3 text-right text-lg tabular-nums text-tijolo"
+              className="titulo-display py-3 pl-1.5 text-right text-[0.9375rem] tabular-nums text-tijolo sm:pl-3 sm:text-lg"
             >
               {e.precoCent !== null && formatarCent(e.precoCent, locale)}
             </td>
@@ -392,7 +407,7 @@ function Grupo({
               .find((texto) => texto !== null) ?? nome}
           </td>
           {escaloes.map((e) => (
-            <td key={e.pessoas} className="py-2 text-right tabular-nums text-tinta-suave">
+            <td key={e.pessoas} className="py-2 pl-1.5 text-right tabular-nums text-tinta-suave sm:pl-3">
               {(() => {
                 const quantidade = e[grupo].find((l) => l.nome.pt === nome)?.quantidade;
                 return quantidade ? emLingua(quantidade, locale) : "—";

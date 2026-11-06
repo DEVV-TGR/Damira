@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { FiltroEmenta } from "./FiltroEmenta";
 
@@ -57,6 +57,33 @@ export function NavegacaoEmenta({
 }) {
   const t = useTranslations("ementa");
   const [activa, setActiva] = useState<string | null>(null);
+  const barra = useRef<HTMLElement>(null);
+
+  /* ⚠️ **Os títulos das categorias colam-se por baixo desta barra** (#85, ver
+     `.titulo-fixo-ementa` no `globals.css`), e a altura dela não é uma só: perde
+     os separadores enquanto se procura, e a caixa de procura parte em duas
+     linhas num telemóvel quando aparece o «limpar». Escrita à mão no CSS, os
+     títulos ficavam por baixo da barra ou com uma fresta a meio da procura.
+     Medida aqui, segue-a; os 8 rem do CSS são só para antes do JavaScript.
+
+     Fica no `<html>` porque os títulos não são filhos desta barra, e sai dele
+     quando a barra sai da página. */
+  useEffect(() => {
+    const elemento = barra.current;
+    if (!elemento) return;
+    const raiz = document.documentElement;
+    const medidor = new ResizeObserver(() => {
+      raiz.style.setProperty(
+        "--altura-barra-ementa",
+        `${elemento.getBoundingClientRect().height}px`,
+      );
+    });
+    medidor.observe(elemento);
+    return () => {
+      medidor.disconnect();
+      raiz.style.removeProperty("--altura-barra-ementa");
+    };
+  }, []);
 
   useEffect(() => {
     const observador = new IntersectionObserver(
@@ -91,6 +118,7 @@ export function NavegacaoEmenta({
 
   return (
     <nav
+      ref={barra}
       aria-label={t("navegar")}
       className="sticky top-16 z-40 border-y-2 border-tinta bg-papel"
     >

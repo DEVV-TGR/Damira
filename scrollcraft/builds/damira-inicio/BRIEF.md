@@ -480,3 +480,31 @@ Nove pedidos, todos feitos. Os que mudam decisões do plano ficam aqui.
   garante que `vegan: true` só existe na carta vegan). A procura passou a apanhar
   também **nomes de cartas e de secções**: «vegan» dava 0 de 95 com o
   placeholder a sugeri-lo. Agora dá 49.
+
+---
+
+# QUARTA RONDA DO CLIENTE — reunião de 12/10/2026
+
+⚠️ **«A partitura como ficou», lá em cima, deixou de ser a partitura no ar.** Fica
+como registo do desenho completo, porque três dos capítulos vão voltar. O que se
+vê hoje é isto:
+
+| Nº | Capítulo | Estado |
+|---|---|---|
+| I | A porta | igual |
+| — | Silêncio | igual |
+| II | **O raro** (vegan) | **subiu** para logo depois do silêncio (#79) |
+| III | O pão | igual; o título ganhou `cap-pao-titulo`, sem marcador no fólio, para o fio voltar a tijolo depois do verde |
+| IV | As mãos | igual |
+| V | A vitrine | mostra 6 fotografias e um «Ver mais» (#80) |
+| VI | Os reels | a página acaba aqui |
+| — | A ementa, as encomendas, encomendar | **ocultos, não apagados** (#79): lista `OCULTOS` em `page.tsx` |
+| — | O colofão | **apagado** (#81), com o mapa do Google e o `frame-src` da CSP |
+
+- **Voltar a mostrar um capítulo oculto é tirá-lo da lista**, e renumerar em
+  `messages/*.json` se não voltarem os três: eles guardam VII, VIII e IX.
+- **A curva de sentir mudou** e não foi re-medida a partir do zero: o pico (o
+  pão) vem agora depois do verde, e a página acaba no carril dos reels, a tinta,
+  colado ao rodapé, também a tinta. Correr o arnês e **ler as capturas** antes de
+  dar a página por boa.
+- **A morada e o horário vivem só no rodapé** desde que o colofão saiu.
