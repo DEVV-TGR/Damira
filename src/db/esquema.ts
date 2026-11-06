@@ -13,11 +13,13 @@ import {
   smallint,
   text,
   timestamp,
+  unique,
   uuid,
 } from "drizzle-orm/pg-core";
 /* Relativo e não `@/`: estes são valores, e o `drizzle-kit` carrega este ficheiro
    sem os atalhos do `tsconfig`. */
 import {
+  AVISOS_DE_DINHEIRO,
   AVISOS_TRATAVEIS,
   ESTADOS_PEDIDO,
   FORMATO_NIF,
@@ -516,6 +518,42 @@ export const reembolsos = pgTable(
     check("reembolsos_falha_tratada", sql`${t.falhaTratadaEm} is null or ${t.estado} = 'falhado'`),
     /* A soma do `reembolsadoCent` e a lista do painel leem os reembolsos de um pedido. */
     index("reembolsos_pedido").on(t.pedidoId),
+  ],
+);
+
+/**
+ * Os avisos de dinheiro: uma disputa, um pagamento apanhado pela verificação, um
+ * pagamento que não bate com o pedido. ⚠️ **Uma linha por facto**, e não no
+ * `avisos_tratados` do pedido: chegam dias depois do levantamento e ficam até
+ * serem tratados, e um segundo facto do mesmo tipo não fica escondido pelo
+ * primeiro (`base-de-dados.md`).
+ *
+ * O `stripe_id` é o objeto do Stripe de que se trata, a disputa ou a sessão. Com o
+ * tipo, é o que impede o mesmo facto de entrar duas vezes, também no caminho sem
+ * evento (o «voltar atrás» do #38), onde o `eventos_stripe` não ajuda.
+ */
+export const avisosDinheiro = pgTable(
+  "avisos_dinheiro",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    pedidoId: uuid("pedido_id")
+      .notNull()
+      .references(() => pedidos.id),
+    tipo: text("tipo").notNull(),
+    stripeId: text("stripe_id").notNull(),
+    /** O que a gerente precisa de saber: o motivo da disputa, o que não bateu. Nunca dados do cliente. */
+    detalhe: text("detalhe"),
+    criadoEm: instante("criado_em").notNull(),
+    tratadoEm: instante("tratado_em"),
+  },
+  (t) => [
+    check("avisos_dinheiro_tipo", sql`${t.tipo} in (${umDe(AVISOS_DE_DINHEIRO)})`),
+    check("avisos_dinheiro_stripe_id", sql`${t.stripeId} <> ''`),
+    check("avisos_dinheiro_tratado", sql`${t.tratadoEm} is null or ${t.tratadoEm} >= ${t.criadoEm}`),
+    unique("avisos_dinheiro_facto").on(t.tipo, t.stripeId),
+    /* O que espera pela gerente, e só isso. */
+    index("avisos_dinheiro_por_tratar").on(t.criadoEm).where(sql`${t.tratadoEm} is null`),
+    index("avisos_dinheiro_pedido").on(t.pedidoId),
   ],
 );
 

@@ -462,14 +462,11 @@ o que mudar o esquema vai num PR só para isso.
    que a gerente fez no catálogo e nos horários.
 6. **O sinal num cesto com percentagens diferentes** não está definido. Hoje o
    `criarPedido` grava sempre `total`.
-7. **Os avisos de dinheiro ficam até alguém os tratar.** O `AvisoAtencao`
-   (`src/lib/dados/tipos.ts`) só mostra pedidos por levantar, mas uma disputa ou
-   um reembolso falhado chegam dias depois. O `reembolso-falhado`, a `disputa`, o
-   `apanhado-pela-verificacao` e o montante que não bate ficam até serem tratados,
-   com o levantamento já passado ou não.
-8. **O montante ou a moeda que não batem.** O pagamento fica registado e há
-   aviso; falta decidir se o pedido passa a `pago` na mesma — o dinheiro entrou, e
-   um pedido pago nunca se perde — ou se fica à parte até a gerente ver.
+7. ~~Os avisos de dinheiro ficam até alguém os tratar~~ — sim, cada um numa linha
+   de `avisos_dinheiro` (`pedidos.md` › Avisos tratados, decidido a 06/11).
+8. ~~O montante ou a moeda que não batem~~ — o pedido passa a `pago` na mesma, e
+   fica o aviso `pagamento-nao-bate` (`pedidos.md`, decidido a 06/11). Até o pedido
+   guardar o valor do sinal, o montante só se confere em modo `total`.
 9. **O MB WAY**: a aprovação que atravessa a expiração, e a lista explícita com o
    MB WAY desligado. Nem a documentação do Stripe nem a revisão os fecharam; o
    ensaio nas sandboxes regista a sequência de estados e eventos.

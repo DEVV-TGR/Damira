@@ -239,7 +239,10 @@ export function criarPedidosDoPainelBd(db: BaseDeDados, leituras: LeiturasDoPain
 
     async tratarAviso(id, tipo, { agora }) {
       if (!(await lerUm(id))) return naoExiste;
-      if (!AVISOS_TRATAVEIS.includes(tipo)) return { ok: false, erro: "dados-invalidos", campos: ["tipo"] };
+      /* Os avisos de dinheiro entram com a `FonteWebhook`, que é quem os grava. */
+      if (!AVISOS_TRATAVEIS.find((aviso) => aviso === tipo)) {
+        return { ok: false, erro: "dados-invalidos", campos: ["tipo"] };
+      }
 
       if (tipo === "reembolso-falhado") {
         /* ⚠️ Por reembolso, e não no pedido: um segundo reembolso falhado ficava

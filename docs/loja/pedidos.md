@@ -260,6 +260,16 @@ depois de a gerente decidir. O que ela decide guarda-se em `avisosTratados`
 (`chegou-tarde`, `possivel-duplicado`, `dia-fechado`, `reembolso-falhado`), e
 um aviso tratado sai da lista. Num duplicado, basta um dos dois estar tratado.
 
+⚠️ **Os avisos de dinheiro ficam até serem tratados**, com o levantamento já
+passado ou não: `disputa`, `apanhado-pela-verificacao` e `pagamento-nao-bate`. Não
+estão em `avisosTratados`: cada um é uma linha em `avisos_dinheiro`
+(`base-de-dados.md`), para um segundo facto não ficar escondido pelo primeiro.
+
+**`pagamento-nao-bate`** quer dizer que entrou dinheiro que não é o esperado: a
+sessão, a moeda, o montante ou o modo não batem com o pedido, ou o pedido já estava
+pago por outra sessão. ⚠️ **O pedido passa a `pago` na mesma** (decidido a 06/11):
+o dinheiro entrou, e um pedido pago nunca se perde. A gerente vê o aviso e decide.
+
 ## O que nunca se guarda, e o que nunca se apaga
 
 - **Dados de cartão: nunca.** Ficam no Stripe.

@@ -301,6 +301,15 @@ export const EsquemaReembolso = z.object({
 /** Os avisos que a gerente pode dar por tratados (`pedidos.md` › Avisos tratados). */
 export const AVISOS_TRATAVEIS = ["chegou-tarde", "possivel-duplicado", "dia-fechado", "reembolso-falhado"] as const;
 
+/**
+ * Os avisos de dinheiro: factos do Stripe, com uma linha cada em `avisos_dinheiro`
+ * (`base-de-dados.md`), e que ficam até serem tratados, com o levantamento já
+ * passado ou não. Não estão nos `avisosTratados`: um segundo facto do mesmo tipo
+ * no mesmo pedido ficava escondido pelo primeiro, já tratado.
+ */
+export const AVISOS_DE_DINHEIRO = ["disputa", "apanhado-pela-verificacao", "pagamento-nao-bate"] as const;
+export type AvisoDeDinheiro = (typeof AVISOS_DE_DINHEIRO)[number];
+
 export const EsquemaPedido = z.object({
   id: z.string(),
   referencia: z.string().regex(FORMATO_REFERENCIA),
@@ -333,7 +342,7 @@ export type EstadoPedido = (typeof ESTADOS_PEDIDO)[number];
 export type LinhaPedido = z.infer<typeof EsquemaLinhaPedido>;
 export type Pedido = z.infer<typeof EsquemaPedido>;
 export type Reembolso = z.infer<typeof EsquemaReembolso>;
-export type AvisoTratavel = (typeof AVISOS_TRATAVEIS)[number];
+export type AvisoTratavel = (typeof AVISOS_TRATAVEIS)[number] | AvisoDeDinheiro;
 
 /**
  * Os erros de criar um pedido. As ações devolvem-nos, nunca rebentam para o
@@ -600,7 +609,7 @@ export type PaginaPedidos = { pedidos: Pedido[]; seguinte: string | null };
  * atenção). Só os pedidos que ainda vão ser levantados: depois do dia, o aviso
  * já não serve de nada e sai sozinho, sem ninguém o ter de dispensar.
  *
- * Os três do Stripe estão já declarados, para o painel os saber mostrar; a
+ * Os do Stripe estão já declarados, para o painel os saber mostrar; a
  * implementação provisória nunca os devolve, porque não há pagamentos (#42, #43,
  * #49). Os produtos por preencher não estão aqui: contam-se com o
  * `contarPorPreencher` (`src/lib/painel.ts`) sobre o `produtosDoPainel`.
@@ -611,7 +620,8 @@ export type AvisoAtencao =
   | { tipo: "dia-fechado"; pedidoId: string; referencia: string; data: string }
   | { tipo: "reembolso-falhado"; pedidoId: string; referencia: string }
   | { tipo: "disputa"; pedidoId: string; referencia: string }
-  | { tipo: "apanhado-pela-verificacao"; pedidoId: string; referencia: string };
+  | { tipo: "apanhado-pela-verificacao"; pedidoId: string; referencia: string }
+  | { tipo: "pagamento-nao-bate"; pedidoId: string; referencia: string };
 
 /**
  * O que o painel lê e escreve. Cada função recebe o `ContextoPainel`; **quem

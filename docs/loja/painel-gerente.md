@@ -30,6 +30,7 @@ quando há alguma coisa:
 | Possível duplicado | **comparar lado a lado** → «ficar com este» (o outro é cancelado e reembolsado por inteiro) · «são dois pedidos diferentes» |
 | Dia que fechou | mudar a data · cancelar e reembolsar · manter neste dia |
 | Reembolso falhado | «já devolvi por outra via» |
+| Disputa, apanhado pela verificação, pagamento que não bate | «já tratei disto», e fica até lá, mesmo depois do levantamento |
 
 Mudar a data só deixa escolher horas em que a loja está aberta e com vaga, e o
 servidor confirma ao gravar. Cancelar pergunta o reembolso — tudo, uma parte ou

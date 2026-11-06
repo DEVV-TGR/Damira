@@ -25,8 +25,8 @@ para o `.env.local` de cada um.
   contadores das vagas e das quantidades, os eventos do Stripe
   (`src/db/migracoes/0002_pedidos.sql`) — e o gatilho que não deixa mudar o
   `de_teste` de um pedido (`0003_pedido_de_teste_imutavel.sql`), e a coluna que
-  liga um pedido ao pagamento do Stripe (`0004_pedido_payment_intent.sql`) — #27,
-  #41, #42. Para as ter num ramo da Neon, basta voltar a correr o `npm run bd:migrar`: só aplica
+  liga um pedido ao pagamento do Stripe (`0004_pedido_payment_intent.sql`), e os
+  avisos de dinheiro (`0005_avisos_dinheiro.sql`) — #27, #41, #42. Para as ter num ramo da Neon, basta voltar a correr o `npm run bd:migrar`: só aplica
   as que faltam.
 - Tudo testado no PGlite, no `npm test`.
 
@@ -110,14 +110,16 @@ pelo terminal em `scripts/bd.ts`.
 ## 4. Aplicar o esquema — primeiro no desenvolvimento
 
 - [x] O comando: `npm run bd:migrar`.
-- [ ] Correr no ramo `desenvolvimento` e confirmar as tabelas e as regras.
+- [x] Correr no ramo `desenvolvimento` e confirmar as tabelas e as regras
+      (06/11, até à migração `0005`).
 - [ ] Só depois no `production`.
 
 ## 5. Importar o catálogo
 
 - [x] O comando: `npm run bd:importar`, com o driver de WebSockets (a
       importação usa uma transação, e o driver HTTP não as faz).
-- [ ] Correr no `desenvolvimento`: a comparação tem de dar **zero diferenças**.
+- [x] Correr no `desenvolvimento`: a comparação tem de dar **zero diferenças**
+      (107 produtos; voltou a dar zero a 06/11, depois das migrações).
 - [ ] No `production`: **uma vez**, antes de a casa começar a preencher os
       produtos (14/10).
 
@@ -128,12 +130,19 @@ Se for preciso recomeçar, é um ramo novo e vazio.
 ## 6. O que só a Neon pode confirmar
 
 O PGlite é um Postgres verdadeiro, mas tem uma ligação só e corre dentro do
-nosso processo. Estas ficam por provar até haver a conta:
+nosso processo. As que estão marcadas foram ensaiadas a 06/11 no `desenvolvimento`,
+com pedidos de teste e pedidos mesmo ao mesmo tempo:
 
-- [ ] **Dois clientes na última vaga ao mesmo tempo**: o `CHECK` recusa o
-      segundo, com duas ligações a sério (`robustez.md` › Concorrência).
-- [ ] **As escritas tudo-ou-nada pelo driver HTTP** (lotes), que o PGlite não
-      imita.
+- [x] **Dois clientes na última vaga ao mesmo tempo**: o `CHECK` recusa o
+      segundo, com duas ligações a sério (`robustez.md` › Concorrência). Com 8 ao
+      mesmo tempo, ficou 1, e os outros receberam `vaga-cheia`.
+- [x] **As escritas tudo-ou-nada pelo driver HTTP** (lotes), que o PGlite não
+      imita: os recusados não deixaram pedido nem vaga, e cada vaga bateu com os
+      pedidos que a ocupam.
+- [x] **O painel dos pedidos pelo driver HTTP**: 5 tablets a entregar sobem a versão
+      uma vez, 6 reembolsos de 40 % deixam passar 2, 4 a cancelar libertam a vaga uma
+      vez, e 2 a reagendar para a última vaga deixam entrar 1.
+- [ ] **A `FonteWebhook`**: dois avisos do Stripe ao mesmo tempo (#109, do Gonçalo).
 - [ ] **A ordem das categorias gravada em dois aparelhos ao mesmo tempo**: a
       permutação confere-se na própria instrução (`guardarOrdemCategorias`),
       e nenhuma das duas deixa a lista com categorias a mais ou a menos.

@@ -41,6 +41,10 @@ const TEXTO: Record<AvisoAtencao["tipo"], { titulo: string; explicacao: string }
     titulo: "Pagamento apanhado pela verificação",
     explicacao: "O aviso do Stripe não chegou: o pedido entrou na mesma. Vale a pena ver porquê.",
   },
+  "pagamento-nao-bate": {
+    titulo: "O pagamento não bate com o pedido",
+    explicacao: "O dinheiro entrou e o pedido segue como pago, mas o valor ou a sessão não são os esperados. Veja no Stripe.",
+  },
 };
 
 type Aberta = { pedidoId: string; acao: "data" | "cancelar" } | null;
@@ -124,6 +128,11 @@ export function Atencao({
               {aviso.tipo === "reembolso-falhado" && (
                 <button type="button" disabled={aEnviar} onClick={() => darPorTratado(aviso.pedidoId, "reembolso-falhado")} className={BOTAO_PRINCIPAL}>
                   Já devolvi por outra via
+                </button>
+              )}
+              {(aviso.tipo === "disputa" || aviso.tipo === "apanhado-pela-verificacao" || aviso.tipo === "pagamento-nao-bate") && (
+                <button type="button" disabled={aEnviar} onClick={() => darPorTratado(aviso.pedidoId, aviso.tipo)} className={BOTAO_PRINCIPAL}>
+                  Já tratei disto
                 </button>
               )}
               {pedido?.estado === "pago" && (aviso.tipo === "chegou-tarde" || aviso.tipo === "dia-fechado") && (

@@ -283,9 +283,11 @@ export function criarPainelJson(
     async tratarAviso(id, tipo: AvisoTratavel) {
       const pedido = estado.pedidos.get(id);
       if (!pedido) return naoExiste;
-      if (!AVISOS_TRATAVEIS.includes(tipo)) return { ok: false, erro: "dados-invalidos", campos: ["tipo"] };
-      if (pedido.avisosTratados.includes(tipo)) return { ok: true, valor: pedido };
-      return gravarPedido({ ...pedido, avisosTratados: [...pedido.avisosTratados, tipo] });
+      /* Os avisos de dinheiro não chegam aqui: esta fonte nunca os devolve. */
+      const doPedido = AVISOS_TRATAVEIS.find((aviso) => aviso === tipo);
+      if (!doPedido) return { ok: false, erro: "dados-invalidos", campos: ["tipo"] };
+      if (pedido.avisosTratados.includes(doPedido)) return { ok: true, valor: pedido };
+      return gravarPedido({ ...pedido, avisosTratados: [...pedido.avisosTratados, doPedido] });
     },
 
     async reagendarPedido(id, entrada, { agora }) {
