@@ -1,6 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  avisosDinheiro,
   emailsPorEnviar,
   eventosStripe,
   linhasPedido,
@@ -430,6 +431,43 @@ describe("os emails por enviar e os eventos do Stripe recusam", () => {
 });
 
 // ——— Os contadores ———
+
+describe("um aviso de dinheiro", () => {
+  const AVISO = { tipo: "disputa", stripeId: "dp_1", criadoEm: new Date("2026-11-03T10:00:00Z") };
+  const inserir = async (mudanca: Partial<typeof avisosDinheiro.$inferInsert> = {}) =>
+    db.insert(avisosDinheiro).values({ ...AVISO, pedidoId: PENDENTE.id, ...mudanca });
+
+  beforeEach(async () => {
+    await db.insert(pedidos).values(PENDENTE);
+  });
+
+  it("entra, sem estar tratado", async () => {
+    await inserir({ detalhe: "fraudulent" });
+    const [aviso] = await db.select().from(avisosDinheiro);
+    expect(aviso).toMatchObject({ tipo: "disputa", detalhe: "fraudulent", tratadoEm: null });
+  });
+
+  it("os três tipos do contrato entram, e outro não", async () => {
+    await inserir({ tipo: "apanhado-pela-verificacao", stripeId: "cs_1" });
+    await inserir({ tipo: "pagamento-nao-bate", stripeId: "cs_1" });
+    expect(await recusa(inserir({ tipo: "inventado", stripeId: "x" }))).toBe("avisos_dinheiro_tipo");
+  });
+
+  it("⚠️ o mesmo facto não entra duas vezes, e um segundo facto do mesmo tipo entra", async () => {
+    await inserir();
+    expect(await recusa(inserir())).toBe("avisos_dinheiro_facto");
+    await inserir({ stripeId: "dp_2" });
+    expect(await db.select().from(avisosDinheiro)).toHaveLength(2);
+  });
+
+  it("recusa um pedido que não existe, um id vazio e um tratado antes de existir", async () => {
+    expect(await recusa(inserir({ pedidoId: "6f1c1f5e-8c1b-4d5a-9a43-1d2f3c4b5a69" }))).toBe(
+      "avisos_dinheiro_pedido_id_pedidos_id_fk",
+    );
+    expect(await recusa(inserir({ stripeId: "" }))).toBe("avisos_dinheiro_stripe_id");
+    expect(await recusa(inserir({ tratadoEm: new Date("2026-11-03T09:00:00Z") }))).toBe("avisos_dinheiro_tratado");
+  });
+});
 
 describe("a última vaga decide-a a base de dados", () => {
   const INICIO = new Date("2026-11-07T15:00:00Z");

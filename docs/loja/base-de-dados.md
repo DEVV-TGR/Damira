@@ -286,6 +286,28 @@ recusado — a confirmar na sandbox, com o `…7726`. Se mesmo assim não couber
 uma inconsistência a sério: 5xx com alerta, e nunca um 200 a escondê-la. Não muda
 o esquema: é a instrução da #49.
 
+### `avisos_dinheiro`
+
+Uma disputa, um pagamento apanhado pela verificação, um pagamento que não bate com
+o pedido. Chegam dias depois do levantamento, e ficam até a gerente os tratar
+(`pagamentos.md`).
+
+| Coluna | Tipo | Do contrato |
+|---|---|---|
+| `id` | `uuid` chave primária | — |
+| `pedido_id` | `uuid` → `pedidos` | `pedidoId` |
+| `tipo` | `text`, `CHECK` contra os 3 do contrato | `tipo` do `AvisoAtencao` |
+| `stripe_id` | `text` | **só da base de dados**: a disputa ou a sessão |
+| `detalhe` | `text` nulo | **só da base de dados**: o motivo, ou o que não bateu |
+| `criado_em`, `tratado_em` | `timestamptz` (o segundo nulo) | — |
+
+⚠️ **Uma linha por facto, e não no `avisos_tratados`.** Pelo mesmo motivo do
+`falha_tratada_em`: um segundo facto do mesmo tipo no mesmo pedido ficava escondido
+pelo primeiro, já tratado. E ⚠️ **único por `(tipo, stripe_id)`**: é o que impede o
+mesmo facto de entrar duas vezes no caminho sem evento (o «voltar atrás» do #38),
+onde o `eventos_stripe` não ajuda. Dar por tratado escreve o `tratado_em` de todos
+os daquele tipo naquele pedido, porque o painel os mostra juntos.
+
 ### `emails_por_enviar`
 
 Os emails — a confirmação ao cliente, o aviso à loja — gravam-se **na mesma
@@ -584,9 +606,8 @@ da visita.
 
 1. ~~De que dia é o limite «por dia»~~ — **o dia de levantamento**, decidido a
    05/10. É o `dia` de `quantidades_dia`.
-2. **Os avisos `disputa` e `apanhado-pela-verificacao`** estão no contrato, mas
-   o pedido ainda não tem onde os guardar. Entram numa migração própria, depois
-   de o `pedidos.md` os ter (#42, #43). *(Gonçalo)*
+2. ~~Os avisos `disputa` e `apanhado-pela-verificacao` não têm onde ficar~~ —
+   `avisos_dinheiro`, com o `pagamento-nao-bate` (migração `0005`).
 3. ~~Pago depois de expirar sobe o limite da vaga~~ — decidido a 05/10: volta a
    ocupar mesmo acima do limite (o `GREATEST`, acima).
 4. **PIN de 4 ou 6 dígitos** — pergunta à Damira (#25). Não muda o esquema.

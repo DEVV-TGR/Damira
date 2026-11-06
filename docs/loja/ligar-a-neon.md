@@ -25,8 +25,8 @@ para o `.env.local` de cada um.
   contadores das vagas e das quantidades, os eventos do Stripe
   (`src/db/migracoes/0002_pedidos.sql`) — e o gatilho que não deixa mudar o
   `de_teste` de um pedido (`0003_pedido_de_teste_imutavel.sql`), e a coluna que
-  liga um pedido ao pagamento do Stripe (`0004_pedido_payment_intent.sql`) — #27,
-  #41, #42. Para as ter num ramo da Neon, basta voltar a correr o `npm run bd:migrar`: só aplica
+  liga um pedido ao pagamento do Stripe (`0004_pedido_payment_intent.sql`), e os
+  avisos de dinheiro (`0005_avisos_dinheiro.sql`) — #27, #41, #42. Para as ter num ramo da Neon, basta voltar a correr o `npm run bd:migrar`: só aplica
   as que faltam.
 - Tudo testado no PGlite, no `npm test`.
 
