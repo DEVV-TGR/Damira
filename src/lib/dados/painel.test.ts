@@ -37,8 +37,8 @@ const fonte = async (): Promise<FonteDeDados> => {
   return { ...base, ...protegerPainel(base) };
 };
 
-/* Os pedidos ainda não estão na base de dados: estes testes só correm na volta
-   dos JSON (`fontes-de-teste.ts`). */
+/* Criam pedidos, e os produtos importados ainda não têm tempos de produção: a
+   casa não os deu. Os pedidos na base de dados provam-se em `pedidos-bd.test.ts`. */
 const comPedidos = it.skipIf(NA_BASE_DE_DADOS);
 
 const hojeAs = (h: number) => new TZDate(2026, 9, 5, h, 0, "Europe/Lisbon").toISOString();

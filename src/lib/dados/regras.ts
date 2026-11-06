@@ -291,5 +291,7 @@ export const pedidoPorPagar = (
  * encontrar «a encomenda da Márcia» escrevendo `marcia`
  * (`base-de-dados.md` › Os pedidos).
  */
-export const textoDeProcura = (nome: string, referencia: string): string =>
-  `${nome} ${referencia}`.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+export const textoDeProcura = (nome: string, referencia: string): string => paraProcura(`${nome} ${referencia}`);
+
+/** Sem acentos e em minúsculas: a mesma conta no que se guarda e no que se procura. */
+export const paraProcura = (texto: string): string => texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
