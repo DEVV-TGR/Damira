@@ -221,6 +221,12 @@ export type AcaoReembolso = {
   stripeRefundId: string;
   /** Dos metadados, nos reembolsos que pedimos. `null` num feito no painel do Stripe. */
   pedidoId: string | null;
+  /**
+   * O nosso id, também dos metadados (`metadata.reembolsoId`). É o que reconhece um
+   * reembolso nosso cuja resposta se perdeu: sem ele, o evento parecia um reembolso
+   * externo, e o nosso cedia a si próprio (#49).
+   */
+  reembolsoId: string | null;
   paymentIntentId: string | null;
   chargeId: string | null;
   valorCent: number;
@@ -244,8 +250,8 @@ export type AcaoDisputa = {
 export type AcaoNada = {
   tipo: "nada";
   /**
-   * - `sessao-por-pagar`: `completed` não quer dizer pago. Com cartão e MB WAY
-   *   vem sempre `paid`, mas um método assíncrono acaba noutro evento.
+   * - `sessao-por-pagar`: `completed` não quer dizer pago. Com os métodos que
+   *   aceitamos vem sempre `paid`, mas um método assíncrono acaba noutro evento.
    * - `sessao-de-fora`: sem `pedidoId` nosso — não chega à base de dados.
    */
   porque: "sessao-por-pagar" | "sessao-de-fora";
@@ -349,6 +355,7 @@ export function acaoDoEvento(evento: EventoLido): AcaoWebhook {
         tipo: "reembolso",
         stripeRefundId: reembolso.id,
         pedidoId: pedidoIdDe(reembolso.metadata),
+        reembolsoId: reembolso.metadata?.reembolsoId ?? null,
         paymentIntentId: reembolso.payment_intent,
         chargeId: reembolso.charge,
         valorCent: reembolso.amount,

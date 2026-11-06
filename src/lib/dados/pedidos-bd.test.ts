@@ -309,7 +309,8 @@ describe("expirar um pedido pelo id", () => {
     const este = await criado(await fonte.criarPedido(entrada(), CONTEXTO));
     const outro = await criado(await fonte.criarPedido(entrada({ levantamentoEm: QUINTA_7H30.toISOString() }), CONTEXTO));
 
-    await expirarPedido(db, este.id);
+    expect(await expirarPedido(db, este.id)).toBe(true);
+    expect(await expirarPedido(db, este.id)).toBe(false);
 
     expect((await fonte.pedidoPorReferencia(este.referencia))?.estado).toBe("expirado");
     expect((await fonte.pedidoPorReferencia(outro.referencia))?.estado).toBe("pendente");

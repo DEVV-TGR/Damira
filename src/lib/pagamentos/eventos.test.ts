@@ -96,6 +96,7 @@ describe("de evento a ação", () => {
       tipo: "reembolso",
       stripeRefundId: "re_test_a1b2c3",
       pedidoId: PEDIDO,
+      reembolsoId: null,
       paymentIntentId: "pi_test_a1b2c3",
       chargeId: "ch_test_a1b2c3",
       valorCent: 1000,
@@ -103,6 +104,12 @@ describe("de evento a ação", () => {
       estadoStripe: "pending",
       estado: "pendente",
       motivo: null,
+    });
+  });
+
+  it("um reembolso nosso traz o nosso id, para não parecer externo se a resposta se perdeu", () => {
+    expect(acao(evento("refund.created", reembolso({ metadata: { pedidoId: PEDIDO, reembolsoId: "r1" } })))).toMatchObject({
+      reembolsoId: "r1",
     });
   });
 

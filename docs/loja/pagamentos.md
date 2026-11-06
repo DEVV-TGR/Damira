@@ -119,9 +119,9 @@ para expirar o checkout de ninguém.
 `src/app/api/stripe/webhook/route.ts`, que só liga as peças: a leitura dos
 eventos e a passagem a ação estão em `src/lib/pagamentos/eventos.ts`, o
 tratamento em `webhook.ts`, e os dados vão pela `FonteWebhook` (`tipos.ts`).
-⚠️ Até a implementação sobre a Neon entrar (`fonte.ts`), a rota verifica a
-assinatura e responde **503**: o Stripe volta a tentar, e nada é dado por
-tratado.
+A implementação sobre a base de dados está em `fonte-bd.ts`. ⚠️ Sem `DATABASE_URL`
+(`fonte.ts`), a rota verifica a assinatura e responde **503**: o Stripe volta a
+tentar, e nada é dado por tratado.
 
 - Lê o corpo **em bruto** (`await req.text()`) e verifica a assinatura com o
   segredo do webhook. Um pedido sem assinatura válida é recusado.
@@ -201,6 +201,10 @@ muda quem pergunta.
 - Pedido ao Stripe com chave de idempotência. O pedido guarda cada reembolso com
   o seu estado: `pendente`, `concluido`, `falhado`.
 - **O estado vem do webhook**, não da resposta ao nosso pedido.
+- ⚠️ **O nosso reembolso vai ao Stripe com `metadata.reembolsoId`** (o nosso `id`).
+  O webhook procura-o pelo `stripe_refund_id` e depois por este, e só trata como
+  externo o que não encontrar por nenhum dos dois. Sem isto, um reembolso cuja
+  resposta se perdeu parecia externo, e o nosso cedia a si próprio.
 - `reembolsadoCent` só soma reembolsos `concluido`.
 - **Um *timeout* não quer dizer que o Stripe recusou.** O reembolso fica
   `pendente`, e a nova tentativa leva a mesma chave. ⚠️ A idempotência do Stripe
@@ -441,26 +445,16 @@ o que mudar o esquema vai num PR só para isso.
    frente, e o reembolso feito no painel do Stripe a entrar no pedido. Quando o
    #100 entrar, este ponto sai daqui. ⚠️ Não se sabe se um MB WAY sem saldo passa
    por `succeeded` antes de falhar: o `…5126` é de cartão.
-2. **A `marcarPago` num lote sem leituras.** Somar à vaga se o pedido estava
-   `expirado` e depois mudar o pedido, em duas instruções, tem uma corrida: duas
-   chamadas ao mesmo tempo leem as duas «expirado» e somam duas vezes. Proposta,
-   que a revisão confirmou para `READ COMMITTED`: uma instrução só, com um CTE que
-   muda o pedido e devolve se ele estava expirado
-   (`chegou_tarde = (estado = 'expirado')`). O *lock* da linha põe a segunda
-   chamada à espera, e ela já não encontra nada para mudar. Os contadores saem só
-   do `RETURNING` de quem ganhou, agregados por contador (a mesma linha nunca duas
-   vezes na mesma instrução), e a versão do painel vai na mesma transação. O
-   `INSERT` em `eventos_stripe` vai primeiro, e só a violação dessa chave quer
-   dizer «repetido». ⚠️ O `ExecutarLote` (`src/db/lote.ts`) devolve `void`: ou
-   passa a devolver o resultado, ou os efeitos ficam gravados na própria
-   transação (3).
-3. **Trabalho pendente que dura.** Os emails (por pedido, tipo e destinatário) e
-   os reembolsos gravam-se **na mesma transação** que os origina, e só depois se
-   enviam, com uma chave estável. Repetem-se quando a base de dados já está
-   acordada por outra razão — o webhook, o painel aberto, um pedido novo, a
-   verificação com trabalho —, e o que ficar parado aparece no painel. ⚠️ Sem nada
-   que acorde a base de dados de propósito, não há garantia de reenvio: fica
-   assumido, e é o aviso no painel que o segura.
+2. ~~A `marcarPago` num lote sem leituras~~ — feito em `fonte-bd.ts`, numa instrução
+   só, com um `WITH`: o `INSERT` em `eventos_stripe` e a mudança do pedido correm
+   juntos, e só a violação dessa chave quer dizer «repetido». Como a instrução
+   devolve linhas, o `ExecutarLote` continua a devolver `void`. ⚠️ Falta o ensaio
+   da corrida de duas transações na Neon: o PGlite só tem uma ligação.
+3. ~~Trabalho pendente que dura~~ — os emails gravam-se nessa mesma instrução
+   (`pago-cliente` e `pago-loja`, em `emails_por_enviar`), e os reembolsos no
+   pedido deles. Falta quem os envia (#42). ⚠️ Sem nada que acorde a base de dados
+   de propósito, não há garantia de reenvio: fica assumido, e é o aviso no painel
+   que o segura.
 4. **A verificação periódica pela data do pagamento.** As sessões listam-se pela
    data em que foram criadas, e uma sessão paga-se até 31 minutos depois.
    Proposta: listar os eventos `checkout.session.completed` (e

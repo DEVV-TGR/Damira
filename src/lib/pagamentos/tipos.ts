@@ -6,8 +6,7 @@ import type { AcaoDisputa, AcaoExpirar, AcaoPagar, AcaoReembolso } from "./event
  *
  * O mesmo padrão da `FonteDeDados` (`src/lib/dados/tipos.ts`): o webhook fala
  * com uma interface, os testes passam-lhe uma implementação em memória, e a
- * verdadeira — sobre a Neon, com as tabelas dos pedidos — troca-se sem mexer na
- * rota.
+ * verdadeira está em `fonte-bd.ts`, sobre a Neon.
  *
  * Fica fora de `src/lib/dados/` porque o frontend nunca a chama: só o Stripe
  * confirma um pagamento, e o `marcarPago` é a única porta para `pago` (regra 4
@@ -25,8 +24,7 @@ import type { AcaoDisputa, AcaoExpirar, AcaoPagar, AcaoReembolso } from "./event
  * - **3, trabalho pendente que dura**: os emails gravam-se nessa mesma
  *   transação, e só depois se enviam;
  * - **8, o montante ou a moeda que não batem**: o resultado `nao-bate` diz o que
- *   não bateu; se o pedido passa a `pago` na mesma é decisão da implementação, e
- *   o `estado` diz o que ficou.
+ *   não bateu; o pedido passa a `pago` na mesma, e o `estado` diz o que ficou.
  *
  * O que nenhum método faz é avisar o painel (`avisarQuePedidosMudaram`): isso é
  * da cache do Next, e fá-lo a rota depois de qualquer resposta sobre um pedido

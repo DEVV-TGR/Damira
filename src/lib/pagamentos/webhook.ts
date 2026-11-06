@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { erroDoPostgres } from "@/db/erros";
 import { acaoDoEvento, lerEnvelope, lerObjeto, type AcaoNada, type AcaoWebhook } from "./eventos";
 import type { FonteWebhook, RegistoEvento, ResultadoWebhook } from "./tipos";
 
@@ -48,8 +49,9 @@ const responder = (status: number, corpo: Record<string, string | boolean> = { r
    Logs). O nome e o código chegam para saber por onde começar. */
 const descrever = (erro: unknown): string => {
   if (!(erro instanceof Error)) return typeof erro;
-  const codigo = "code" in erro && typeof erro.code === "string" ? ` ${erro.code}` : "";
-  return `${erro.name}${codigo}`;
+  /* O do Drizzle traz o código na causa, e não nele (`erroDoPostgres`). */
+  const { code, constraint } = erroDoPostgres(erro);
+  return [erro.name, code, constraint].filter(Boolean).join(" ");
 };
 
 export async function tratarWebhook(pedido: Request, deps: DependenciasWebhook): Promise<Response> {
