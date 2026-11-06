@@ -261,8 +261,8 @@ describe("um pedido recusa", () => {
     expect(await tenta({ ...PAGO_ONLINE, reembolsoReservadoCent: 1261 })).toBe("pedidos_reembolso_reservado");
   });
 
-  it("a mesma referência, a mesma chave de idempotência ou a mesma sessão do Stripe", async () => {
-    await db.insert(pedidos).values({ ...PENDENTE, stripeSessionId: "cs_test_1" });
+  it("a mesma referência, a mesma chave de idempotência, ou a mesma sessão ou pagamento do Stripe", async () => {
+    await db.insert(pedidos).values({ ...PENDENTE, stripeSessionId: "cs_test_1", stripePaymentIntentId: "pi_test_1" });
     const outro = {
       id: "6f1c1f5e-8c1b-4d5a-9a43-1d2f3c4b5a69",
       referencia: "DAM-0311-ZZZ9",
@@ -273,6 +273,9 @@ describe("um pedido recusa", () => {
       "pedidos_chave_idempotencia_unique",
     );
     expect(await tenta({ ...outro, stripeSessionId: "cs_test_1" })).toBe("pedidos_stripe_session_id_unique");
+    expect(await tenta({ ...outro, stripePaymentIntentId: "pi_test_1" })).toBe(
+      "pedidos_stripe_payment_intent_id_unique",
+    );
   });
 
   it("nascer sem dizer se é de teste", async () => {
@@ -460,14 +463,31 @@ describe("a última vaga decide-a a base de dados", () => {
     expect(await recusa(db.update(vagas).set({ ocupadas: sql`${vagas.ocupadas} - 2` }))).toBe("vagas_ocupadas");
   });
 
+  /** Como o `marcarPago` vai voltar a ocupar: sobe o limite até caber, se houver limite. */
+  const limiteDeQuemVoltaAOcupar = (n: number) =>
+    sql`case when ${vagas.limite} is null then null else greatest(${vagas.limite}, ${vagas.ocupadas} + ${n}) end`;
+
   it("pago depois de expirar sobe o limite até caber, e nunca falha", async () => {
     await reservar(2, 2);
     await db
       .update(vagas)
-      .set({ ocupadas: sql`${vagas.ocupadas} + 1`, limite: sql`greatest(${vagas.limite}, ${vagas.ocupadas} + 1)` })
+      .set({ ocupadas: sql`${vagas.ocupadas} + 1`, limite: limiteDeQuemVoltaAOcupar(1) })
       .where(eq(vagas.inicio, INICIO));
     const [vaga] = await db.select().from(vagas);
     expect(vaga).toMatchObject({ ocupadas: 3, limite: 3 });
+  });
+
+  /* ⚠️ O `GREATEST` ignora os `NULL`: `GREATEST(NULL, 3)` dá 3. Sem o `CASE`, uma
+     vaga sem limite ficava cheia às 3, e um reagendar para lá era recusado com a
+     gerente sem limite nenhum ligado. */
+  it("pago depois de expirar não inventa um limite onde não havia", async () => {
+    await reservar(2, null);
+    await db
+      .update(vagas)
+      .set({ ocupadas: sql`${vagas.ocupadas} + 1`, limite: limiteDeQuemVoltaAOcupar(1) })
+      .where(eq(vagas.inicio, INICIO));
+    const [vaga] = await db.select().from(vagas);
+    expect(vaga).toMatchObject({ ocupadas: 3, limite: null });
   });
 
   it("as quantidades por dia e totais, ao quilo também", async () => {
