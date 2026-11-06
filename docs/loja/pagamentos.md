@@ -20,13 +20,28 @@ funciona sem configurar o nosso domínio. A página do Stripe leva o logótipo, 
 nome e as cores da Damira (definições do Stripe).
 
 **Métodos de pagamento: cartão — crédito e débito, incluindo Apple Pay e Google
-Pay — e MB WAY. Mais nenhum.** A lista vai **explícita** na criação da sessão, e
-não fica entregue às definições do painel do Stripe.
+Pay —, MB WAY, PayPal e Revolut Pay. Mais nenhum** (o PayPal e o Revolut Pay
+entraram a 03/11). A lista vai **explícita** na criação da sessão — `card`,
+`mb_way`, `paypal` e `revolut_pay` — e não fica entregue às definições do painel
+do Stripe. O painel tem ligados os mesmos, e mais nenhum, para os *Payment Links*
+e qualquer outra página do Stripe não mostrarem o que o site não aceita.
+
+⚠️ **O cartão não sai por causa do Apple Pay e do Google Pay.** São pagamentos
+com cartão: no checkout do Stripe só aparecem com `card` na lista, e o formulário
+para escrever o número vem com eles.
 
 ⚠️ **Porquê explícita.** Se alguém ligar o Multibanco no painel do Stripe, ele
-aparecia no nosso checkout — e uma referência Multibanco pode ser paga horas ou
-dias depois, muito depois de o pedido expirar aos 31 minutos. A proposta excluiu-o
-por isso mesmo.
+aparecia no nosso checkout — e uma referência Multibanco vale 7 dias e o Stripe
+pode confirmar o pagamento dias depois, muito depois de o pedido expirar aos 31
+minutos. A proposta excluiu-o por isso mesmo, e a 03/11 voltou a ficar de fora:
+entrar obrigava a mudar o contrato do pedido, com a vaga presa uma semana ou o
+pagamento a chegar sempre tarde.
+
+**PayPal e Revolut Pay:** a confirmação é imediata, como num cartão — o cliente
+aprova na app ou no site deles e volta. O PayPal só funciona em modo real
+**depois de a casa ligar a conta PayPal dela** no painel do Stripe, com o
+dinheiro a cair no saldo Stripe (é a opção que o Stripe recomenda, e assim os
+reembolsos saem do mesmo saldo que os outros).
 
 **MB WAY:** a confirmação é imediata, como num cartão. Limites que convém saber:
 
@@ -141,7 +156,7 @@ O que faz com cada evento:
 | Evento | O que faz |
 |---|---|
 | `checkout.session.completed` | só com `payment_status: 'paid'` → `marcarPago`. `completed` não quer dizer pago |
-| `checkout.session.async_payment_succeeded` | `marcarPago` (não deve acontecer com cartão e MB WAY, mas não custa estar preparado) |
+| `checkout.session.async_payment_succeeded` | `marcarPago` (não deve acontecer com nenhum dos quatro métodos, mas não custa estar preparado) |
 | `checkout.session.async_payment_failed` | **nunca** paga: o pedido passa a `expirado`, se ainda estiver `pendente` |
 | `checkout.session.expired` | pedido a `expirado`, se ainda estiver `pendente` |
 | `refund.created` / `refund.updated` / `refund.failed` | atualiza o estado do reembolso, **só para a frente**: o Stripe não garante a ordem dos eventos, e um `succeeded` antigo depois de um `failed` não faz nada. Um reembolso feito no painel do Stripe, que não pedimos, entra na mesma (ver «Em aberto», 1) |
@@ -192,7 +207,9 @@ falhado, em «Precisa de atenção», e a gerente devolve o dinheiro por outra v
 
 ⚠️ **O Stripe não devolve a comissão de um pagamento reembolsado.**
 
-Reembolsos de MB WAY: até 365 dias depois do pagamento.
+Reembolsos de MB WAY: até 365 dias depois do pagamento. De PayPal e de Revolut
+Pay: até 180 dias; o do Revolut Pay também chega pelo webhook, uns minutos
+depois.
 
 ## Ambientes
 
@@ -253,12 +270,33 @@ trocá-los é a causa mais comum de «o pagamento passou mas o pedido não entro
 copia as definições do modo real (vem ligado por defeito), mas a cópia não se
 mantém sincronizada: confirma-se em cada uma.
 
-- o MB WAY ativado nos métodos de pagamento — a documentação do Stripe pede-o;
-- os recibos automáticos desligados (ver «Emails»);
-- a marca: logótipo, nome e cores da casa;
+- nos métodos de pagamento, ligados o cartão, o Apple Pay, o Google Pay, o MB WAY
+  (a documentação do Stripe pede-o), o PayPal e o Revolut Pay, e **desligado
+  tudo o resto** — o Stripe liga sozinho uma dúzia de métodos que o site não
+  aceita (o modo real tinha-os a 03/11: Klarna, Link, Pix, Bancontact…);
+- no modo real, a conta PayPal da casa ligada, com o dinheiro a cair no saldo
+  Stripe. Enquanto não estiver, a cópia para uma sandbox não o traz: liga-se lá
+  à mão, e numa sandbox não pede conta PayPal nenhuma;
+- os recibos automáticos desligados (ver «Emails»), e a língua dos emails do
+  Stripe em Português (Portugal) — vinha em Português (Brasil);
+- a marca: o ícone (o mesmo do site, `src/app/icon.png`), o logótipo a papel
+  sobre tijolo, o nome e as cores da casa — tijolo como cor da marca, tinta como
+  acento —, com «Prefer logo over icon» desligado: em pequeno, o ícone com o
+  nome lê-se melhor;
+- ⚠️ **a tarefa «Verify your business ownership» resolvida.** Uma sandbox
+  copiada nasce sem os donos da empresa, e o Stripe pausa-lhe os pagamentos até
+  eles estarem lá, mesmo com o modo real em dia. Sem isto, nenhum ensaio com
+  pagamentos corre (o Vitest não depende disto);
+- o acesso: a «desenvolvimento» é de toda a equipa e a «produção» é privada
+  (decidido a 03/11);
 - o endpoint criado com a mesma versão da API que o SDK fixa;
 - as chaves e o segredo do webhook diretamente nas variáveis da Vercel ou no
   `.env.local`, nunca por mensagem.
+
+As duas sandboxes existem desde 03/11, copiadas do modo real já com os métodos,
+os emails e a marca acertados. Falta a tarefa dos donos e o endpoint, que espera
+pelo #42. A «Área restrita de Confeitaria Damira», que o Stripe criou sozinho,
+não se usa.
 
 ## Emails
 
@@ -298,7 +336,7 @@ que só o Stripe faz, e correm à mão.
 
 | Área | Casos |
 |---|---|
-| Sessão (#38) | métodos exatamente `card` e `mb_way`; `price_data` linha a linha, em `eur` e com os cêntimos do pedido gravado; `expires_at = criadoEm + 31 min`, e o prazo do pedido no mesmo instante; o `pedidoId` e a referência nos metadados, e a referência em `client_reference_id`; email e língua; a mesma chave de idempotência para o mesmo pedido; a resposta do Stripe perdida → a nova tentativa, com a mesma chave, recebe a mesma sessão; mais de um minuto desde o pedido → o pedido expira, e nunca se estica o prazo; a mesma chave com outro cesto ou outro levantamento → erro, nunca o pedido antigo; um pedido já terminado → nunca uma sessão nova; um cesto sob orçamento, ou com a hora só pretendida, nunca chega ao Stripe; com a chave trocada com o modo da loja, o build falha e o checkout não abre |
+| Sessão (#38) | métodos exatamente `card`, `mb_way`, `paypal` e `revolut_pay`; `price_data` linha a linha, em `eur` e com os cêntimos do pedido gravado; `expires_at = criadoEm + 31 min`, e o prazo do pedido no mesmo instante; o `pedidoId` e a referência nos metadados, e a referência em `client_reference_id`; email e língua; a mesma chave de idempotência para o mesmo pedido; a resposta do Stripe perdida → a nova tentativa, com a mesma chave, recebe a mesma sessão; mais de um minuto desde o pedido → o pedido expira, e nunca se estica o prazo; a mesma chave com outro cesto ou outro levantamento → erro, nunca o pedido antigo; um pedido já terminado → nunca uma sessão nova; um cesto sob orçamento, ou com a hora só pretendida, nunca chega ao Stripe; com a chave trocada com o modo da loja, o build falha e o checkout não abre |
 | Sinal (#38) | uma linha só, com `Math.round(total × % / 100)`; o arredondamento nos meios cêntimos; 100 %; um sinal abaixo do mínimo que o Stripe cobra (0,50 €) → erro claro antes do checkout; um cesto com produtos de percentagens diferentes (ver «Em aberto», 6). A soma sinal + resto não se testa: o resto é `total − sinal`, e o teste seria tautológico |
 | Voltar atrás (#38) | expira no Stripe **antes** de mudar o pedido; sessão já paga → `pago`, e não `expirado`; sessão já expirada → `expirado`; o Stripe em baixo → o pedido fica `pendente` e a vaga não sai; abrir o endereço (GET) não expira nada; um token de outro pedido, ou fora de validade, é recusado |
 | `marcarPago` (#42) | `pendente` → `pago`, com `pagoOnlineCent` do `amount_total`; `expirado` → `pago` + `chegouTarde`, a voltar a ocupar mesmo acima do limite; `pago`, `entregue`, `cancelado` → nada; duas chamadas → uma transição e um email de cada; `unpaid` → nada; duas linhas do mesmo produto, com escolhas diferentes → as quantidades somam-se antes de tocar no contador; a sessão encontrada pelo `pedidoId`, sem `stripe_session_id` gravado → associa-se, depois de conferida; montante ou moeda que não batem → o pagamento fica registado e há aviso |
@@ -339,6 +377,7 @@ Números de teste da documentação do Stripe, confirmados a 02/11/2026:
 | reembolso que falha | `4000 0000 0000 5126` — começa `succeeded` e passa a `failed`, com `refund.failed` |
 | MB WAY aceite | qualquer número que não esteja abaixo; o `+351911111112` só aprova ao fim de ~30 s |
 | MB WAY recusado | `+351911111113` (indisponível), `…114` (banco), `…115` (expirou), `…116` (cliente) |
+| PayPal e Revolut Pay | sem número: numa sandbox, o Stripe mostra uma página de teste onde se aprova ou recusa (a confirmar no primeiro ensaio) |
 
 Primeiro na sandbox «desenvolvimento»; depois, no site no ar, na «produção», e
 com o tablet na loja:
@@ -347,6 +386,7 @@ com o tablet na loja:
 - MB WAY aceite — o imediato e o de ~30 s, para ver «A confirmar o pagamento…» à
   espera — e os quatro recusados;
 - Apple Pay num iPhone verdadeiro, Google Pay num Android;
+- PayPal e Revolut Pay, aprovados e recusados, e um reembolso de cada;
 - voltar atrás no checkout: o link antigo do Stripe passa a dizer que a sessão
   expirou;
 - sessão que expira sozinha aos 31 minutos → `checkout.session.expired`;
