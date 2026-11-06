@@ -14,6 +14,7 @@ import { casa as tabelaCasa, produtos, variantes } from "@/db/esquema";
 import { violouChave } from "@/db/erros";
 import type { ExecutarLote } from "@/db/lote";
 import { diaDeLisboa } from "@/lib/painel";
+import { criarPedidosDoPainelBd } from "./bd-painel-pedidos";
 import { criarPedidosBd, type LeituraDoPedido, type OpcoesDosPedidos } from "./bd-pedidos";
 import { comIds, cotarLinhas, emId, invalido, livre, naoExiste } from "./regras";
 import {
@@ -36,8 +37,8 @@ import {
  * (`regras.ts`) são as mesmas.
  *
  * Aqui vivem o catálogo e a casa. Os pedidos da loja — criar, a ocupação, a
- * referência — estão em `bd-pedidos.ts`; os do painel ainda não estão
- * (`pedidosAindaNaoGuardados`, abaixo). Quem junta tudo é o `montarFonteBd`, e
+ * referência — estão em `bd-pedidos.ts`, e os do painel em
+ * `bd-painel-pedidos.ts`. Quem junta tudo é o `montarFonteBd`, e
  * quem a escolhe para o site é o `fonteDoAmbiente`, quando há `DATABASE_URL`
  * (`docs/loja/ligar-a-neon.md`).
  *
@@ -327,41 +328,6 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
   };
 }
 
-/**
- * # O painel dos pedidos, enquanto não está na base de dados
- *
- * Os pedidos da loja já estão (`bd-pedidos.ts`: criar, a ocupação, a
- * referência). Os do painel vêm noutro PR, e até lá o painel responde **a
- * verdade** do lado dele: o balcão abre vazio e «Precisa de atenção» não
- * aparece. Os pedidos de exemplo do painel e o «Simular pedido novo» ficam só na
- * fonte dos JSON (#57).
- *
- * Cada função sai daqui quando passar a ser a verdadeira, e esta lista encolhe
- * até desaparecer.
- */
-export const pedidosAindaNaoGuardados: Pick<
-  FonteDeDados,
-  | "listarPedidos"
-  | "pedidoDoPainel"
-  | "marcarEntregue"
-  | "desfazerEntregue"
-  | "precisaDeAtencao"
-  | "tratarAviso"
-  | "reagendarPedido"
-  | "cancelarPedido"
-  | "reembolsarPedido"
-> = {
-  listarPedidos: async () => ({ ok: true, valor: { pedidos: [], seguinte: null } }),
-  pedidoDoPainel: async () => naoExiste,
-  marcarEntregue: async () => naoExiste,
-  desfazerEntregue: async () => naoExiste,
-  precisaDeAtencao: async () => ({ ok: true, valor: [] }),
-  tratarAviso: async () => naoExiste,
-  reagendarPedido: async () => naoExiste,
-  cancelarPedido: async () => naoExiste,
-  reembolsarPedido: async () => naoExiste,
-};
-
 export type OpcoesDaFonteBd = Omit<OpcoesDosPedidos, "leitura"> & {
   /**
    * Por onde o `criarPedido` lê os produtos, a casa e as vagas. Sem ela, pela
@@ -377,9 +343,14 @@ export type OpcoesDaFonteBd = Omit<OpcoesDosPedidos, "leitura"> & {
  */
 export function montarFonteBd(db: BaseDeDados, emLote: ExecutarLote, opcoes: OpcoesDaFonteBd): FonteDeDados {
   const fonte: FonteDeDados = {
-    ...pedidosAindaNaoGuardados,
     ...criarFonteBd(db, emLote),
     ...criarPedidosBd(db, emLote, { ...opcoes, leitura: opcoes.leitura ?? (() => fonte) }),
+    ...criarPedidosDoPainelBd(db, {
+      /* Como está gravada, e nunca a de exemplo: é a mesma que a gerente vê
+         (`configuracaoDoPainel`). */
+      configuracao: (ctx) => fonte.configuracaoDoPainel(ctx),
+      ocupacao: (desde, ate) => fonte.ocupacao(desde, ate),
+    }),
   };
   return fonte;
 }
