@@ -511,7 +511,12 @@ export const fonteDoAmbiente = (
        modo de teste é ela que tem os tempos de exemplo, e um pedido conferido
        sem eles dava sempre «indisponível» enquanto o calendário mostrava vagas.
        É uma função porque a vista só existe depois da fonte que embrulha: só é
-       chamada ao criar um pedido, quando as duas já existem. */
+       chamada ao criar um pedido, quando as duas já existem.
+
+       ⚠️ A única coisa de exemplo que chega à base de dados: o limite por vaga da
+       vista é copiado para `vagas.limite` ao criar o pedido. É aceite, e não é
+       um defeito: passa sozinho, porque o primeiro pedido depois do lançamento
+       escreve o limite verdadeiro. */
     const daBaseDeDados = criarDaBaseDeDados(endereco, { deTeste: emTeste, leitura: () => vista });
     const vista = emTeste ? comExemplo(daBaseDeDados, ambiente) : daBaseDeDados;
     return vista;

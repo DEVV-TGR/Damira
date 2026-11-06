@@ -2,17 +2,15 @@ import { randomUUID } from "node:crypto";
 import { and, asc, eq, gte, inArray, lte, sql, type SQL } from "drizzle-orm";
 import type { BaseDeDados } from "@/db/catalogo";
 import { casa as tabelaCasa, linhasPedido, pedidos, reembolsos, vagas } from "@/db/esquema";
+import { erroDoPostgres } from "@/db/erros";
 import type { ExecutarLote } from "@/db/lote";
-import { validarLevantamento, type ArtigoDoCesto } from "@/lib/horarios";
-import { esgotadoHoje } from "@/lib/painel";
-import { cotarLinhas, gerarReferencia, PRAZO_DO_PEDIDO_MS, textoDeProcura } from "./regras";
+import { conferirPedido, gerarReferencia, pedidoPorPagar, PRAZO_DO_PEDIDO_MS, textoDeProcura } from "./regras";
 import {
   EsquemaEntradaPedido,
   EsquemaPedido,
   type FonteDeDados,
   type FonteLoja,
   type Pedido,
-  type Produto,
   type ResultadoCriarPedido,
 } from "./tipos";
 
@@ -60,33 +58,21 @@ const PENDENTES_POR_EMAIL = 3;
    duas vezes seguidas já é sinal de outra coisa. */
 const TENTATIVAS_DE_REFERENCIA = 5;
 
-/* O código e a regra de um erro do Postgres. Vem como causa do erro do Drizzle,
-   ou como o próprio erro, conforme o driver. */
-const erroDoPostgres = (erro: unknown): { code?: string; constraint?: string } =>
-  ((erro as { cause?: unknown }).cause ?? erro) as { code?: string; constraint?: string };
-
 /**
- * # A limpeza: os pendentes que já não se podem pagar passam a `expirado`
+ * Os pendentes que a condição escolhe passam a `expirado`, numa instrução só:
+ * muda os pedidos, desconta as vagas deles e sobe a versão do painel, se houve
+ * algum. É um sítio só para o desconto: a limpeza por idade e o pedido expirado
+ * pelo id, no «voltar atrás» do #38, descontam da mesma maneira.
  *
- * Uma instrução só: muda os pedidos, desconta as vagas deles e sobe a versão do
- * painel, se houve algum. **Sem tarefa agendada** (regra 6: a base de dados
- * dorme) — corre antes de ler a ocupação e dentro do `criarPedido`, quando já há
- * um cliente no site (`base-de-dados.md` › Expirar sem tarefa agendada).
- *
- * ⚠️ **Nunca antes do prazo**: o pedido expira quando o Stripe já não aceita o
- * pagamento, e não um minuto antes (`pedidos.md`). Por isso é «mais velho do que
- * o prazo», estritamente.
- *
- * Duas limpezas ao mesmo tempo não descontam duas vezes: a segunda espera pelo
- * *lock* da linha, volta a avaliar o `estado = 'pendente'` e já não a encontra.
- * Os `UPDATE` dentro do `WITH` correm sempre, mesmo sem ninguém os ler.
+ * Duas ao mesmo tempo não descontam duas vezes: a segunda espera pelo *lock* da
+ * linha, volta a avaliar o `estado = 'pendente'` e já não a encontra. Os `UPDATE`
+ * dentro do `WITH` correm sempre, mesmo sem ninguém os ler.
  */
-export function limparExpirados(db: BaseDeDados, agora: Date) {
-  const limite = new Date(agora.getTime() - PRAZO_DO_PEDIDO_MS).toISOString();
+function expirarPendentes(db: BaseDeDados, condicao: SQL) {
   return db.execute(sql`
     with expirados as (
       update pedidos set estado = 'expirado'
-      where estado = 'pendente' and criado_em < ${limite}::timestamptz
+      where estado = 'pendente' and ${condicao}
       returning levantamento_em
     ),
     por_vaga as (
@@ -100,6 +86,43 @@ export function limparExpirados(db: BaseDeDados, agora: Date) {
     update casa set versao_pedidos = versao_pedidos + 1
     where id = 1 and exists (select 1 from expirados)
   `);
+}
+
+/**
+ * # A limpeza: os pendentes que já não se podem pagar passam a `expirado`
+ *
+ * **Sem tarefa agendada** (regra 6: a base de dados dorme) — corre antes de ler a
+ * ocupação e dentro do `criarPedido`, quando já há um cliente no site
+ * (`base-de-dados.md` › Expirar sem tarefa agendada).
+ *
+ * ⚠️ **Nunca antes do prazo**: o pedido expira quando o Stripe já não aceita o
+ * pagamento, e não um minuto antes (`pedidos.md`). Por isso é «mais velho do que
+ * o prazo», estritamente.
+ */
+export function limparExpirados(db: BaseDeDados, agora: Date) {
+  const limite = new Date(agora.getTime() - PRAZO_DO_PEDIDO_MS).toISOString();
+  return expirarPendentes(db, sql`criado_em < ${limite}::timestamptz`);
+}
+
+/** Expira este pedido já, se ainda estiver pendente; em qualquer outro estado, nada. */
+export function expirarPedido(db: BaseDeDados, id: string) {
+  return expirarPendentes(db, sql`id = ${id}::uuid`);
+}
+
+/**
+ * ⚠️ **Uma limpeza que falha nunca derruba quem a chamou.** É arrumação que corre
+ * à boleia do calendário e do checkout: deixá-la subir punha o site inteiro a
+ * recusar pedidos, até alguém arranjar a base de dados à mão. E falhar é o lado
+ * seguro: a vaga fica ocupada, não se vende nada duas vezes, só se liberta mais
+ * tarde. Fica no log, com a regra que falhou e sem a mensagem do erro.
+ */
+async function limparSemTravar(db: BaseDeDados, agora: Date): Promise<void> {
+  try {
+    await limparExpirados(db, agora);
+  } catch (erro) {
+    const { code, constraint } = erroDoPostgres(erro);
+    console.error(`[pedidos] a limpeza dos expirados falhou: ${code ?? "sem código"} ${constraint ?? "sem regra"}`);
+  }
 }
 
 /**
@@ -184,7 +207,7 @@ export function criarPedidosBd(db: BaseDeDados, emLote: ExecutarLote, opcoes: Op
     async ocupacao(desde, ate) {
       /* Primeiro a limpeza: um pedido abandonado há uma hora não pode continuar
          a encher o calendário de quem chega agora. */
-      await limparExpirados(db, relogio());
+      await limparSemTravar(db, relogio());
       const ocupadas = await db
         .select({ inicio: vagas.inicio, pedidos: vagas.ocupadas })
         .from(vagas)
@@ -199,7 +222,7 @@ export function criarPedidosBd(db: BaseDeDados, emLote: ExecutarLote, opcoes: Op
       const dados = lido.data;
       if (dados.armadilha !== "") return { ok: false, erro: "recusado" };
 
-      await limparExpirados(db, agora);
+      await limparSemTravar(db, agora);
 
       /* A mesma chave devolve o mesmo pedido, seja qual for o resto: é o que
          impede um duplo clique de pagar duas vezes. */
@@ -213,86 +236,24 @@ export function criarPedidosBd(db: BaseDeDados, emLote: ExecutarLote, opcoes: Op
         /* Com os arquivados: é o `cotarLinhas` que os recusa, com o motivo. */
         leitura.listarProdutos({ incluirArquivados: true }),
       ]);
-      if (definicoes.pausaAte && agora.getTime() < definicoes.pausaAte.getTime()) {
-        return { ok: false, erro: "loja-em-pausa" };
-      }
-
       const porId = new Map(catalogo.map((p) => [p.id, p]));
-      const cotacao = cotarLinhas(dados.linhas, (id) => porId.get(id));
-      if (!cotacao.valida) return { ok: false, erro: "artigo-invalido", linhas: cotacao.linhas };
-      if (cotacao.semPreco > 0) return { ok: false, erro: "sob-orcamento", linhas: cotacao.linhas };
-      if (definicoes.valorMinimoCent !== null && cotacao.totalCent < definicoes.valorMinimoCent) {
-        return { ok: false, erro: "abaixo-do-minimo-da-loja" };
-      }
-
-      /* Sem a cozinha ou sem um tempo de produção, não há calendário — e um
-         pedido sem calendário é uma promessa sem data. */
-      const produtos: Produto[] = dados.linhas.map((linha) => porId.get(linha.produtoId)!);
-      if (configuracao.cozinha === null || produtos.some((p) => p.tempoProducao === null)) {
-        return { ok: false, erro: "indisponivel" };
-      }
-      const cesto: ArtigoDoCesto[] = produtos.map((p) => ({
-        tempo: p.tempoProducao!,
-        esgotadoHoje: esgotadoHoje(p, agora),
-      }));
-      const levantamentoEm = new Date(dados.levantamentoEm);
       /* A conferência de antes, com o motivo certo. A que decide é a do lote. */
-      const validacao = validarLevantamento(
-        cesto,
-        levantamentoEm,
-        agora,
-        { ...configuracao, cozinha: configuracao.cozinha },
-        await leitura.ocupacao(levantamentoEm, levantamentoEm),
-      );
-      if (!validacao.ok) return { ok: false, erro: validacao.motivo };
-
-      const linhasDoPedido: Pedido["linhas"] = dados.linhas.map((linha, i) => {
-        const produto = produtos[i];
-        const variante = produto.variantes.find((v) => v.id === linha.varianteId)!;
-        const cotada = cotacao.linhas[i];
-        return {
-          produtoId: produto.id,
-          varianteId: variante.id,
-          /* Em português, como na fonte dos JSON: a língua do pedido ainda não
-             está decidida (`pedidos.md` não tem `locale`). */
-          nome: produto.nome.pt,
-          variante: variante.rotulo?.pt ?? null,
-          escolhas: linha.escolhas,
-          unidade: produto.unidade,
-          quantidade: linha.quantidade,
-          precoUnitarioCent: cotada.precoUnitarioCent!,
-          totalCent: cotada.totalCent!,
-          notas: linha.notas,
-        };
+      const conferido = await conferirPedido(dados, agora, {
+        definicoes,
+        configuracao,
+        produtoDe: (id) => porId.get(id),
+        ocupacaoDaVaga: (vaga) => leitura.ocupacao(vaga, vaga),
       });
+      if (!conferido.ok) return conferido;
+      const { levantamentoEm, linhas: linhasDoPedido } = conferido;
 
       for (let tentativa = 0; tentativa < TENTATIVAS_DE_REFERENCIA; tentativa++) {
-        const pedido: Pedido = {
+        const pedido = pedidoPorPagar(dados, conferido, {
           id: randomUUID(),
           referencia: gerarReferencia(agora),
-          estado: "pendente",
-          criadoEm: agora,
-          levantamentoEm,
-          cliente: { ...dados.cliente, contaId },
-          linhas: linhasDoPedido,
-          observacoes: dados.observacoes,
-          totalCent: cotacao.totalCent,
-          /* O sinal é por produto e o modo de pagamento é por pedido; o cesto
-             misto está em aberto (`pagamentos.md` › Em aberto, 6). Até lá,
-             paga-se tudo — como na fonte dos JSON. */
-          modoPagamento: "total",
-          pagoOnlineCent: 0,
-          reembolsadoCent: 0,
-          chegouTarde: false,
-          pagoEm: null,
-          impressoEm: null,
-          entregueEm: null,
-          canceladoEm: null,
-          canceladoPor: null,
-          reembolsos: [],
-          avisosTratados: [],
-          reagendadoEm: null,
-        };
+          agora,
+          contaId,
+        });
 
         try {
           await emLote((tx) => [

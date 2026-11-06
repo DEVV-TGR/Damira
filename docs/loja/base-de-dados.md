@@ -221,7 +221,9 @@ de teste — o `LOJA_EM_TESTE` desse momento.
   que importa aqui é a diferença entre a velha e a nova.
 - **No lançamento** (#55), um comando desconta numa transação as vagas e as
   quantidades dos pedidos de teste, e arquiva-os: ficam guardados, e fora das
-  vagas, das quantidades e das vendas. Repor o ramo `production` a um ponto
+  vagas, das quantidades e das vendas. ⚠️ **Na mesma transação, tira os pendentes
+  de teste do `pendente`.** Senão, a limpeza seguinte desconta-os outra vez, a
+  vaga fica abaixo de zero e o `CHECK` recusa a limpeza a partir daí. Repor o ramo `production` a um ponto
   anterior não serve — apagava o que a gerente fez no catálogo e nos horários.
 
 ### `linhas_pedido`
@@ -405,7 +407,12 @@ pode pagar (`pedidos.md`). Quem o faz, por ordem:
 
 Não há tarefa agendada a acordar a base de dados para isto (regra 6). A limpeza
 (`limparExpirados`, em `bd-pedidos.ts`) é uma instrução só: muda os pendentes antigos para `expirado` e desconta-os dos
-contadores. A lógica completa é da #41.
+contadores. A lógica completa é da #41. O pedido expirado pelo id, no ponto 1,
+usa a mesma instrução (`expirarPedido`).
+
+⚠️ **Se a limpeza falhar, o calendário e o `criarPedido` continuam.** O erro fica
+no log, com a regra que falhou, e a vaga fica ocupada: é o lado seguro, porque
+não se vende nada duas vezes e só se liberta mais tarde.
 
 ## Limites de pedidos
 

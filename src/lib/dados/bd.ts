@@ -11,6 +11,7 @@ import {
   type DadosDaCasa,
 } from "@/db/catalogo";
 import { casa as tabelaCasa, produtos, variantes } from "@/db/esquema";
+import { violouChave } from "@/db/erros";
 import type { ExecutarLote } from "@/db/lote";
 import { diaDeLisboa } from "@/lib/painel";
 import { criarPedidosBd, type LeituraDoPedido, type OpcoesDosPedidos } from "./bd-pedidos";
@@ -68,13 +69,6 @@ export type FonteBd = Pick<
   | "pausarLoja"
   | "guardarOrdemCategorias"
 >;
-
-/* Um id já usado por outro produto: o Postgres chama-lhe 23505. Vem como causa
-   do erro do Drizzle, ou como o próprio erro, conforme o driver. */
-const violouChave = (erro: unknown, restricao: string): boolean => {
-  const causa = ((erro as { cause?: unknown }).cause ?? erro) as { code?: string; constraint?: string };
-  return causa.code === "23505" && causa.constraint === restricao;
-};
 
 /**
  * A fonte sobre a base de dados. O `emLote` é a forma de gravar tudo ou nada

@@ -1,11 +1,11 @@
 import { TZDate } from "@date-fns/tz";
 import { eq } from "drizzle-orm";
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { casa, pedidos, vagas } from "@/db/esquema";
 import { loteEmTransacao } from "@/db/lote";
 import { catalogoDeTeste } from "@/db/teste";
 import { montarFonteBd, type OpcoesDaFonteBd } from "./bd";
-import type { LeituraDoPedido } from "./bd-pedidos";
+import { expirarPedido, type LeituraDoPedido } from "./bd-pedidos";
 import { comExemplo, fonteDoAmbiente } from "./exemplo";
 import { PRAZO_DO_PEDIDO_MS } from "./regras";
 import type { VagaOcupada } from "@/lib/horarios";
@@ -52,6 +52,9 @@ const entrada = (alteracoes: Partial<EntradaPedido> = {}): EntradaPedido => ({
 let relogio: Date = AGORA;
 beforeEach(() => {
   relogio = AGORA;
+});
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 /**
@@ -261,6 +264,98 @@ describe("a limpeza: o pedido expira aos 31 minutos, e nem um segundo antes", ()
     await criado(await fonte.criarPedido(entrada(), CONTEXTO));
     const depois = new Date(AGORA.getTime() + PRAZO_DO_PEDIDO_MS + 1000);
     await criado(await fonte.criarPedido(entrada(), { ...CONTEXTO, agora: depois }));
+  });
+});
+
+describe("se a limpeza falhar, o site continua a vender", () => {
+  /* Um contador abaixo do que a limpeza desconta: o `CHECK vagas_ocupadas` recusa
+     a instrução inteira. É o que acontecia com um comando de lançamento que
+     descontasse os pedidos de teste e os deixasse pendentes. */
+  async function comALimpezaAFalhar() {
+    const montada = await montar();
+    await criado(await montada.fonte.criarPedido(entrada(), CONTEXTO));
+    await montada.db.update(vagas).set({ ocupadas: 0 }).where(eq(vagas.inicio, QUARTA_7H30));
+    relogio = new Date(AGORA.getTime() + 40 * 60_000);
+    return { ...montada, log: vi.spyOn(console, "error").mockImplementation(() => {}) };
+  }
+
+  it("a ocupação responde na mesma, e o pedido fica pendente até a limpeza voltar a passar", async () => {
+    const { fonte, db, log } = await comALimpezaAFalhar();
+    await expect(fonte.ocupacao(QUARTA_7H30, QUARTA_7H30)).resolves.toEqual([]);
+    const [pedido] = await db.select({ estado: pedidos.estado }).from(pedidos);
+    expect(pedido.estado).toBe("pendente");
+    expect(log).toHaveBeenCalledOnce();
+  });
+
+  it("criar um pedido também continua a funcionar", async () => {
+    const { fonte } = await comALimpezaAFalhar();
+    const depois = new Date(AGORA.getTime() + 40 * 60_000);
+    await criado(await fonte.criarPedido(entrada({ levantamentoEm: QUINTA_7H30.toISOString() }), { ...CONTEXTO, agora: depois }));
+  });
+
+  it("o log diz a regra que falhou, e nunca a mensagem do erro, que traz os parâmetros", async () => {
+    const { fonte, log } = await comALimpezaAFalhar();
+    await fonte.ocupacao(QUARTA_7H30, QUARTA_7H30);
+    const escrito = log.mock.calls.flat().map(String).join(" ");
+    expect(escrito).toContain("vagas_ocupadas");
+    expect(escrito).not.toContain("update pedidos");
+    expect(log.mock.calls[0]).toHaveLength(1);
+  });
+});
+
+describe("expirar um pedido pelo id", () => {
+  it("expira esse e só esse, e liberta a vaga dele, antes de passar o prazo", async () => {
+    const { fonte, db } = await montar();
+    const este = await criado(await fonte.criarPedido(entrada(), CONTEXTO));
+    const outro = await criado(await fonte.criarPedido(entrada({ levantamentoEm: QUINTA_7H30.toISOString() }), CONTEXTO));
+
+    await expirarPedido(db, este.id);
+
+    expect((await fonte.pedidoPorReferencia(este.referencia))?.estado).toBe("expirado");
+    expect((await fonte.pedidoPorReferencia(outro.referencia))?.estado).toBe("pendente");
+    expect(await fonte.ocupacao(QUARTA_7H30, QUARTA_7H30)).toEqual([]);
+    expect(await fonte.ocupacao(QUINTA_7H30, QUINTA_7H30)).toEqual([{ inicio: QUINTA_7H30, pedidos: 1 }]);
+  });
+
+  it("duas vezes só desconta uma, e um pedido pago não se expira", async () => {
+    const { fonte, db } = await montar();
+    const este = await criado(await fonte.criarPedido(entrada(), CONTEXTO));
+    await criado(await fonte.criarPedido(entrada(), CONTEXTO));
+    await expirarPedido(db, este.id);
+    await expirarPedido(db, este.id);
+    expect(await fonte.ocupacao(QUARTA_7H30, QUARTA_7H30)).toEqual([{ inicio: QUARTA_7H30, pedidos: 1 }]);
+
+    const pago = await criado(await fonte.criarPedido(entrada(), CONTEXTO));
+    await db.update(pedidos).set({ estado: "pago", pagoEm: AGORA }).where(eq(pedidos.id, pago.id));
+    await expirarPedido(db, pago.id);
+    expect((await fonte.pedidoPorReferencia(pago.referencia))?.estado).toBe("pago");
+  });
+});
+
+describe("a referência que já existe", () => {
+  /* Quatro letras: o `gerarReferencia` pede quatro números ao acaso. */
+  const sorteios = (valor: number) => [valor, valor, valor, valor];
+
+  it("tenta outra, e o pedido nasce na mesma, sem meia reserva da tentativa falhada", async () => {
+    const { fonte, db } = await montar();
+    const acaso = vi.spyOn(Math, "random");
+    sorteios(0).forEach((n) => acaso.mockReturnValueOnce(n));
+    const primeiro = await criado(await fonte.criarPedido(entrada(), CONTEXTO));
+
+    [...sorteios(0), ...sorteios(0.5)].forEach((n) => acaso.mockReturnValueOnce(n));
+    const segundo = await criado(await fonte.criarPedido(entrada(), CONTEXTO));
+
+    expect(segundo.referencia).not.toBe(primeiro.referencia);
+    expect(segundo.referencia).toMatch(FORMATO_REFERENCIA);
+    const [vaga] = await db.select().from(vagas).where(eq(vagas.inicio, QUARTA_7H30));
+    expect(vaga.ocupadas).toBe(2);
+  });
+
+  it("ao fim de cinco colisões desiste com um erro, em vez de ficar às voltas", async () => {
+    const { fonte } = await montar();
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    await criado(await fonte.criarPedido(entrada(), CONTEXTO));
+    await expect(fonte.criarPedido(entrada(), CONTEXTO)).rejects.toThrow("referências seguidas");
   });
 });
 

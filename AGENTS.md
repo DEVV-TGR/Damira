@@ -110,8 +110,10 @@ provisório** — em local e na Vercel, sem uma segunda variável para ligar
 05/10, #57). O modo de teste passa a ser uma **camada por cima**
 (`comExemplo`, em `exemplo.ts`) que só tapa o que falta nas leituras da loja —
 os tempos, a cozinha, o limite por vaga — e junta os pedidos de exemplo ao
-calendário. ⚠️ **Nunca grava nada**, e o painel lê a casa e os produtos **como
-estão gravados** (`configuracaoDoPainel`, `produtosDoPainel`): se a gerente
+calendário. ⚠️ **Nunca grava nada** (só o limite por vaga de exemplo, copiado
+para `vagas.limite` ao criar um pedido, e que o primeiro pedido depois do
+lançamento substitui), e o painel lê a casa e os produtos **como estão gravados**
+(`configuracaoDoPainel`, `produtosDoPainel`): se a gerente
 visse a cozinha de exemplo em «Horários», gravava-a como sendo a dela. Os
 pedidos de exemplo do painel ficam nos JSON; no ar, testa-se comprando com os
 cartões de teste do Stripe. E ⚠️ **a entrada provisória não liga com a base de

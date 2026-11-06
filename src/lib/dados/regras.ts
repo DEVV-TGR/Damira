@@ -1,8 +1,21 @@
 import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
 import type { z } from "zod";
-import { FUSO } from "@/lib/horarios";
-import type { Cotacao, EsquemaEntradaProduto, LinhaCesto, LinhaCotada, Produto, ResultadoPainel } from "./tipos";
+import { FUSO, validarLevantamento, type ArtigoDoCesto, type VagaOcupada } from "@/lib/horarios";
+import { esgotadoHoje } from "@/lib/painel";
+import type {
+  ConfiguracaoDaCasa,
+  Cotacao,
+  DefinicoesLoja,
+  EsquemaEntradaPedido,
+  EsquemaEntradaProduto,
+  LinhaCesto,
+  LinhaCotada,
+  Pedido,
+  Produto,
+  ResultadoCriarPedido,
+  ResultadoPainel,
+} from "./tipos";
 
 /**
  * # As regras da fronteira, num sítio só
@@ -153,6 +166,124 @@ export const gerarReferencia = (agora: Date): string => {
   for (let i = 0; i < 4; i++) sufixo += ALFABETO[Math.floor(Math.random() * ALFABETO.length)];
   return `DAM-${format(agora, "ddMM", { in: tz(FUSO) })}-${sufixo}`;
 };
+
+type DadosDoPedido = z.output<typeof EsquemaEntradaPedido>;
+
+/** O que passou a conferência: o que falta para o pedido nascer é a referência e o id. */
+export type PedidoConferido = {
+  ok: true;
+  levantamentoEm: Date;
+  linhas: Pedido["linhas"];
+  totalCent: number;
+};
+
+/**
+ * Tudo o que se confere antes de um pedido nascer, pela ordem em que se responde:
+ * a pausa, os artigos, o preço, o mínimo, o calendário. É uma conferência e não
+ * uma garantia: quem decide a última vaga é a base de dados (regra 5), e quem
+ * chama trata disso.
+ *
+ * Os dados vêm de quem chama (`ocupacaoDaVaga` só é pedida se tudo o resto
+ * passou, por ser a única que pode ir à base de dados outra vez).
+ */
+export async function conferirPedido(
+  dados: DadosDoPedido,
+  agora: Date,
+  fontes: {
+    definicoes: DefinicoesLoja;
+    configuracao: ConfiguracaoDaCasa;
+    produtoDe: (id: string) => Produto | undefined;
+    ocupacaoDaVaga: (vaga: Date) => VagaOcupada[] | Promise<VagaOcupada[]>;
+  },
+): Promise<PedidoConferido | Extract<ResultadoCriarPedido, { ok: false }>> {
+  const { definicoes, configuracao, produtoDe, ocupacaoDaVaga } = fontes;
+  if (definicoes.pausaAte && agora.getTime() < definicoes.pausaAte.getTime()) {
+    return { ok: false, erro: "loja-em-pausa" };
+  }
+
+  const cotacao = cotarLinhas(dados.linhas, produtoDe);
+  if (!cotacao.valida) return { ok: false, erro: "artigo-invalido", linhas: cotacao.linhas };
+  if (cotacao.semPreco > 0) return { ok: false, erro: "sob-orcamento", linhas: cotacao.linhas };
+  if (definicoes.valorMinimoCent !== null && cotacao.totalCent < definicoes.valorMinimoCent) {
+    return { ok: false, erro: "abaixo-do-minimo-da-loja" };
+  }
+
+  /* Sem a cozinha ou sem um tempo de produção, não há calendário — e um pedido
+     sem calendário é uma promessa sem data. */
+  const produtos = dados.linhas.map((linha) => produtoDe(linha.produtoId)!);
+  if (configuracao.cozinha === null || produtos.some((p) => p.tempoProducao === null)) {
+    return { ok: false, erro: "indisponivel" };
+  }
+  const cesto: ArtigoDoCesto[] = produtos.map((p) => ({
+    tempo: p.tempoProducao!,
+    esgotadoHoje: esgotadoHoje(p, agora),
+  }));
+  const levantamentoEm = new Date(dados.levantamentoEm);
+  const validacao = validarLevantamento(
+    cesto,
+    levantamentoEm,
+    agora,
+    { ...configuracao, cozinha: configuracao.cozinha },
+    await ocupacaoDaVaga(levantamentoEm),
+  );
+  if (!validacao.ok) return { ok: false, erro: validacao.motivo };
+
+  return {
+    ok: true,
+    levantamentoEm,
+    totalCent: cotacao.totalCent,
+    linhas: dados.linhas.map((linha, i) => {
+      const produto = produtos[i];
+      const variante = produto.variantes.find((v) => v.id === linha.varianteId)!;
+      const cotada = cotacao.linhas[i];
+      return {
+        produtoId: produto.id,
+        varianteId: variante.id,
+        /* Em português: a língua do pedido ainda não está decidida (`pedidos.md`
+           não tem `locale`). */
+        nome: produto.nome.pt,
+        variante: variante.rotulo?.pt ?? null,
+        escolhas: linha.escolhas,
+        unidade: produto.unidade,
+        quantidade: linha.quantidade,
+        precoUnitarioCent: cotada.precoUnitarioCent!,
+        totalCent: cotada.totalCent!,
+        notas: linha.notas,
+      };
+    }),
+  };
+}
+
+/** O pedido no momento em que nasce: pendente, e com tudo o que vem depois a vazio. */
+export const pedidoPorPagar = (
+  dados: DadosDoPedido,
+  conferido: PedidoConferido,
+  { id, referencia, agora, contaId }: { id: string; referencia: string; agora: Date; contaId: string | null },
+): Pedido => ({
+  id,
+  referencia,
+  estado: "pendente",
+  criadoEm: agora,
+  levantamentoEm: conferido.levantamentoEm,
+  cliente: { ...dados.cliente, contaId },
+  linhas: conferido.linhas,
+  observacoes: dados.observacoes,
+  totalCent: conferido.totalCent,
+  /* O sinal é por produto e o modo de pagamento é por pedido; o cesto misto está
+     em aberto (`pagamentos.md` › Em aberto, 6). Até lá, paga-se tudo. */
+  modoPagamento: "total",
+  pagoOnlineCent: 0,
+  reembolsadoCent: 0,
+  chegouTarde: false,
+  pagoEm: null,
+  impressoEm: null,
+  entregueEm: null,
+  canceladoEm: null,
+  canceladoPor: null,
+  reembolsos: [],
+  avisosTratados: [],
+  reagendadoEm: null,
+});
 
 /**
  * O texto por onde o painel procura um pedido: o nome e a referência, sem
