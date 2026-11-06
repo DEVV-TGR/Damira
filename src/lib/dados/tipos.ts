@@ -166,6 +166,12 @@ export const EsquemaLinhaCesto = z
 
 export type LinhaCesto = z.input<typeof EsquemaLinhaCesto>;
 
+/* Com `[0-9]` e não `\d`, por serem também os `CHECK` da base de dados
+   (`src/db/esquema.ts`): no Postgres, o `\d` depende da língua da base de dados
+   e pode aceitar dígitos que aqui se recusam. */
+export const FORMATO_TELEFONE = /^\+[1-9][0-9]{6,14}$/;
+export const FORMATO_NIF = /^[0-9]{9}$/;
+
 export const EsquemaCliente = z
   .object({
     nome: z.string().trim().min(1).max(120),
@@ -178,10 +184,10 @@ export const EsquemaCliente = z
      * manda-o já assim. Aqui confere-se só a forma, para o tipo não trazer a
      * biblioteca para o browser (há um teste que o vigia).
      */
-    telefone: z.string().regex(/^\+[1-9]\d{6,14}$/, "telefone em E.164"),
+    telefone: z.string().regex(FORMATO_TELEFONE, "telefone em E.164"),
     nif: z
       .string()
-      .regex(/^\d{9}$/)
+      .regex(FORMATO_NIF)
       .nullable()
       .default(null),
   })
@@ -264,7 +270,7 @@ export type ResultadoCotacao =
 export const ESTADOS_PEDIDO = ["pendente", "pago", "entregue", "expirado", "cancelado"] as const;
 
 /** A referência de balcão: `DAM-DDMM-XXXX`, sem letras que se confundem ao telefone. */
-export const FORMATO_REFERENCIA = /^DAM-\d{4}-[A-HJ-NP-Z2-9]{4}$/;
+export const FORMATO_REFERENCIA = /^DAM-[0-9]{4}-[A-HJ-NP-Z2-9]{4}$/;
 
 /**
  * Uma linha guardada é **uma fotografia do momento**: o nome, a variante e o

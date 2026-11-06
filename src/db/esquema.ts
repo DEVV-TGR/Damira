@@ -17,7 +17,15 @@ import {
 } from "drizzle-orm/pg-core";
 /* Relativo e não `@/`: estes são valores, e o `drizzle-kit` carrega este ficheiro
    sem os atalhos do `tsconfig`. */
-import { AVISOS_TRATAVEIS, ESTADOS_PEDIDO, type GrupoComposicao, type OrdemEmenta } from "../lib/dados/tipos";
+import {
+  AVISOS_TRATAVEIS,
+  ESTADOS_PEDIDO,
+  FORMATO_NIF,
+  FORMATO_REFERENCIA,
+  FORMATO_TELEFONE,
+  type GrupoComposicao,
+  type OrdemEmenta,
+} from "../lib/dados/tipos";
 import type { DiaFechado, HorarioSemanal } from "@/lib/horarios";
 
 /**
@@ -38,6 +46,10 @@ import type { DiaFechado, HorarioSemanal } from "@/lib/horarios";
 /* Uma lista de valores permitidos, para os `CHECK`. Os valores são nossos, não
    do browser, por isso podem ir para o SQL escritos. */
 const umDe = (valores: readonly string[]) => sql.raw(valores.map((v) => `'${v}'`).join(", "));
+
+/* A mesma expressão do contrato, para as duas não se afastarem sem ninguém dar
+   por isso: mudar a constante gera uma migração. */
+const formato = (expressao: RegExp) => sql.raw(`'${expressao.source}'`);
 
 // ——— O catálogo ———
 
@@ -333,6 +345,12 @@ export const pedidos = pgTable(
     /** Para os limites por IP. Nunca vai para o painel. */
     ip: text("ip"),
     stripeSessionId: text("stripe_session_id").unique(),
+    /**
+     * Grava-o o `marcarPago`. É por ele que se encontra o pedido de um reembolso
+     * ou de uma disputa feitos no painel do Stripe: o evento traz o
+     * `payment_intent` e não traz o nosso id (`pagamentos.md`).
+     */
+    stripePaymentIntentId: text("stripe_payment_intent_id").unique(),
     /** O nome e a referência sem acentos e em minúsculas, para a pesquisa. */
     procura: text("procura").notNull(),
     /**
@@ -351,10 +369,10 @@ export const pedidos = pgTable(
   },
   (t) => [
     check("pedidos_estado", sql`${t.estado} in (${umDe(ESTADOS_PEDIDO)})`),
-    check("pedidos_referencia", sql`${t.referencia} ~ '^DAM-[0-9]{4}-[A-HJ-NP-Z2-9]{4}$'`),
+    check("pedidos_referencia", sql`${t.referencia} ~ ${formato(FORMATO_REFERENCIA)}`),
     /* E.164, como o `EsquemaCliente`: é por ele que o balcão liga. */
-    check("pedidos_telefone", sql`${t.clienteTelefone} ~ '^\\+[1-9][0-9]{6,14}$'`),
-    check("pedidos_nif", sql`${t.clienteNif} ~ '^[0-9]{9}$'`),
+    check("pedidos_telefone", sql`${t.clienteTelefone} ~ ${formato(FORMATO_TELEFONE)}`),
+    check("pedidos_nif", sql`${t.clienteNif} ~ ${formato(FORMATO_NIF)}`),
     check("pedidos_modo_pagamento", sql`${t.modoPagamento} in (${umDe(["total", "sinal"])})`),
     /* ⚠️ Fica de fora `pago_online_cent <= total_cent`: um montante que não bate
        ainda não tem regra (`pagamentos.md` › Em aberto, 8), e um `CHECK` que

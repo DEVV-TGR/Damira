@@ -174,6 +174,7 @@ ordem — ficava órfã, fora da `/ementa`.
 | `chave_idempotencia` | `uuid` único | **só da base de dados** |
 | `ip` | `text` nulo | **só da base de dados** |
 | `stripe_session_id` | `text` único, nulo | **só da base de dados** (#38) |
+| `stripe_payment_intent_id` | `text` único, nulo | **só da base de dados** (#42): liga ao pedido o que se fez no painel do Stripe |
 | `procura` | `text` | **só da base de dados** |
 | `reembolso_reservado_cent` | `integer` `>= 0`, `CHECK (… <= pago_online_cent)` | **só da base de dados** (ver «Reembolsos ao mesmo tempo») |
 | `de_teste` | `boolean`, **sem valor por defeito**, imutável | **só da base de dados** (ver «Os pedidos de teste») |
@@ -373,9 +374,11 @@ um bolo feito para ninguém.
 
 ⚠️ **Pago depois de expirar volta a ocupar, e nunca falha** (`pedidos.md`: pago
 ganha sempre). Nesse caminho a soma sobe o limite da linha até caber
-(`limite = GREATEST(limite, ocupadas + n)`): a vaga fica acima do limite, e isso
-é verdade — a cozinha tem mesmo mais um. A gerente vê o aviso `chegou-tarde` e
-decide.
+(`limite = CASE WHEN limite IS NULL THEN NULL ELSE GREATEST(limite, ocupadas + n) END`):
+a vaga fica acima do limite, e isso é verdade — a cozinha tem mesmo mais um. A
+gerente vê o aviso `chegou-tarde` e decide. ⚠️ O `CASE` faz falta: o `GREATEST`
+ignora os `NULL`, e `GREATEST(NULL, 3)` dá 3 — uma vaga sem limite ficava cheia,
+e um reagendar para lá era recusado.
 
 **A vaga identifica-se pelo instante em que começa**, e não por «dia + hora»: a
 25 de outubro a hora 01:00 repete-se. A loja não abre a essa hora, mas um
@@ -461,15 +464,21 @@ repetido bate na chave primária e faz cair o lote inteiro, e **só essa violaç
 quer dizer «repetido» (`pagamentos.md`). A versão da API guarda-se porque um
 evento nunca muda depois de criado: uma retentativa que chega depois de uma
 subida da API vem na forma antiga. Mais
-as colunas `pedidos.stripe_session_id` e `reembolsos.stripe_refund_id`, únicas.
-Estão no esquema para o Gonçalo não precisar de uma migração para começar a #42.
+as colunas `pedidos.stripe_session_id`, `pedidos.stripe_payment_intent_id` e
+`reembolsos.stripe_refund_id`, únicas. Estão no esquema para o Gonçalo não
+precisar de uma migração para começar a #42.
+
+⚠️ **O `stripe_payment_intent_id` grava-o o `marcarPago`**, com o que a sessão
+traz. Um reembolso ou uma disputa feitos no painel do Stripe trazem o
+`payment_intent` e não o nosso id, e é por esta coluna que se encontra o pedido,
+sem uma consulta ao Stripe a cada evento (migração `0004`).
 
 ## Índices
 
 Os de `robustez.md` › Consultas, e mais nenhum:
 
-- `pedidos(referencia)`, `pedidos(chave_idempotencia)` e
-  `pedidos(stripe_session_id)`, únicos
+- `pedidos(referencia)`, `pedidos(chave_idempotencia)`,
+  `pedidos(stripe_session_id)` e `pedidos(stripe_payment_intent_id)`, únicos
 - `pedidos(estado, levantamento_em)` — as listas do balcão
 - `pedidos(criado_em, id)` — o arquivo e os pedidos da gerente, por cursor
 - `pedidos(cliente_email)` — o histórico e os possíveis duplicados
