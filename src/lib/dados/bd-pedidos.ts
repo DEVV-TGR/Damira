@@ -67,10 +67,14 @@ const TENTATIVAS_DE_REFERENCIA = 5;
  * Duas ao mesmo tempo não descontam duas vezes: a segunda espera pelo *lock* da
  * linha, volta a avaliar o `estado = 'pendente'` e já não a encontra. Os `UPDATE`
  * dentro do `WITH` correm sempre, mesmo sem ninguém os ler.
+ *
+ * `passoAntes` é outro passo do `WITH`: o webhook regista lá o evento, para o
+ * registo e a mudança correrem juntos. Diz se algum pedido mudou.
  */
-function expirarPendentes(db: BaseDeDados, condicao: SQL) {
-  return db.execute(sql`
-    with expirados as (
+export async function expirarPendentes(db: BaseDeDados, condicao: SQL, passoAntes: SQL = sql``): Promise<boolean> {
+  const resultado = await db.execute(sql`
+    with ${passoAntes}
+    expirados as (
       update pedidos set estado = 'expirado'
       where estado = 'pendente' and ${condicao}
       returning levantamento_em
@@ -82,10 +86,15 @@ function expirarPendentes(db: BaseDeDados, condicao: SQL) {
       update vagas set ocupadas = vagas.ocupadas - por_vaga.n
       from por_vaga where vagas.inicio = por_vaga.levantamento_em
       returning 1
+    ),
+    versao as (
+      update casa set versao_pedidos = versao_pedidos + 1
+      where id = 1 and exists (select 1 from expirados)
+      returning 1
     )
-    update casa set versao_pedidos = versao_pedidos + 1
-    where id = 1 and exists (select 1 from expirados)
+    select count(*)::int as n from expirados
   `);
+  return (resultado as unknown as { rows: { n: number }[] }).rows[0].n > 0;
 }
 
 /**
@@ -104,8 +113,8 @@ export function limparExpirados(db: BaseDeDados, agora: Date) {
   return expirarPendentes(db, sql`criado_em < ${limite}::timestamptz`);
 }
 
-/** Expira este pedido já, se ainda estiver pendente; em qualquer outro estado, nada. */
-export function expirarPedido(db: BaseDeDados, id: string) {
+/** Expira este pedido já, se ainda estiver pendente; em qualquer outro estado, nada. Diz se mudou. */
+export function expirarPedido(db: BaseDeDados, id: string): Promise<boolean> {
   return expirarPendentes(db, sql`id = ${id}::uuid`);
 }
 

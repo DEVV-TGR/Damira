@@ -1,15 +1,17 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, gte, inArray, lte, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, lte, or, sql, type SQL } from "drizzle-orm";
 import type { BaseDeDados } from "@/db/catalogo";
 import { erroDoPostgres } from "@/db/erros";
-import { pedidos } from "@/db/esquema";
+import { avisosDinheiro, pedidos } from "@/db/esquema";
 import { validarLevantamento, type VagaOcupada } from "@/lib/horarios";
 import { avisosDosPedidos, porDevolverCent } from "@/lib/painel";
 import { lerPedidos } from "./bd-pedidos";
 import { invalido, naoExiste, paraProcura } from "./regras";
 import {
+  AVISOS_DE_DINHEIRO,
   AVISOS_TRATAVEIS,
   EsquemaFiltroPedidos,
+  type AvisoDeDinheiro,
   type ConfiguracaoDaCasa,
   type ContextoPainel,
   type FontePainel,
@@ -220,7 +222,7 @@ export function criarPedidosDoPainelBd(db: BaseDeDados, leituras: LeiturasDoPain
     async precisaDeAtencao(ctx) {
       const { agora } = ctx;
       const desde = new Date(agora.getTime() - JANELA_DOS_AVISOS_MS);
-      const [candidatos, casa] = await Promise.all([
+      const [candidatos, casa, deDinheiro] = await Promise.all([
         lerPedidos(
           db,
           or(
@@ -233,13 +235,37 @@ export function criarPedidosDoPainelBd(db: BaseDeDados, leituras: LeiturasDoPain
           )!,
         ),
         leituras.configuracao(ctx),
+        /* Um por tipo e por pedido, por mais factos que haja: o painel trata-os juntos. */
+        db
+          .selectDistinct({ tipo: avisosDinheiro.tipo, pedidoId: pedidos.id, referencia: pedidos.referencia })
+          .from(avisosDinheiro)
+          .innerJoin(pedidos, eq(pedidos.id, avisosDinheiro.pedidoId))
+          .where(isNull(avisosDinheiro.tratadoEm)),
       ]);
-      return { ok: true, valor: avisosDosPedidos(candidatos, casa, agora) };
+      return {
+        ok: true,
+        valor: [
+          ...avisosDosPedidos(candidatos, casa, agora),
+          ...deDinheiro.map((aviso) => ({ ...aviso, tipo: aviso.tipo as AvisoDeDinheiro })),
+        ],
+      };
     },
 
     async tratarAviso(id, tipo, { agora }) {
       if (!(await lerUm(id))) return naoExiste;
-      /* Os avisos de dinheiro entram com a `FonteWebhook`, que é quem os grava. */
+      if (AVISOS_DE_DINHEIRO.some((aviso) => aviso === tipo)) {
+        /* Todos os daquele tipo naquele pedido: o painel mostra-os juntos. */
+        await db.execute(sql`
+          with mudado as (
+            update avisos_dinheiro set tratado_em = ${instante(agora)}
+            where pedido_id = ${id}::uuid and tipo = ${tipo} and tratado_em is null
+            returning 1
+          )
+          update casa set versao_pedidos = versao_pedidos + 1
+          where id = 1 and exists (select 1 from mudado)
+        `);
+        return depoisDeMudar(id);
+      }
       if (!AVISOS_TRATAVEIS.find((aviso) => aviso === tipo)) {
         return { ok: false, erro: "dados-invalidos", campos: ["tipo"] };
       }

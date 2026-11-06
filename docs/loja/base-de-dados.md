@@ -277,14 +277,13 @@ tabela de trabalho pendente para os reembolsos: seria guardar o mesmo facto em
 dois sítios.
 
 **Um reembolso feito no painel do Stripe** que não caiba ao lado de um pendente
-nosso — proposta, em resposta à pergunta do #100, por fechar com o Gonçalo: o
-nosso cede. Na mesma instrução que insere o do Stripe, os nossos
+nosso — decidido com o Gonçalo no #101 (`atualizarReembolso`, em `fonte-bd.ts`): o
+nosso cede, desde que seja mesmo de outro reembolso (`pagamentos.md` › Reembolsos). Na mesma instrução que insere o do Stripe, os nossos
 `pendente` **ainda sem `stripe_refund_id`** passam a `falhado` com o motivo
 `cedeu-a-reembolso-externo`, e o reservado desconta-os. O Stripe não deixa
 reembolsar mais do que falta, contando com os pendentes, por isso o nosso ia ser
 recusado — a confirmar na sandbox, com o `…7726`. Se mesmo assim não couber, é
-uma inconsistência a sério: 5xx com alerta, e nunca um 200 a escondê-la. Não muda
-o esquema: é a instrução da #49.
+uma inconsistência a sério: 5xx com alerta, e nunca um 200 a escondê-la.
 
 ### `avisos_dinheiro`
 
