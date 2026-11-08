@@ -39,8 +39,8 @@ design vem deles. O painel é nosso.
 |---|---|
 | Todo o frontend: loja (cesto, variantes, calendário, checkout, conta), painel (as duas vistas), configurador dos bolos personalizados | Base de dados e migração do catálogo (JSON → BD, euros → cêntimos, horários do `casa.json` → BD) |
 | Interface de `src/lib/dados/`: assinaturas e tipos que o frontend consome (os do pedido saem do `pedidos.md`), com implementação provisória a ler os JSON | Implementação de `src/lib/dados/` sobre a base de dados — troca o que está lá dentro sem mudar as assinaturas |
-| Motor de horários (`src/lib/horarios.ts`) e os testes (Vitest) | Backend: produtos, pedidos, fotos (Vercel Blob), histórico da conta no servidor |
-| Stripe: checkout, webhook, verificação periódica, reembolsos, sinal, cancelamento | Entrada no painel: PIN, código por email da gerente, sessões e dispositivos |
+| Motor de horários (`src/lib/horarios.ts`) e os testes (Vitest) | Backend: produtos, pedidos (fora os pagamentos), fotos (Vercel Blob), histórico da conta no servidor |
+| Stripe: checkout, webhook, gravar os pagamentos na base de dados (a `FonteWebhook`, `src/lib/pagamentos/`), verificação periódica, reembolsos, sinal, cancelamento, e as contas Stripe e PayPal da casa | Entrada no painel: PIN, código por email da gerente, sessões e dispositivos |
 | Regras das combinações dos bolos personalizados | Impressão e talão |
 | | Textos legais e cookies |
 | | Tudo o que é presencial (ver abaixo) |
@@ -124,15 +124,20 @@ outro onde ela é obrigatória; apanha o básico onde não é.
    incomodar» desligado, carregador sempre ligado.
 3. **Conteúdo dos produtos** — a casa preenche fotos, alergénios e tempos de
    produção no painel. Os testes reais só acontecem depois disso; acompanhar.
-4. **Contas em nome da Damira** — Stripe (com verificação da empresa), Neon
-   (plano Launch), Resend, e a conta PayPal da casa, ligada ao Stripe para o
-   PayPal funcionar em modo real. A verificação do Stripe demora: começar cedo.
+4. **Contas em nome da Damira** — Neon (plano Launch) e Resend. As contas de
+   pagamento são do Gonçalo (abaixo).
 5. **Marketing** — fazer a ponte com quem trata do marketing da casa.
 6. **Advogada** — levar os textos legais e trazer a aprovação.
 7. **Testes na loja e formação** — nas sandboxes do Stripe, com o tablet, e
    depois a primeira venda verdadeira. As falhas, o reembolso sem saldo
    incluído, ensaiam-se nas sandboxes: o Stripe proíbe testar em modo real (ver
    `pagamentos.md` › Testes).
+
+**As contas de pagamento são do Gonçalo** (decidido a 06/11), como o resto dos
+pagamentos: o Stripe com a verificação da empresa, que demora e convém começar
+cedo; os donos da empresa nas sandboxes; e a conta PayPal da casa, ligada ao Stripe
+para o PayPal funcionar em modo real. Os testes na loja (ponto 7) continuam com
+quem lá vai.
 
 ## Etapas
 
