@@ -535,7 +535,8 @@ comparar com o `CATALOGO_JSON`, campo a campo, sem diferenças. Os ids ficam os 
 hoje: vão no URL.
 
 O horário da loja sai do `casa.json` para `casa.horario_loja`; a cozinha fica
-`NULL`. As fotos de `public/` passam para o Blob na #32.
+`NULL`. As fotos de `public/` ficam onde estão: nenhuma é de
+um produto, por isso não há nada a migrar para o Blob.
 
 ## O modo de teste e a base de dados
 

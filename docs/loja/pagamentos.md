@@ -10,7 +10,8 @@ cancelado está em `pedidos.md`; aqui está a ligação ao Stripe.
 - A Damira convida a conta da DevPlus com o papel de programador. As chaves vão
   diretamente para as variáveis de ambiente da Vercel — nunca por mensagem.
 - ⚠️ **A ativação da conta (verificação da empresa) demora.** Sem ela não há
-  modo real. Começa cedo — é tarefa presencial (ver `divisao.md`).
+  modo real. Começa cedo — trata-a o Gonçalo, com o resto das contas de pagamento
+  (ver `divisao.md`).
 
 ## Checkout alojado no Stripe
 
