@@ -15,6 +15,27 @@
       "when": 1791212627057,
       "tag": "0001_sessoes",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793705021279,
+      "tag": "0002_pedidos",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793705032261,
+      "tag": "0003_pedido_de_teste_imutavel",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793972838755,
+      "tag": "0004_pedido_payment_intent",
+      "breakpoints": true
     }
   ]
 }
