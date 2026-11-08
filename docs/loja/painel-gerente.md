@@ -170,9 +170,12 @@ bebidas ficam na ordem do impresso), e as cartas também não se ordenam.
   falhar, fica uma foto esquecida no Blob e um erro no log, e o produto continua
   gravado.
 - ⚠️ **A CSP só abre ao Blob em `/painel`** (`next.config.ts`). O resto do site
-  recebe as fotos pelo otimizador de imagens, que é a mesma origem.
-- As fotos que já existem em `public/` passam para o Blob na migração, para
-  haver um sítio só de onde vêm as fotos.
+  recebe as fotos pelo otimizador de imagens, que é a mesma origem — **quando o
+  `FotoProduto` passar a `next/image`**, o que o Gonçalo faz no PR do editor de
+  produtos. Até lá, uma foto do Blob apareceria partida na loja: os dois entram
+  juntos.
+- As fotos que já existem em `public/` ficam onde estão: nenhuma é de um produto
+  (`AGENTS.md` › As páginas de produto), por isso não há nada a migrar.
 
 ## Pedidos
 

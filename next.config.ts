@@ -73,6 +73,11 @@ const CSP = [
  * gerente envia as fotos, diretamente do browser (`src/lib/fotos.ts`), e é lá que
  * vê as miniaturas. O resto do site continua sem falar com ninguém de fora: as
  * fotos dos produtos chegam-lhe pelo otimizador de imagens, que é a mesma origem.
+ * ⚠️ Só depois de o `FotoProduto` passar a `next/image` (o PR do editor de
+ * produtos): com um `<img>` direto ao Blob, esta CSP recusava a imagem.
+ *
+ * ⚠️ O `*` aceita qualquer loja do Blob, e não só a da casa. Quando a dela existir,
+ * troca-se pelo endereço exato, aqui e no `remotePatterns`.
  */
 const BLOB = "https://*.public.blob.vercel-storage.com";
 const CSP_DO_PAINEL = CSP.replace("img-src 'self' data: blob:", `img-src 'self' data: blob: ${BLOB}`).replace(
@@ -113,7 +118,7 @@ const CABECALHOS = [
  */
 const nextConfig: NextConfig = {
   images: {
-    /* Só o Blob da casa, e nenhum outro: ver o comentário de cima. */
+    /* Só o Blob, e nenhum outro sítio. Ainda aceita qualquer loja do Blob: ver o comentário de cima. */
     remotePatterns: [{ protocol: "https", hostname: "*.public.blob.vercel-storage.com" }],
   },
   async headers() {
