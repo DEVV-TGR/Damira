@@ -221,7 +221,9 @@ de teste — o `LOJA_EM_TESTE` desse momento.
   que importa aqui é a diferença entre a velha e a nova.
 - **No lançamento** (#55), um comando desconta numa transação as vagas e as
   quantidades dos pedidos de teste, e arquiva-os: ficam guardados, e fora das
-  vagas, das quantidades e das vendas. Repor o ramo `production` a um ponto
+  vagas, das quantidades e das vendas. ⚠️ **Na mesma transação, tira os pendentes
+  de teste do `pendente`.** Senão, a limpeza seguinte desconta-os outra vez, a
+  vaga fica abaixo de zero e o `CHECK` recusa a limpeza a partir daí. Repor o ramo `production` a um ponto
   anterior não serve — apagava o que a gerente fez no catálogo e nos horários.
 
 ### `linhas_pedido`
@@ -404,14 +406,22 @@ pode pagar (`pedidos.md`). Quem o faz, por ordem:
    só quando há um cliente no site, ou seja, com a base de dados já acordada.
 
 Não há tarefa agendada a acordar a base de dados para isto (regra 6). A limpeza
-é uma instrução só: muda os pendentes antigos para `expirado` e desconta-os dos
-contadores. A lógica completa é da #41.
+(`limparExpirados`, em `bd-pedidos.ts`) é uma instrução só: muda os pendentes antigos para `expirado` e desconta-os dos
+contadores. A lógica completa é da #41. O pedido expirado pelo id, no ponto 1,
+usa a mesma instrução (`expirarPedido`).
+
+⚠️ **Se a limpeza falhar, o calendário e o `criarPedido` continuam.** O erro fica
+no log, com a regra que falhou, e a vaga fica ocupada: é o lado seguro, porque
+não se vende nada duas vezes e só se liberta mais tarde.
 
 ## Limites de pedidos
 
 - **Criar pedido**: 5 pendentes por IP e 3 por email ao mesmo tempo. Conta-se
   na própria instrução que insere o pedido, com índices parciais
-  (`WHERE estado = 'pendente'`) em `ip` e em `cliente_email`.
+  (`WHERE estado = 'pendente'`) em `ip` e em `cliente_email`. O `INSERT … SELECT … WHERE`
+  não insere nada fora dos limites, e a instrução seguinte do lote — as linhas —
+  falha na chave estrangeira por não haver pedido: o lote cai inteiro, e essa
+  falha é o `demasiados-pedidos`. Sem IP, só conta o email.
 - **PIN e código da gerente**: tabela `limites`, chave `(chave, janela)`, com
   uma `contagem`. A janela é o início do intervalo (os 15 minutos do PIN), e a
   chave diz o quê e de onde (`pin:<dispositivo>`, `codigo:<email>`).
@@ -515,8 +525,18 @@ inventada ficava na base de dados como sendo a da casa. Há um teste que o prova
 e que falha se a camada deixar passar o exemplo para o painel.
 
 Os pedidos de exemplo do painel e o «Simular pedido novo» ficam na fonte dos
-JSON. **Enquanto os pedidos não estão na base de dados**, o site com ela diz a
-verdade: zero pedidos guardados (`pedidosAindaNaoGuardados`, em `bd.ts`).
+JSON. **Enquanto o painel dos pedidos não está na base de dados**, o site com
+ela diz a verdade do lado dele: o balcão abre vazio (`pedidosAindaNaoGuardados`,
+em `bd.ts`).
+
+⚠️ **O `criarPedido` confere o pedido pela vista, e grava-o na base de dados.**
+No modo de teste, os produtos não têm tempos de produção gravados (a casa ainda
+não os deu) e é a camada que os tapa. Um `criarPedido` que lesse a base de dados
+crua dava sempre «indisponível» enquanto o calendário mostrava vagas. Por isso
+lê os produtos, a casa e as vagas por uma **leitura** que o `fonteDoAmbiente` lhe
+dá: a vista com os exemplos (`bd-pedidos.ts` › `LeituraDoPedido`). A camada
+continua a não gravar nada; o pedido grava-se como sempre, com `de_teste` a
+`true` («Os pedidos de teste», acima).
 
 ## Os testes
 
@@ -527,12 +547,17 @@ base de dados, numa cópia limpa do catálogo importado para um PGlite
 (`src/lib/dados/fontes-de-teste.ts`). É a prova de que a troca no `index.ts`
 não muda nada para as páginas.
 
-Os testes que precisam do que ainda não está na base de dados — os pedidos, o
-modo de teste por cima dela — **saltam a volta `bd`, marcados**, com o motivo
-escrito ao lado. Uma função de pedido chamada na volta `bd` rebenta a dizê-lo,
-em vez de correr contra os JSON sem ninguém dar por isso. O
-`pedidos-painel.test.ts` e o `vagas-servidor.test.ts` entram na volta `bd` quando
-a fonte da base de dados tiver os pedidos (#29, #41) — as tabelas já existem.
+Os testes que precisam do que ainda não está na base de dados — o painel dos
+pedidos — **saltam a volta `bd`, marcados**, com o motivo escrito ao lado. Uma
+função do painel dos pedidos chamada na volta `bd` rebenta a dizê-lo, em vez de
+correr contra os JSON sem ninguém dar por isso. O `pedidos-painel.test.ts` e o
+`vagas-servidor.test.ts` entram na volta `bd` com o painel dos pedidos (#31).
+
+**Os pedidos da loja provam-se em `src/lib/dados/pedidos-bd.test.ts`**, com o
+cenário dos testes do `criarPedido` dos JSON (o mesmo dia, o mesmo kit, o mesmo
+total) e o que só a base de dados garante: a última vaga recusada **mesmo com uma
+leitura desatualizada**, os limites por IP e por email, a limpeza que não expira
+aos 30 min 59 s e expira aos 31 min 1 s, e o `de_teste` conforme o modo.
 
 As regras das tabelas dos pedidos provam-se em `src/db/esquema-pedidos.test.ts`:
 cada `CHECK`, as chaves únicas e estrangeiras, o gatilho do `de_teste` e a
@@ -561,3 +586,8 @@ da visita.
 6. **O `estadoStripe` e o `motivo` do reembolso** já têm colunas, e o contrato
    ainda não os tem (`EsquemaReembolso`). Entram no contrato com a #49.
    *(Gonçalo)*
+7. **As quantidades por produto ainda não se reservam.** As tabelas
+   (`quantidades_dia`, `quantidades_total`) existem, mas o `criarPedido` só
+   reserva a vaga: nenhum produto tem limite hoje, e o contrato não tem erro
+   para «este artigo esgotou» (`ErroCriarPedido`). Quando a gerente puser o
+   primeiro limite, falta esse erro e a soma no mesmo lote. *(Gonçalo)*

@@ -81,6 +81,11 @@ painel desliga-se** — o PIN dela é público, e o painel gravaria a sério —
 isso a entrada verdadeira (ponto 8) liga-se no mesmo deploy, ou o painel fica
 trancado até ela.
 
+⚠️ **Primeiro migrar o ramo, e só depois pôr a variável no ambiente — e a Preview
+também conta.** Com a `DATABASE_URL`, cada vista do calendário escreve em `pedidos`
+e em `vagas`. Sem a migração `0002` aplicada, o calendário parte-se
+(`relation "pedidos" does not exist`).
+
 ## Os comandos
 
 Correm no terminal de quem está a fazer a ligação, e nunca no site. O endereço
