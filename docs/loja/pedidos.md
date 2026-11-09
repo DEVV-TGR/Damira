@@ -198,8 +198,20 @@ A gerente reembolsa **sem cancelar** (`reembolsarPedido`) quando o pedido segue
 mas alguma coisa correu mal — um artigo que faltou. Nunca mais do que o que foi
 pago online e ainda não foi devolvido.
 
-⚠️ Até ao Stripe (#49), a implementação provisória dá o reembolso como
-`concluido` logo, e o painel diz que é simulado.
+⚠️ **Até ao Stripe (#49), nenhum reembolso devolve dinheiro.** O que o painel
+mostra depende da fonte:
+
+- **Nas duas**, ao cancelar ou reembolsar, por baixo do valor: «Até aos
+  pagamentos online, o reembolso só fica registado — não sai dinheiro.» (Ao
+  juntar dois pedidos repetidos, a mesma frase sem a segunda parte.)
+- **Nos JSON**, o reembolso fica `concluido` logo: o histórico do pedido mostra
+  «Reembolso», o valor e «concluído», e o detalhe ganha a linha «Reembolsado».
+- **Na base de dados** (com o #105), nasce `pendente` e, sem `stripe_refund_id`,
+  é trabalho por fazer: fica gravado, mas nenhum dinheiro volta até a #49 chamar o
+  Stripe. O histórico mostra «pendente», a linha «Reembolsado» não aparece (o
+  `reembolsadoCent` só soma os `concluido`), e um `pendente` não entra em
+  «Precisa de atenção» — só um `falhado` entra. Ninguém é avisado de que está
+  parado (`pagamentos.md` › Reembolsos).
 
 ### Os estados, e de onde vêm
 
