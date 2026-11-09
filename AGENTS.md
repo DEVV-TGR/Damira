@@ -38,8 +38,11 @@ proteção do `main` no GitHub.
 
 ## A loja online — ler antes de mexer
 
-A partir de outubro de 2026 o site passa a vender: pagamento online, painel do
-balcão e da gerente, impressão de talões. **As regras de negócio estão em
+A partir de outubro de 2026 o site passa a vender: pedidos guardados, painel do
+balcão e da gerente, impressão de talões. ⚠️ **Desde 04/11/2026 paga-se na loja,
+e não online** — decisão da casa, «para já». O pagamento online (Stripe) não se
+apagou: dorme no esquema e no contrato, para o dia em que voltar (`pedidos.md`).
+**As regras de negócio estão em
 `docs/loja/`, um ficheiro por área. Antes de mexer numa área, ler o ficheiro
 dela** — e o `pedidos.md`, que é o contrato de que todos dependem.
 
@@ -48,7 +51,7 @@ dela** — e o `pedidos.md`, que é o contrato de que todos dependem.
 | **Quem faz o quê, e com quem estás a trabalhar** | `divisao.md` |
 | O pedido: estados, referência, dinheiro, cancelamento | `pedidos.md` |
 | Calendário, tempos de produção, até quando se cancela | `horarios.md` |
-| Stripe: checkout, webhook, reembolsos | `pagamentos.md` |
+| Stripe: checkout, webhook, reembolsos — **a dormir desde 04/11** | `pagamentos.md` |
 | Painel: entrada, papéis, sessões | `painel.md` |
 | Painel: vista do balcão | `painel-balcao.md` |
 | Painel: vista da gerente, produtos | `painel-gerente.md` |
@@ -69,8 +72,10 @@ esquecerem:
 3. **Hora de Lisboa, com biblioteca de fusos.** `agora` entra como argumento;
    nunca `getHours()` no servidor — a Vercel está em UTC e o erro só aparece
    em março. (`horarios.md`)
-4. **Só o Stripe confirma um pagamento.** `marcarPago` é a única porta, e é
-   condicional e idempotente. (`pagamentos.md`)
+4. **Só o Stripe confirma um pagamento online** — e hoje não há nenhum: paga-se
+   na loja, e nada no site marca um pedido como pago. Se o pagamento online
+   voltar, `marcarPago` é a única porta, condicional e idempotente.
+   (`pedidos.md`, `pagamentos.md`)
 5. **A última vaga decide-a a base de dados**, com restrições `CHECK` numa
    transação — não o código a ler e depois escrever. (`robustez.md`)
 6. **A base de dados dorme.** Nada que corra sozinho (polling, tarefas
@@ -79,13 +84,13 @@ esquecerem:
    `/painel`. (`robustez.md`)
 8. **Esconder um botão não é proteger.** Cada acção de gestão verifica o papel
    no servidor. (`painel.md`)
-9. **Um pedido pago nunca se perde e nunca se apaga.** (`pedidos.md`)
+9. **Um pedido nunca se perde e nunca se apaga** — nem um por confirmar, que não
+   expira sozinho. (`pedidos.md`)
 
 ### O modo de teste — e é um bloqueador de lançamento
 
 Até a casa dar os tempos de produção (o horário da cozinha já deu: das 6h00
-às 11h00), até a conta Stripe dela estar verificada e até haver base de
-dados, a loja corre no ar em
+às 11h00) e até ao lançamento, a loja corre no ar em
 **modo de teste**. ⚠️ **`LOJA_EM_TESTE=1` é o único interruptor de tudo o que é
 provisório** — em local e na Vercel, sem uma segunda variável para ligar
 (decidido a 04/10; a lista vive em `src/lib/modo-teste.ts`):
@@ -102,7 +107,6 @@ provisório** — em local e na Vercel, sem uma segunda variável para ligar
   repositório público: é a troca aceite para o modo de teste ligar com uma
   variável só, e só há dados de exemplo do outro lado. Sai com a entrada
   verdadeira (#33);
-- o Stripe de teste;
 - e os avisos que o dizem: **uma faixa no topo de todas as páginas** da loja
   (`src/components/FaixaModoTeste.tsx`) e outra no topo do painel.
 
@@ -115,8 +119,8 @@ para `vagas.limite` ao criar um pedido, e que o primeiro pedido depois do
 lançamento substitui), e o painel lê a casa e os produtos **como estão gravados**
 (`configuracaoDoPainel`, `produtosDoPainel`): se a gerente
 visse a cozinha de exemplo em «Horários», gravava-a como sendo a dela. Os
-pedidos de exemplo do painel ficam nos JSON; no ar, testa-se comprando com os
-cartões de teste do Stripe. E ⚠️ **a entrada provisória não liga com a base de
+pedidos de exemplo do painel ficam nos JSON; no ar, testa-se fazendo pedidos, que
+ficam marcados `de_teste` e saem das contas no lançamento. E ⚠️ **a entrada provisória não liga com a base de
 dados** — o PIN dela é público, e o painel gravava a sério: até a verdadeira
 estar ligada, o painel fica trancado.
 
@@ -127,16 +131,17 @@ calendário volta a «indisponível», nunca a um prazo inventado, e o painel di
 que a entrada ainda não está ligada. Lê-se no build: mudar o interruptor obriga
 a um novo deploy.
 
-### A página de compra — e, até ao Stripe, acaba num email
+### A página de compra — e, até o pedido ficar guardado, acaba num email
 
 O cesto leva a **`/encomendas/pedido`** (#37): o resumo com o total do servidor,
 o calendário de levantamento (sempre embutido, com dia e hora — sem os dados da
 cozinha, as horas são as da loja e a escolhida é **pretendida**, a confirmar) e
 os dados da pessoa. O botão do carrinho não aparece nesta página. O formulário que vivia no
-fundo das encomendas saiu. ⚠️ **Até ao pagamento online (#38) o pedido acaba num
-email à casa**, por secções e com todos os dados (os opcionais vazios
-escrevem-se «—»); com o Stripe, o botão do fim passa a «Pagar» e o resto da
-página fica. ⚠️ Os campos são controlados e o envio é feito à mão, sem o
+fundo das encomendas saiu. ⚠️ **Até o pedido ficar guardado na base de dados o
+pedido acaba num email à casa**, por secções e com todos os dados (os opcionais
+vazios escrevem-se «—»); depois, o botão do fim cria o pedido — confirmado, ou
+por confirmar (`pedidos.md`) — e o resto da página fica. Não há botão «Pagar»
+enquanto se pagar na loja. ⚠️ Os campos são controlados e o envio é feito à mão, sem o
 reinício automático do `<form action>` do React 19: um erro do servidor nunca
 apaga o que a pessoa escreveu (`robustez.md` › Erros).
 
@@ -167,8 +172,12 @@ que as torna falsas:
   dentro de uma funcionalidade.
 - Desenvolvimento e produção são bases diferentes (ramos da Neon). Nunca testar
   contra a de produção — com uma exceção: o site no ar em modo de teste, até ao
-  lançamento, compra com cartões de teste contra ela (`pagamentos.md` ›
-  Ambientes). Os pedidos que isso deixa lá saem das contas no lançamento.
+  lançamento, faz pedidos de teste contra ela (marcados `de_teste`). Os pedidos
+  que isso deixa lá saem das contas no lançamento.
+- ⚠️ **O catálogo vive na base de dados desde 09/11/2026**, quando foi importado
+  para o ramo `production`. Mudar um produto nos `src/data/*.json` já não chega
+  ao site com a `DATABASE_URL` ligada: muda-se no painel. A importação não volta
+  a correr (`ligar-a-neon.md` › 5).
 
 ### Revisão
 

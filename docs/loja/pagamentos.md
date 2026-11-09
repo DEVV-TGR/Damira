@@ -1,5 +1,11 @@
 # Pagamentos — Stripe
 
+⚠️ **A dormir desde 04/11/2026.** A casa decidiu que, para já, se paga na loja,
+ao levantar ou na entrega (`pedidos.md`). Nada deste ficheiro corre hoje: nenhum
+pedido nasce `pendente`, e a rota do webhook não tem pedidos para marcar. Fica
+escrito como estava — é o desenho para o dia em que o pagamento online voltar,
+e a casa disse «para já», não «nunca». Até lá, não se constrói mais nada aqui.
+
 Como o dinheiro entra e sai. O que acontece ao pedido quando é pago, expira ou é
 cancelado está em `pedidos.md`; aqui está a ligação ao Stripe.
 

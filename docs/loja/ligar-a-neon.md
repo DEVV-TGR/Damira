@@ -110,16 +110,35 @@ pelo terminal em `scripts/bd.ts`.
 ## 4. Aplicar o esquema — primeiro no desenvolvimento
 
 - [x] O comando: `npm run bd:migrar`.
-- [ ] Correr no ramo `desenvolvimento` e confirmar as tabelas e as regras.
-- [ ] Só depois no `production`.
+- [x] Correr no ramo `desenvolvimento` e confirmar as tabelas e as regras
+      (06/11). ⚠️ O `desenvolvimento` tem a mais a migração `0005` dos avisos de
+      dinheiro, do #108, que se fechou sem entrar no `main` quando o pagamento
+      online foi a dormir: uma tabela `avisos_dinheiro` vazia que o código não
+      lê. Não faz mal; some quando o ramo for recriado a partir do `production`.
+- [x] Só depois no `production` (09/11): as 5 migrações do `main`, da `0000` à
+      `0004` — 14 tabelas, Postgres 18.6.
+
+**Para correr um comando no `production`**, o endereço direto dele vive num
+ficheiro à parte, `.env.producao.local` (o git ignora-o), e passa-se com
+`--env-file`, que ganha ao `.env.local`:
+
+```bash
+npx tsx --env-file=.env.producao.local scripts/bd.ts migrar
+```
+
+O `.env.local` continua a apontar para o `desenvolvimento`. ⚠️ Confirmar sempre o
+servidor que o comando mostra antes de escrever «sim».
 
 ## 5. Importar o catálogo
 
 - [x] O comando: `npm run bd:importar`, com o driver de WebSockets (a
       importação usa uma transação, e o driver HTTP não as faz).
-- [ ] Correr no `desenvolvimento`: a comparação tem de dar **zero diferenças**.
-- [ ] No `production`: **uma vez**, antes de a casa começar a preencher os
-      produtos (14/10).
+- [x] Correr no `desenvolvimento`: a comparação tem de dar **zero diferenças**
+      (107 produtos; voltou a dar zero a 06/11 e a 09/11).
+- [x] No `production`: **uma vez**, antes de a casa começar a preencher os
+      produtos — feito a 09/11: 107 produtos e 116 variantes, **zero
+      diferenças**. ⚠️ A partir daqui o catálogo vive na base de dados, e mudar
+      os `src/data/*.json` já não chega ao site.
 
 ⚠️ **Depois disso, nunca mais.** A importação recusa-se a correr sobre uma base
 de dados com produtos, e é de propósito: apagava o que a gerente fez no painel.
@@ -128,12 +147,18 @@ Se for preciso recomeçar, é um ramo novo e vazio.
 ## 6. O que só a Neon pode confirmar
 
 O PGlite é um Postgres verdadeiro, mas tem uma ligação só e corre dentro do
-nosso processo. Estas ficam por provar até haver a conta:
+nosso processo. As que estão marcadas foram ensaiadas a 06/11 no `desenvolvimento`,
+com pedidos de teste e pedidos mesmo ao mesmo tempo:
 
-- [ ] **Dois clientes na última vaga ao mesmo tempo**: o `CHECK` recusa o
-      segundo, com duas ligações a sério (`robustez.md` › Concorrência).
-- [ ] **As escritas tudo-ou-nada pelo driver HTTP** (lotes), que o PGlite não
-      imita.
+- [x] **Dois clientes na última vaga ao mesmo tempo**: o `CHECK` recusa o
+      segundo, com duas ligações a sério (`robustez.md` › Concorrência). Com 8 ao
+      mesmo tempo, ficou 1, e os outros receberam `vaga-cheia`.
+- [x] **As escritas tudo-ou-nada pelo driver HTTP** (lotes), que o PGlite não
+      imita: os recusados não deixaram pedido nem vaga, e cada vaga bateu com os
+      pedidos que a ocupam.
+- [x] **O painel dos pedidos pelo driver HTTP** (#105): 5 tablets a entregar sobem
+      a versão uma vez, 4 a cancelar libertam a vaga uma vez, e 2 a reagendar para
+      a última vaga deixam entrar 1.
 - [ ] **A ordem das categorias gravada em dois aparelhos ao mesmo tempo**: a
       permutação confere-se na própria instrução (`guardarOrdemCategorias`),
       e nenhuma das duas deixa a lista com categorias a mais ou a menos.
@@ -149,7 +174,9 @@ nosso processo. Estas ficam por provar até haver a conta:
 A casa começa a preencher os produtos no painel, e o que ela grava tem de ficar.
 
 - [x] A fonte sobre a base de dados, escolhida pela `DATABASE_URL` (#69, e o
-      `fonteDoAmbiente`). Falta pôr a variável na Vercel.
+      `fonteDoAmbiente`). O `production` está pronto desde 09/11; falta pôr a
+      variável na Vercel, **no mesmo deploy** que o Resend e a `EMAILS_GERENTE`
+      — antes disso o painel fica trancado e não adianta nada.
 - [x] **O modo de teste por cima da base de dados, e não no lugar dela**
       (`comExemplo`): o site fica em modo de teste até 11/11, e é nesse modo que
       ela vai preencher. Nada de exemplo chega à base de dados, e o painel vê a
@@ -160,7 +187,8 @@ A casa começa a preencher os produtos no painel, e o que ela grava tem de ficar
       (ponto 8).
 - [ ] A conta Resend da Damira, para o código da gerente chegar por email (#26)
       — **criada com o email da gerente**, para o código lhe chegar antes de o
-      domínio estar verificado (ponto 8).
+      domínio estar verificado (ponto 8). Trata-a o Gonçalo, desde 09/11
+      (`divisao.md`); o domínio damira.pt está ativo desde 02/11.
 
 ## 8. A entrada no painel (#33) — o que falta
 
