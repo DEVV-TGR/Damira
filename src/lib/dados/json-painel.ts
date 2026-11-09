@@ -17,7 +17,7 @@ import {
   type Produto,
   type ResultadoPainel,
 } from "./tipos";
-import { comIds, emId, invalido, livre, naoExiste } from "./regras";
+import { comIds, emId, invalido, livre, naoExiste, paraProcura } from "./regras";
 
 /**
  * # O painel sobre os JSON — em memória, como os pedidos
@@ -50,8 +50,6 @@ export type EstadoJson = {
 };
 
 /* «Márcia», «marcia» e «MARCIA» são a mesma pessoa ao telefone. */
-const paraProcura = (texto: string) =>
-  texto.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 
 const CINCO_MINUTOS = 5 * 60_000;
 

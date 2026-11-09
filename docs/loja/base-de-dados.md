@@ -264,7 +264,9 @@ um pedido antigo diz o que se pagou nesse dia (`pedidos.md`).
 recusado, venha de onde vier. O `estado_stripe` nulo é um reembolso a que o Stripe
 ainda não respondeu, ou um que demos nós por falhado.
 
-**A falha trata-se por reembolso, e não no `avisos_tratados` do pedido.** Um
+**A falha trata-se por reembolso, e não no `avisos_tratados` do pedido.** Para o
+contrato, `reembolso-falhado` aparece nos `avisosTratados` quando houve falhas e
+nenhuma ficou por tratar. Um
 segundo reembolso falhado no mesmo pedido ficava escondido pelo primeiro, já
 tratado. O aviso existe enquanto houver um `falhado` sem `falha_tratada_em`.
 
@@ -334,7 +336,11 @@ o contador bate sempre com a soma dos reembolsos `pendente` e `concluido`.
   — é o `estado-mudou` do contrato. Dois toques em «entregue», em dois tablets,
   entregam uma vez.
 - **Os 5 minutos do balcão** para desfazer um «entregue» vão na mesma condição
-  (`… AND entregue_em > agora − 5 min`), com o `agora` do contexto.
+  (`… AND entregue_em >= agora − 5 min`), com o `agora` do contexto.
+- **Os efeitos vão na mesma instrução**, em passos do mesmo `WITH`
+  (`bd-painel-pedidos.ts`): a vaga, o reembolso e a versão. Sem isso, um pedido que
+  já não está no estado de partida descontava a vaga na mesma, e o driver HTTP da
+  Neon não tem transações interativas para ler a meio.
 - **Cada escrita num pedido sobe `casa.versao_pedidos` na mesma instrução**, e a
   ação chama a seguir o `avisarQuePedidosMudaram()`. Assim o polling do painel
   não falha uma alteração e a base de dados continua a dormir (`painel.md`).
@@ -526,9 +532,8 @@ inventada ficava na base de dados como sendo a da casa. Há um teste que o prova
 e que falha se a camada deixar passar o exemplo para o painel.
 
 Os pedidos de exemplo do painel e o «Simular pedido novo» ficam na fonte dos
-JSON. **Enquanto o painel dos pedidos não está na base de dados**, o site com
-ela diz a verdade do lado dele: o balcão abre vazio (`pedidosAindaNaoGuardados`,
-em `bd.ts`).
+JSON. Com a base de dados, o balcão mostra os pedidos que lá estão, e abre vazio
+se não houver nenhum.
 
 ⚠️ **O `criarPedido` confere o pedido pela vista, e grava-o na base de dados.**
 No modo de teste, os produtos não têm tempos de produção gravados (a casa ainda
@@ -548,11 +553,15 @@ base de dados, numa cópia limpa do catálogo importado para um PGlite
 (`src/lib/dados/fontes-de-teste.ts`). É a prova de que a troca no `index.ts`
 não muda nada para as páginas.
 
-Os testes que precisam do que ainda não está na base de dados — o painel dos
-pedidos — **saltam a volta `bd`, marcados**, com o motivo escrito ao lado. Uma
-função do painel dos pedidos chamada na volta `bd` rebenta a dizê-lo, em vez de
-correr contra os JSON sem ninguém dar por isso. O `pedidos-painel.test.ts` e o
-`vagas-servidor.test.ts` entram na volta `bd` com o painel dos pedidos (#31).
+Os testes que precisam do que a base de dados ainda não tem — os tempos de
+produção, que a casa ainda não deu — **saltam a volta `bd`, marcados**, com o
+motivo escrito ao lado. O `pedidos-painel.test.ts` é a especificação do painel
+dos pedidos, e corre nas duas voltas.
+
+**O que só a base de dados garante no painel** prova-se em
+`src/lib/dados/pedidos-painel-bd.test.ts`: dois tablets a entregar, dois reembolsos
+que juntos passam o pago, a última vaga ao reagendar com a leitura desatualizada,
+os contadores depois de cada mudança e o cursor sem saltos.
 
 **Os pedidos da loja provam-se em `src/lib/dados/pedidos-bd.test.ts`**, com o
 cenário dos testes do `criarPedido` dos JSON (o mesmo dia, o mesmo kit, o mesmo
