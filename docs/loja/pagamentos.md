@@ -201,6 +201,17 @@ muda quem pergunta.
   isso a proteção que dura é a nossa: o reembolso gravado antes de se chamar o
   Stripe (ver «Em aberto», 3).
 
+⚠️ **Regra: o #109 não vai para produção sem o #49.** O #109 (a `FonteWebhook`
+sobre a base de dados) é o que faz um pagamento confirmado ficar gravado no
+pedido; o #49 é o que pede os reembolsos ao Stripe. Sobre a base de dados, um
+reembolso **nasce `pendente`** e fica à espera de ser pedido ao Stripe — e até ao
+#49 nada o pede. Com o #109 sem o #49, o cliente paga a sério, a gerente cancela
+ou reembolsa, e **o dinheiro nunca volta e ninguém é avisado**: o `pendente` não
+entra em «Precisa de atenção», só o `falhado` (`pedidos.md` › Reembolsos).
+Em termos que se confirmam: cada merge no `main` vai para a Production da Vercel,
+por isso **o #109 não entra no `main` antes do #49**, ou entram juntos. Esta regra
+sai daqui no PR do #49.
+
 ⚠️ **Um reembolso pode falhar.** Os reembolsos saem do saldo Stripe da casa. Sem
 saldo, o de cartão fica pendente e o de MB WAY **falha**. Nos primeiros dias, com
 o saldo quase a zero, é exatamente o que vai acontecer. O painel mostra-o como
