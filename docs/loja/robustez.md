@@ -72,7 +72,7 @@ memória não servem: na Vercel cada pedido pode cair numa instância diferente.
 | PIN do balcão | 5 erros → 15 min bloqueado (`painel.md`) |
 | Código da gerente | envios por hora e tentativas por código (`painel.md`) |
 | Criar pedido | 5 pendentes por IP e 3 por email ao mesmo tempo |
-| Fotos dos bolos personalizados | por pedido e por IP |
+| Fotos dos bolos personalizados | por pedido (até 3 de referência e 1 para imprimir no bolo) e por IP |
 
 ⚠️ **Porquê limitar a criação de pedidos.** Um pedido pendente reserva vaga e
 quantidades durante 31 minutos. Sem limite, um robô — ou alguém com má intenção
