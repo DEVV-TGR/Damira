@@ -28,19 +28,24 @@
     "date-fns": "^4.4.0",
     "drizzle-orm": "^0.45.3",
     "libphonenumber-js": "^1.13.14",
-    "next": "16.2.12",
+    "next": "16.4.6",
     "next-auth": "^5.0.0-beta.32",
     "next-intl": "^4.13.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "server-only": "^0.0.1",
-    "sharp": "^0.35.3",
+    "sharp": "^0.35.5",
     "zod": "^4.4.3"
   },
-  "_comentario_overrides": "O `next` traz cópias suas do `postcss` (fixo em 8.4.31) e do `sharp` (^0.34.5), e ambas têm vulnerabilidades conhecidas. Estes overrides obrigam-no a usar as versões corrigidas em vez das aninhadas. Se um dia o `next` subir sozinho estas duas, os overrides deixam de ser precisos e devem sair — um override esquecido é uma versão presa que ninguém volta a olhar.",
+  "_comentario_overrides": "O Next 16.4.6 já usa sharp corrigido; saiu esse override. Mantemos postcss ^8.5.26 (o Next fixa 8.5.23). As ferramentas de desenvolvimento ainda trazem minimatch e esbuild vulneráveis: os overrides limitam-se aos dois pais afetados. Rever quando esses pais atualizarem as dependências.",
   "overrides": {
     "postcss": "^8.5.26",
-    "sharp": "^0.35.3"
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.1"
+    },
+    "@esbuild-kit/core-utils": {
+      "esbuild": "^0.28.2"
+    }
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
@@ -50,7 +55,7 @@
     "@types/react-dom": "^19",
     "drizzle-kit": "^0.31.11",
     "eslint": "^9",
-    "eslint-config-next": "16.2.12",
+    "eslint-config-next": "16.4.6",
     "playwright-core": "^1.62.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
