@@ -82,6 +82,7 @@ o código que os testes provam é o mesmo que corre no site.
 | `a_venda_online`, `aparece_na_ementa` | `boolean` | iguais |
 | `alergenios` | `text[]` nulo | ⚠️ `NULL` é «por responder», `{}` é «sem alergénios» |
 | `vegan`, `sem_gluten` | `boolean` | iguais |
+| `pede_confirmacao` | `boolean`, `false` por defeito | `pedeConfirmacao` — «Necessita de confirmação da loja», da gerente (`painel-gerente.md`) |
 | `fotos` | `text[]` | os URLs do Vercel Blob (#32) |
 | `sinal_percent` | `integer` nulo, `CHECK` 1–100 | `sinalPercent` |
 | `limite_quantidade`, `limite_modo` | `integer`, `text` (`porDia`, `total`), nulos | `limite` |
@@ -94,6 +95,14 @@ dos pedidos. Um número por baixo obrigava a traduzir número ↔ código em cad
 leitura e escrita, sem ninguém de fora o ver. O código gera-se no servidor a
 partir do nome, como já faz o `json-painel.ts` (`croissant`, `croissant-2`…). O
 `produtos(slug)` único do `robustez.md` é esta chave primária.
+
+**O `pede_confirmacao` nasce calculado, e não do `DEFAULT`** (migração `0005`).
+O `false` por defeito é o de um produto novo. Os que já existem ficam ligados só
+se não tiverem preço nenhum — nenhuma variante com `preco_cent` —, a mesma conta
+do `pedeConfirmacaoInicial` (`regras.ts`); é um `UPDATE` escrito à mão a seguir
+à coluna que o `drizzle-kit` gera, e numa base vazia não muda nada. Daí para a
+frente é da gerente. A prova sobre uma base que já tem produtos está em
+`src/db/migracao-pede-confirmacao.test.ts`.
 
 ### `variantes`
 
