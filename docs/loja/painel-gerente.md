@@ -53,6 +53,7 @@ qualquer pedido, com «reembolsar parte» para os que seguem.
 | À venda online | sim / não |
 | Limitar quantidade | interruptor; ligado pede **quantos** e **por dia / no total** |
 | Pede sinal | interruptor; ligado pede a percentagem (ver `pagamentos.md`) |
+| Necessita de confirmação da loja | sim / não — ver abaixo |
 
 **«Aparece na ementa» e «à venda online» são coisas diferentes.** A ementa tem 95
 artigos e nem todos se encomendam — não se encomenda um galão para sexta. Hoje
@@ -64,6 +65,27 @@ repõe-se sozinha todos os dias; **no total** é um stock que não se repõe (os
 bolos-rei de um Natal). Se a gerente baixar o limite abaixo do que já está
 vendido, o artigo deixa de estar à venda — **os pedidos já feitos nunca são
 cancelados por isso**.
+
+### Necessita de confirmação da loja
+
+Decidido a 11/11, com a loja a deixar o pagamento online: uns produtos ficam
+confirmados logo, outros só depois de a casa os ver. **Quem decide é a gerente,
+produto a produto**, com esta caixa na ficha — está em **todos** os produtos,
+com preço ou sem ele. No código é o `pedeConfirmacao` (`tipos.ts`).
+
+- **De partida, ligada só nos produtos sem preço** — sem nenhuma variante com
+  preço, que é «sob orçamento» e nunca zero (hoje, só o bolo por medida).
+  Calcula-se (`pedeConfirmacaoInicial`, em `regras.ts`); não se escreve à mão
+  em 107 produtos. Daí para a frente é o que ela marcar. Um produto novo
+  começa desligado.
+- ⚠️ **Só a gerente a muda**: grava-se com o produto (`editarProduto`,
+  `criarProduto`), e o papel verifica-se no servidor (`papeis.ts`).
+- ⚠️ **Ainda não muda nada na loja.** Nenhum pedido fica à espera por causa
+  dela até o pedido ganhar esse caminho (`pedidos.md`, que é quem o decide).
+- **Mudar o preço não mexe na caixa**, nem a caixa no preço: o valor de
+  partida conta só uma vez. Na base de dados é a coluna `pede_confirmacao`, e
+  a migração `0005` liga-a de partida nos produtos que lá estão sem preço
+  (`base-de-dados.md`).
 
 ### Variantes e escolhas
 
