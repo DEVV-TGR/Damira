@@ -1,11 +1,18 @@
 "use client";
 
+import { captureException } from "@sentry/nextjs";
+import { useEffect } from "react";
+
 /**
  * ⚠️ **Nunca uma página em branco** (`robustez.md`). No tablet do balcão, um
  * ecrã branco lê-se como «o painel está desligado», e ninguém sabe se há
  * pedidos. Diz o que aconteceu e dá as duas saídas.
  */
-export default function ErroPainel({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function ErroPainel({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  useEffect(() => {
+    captureException(error);
+  }, [error]);
+
   return (
     <main className="mx-auto flex min-h-dvh max-w-xl flex-col justify-center px-6 py-16">
       <p className="text-xs font-semibold uppercase tracking-widest text-tijolo">Painel</p>

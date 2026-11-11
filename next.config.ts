@@ -1,3 +1,4 @@
+import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
@@ -130,4 +131,28 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+/**
+ * ⚠️ **O `/api/erros` é o que deixa a CSP ficar como está.** Os erros do browser
+ * saem pela mesma origem, e é o nosso servidor que os passa ao Sentry
+ * (`src/app/sentry-tunnel/route.ts`). Fica debaixo de `/api` para o `src/proxy.ts`
+ * não o mandar para `/pt/…`.
+ *
+ * ⚠️ **Sem `SENTRY_AUTH_TOKEN` o build passa na mesma**, sem enviar os mapas de
+ * código. E uma falha do Sentry a recebê-los nunca pode parar um deploy, por isso
+ * o `errorHandler` só avisa: por defeito, parava o build.
+ */
+export default withSentryConfig(withNextIntl(nextConfig), {
+  tunnelRoute: "/api/erros",
+  telemetry: false,
+  silent: !process.env.CI,
+  errorHandler: (erro) => console.warn("[sentry] os mapas de código não foram enviados:", erro.message),
+  /* Só erros: sem medição de desempenho e sem gravação de sessões. */
+  bundleSizeOptimizations: {
+    excludeDebugStatements: true,
+    excludeTracing: true,
+    excludeReplayIframe: true,
+    excludeReplayShadowDom: true,
+    excludeReplayWorker: true,
+  },
+  suppressOnRouterTransitionStartWarning: true,
+});

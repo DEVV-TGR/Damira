@@ -184,6 +184,41 @@ calmo de um tablet desligado.
 - **Nunca nos logs:** email, telefone, NIF, moradas, dados do Stripe para além
   dos ids. Regista-se a referência `DAM-…`, que chega para encontrar tudo.
 
+### O Sentry
+
+- **O `NEXT_PUBLIC_SENTRY_DSN` é o interruptor.** Vazio, o SDK fica desligado e
+  nada sai do site. Lê-se no build: mudá-lo obriga a um novo deploy.
+- **Só erros.** Sem medição de desempenho, sem gravação de sessões e sem contagem
+  de visitas. Sem erros, o site não fala com o Sentry.
+- **No servidor** chegam os erros que rebentam (`onRequestError`) e os
+  `console.error`. **No browser**, os erros soltos e os que param no
+  `global-error.tsx` ou no `error.tsx` do painel. Um `error.tsx` novo tem de
+  chamar o `captureException`, ou o erro fica lá preso.
+- ⚠️ **O SDK recolhe quase tudo por defeito:** cookies, cabeçalhos, o corpo dos
+  pedidos, a query e as variáveis locais. O `src/lib/sentry.ts` desliga tudo, e o
+  `limparEvento` tapa emails, telefones, NIF e códigos postais nas mensagens, e
+  corta os valores que o Drizzle escreve nos erros. ⚠️ **Uma morada escrita à mão
+  numa mensagem passa**, porque não há padrão que a reconheça: a regra de cima
+  continua a valer.
+- **Os erros do browser saem por `/api/erros`**, que é a mesma origem, e por isso a
+  CSP continua `connect-src 'self'`. O servidor passa-os ao Sentry, sem o IP de
+  quem visita (`src/app/sentry-tunnel/route.ts`).
+- **A política de privacidade tem de nomear o Sentry**, como quem trata erros do
+  site em nosso nome.
+
+Para ligar:
+
+1. Criar a conta com o email da DevPlus, com os dados na **região da UE**, e um
+   projeto Next.js.
+2. Pôr o DSN em `NEXT_PUBLIC_SENTRY_DSN` na Vercel, em Production e Preview, e
+   fazer um novo deploy. Os erros chegam separados por ambiente.
+3. Criar o alerta por email para os erros novos.
+4. **Opcional:** `SENTRY_ORG`, `SENTRY_PROJECT` e `SENTRY_AUTH_TOKEN` na Vercel,
+   para os erros aparecerem com os nomes verdadeiros. Sem elas o build passa na
+   mesma, mas os erros chegam com o código minificado.
+5. Forçar um erro num preview, com um commit descartável, e confirmar que chega e
+   que o email sai. É o critério da #53.
+
 ## Backups e restauro
 
 ⚠️ **A proposta promete cópias diárias com 7 dias de histórico. O plano gratuito
