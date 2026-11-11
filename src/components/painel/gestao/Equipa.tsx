@@ -59,7 +59,9 @@ export function Equipa() {
       const r = await terminarSessao(s.id);
       setATerminar(null);
       if (!r.ok) return setMensagem({ ok: false, texto: MENSAGENS[r.erro] });
-      /* Terminar a própria sessão é sair: a página volta à entrada. */
+      /* Sair exige uma navegação completa: descarta o estado do painel e volta
+         a verificar a sessão no servidor, sem reutilizar o router do cliente. */
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       if (s.esta) return window.location.assign("/painel");
       setMensagem({ ok: true, texto: "Sessão terminada. Esse aparelho volta a pedir a entrada." });
       carregar();
