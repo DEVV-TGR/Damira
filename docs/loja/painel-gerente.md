@@ -82,16 +82,10 @@ com preço ou sem ele. No código é o `pedeConfirmacao` (`tipos.ts`).
   `criarProduto`), e o papel verifica-se no servidor (`papeis.ts`).
 - ⚠️ **Ainda não muda nada na loja.** Nenhum pedido fica à espera por causa
   dela até o pedido ganhar esse caminho (`pedidos.md`, que é quem o decide).
-- ⚠️ **Na base de dados ainda não se grava.** A coluna `pede_confirmacao` é um
-  PR só de esquema, do Sobral. Até lá, com `DATABASE_URL`, o valor lê-se do
-  preço como nos JSON (`src/db/catalogo.ts`) e por isso **segue o preço**: dar
-  um preço ao bolo por medida desliga-a, tirá-lo liga-a. Duas regras (`bd.ts`):
-  - **mexer na caixa** para um valor que o preço não dá **recusa-se**, com o
-    campo marcado e a dizer porquê — perdê-lo calado era o painel a dizer
-    «gravado» a uma mudança que não ficou;
-  - **com a caixa intacta, grava-se sempre**: mudar um preço nunca fica preso a
-    um campo em que ela não tocou. Se a caixa mudou por seguir o preço, a
-    mensagem de «gravado» di-lo.
+- **Mudar o preço não mexe na caixa**, nem a caixa no preço: o valor de
+  partida conta só uma vez. Na base de dados é a coluna `pede_confirmacao`, e
+  a migração `0005` liga-a de partida nos produtos que lá estão sem preço
+  (`base-de-dados.md`).
 
 ### Variantes e escolhas
 

@@ -8,7 +8,6 @@ import {
   type OrdemEmenta,
   type Produto,
 } from "@/lib/dados/tipos";
-import { pedeConfirmacaoInicial } from "@/lib/dados/regras";
 import { casa, produtos, variantes } from "./esquema";
 
 /**
@@ -62,6 +61,7 @@ export function colunasEditaveis(produto: Produto) {
     alergenios: produto.alergenios,
     vegan: produto.vegan,
     semGluten: produto.semGluten,
+    pedeConfirmacao: produto.pedeConfirmacao,
     fotos: produto.fotos,
     sinalPercent: produto.sinalPercent,
     limiteQuantidade: produto.limite?.quantidade ?? null,
@@ -127,12 +127,7 @@ export function linhasParaProduto(linha: LinhaProduto, linhasVariantes: LinhaVar
     alergenios: linha.alergenios,
     vegan: linha.vegan,
     semGluten: linha.semGluten,
-    /* ⚠️ Provisório: ainda não há coluna `pede_confirmacao` (é um PR só de
-       esquema, do Sobral). Até lá lê-se o valor de partida, calculado do preço
-       como nos JSON, e não se grava — o `bd.ts` recusa uma mudança em vez de a
-       perder. Com a coluna, passa a `linha.pedeConfirmacao`, e entra no
-       `colunasEditaveis`. */
-    pedeConfirmacao: pedeConfirmacaoInicial({ variantes: linhasVariantes }),
+    pedeConfirmacao: linha.pedeConfirmacao,
     fotos: linha.fotos,
     sinalPercent: linha.sinalPercent,
     limite:
