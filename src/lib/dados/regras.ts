@@ -102,6 +102,17 @@ export const invalido = (erro: z.ZodError): ResultadoPainel<never> => ({
 
 export const naoExiste: ResultadoPainel<never> = { ok: false, erro: "nao-existe" };
 
+/**
+ * O «necessita de confirmação da loja» de partida: ligado só num produto **sem
+ * preço** — nenhuma variante com preço, que é «sob orçamento» e nunca zero.
+ * Um preço que ninguém deu não se confirma sozinho; um que a casa escreveu,
+ * sim, até a gerente dizer o contrário. Calcula-se em vez de se escrever à mão
+ * em 107 produtos, e é a mesma conta para os JSON e para a migração da base de
+ * dados.
+ */
+export const pedeConfirmacaoInicial = (produto: { variantes: readonly { precoCent: number | null }[] }): boolean =>
+  produto.variantes.every((variante) => variante.precoCent === null);
+
 /* «Bolo de Bolacha» → `bolo-de-bolacha`. Os acentos saem, porque o id vai no
    URL e um `pão` partilhado por mensagem chega como `p%C3%A3o`. */
 export const emId = (texto: string): string =>

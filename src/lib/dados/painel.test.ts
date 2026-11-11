@@ -72,6 +72,7 @@ const novoBolo = (alteracoes: Partial<EntradaProduto> = {}): EntradaProduto => (
   alergenios: ["glúten", "ovo"],
   vegan: false,
   semGluten: false,
+  pedeConfirmacao: false,
   fotos: [],
   sinalPercent: null,
   limite: null,
@@ -192,6 +193,114 @@ describe("criar e editar produtos", () => {
       campos: ["variantes"],
     });
     expect(await f.editarProduto("nao-existe", entrada, GERENTE)).toEqual({ ok: false, erro: "nao-existe" });
+  });
+});
+
+describe("«Necessita de confirmação da loja» (11/11)", () => {
+  /* Ainda não há coluna na base de dados (PR de esquema do Sobral): até lá, a
+     volta da base de dados lê o valor de partida e recusa que a gerente lhe
+     mexa. Quando a coluna chegar, o `semColuna` sai, os `gravaSe` passam a
+     correr nas duas voltas, e o teste do preço deixa de depender da volta. */
+  const gravaSe = it.skipIf(NA_BASE_DE_DADOS);
+  const semColuna = it.runIf(NA_BASE_DE_DADOS);
+
+  it("começa ligada só nos produtos sem preço, e desligada em todos os outros", async () => {
+    const f = await fonte();
+    const produtos = await f.produtosDoPainel(GERENTE);
+    expect(produtos.filter((p) => p.pedeConfirmacao).map((p) => p.id)).toEqual(["bolo-por-medida"]);
+    for (const produto of produtos) {
+      expect(produto.pedeConfirmacao).toBe(produto.variantes.every((v) => v.precoCent === null));
+    }
+  });
+
+  gravaSe("a gerente liga-a e desliga-a em qualquer produto, e fica gravada — sem mudar o preço", async () => {
+    const f = await fonte();
+    const premium = (await f.produtoPorId("festa-premium"))!;
+    const ligado = await f.editarProduto(
+      "festa-premium",
+      { ...paraEntrada(premium), alergenios: [], pedeConfirmacao: true },
+      GERENTE,
+    );
+    expect(ligado.ok && ligado.valor.pedeConfirmacao).toBe(true);
+    expect((await f.produtosDoPainel(GERENTE)).find((p) => p.id === "festa-premium")?.pedeConfirmacao).toBe(true);
+    /* A loja não muda por isto, por enquanto: o mesmo preço, sem erro. */
+    expect(await precoDe(f, "festa-premium", "20")).toMatchObject({ totalCent: 33500, erro: null });
+
+    const medida = (await f.produtoPorId("bolo-por-medida"))!;
+    const desligado = await f.editarProduto("bolo-por-medida", { ...paraEntrada(medida), alergenios: [], pedeConfirmacao: false }, GERENTE);
+    expect(desligado.ok && desligado.valor.pedeConfirmacao).toBe(false);
+  });
+
+  gravaSe("um produto novo grava o que a gerente marcou", async () => {
+    const f = await fonte();
+    const criado = await f.criarProduto(novoBolo({ pedeConfirmacao: true }), GERENTE);
+    expect(criado.ok && criado.valor.pedeConfirmacao).toBe(true);
+  });
+
+  it("o balcão não a muda, e nada muda", async () => {
+    const f = await fonte();
+    const premium = (await f.produtoPorId("festa-premium"))!;
+    expect(
+      await f.editarProduto("festa-premium", { ...paraEntrada(premium), alergenios: [], pedeConfirmacao: true }, BALCAO),
+    ).toEqual({ ok: false, erro: "sem-permissao" });
+    expect((await f.produtosDoPainel(BALCAO)).find((p) => p.id === "festa-premium")?.pedeConfirmacao).toBe(false);
+  });
+
+  it("sem sim/não é recusada, com o campo marcado", async () => {
+    const f = await fonte();
+    const premium = (await f.produtoPorId("festa-premium"))!;
+    const { pedeConfirmacao: _, ...semCampo } = { ...paraEntrada(premium), alergenios: [] };
+    void _;
+    expect(await f.editarProduto("festa-premium", semCampo, GERENTE)).toEqual({
+      ok: false,
+      erro: "dados-invalidos",
+      campos: ["pedeConfirmacao"],
+    });
+  });
+
+  /* O caso que não pode prender: a caixa intacta nunca impede gravar um preço.
+     Nos JSON a caixa fica como estava; na base de dados, sem coluna, segue o
+     preço — e o editor diz que mudou. */
+  it("dar um preço a um produto sem preço, ou tirá-lo, sem tocar na caixa, grava-se", async () => {
+    const f = await fonte();
+    const medida = (await f.produtoPorId("bolo-por-medida"))!;
+    const comPreco = await f.editarProduto(
+      "bolo-por-medida",
+      { ...paraEntrada(medida), alergenios: [], variantes: [{ ...medida.variantes[0], precoCent: 4000 }] },
+      GERENTE,
+    );
+    expect(comPreco.ok && comPreco.valor.variantes[0].precoCent).toBe(4000);
+    expect(comPreco.ok && comPreco.valor.pedeConfirmacao).toBe(!NA_BASE_DE_DADOS);
+    expect((await precoDe(f, "bolo-por-medida", "unica")).totalCent).toBe(4000);
+
+    const premium = (await f.produtoPorId("festa-premium"))!;
+    const semPreco = await f.editarProduto(
+      "festa-premium",
+      { ...paraEntrada(premium), alergenios: [], variantes: premium.variantes.map((v) => ({ ...v, precoCent: null })) },
+      GERENTE,
+    );
+    expect(semPreco.ok && semPreco.valor.variantes.every((v) => v.precoCent === null)).toBe(true);
+    expect(semPreco.ok && semPreco.valor.pedeConfirmacao).toBe(NA_BASE_DE_DADOS);
+
+    const novoSobOrcamento = await f.criarProduto(
+      novoBolo({ variantes: [{ rotulo: null, pessoas: null, precoCent: null, composicao: [] }] }),
+      GERENTE,
+    );
+    expect(novoSobOrcamento.ok).toBe(true);
+  });
+
+  semColuna("na base de dados, até haver coluna, mexer na caixa recusa-se em vez de se perder", async () => {
+    const f = await fonte();
+    const premium = (await f.produtoPorId("festa-premium"))!;
+    expect(
+      await f.editarProduto("festa-premium", { ...paraEntrada(premium), alergenios: [], pedeConfirmacao: true }, GERENTE),
+    ).toEqual({ ok: false, erro: "dados-invalidos", campos: ["pedeConfirmacao"] });
+    expect(await f.criarProduto(novoBolo({ pedeConfirmacao: true }), GERENTE)).toEqual({
+      ok: false,
+      erro: "dados-invalidos",
+      campos: ["pedeConfirmacao"],
+    });
+    expect((await f.produtosDoPainel(GERENTE)).find((p) => p.id === "festa-premium")?.pedeConfirmacao).toBe(false);
   });
 });
 

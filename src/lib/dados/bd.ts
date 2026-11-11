@@ -16,7 +16,7 @@ import type { ExecutarLote } from "@/db/lote";
 import { diaDeLisboa } from "@/lib/painel";
 import { criarPedidosDoPainelBd } from "./bd-painel-pedidos";
 import { criarPedidosBd, type LeituraDoPedido, type OpcoesDosPedidos } from "./bd-pedidos";
-import { comIds, cotarLinhas, emId, invalido, livre, naoExiste } from "./regras";
+import { comIds, cotarLinhas, emId, invalido, livre, naoExiste, pedeConfirmacaoInicial } from "./regras";
 import {
   EsquemaDefinicoes,
   EsquemaEntradaProduto,
@@ -127,6 +127,25 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
     campos: ["categoria"],
   };
 
+  /* ⚠️ Provisório, até à coluna `pede_confirmacao` (PR de esquema do Sobral).
+     Sem ela, o «necessita de confirmação» lê-se do preço (`catalogo.ts`) e não
+     há onde o gravar. Recusa-se **só** quando a gerente mexeu na caixa (vem
+     diferente de `antes`) e o que pediu não é o que a leitura vai dar depois de
+     gravar: era o painel a dizer «gravado» a uma mudança perdida. Com a caixa
+     intacta grava-se sempre — mudar um preço nunca pode ficar preso a um campo
+     em que ela não tocou, e a caixa acompanha o preço novo (o editor avisa).
+     `antes` é o valor lido, ao editar, e o desligado do formulário novo, ao
+     criar. Sai com a coluna. */
+  const confirmacaoPerdida = (
+    entrada: { pedeConfirmacao: boolean; variantes: { precoCent: number | null }[] },
+    antes: boolean,
+  ) => entrada.pedeConfirmacao !== antes && entrada.pedeConfirmacao !== pedeConfirmacaoInicial(entrada);
+  const confirmacaoSemColuna: ResultadoPainel<never> = {
+    ok: false,
+    erro: "dados-invalidos",
+    campos: ["pedeConfirmacao"],
+  };
+
   return {
     async listarProdutos(filtro = {}) {
       /* O `and` ignora os `undefined`: um filtro que não vem não filtra. */
@@ -188,6 +207,7 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
       const lido = EsquemaEntradaProduto.safeParse(entrada);
       if (!lido.success) return invalido(lido.error);
       if (await foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
+      if (confirmacaoPerdida(lido.data, false)) return confirmacaoSemColuna;
       const base = emId(lido.data.nome.pt) || "produto";
 
       /* O id é o primeiro livre de `base`, `base-2`… Entre ler os ocupados e
@@ -234,6 +254,7 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
       const lido = EsquemaEntradaProduto.safeParse(entrada);
       if (!lido.success) return invalido(lido.error);
       if (await foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
+      if (confirmacaoPerdida(lido.data, atual.pedeConfirmacao)) return confirmacaoSemColuna;
       /* Um id de variante que o produto não tem não se aceita: era o browser a
          inventar ids, e são eles que os cestos guardam. Uma variante que falte
          na entrada sai. (A mesma regra do `json-painel.ts`.) */

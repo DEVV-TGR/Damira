@@ -37,6 +37,9 @@ const CAMPOS: Record<string, string> = {
   alergenios: "os alergénios (sem eles respondidos, não vai à venda online)",
   sinalPercent: "o sinal",
   limite: "o limite de quantidade",
+  /* Só a base de dados, sem a coluna, a recusa (`bd.ts`): diz porquê, senão o
+     «confira» não tem nada para conferir. */
+  pedeConfirmacao: "«Necessita de confirmação da loja» — por agora não se grava e segue o preço (ligada só sob orçamento)",
 };
 
 const NOVO: EntradaProduto = {
@@ -58,6 +61,9 @@ const NOVO: EntradaProduto = {
   alergenios: null,
   vegan: false,
   semGluten: false,
+  /* Desligada, como o «sob orçamento» da variante de um produto novo: é a
+     gerente que a liga, se quiser. */
+  pedeConfirmacao: false,
   fotos: [],
   sinalPercent: null,
   limite: null,
@@ -144,7 +150,13 @@ export function EditorProduto({
         return setErro(campos.length > 0 ? `Confira ${campos.join(", ")}.` : MENSAGENS[resultado.erro]);
       }
       router.refresh();
-      onFechar(`«${resultado.valor.nome.pt}» gravado. O site já mostra a alteração.`, resultado.valor);
+      /* Sem a coluna na base de dados, a caixa segue o preço (`bd.ts`): se o
+         gravado não é o que estava marcado, diz-se, em vez de mudar calado. */
+      const confirmacao =
+        resultado.valor.pedeConfirmacao === entrada.pedeConfirmacao
+          ? ""
+          : ` «Necessita de confirmação da loja» ficou ${resultado.valor.pedeConfirmacao ? "ligada" : "desligada"}: por agora segue o preço.`;
+      onFechar(`«${resultado.valor.nome.pt}» gravado. O site já mostra a alteração.${confirmacao}`, resultado.valor);
     });
 
   const alternarArquivo = () =>
@@ -507,6 +519,14 @@ export function EditorProduto({
               %
             </div>
           )}
+        </div>
+        <div className="mt-4">
+          <Caixa
+            checked={e.pedeConfirmacao}
+            onChange={(v) => mudar({ pedeConfirmacao: v })}
+            titulo="Necessita de confirmação da loja"
+            explicacao="Um pedido com este produto fica à espera de a casa o confirmar."
+          />
         </div>
       </fieldset>
 

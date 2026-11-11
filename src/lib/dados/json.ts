@@ -8,7 +8,7 @@ import { PRODUTOS, type Produto as ProdutoDasEncomendas } from "@/lib/produtos";
 import mensagensEn from "../../../messages/en.json";
 import mensagensPt from "../../../messages/pt.json";
 import { criarPainelJson, type EstadoJson } from "./json-painel";
-import { conferirPedido, cotarLinhas, gerarReferencia, pedidoPorPagar } from "./regras";
+import { conferirPedido, cotarLinhas, gerarReferencia, pedeConfirmacaoInicial, pedidoPorPagar } from "./regras";
 import {
   EsquemaEntradaPedido,
   EsquemaLinhaCesto,
@@ -58,7 +58,11 @@ const emCent = (euros: number, onde: string): number => {
 
 // ——— O catálogo ———
 
-const daEmenta = (artigo: Artigo): Produto => {
+/* O «necessita de confirmação» junta-se no fim, de uma vez, para os 107
+   (`montarCatalogo`): é calculado, e não um dado dos JSON. */
+type SemConfirmacao = Omit<Produto, "pedeConfirmacao">;
+
+const daEmenta = (artigo: Artigo): SemConfirmacao => {
   /* O mínimo e o passo da encomenda vivem ainda numa tabela por categoria (ver
      `encomendavel.ts`). Passam a ser por produto quando a gerente os puder
      editar; até lá, um artigo sem regra não se encomenda. */
@@ -131,7 +135,7 @@ const composicaoDe = (produto: ProdutoDasEncomendas): GrupoComposicao[] => {
   return [];
 };
 
-const daEncomenda = (produto: ProdutoDasEncomendas): Produto => {
+const daEncomenda = (produto: ProdutoDasEncomendas): SemConfirmacao => {
   const fonte = produto.fonte;
   const variantes =
     fonte && "escaloes" in fonte
@@ -193,10 +197,12 @@ const daEncomenda = (produto: ProdutoDasEncomendas): Produto => {
 };
 
 const montarCatalogo = (): Produto[] => {
-  const catalogo = EsquemaProduto.array().parse([
-    ...ementa.map(daEmenta),
-    ...PRODUTOS.map(daEncomenda),
-  ]);
+  const catalogo = EsquemaProduto.array().parse(
+    [...ementa.map(daEmenta), ...PRODUTOS.map(daEncomenda)].map((produto) => ({
+      ...produto,
+      pedeConfirmacao: pedeConfirmacaoInicial(produto),
+    })),
+  );
   /* A ementa e as encomendas vêm de ficheiros diferentes e agora partilham um
      espaço de ids. Um `nata` nos dois era um produto que tapava o outro. */
   const repetidos = catalogo
