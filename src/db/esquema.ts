@@ -87,6 +87,14 @@ export const produtos = pgTable(
     alergenios: text("alergenios").array(),
     vegan: boolean("vegan").notNull().default(false),
     semGluten: boolean("sem_gluten").notNull().default(false),
+    /**
+     * «Necessita de confirmação da loja» (11/11): marcado pela gerente, produto a
+     * produto. O `false` por defeito é o de um produto novo; os que já existem
+     * nascem ligados só se não tiverem preço nenhum, e isso fá-lo a migração
+     * `0005`, com a mesma conta do `pedeConfirmacaoInicial` — um valor de partida
+     * calculado do preço não cabe num `DEFAULT`.
+     */
+    pedeConfirmacao: boolean("pede_confirmacao").notNull().default(false),
     /** Os URLs do Vercel Blob (#32). */
     fotos: text("fotos").array().notNull().default(sql`'{}'`),
     sinalPercent: integer("sinal_percent"),

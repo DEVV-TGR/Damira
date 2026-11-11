@@ -36,6 +36,13 @@
       "when": 1793972838755,
       "tag": "0004_pedido_payment_intent",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794415422071,
+      "tag": "0005_pede_confirmacao",
+      "breakpoints": true
     }
   ]
 }
