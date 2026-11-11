@@ -15,15 +15,21 @@ Vê pelo `git config user.email` ou pelo utilizador do GitHub:
 
 ## O que entra e o que fica de fora
 
-**Entra:** loja com pagamento (cartão, Apple Pay, Google Pay, MB WAY, PayPal e
-Revolut Pay — ver `pagamentos.md`), calendário de levantamento, painel do balcão
-e da gerente, impressão de talões, conta de cliente com histórico no servidor e
-cancelamento (interruptor da gerente), bolos personalizados (feitos já,
-escondidos da venda até a casa decidir), textos legais e aviso de cookies.
+**Entra:** loja com **pagamento na loja** (decidido pela casa a 04/11 — ver
+`pedidos.md`), produtos de confirmação imediata e sob orçamento, **entrega ao
+domicílio** sujeita a confirmação (pedida a 04/11), calendário de levantamento,
+painel do balcão e da gerente, impressão de talões, conta de cliente com
+histórico no servidor e cancelamento (interruptor da gerente), bolos
+personalizados (feitos já, escondidos da venda até a casa decidir), textos
+legais e aviso de cookies.
 
-**Fica de fora — não construir:** faturação automática (é manual), entregas ao
-domicílio, relatórios de vendas (mas os dados guardam-se desde o primeiro
-pedido), PIN individual por funcionário, campanhas por SMS.
+**A dormir:** o pagamento online (cartão, Apple Pay, Google Pay, MB WAY, PayPal
+e Revolut Pay — ver `pagamentos.md`). A casa disse «para já»: o código e o
+esquema ficam, desligados, e não se constrói mais nada nele até ela o pedir.
+
+**Fica de fora — não construir:** faturação automática (é manual), relatórios
+de vendas (mas os dados guardam-se desde o primeiro pedido), PIN individual por
+funcionário, campanhas por SMS.
 
 **Em aberto:** cupões e campanhas por email.
 
@@ -40,7 +46,8 @@ design vem deles. O painel é nosso.
 | Todo o frontend: loja (cesto, variantes, calendário, checkout, conta), painel (as duas vistas), configurador dos bolos personalizados | Base de dados e migração do catálogo (JSON → BD, euros → cêntimos, horários do `casa.json` → BD) |
 | Interface de `src/lib/dados/`: assinaturas e tipos que o frontend consome (os do pedido saem do `pedidos.md`), com implementação provisória a ler os JSON | Implementação de `src/lib/dados/` sobre a base de dados — troca o que está lá dentro sem mudar as assinaturas |
 | Motor de horários (`src/lib/horarios.ts`) e os testes (Vitest) | Backend: produtos, pedidos (fora os pagamentos), fotos (Vercel Blob), histórico da conta no servidor |
-| Stripe: checkout, webhook, gravar os pagamentos na base de dados (a `FonteWebhook`, `src/lib/pagamentos/`), verificação periódica, reembolsos, sinal, cancelamento, e as contas Stripe e PayPal da casa | Entrada no painel: PIN, código por email da gerente, sessões e dispositivos |
+| Stripe (**a dormir desde 04/11**): checkout, webhook, gravar os pagamentos na base de dados (a `FonteWebhook`, `src/lib/pagamentos/`), verificação periódica, reembolsos, sinal, cancelamento, e as contas Stripe e PayPal da casa | Entrada no painel: PIN, código por email da gerente, sessões e dispositivos |
+| A conta Resend (o envio dos emails e o domínio verificado) e o Vercel Blob (a store e o token), decidido a 09/11 | |
 | Regras das combinações dos bolos personalizados | Impressão e talão |
 | | Textos legais e cookies |
 | | Tudo o que é presencial (ver abaixo) |
@@ -124,17 +131,17 @@ outro onde ela é obrigatória; apanha o básico onde não é.
    incomodar» desligado, carregador sempre ligado.
 3. **Conteúdo dos produtos** — a casa preenche fotos, alergénios e tempos de
    produção no painel. Os testes reais só acontecem depois disso; acompanhar.
-4. **Contas em nome da Damira** — Neon (plano Launch) e Resend. As contas de
-   pagamento são do Gonçalo (abaixo).
+4. **Contas em nome da Damira** — Neon (plano Launch). O Resend e o Blob passaram
+   para o Gonçalo a 09/11, como as contas de pagamento (abaixo).
 5. **Marketing** — fazer a ponte com quem trata do marketing da casa.
 6. **Advogada** — levar os textos legais e trazer a aprovação.
-7. **Testes na loja e formação** — nas sandboxes do Stripe, com o tablet, e
-   depois a primeira venda verdadeira. As falhas, o reembolso sem saldo
-   incluído, ensaiam-se nas sandboxes: o Stripe proíbe testar em modo real (ver
-   `pagamentos.md` › Testes).
+7. **Testes na loja e formação** — com pedidos de teste e o tablet: um pedido
+   de confirmação imediata que imprime, um por confirmar que a gerente confirma,
+   uma entrega, um cancelamento; e depois o primeiro pedido verdadeiro. (Com o
+   pagamento online, voltam as sandboxes do Stripe — `pagamentos.md` › Testes.)
 
 **As contas de pagamento são do Gonçalo** (decidido a 06/11), como o resto dos
-pagamentos: o Stripe com a verificação da empresa, que demora e convém começar
+pagamentos, e dormem com eles desde 04/11: o Stripe com a verificação da empresa, que demora e convém começar
 cedo; os donos da empresa nas sandboxes; e a conta PayPal da casa, ligada ao Stripe
 para o PayPal funcionar em modo real. Os testes na loja (ponto 7) continuam com
 quem lá vai.
@@ -148,6 +155,10 @@ quem lá vai.
 | 11/11 | Bolos personalizados, cancelamento, textos legais aprovados, formação | **loja no ar** com pagamentos reais |
 
 25/10 é dia de mudança de hora — testar o calendário nesse fim de semana.
+
+⚠️ **Estas etapas são de antes de 04/11**, quando ainda havia pagamento online:
+onde dizem «Stripe» ou «pagamentos reais», lê-se pagamento na loja
+(`pedidos.md`). As datas novas combina-as o Gonçalo com a casa.
 
 ## Em espera
 
