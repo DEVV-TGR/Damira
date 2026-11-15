@@ -172,7 +172,8 @@ calmo de um tablet desligado.
 
 ## Cache
 
-- **Em cache:** as páginas públicas (ementa, produtos), revalidadas quando a
+- **Em cache:** as páginas públicas (a inicial, as encomendas, os produtos; e a
+  ementa, até sair), revalidadas quando a
   gerente grava (`painel-gerente.md`); o número de versão do painel.
 - ⚠️ **Nunca em cache:** vagas, quantidades, o estado de um pedido, a página do
   pedido, a página de aceite e tudo o que está em `/painel`. Uma vaga em cache é uma vaga vendida duas vezes,

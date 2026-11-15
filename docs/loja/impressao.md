@@ -22,8 +22,9 @@
 cliente e telefone, artigos (variante, escolhas, quantidade, notas), observações,
 o que há a pagar — `A PAGAR NA LOJA · 23,50 €`, com `VALOR INDICATIVO` quando há
 produtos ao quilo (`pedidos.md` › Dinheiro) —, NIF se o cliente o deu, e
-«documento sem valor fiscal». Numa entrega paga-se por transferência, e o que o
-talão diz dela está em aberto (`pedidos.md`, n.º 3 e 4). Um talão nunca tem uma
+«documento sem valor fiscal». Numa entrega paga-se por transferência, e o talão
+diz se ela ainda está **por receber** — a casa produz sem esperar por ela
+(`pedidos.md` › O orçamento e o aceite). Um talão nunca tem uma
 linha sem preço: só imprime um pedido confirmado, e aí a gerente já fixou tudo.
 (`PAGO` e `SINAL PAGO · FALTA 12,50 €` eram do pagamento online, e dormem com
 ele.)
@@ -40,6 +41,11 @@ branco imprime-as ilegíveis. O talão diz «2 fotos — ver no painel».
 talão** — um confirmado —, com `CANCELADO` em bloco invertido, a referência e o
 levantamento previsto (ver `pedidos.md`). Um `por-confirmar` ou um
 `a-aguardar-aceite` cancelado nunca chegou à cozinha, e não imprime nada.
+
+**Talão de pagamento recebido** (decidido a 15/11, por fazer; #47): sai sozinho quando
+alguém da equipa marca «pagamento recebido» numa entrega, com a referência, o
+valor e a data da entrega, para quem a prepara saber que já está paga. O formato
+fecha-se na implementação.
 
 **Talão de alteração:** sai quando a gerente reagenda um pedido confirmado,
 com a hora nova, para a cozinha não continuar com a antiga (`pedidos.md` ›

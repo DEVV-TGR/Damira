@@ -22,8 +22,13 @@ cliente por link quando a resposta traz preço ou hora novos, **entrega ao
 domicílio** sujeita a confirmação, por orçamento e paga por transferência
 (pedida a 04/11), calendário de levantamento, painel do balcão e da gerente,
 impressão de talões, conta de cliente com histórico no servidor e cancelamento
-por contacto com a casa (registado pela gerente), bolos personalizados (feitos
-já, escondidos da venda até a casa decidir), textos legais e aviso de cookies.
+por contacto com a casa (registado pela gerente), bolos personalizados (abrem
+com o site, decidido a 15/11), textos legais e aviso de cookies.
+
+⚠️ **O lançamento espera por tudo o que está decidido** (#55), e não abre com nada a
+meio — em particular a `/ementa` fora, as categorias e os dois tipos de
+produto, os tamanhos e grupos de opções, os bolos personalizados e os emails ao
+cliente (`AGENTS.md` › Decidido a 12/11 e 15/11).
 
 **A dormir:** o pagamento online (cartão, Apple Pay, Google Pay, MB WAY, PayPal
 e Revolut Pay — ver `pagamentos.md`). A casa disse «para já»: o código e o
@@ -187,8 +192,9 @@ onde dizem «Stripe» ou «pagamentos reais», lê-se pagamento na loja
 - **Respostas da Damira** (cozinha, bolos personalizados, cupões, valor
   mínimo) → `horarios.md`, `bolos-personalizados.md`
 - **Respostas da Andreia ao contrato** (o teto das 48 h, o prazo do aceite, a
-  zona, o custo e o horário das entregas, o texto do aceite fora das entregas)
-  → `pedidos.md` › Em aberto
+  zona, o custo e o horário das entregas, o texto do aceite fora das entregas,
+  os textos dos emails) → `pedidos.md` › Em aberto
+- **Se o «Produzir hoje» lhe faz falta** → `painel-balcao.md`
 
 ## Como trabalhamos
 

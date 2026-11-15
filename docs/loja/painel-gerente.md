@@ -59,6 +59,24 @@ detalhe de qualquer pedido.
 
 ## Produtos
 
+### Categorias e dois tipos de produto — decidido a 15/11, por fazer (#124)
+
+**Acabam as famílias** (`ementa`, `festa`, `bolo`, `box`, `medida`). O catálogo
+passa a ter só duas camadas:
+
+- **Categorias**, que a gerente cria e ordena — «Salgados», «Bolos», «Kits de
+  festa». **Todas** as categorias, e não só as da antiga carta: os kits e as
+  boxes também passam a ter uma.
+- **Produtos**, dentro de uma categoria. Cada um é de um de dois tipos:
+  - **simples** — um croissant, com sabores;
+  - **composto** — um kit, com número de pessoas e **o que leva dentro** (um
+    grupo de opções «O que leva», abaixo).
+
+No separador **Produtos** há um botão **«+»** para criar uma categoria e um
+produto. A tabela abaixo é a de hoje; a «Carta e categoria» passa a ser só a
+categoria, e o «Aparece na ementa» perde o sentido quando a `/ementa` sair
+(`AGENTS.md`). Ambos se revêm no PR que fizer as categorias.
+
 ### O que cada produto tem
 
 | Campo | Notas |
@@ -86,7 +104,29 @@ bolos-rei de um Natal). Se a gerente baixar o limite abaixo do que já está
 vendido, o artigo deixa de estar à venda — **os pedidos já feitos nunca são
 cancelados por isso**.
 
-### Variantes e escolhas
+### Tamanhos e grupos de opções — decidido a 15/11, por fazer (#88)
+
+Substitui as variantes e as escolhas (abaixo, como estão hoje). São dois
+conceitos:
+
+- **Tamanhos.** Escolhe-se **um**, e cada um tem o seu preço — 1 kg, 2 kg,
+  «Kit 20 pessoas». É o que hoje são as variantes.
+- **Grupos de opções** (os «modificadores» das plataformas de entregas). A
+  gerente cria-os e diz, em cada um, **se é obrigatório** e **quantas opções se
+  escolhem** (mínimo e máximo). Cada opção tem um preço ou fica a 0 €, e **o
+  mesmo grupo serve para vários produtos** — um «Sabores dos salgados» usado em
+  doze artigos muda-se uma vez.
+  - As escolhas sem preço de hoje (sabor, cor) passam a ser **um grupo com as
+    opções a 0 €**.
+  - Um produto composto usa um grupo **«O que leva»**.
+  - Os complementos com preço (o topper, a impressão da foto) são opções com
+    preço — é a #88.
+
+Lança-se com esta base e afina-se com o que a Andreia disser ao usá-la. O
+pedido guarda, como sempre, o nome e o preço de cada opção **do momento**
+(`pedidos.md` › O que o pedido guarda).
+
+### Variantes e escolhas (como estão hoje)
 
 Duas coisas diferentes, e a diferença é o preço:
 
@@ -149,7 +189,9 @@ pedidos antigos a referir uma coisa que não existe.
 
 Pedido da casa a 12/10 (#87). No separador **Categorias**, a gerente escolhe a
 ordem em que as categorias aparecem — na ementa e na secção «Da carta, por
-encomenda» das encomendas. **Dentro de cada categoria, os produtos ficam por
+encomenda» das encomendas. ⚠️ **Decidido a 15/11, por fazer:** a ordem passa a
+valer para **todas** as categorias, kits e boxes incluídos; a ementa sai, e a
+secção passa a «Do dia a dia» (`AGENTS.md`). **Dentro de cada categoria, os produtos ficam por
 ordem alfabética**, e isso não se escolhe: ninguém ordena noventa e cinco
 artigos à mão num telemóvel. Não há subcategorias para ordenar (os títulos das
 bebidas ficam na ordem do impresso), e as cartas também não se ordenam.
@@ -171,8 +213,9 @@ bebidas ficam na ordem do impresso), e as cartas também não se ordenam.
   «pastel». Ordena-se pelo nome português também na página inglesa.
 - Ordena-se **na fronteira** (`listarProdutos` do `index.ts`), e não nos
   componentes nem na base de dados: as páginas recebem a lista já ordenada, e
-  ninguém depende da colação do Postgres. Os produtos de encomenda (kits, boxes)
-  não têm categoria e ficam pela ordem do catálogo.
+  ninguém depende da colação do Postgres. Hoje os produtos de encomenda (kits,
+  boxes) não têm categoria e ficam pela ordem do catálogo — com as categorias
+  da gerente (acima, por fazer) passam a ter, e ordenam-se como as outras.
 - **As duas páginas desenham as cartas e as categorias pela mesma função**
   (`cartasComArtigos` e `categoriasDaCarta`, em `src/lib/vista.ts`), a partir da
   ordem gravada: a ementa e a carta por encomenda nunca divergem.
@@ -205,6 +248,11 @@ bebidas ficam na ordem do impresso), e as cartas também não se ordenam.
   entrou, foi confirmado, respondido, aceite, impresso, reagendado, entregue,
   cancelado ou expirou — e porquê).
 - **Confirmar e responder** a um `por-confirmar` (ver «Precisa de atenção»).
+  Bolos sob orçamento e entregas ficam juntos no «Por confirmar». **Fazer e
+  enviar o orçamento é só da gerente.**
+- Numa entrega, **«pagamento recebido»** e **cancelar por falta de pagamento**
+  — decidido a 15/11, por fazer. Não são só dela: qualquer pessoa da equipa o
+  faz, também do balcão (`pedidos.md` › O orçamento e o aceite).
 - **Cancelar**, registando o que se combinou ao telefone e de quem foi a
   iniciativa (ver `pedidos.md`). O cliente não cancela pelo site.
 - **Mudar o levantamento** (ver `pedidos.md`).

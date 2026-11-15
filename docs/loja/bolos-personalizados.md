@@ -15,7 +15,10 @@ O cliente monta o bolo **dentro do que a casa faz** (tamanho, massa, recheio,
 cobertura, topping, «à volta»), junta as fotos (abaixo) e o bolo vai para o
 **cesto como qualquer outro artigo**. Não há formulário à parte.
 
-Constrói-se já e **fica escondido da venda** até a casa decidir abrir.
+⚠️ **Bloqueia o lançamento** (decidido a 15/11). O site não vai para o ar com
+nada a meio: os bolos personalizados, com as 3 fotos de referência e a 1 para
+imprimir no bolo, têm de estar prontos antes de abrir — já não ficam escondidos
+da venda à espera de a casa decidir.
 
 ## As duas fotos — não são a mesma coisa
 
@@ -61,7 +64,8 @@ só se vê quando o cliente vem buscar o bolo.
   - o cliente vê um **preço base por tamanho**, como «a partir de», que a gerente
     define no painel. É só para mostrar: a linha do bolo entra no pedido **sem
     preço final**. Os extras (o topper, a impressão da foto, uma cobertura mais
-    cara) são complementos (#88), com preço ou a 0 €;
+    cara) são opções de um grupo (#88, `painel-gerente.md` › Tamanhos e grupos
+    de opções), com preço ou a 0 €;
   - **o bolo vai no mesmo cesto que o resto**, e o pedido inteiro fica
     **por confirmar** (`pedidos.md` › Confirmar). O cesto, a página do pedido, o
     email de «recebemos» e o painel mostram o total dos produtos de preço fixo,

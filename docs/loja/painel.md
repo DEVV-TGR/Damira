@@ -36,7 +36,10 @@ confirmação, e também se verifica no servidor, em cada uma:
 - **só a gerente** fixa o valor de uma linha sem preço, manda o orçamento de uma
   entrega, muda a hora, cancela e recusa — incluindo registar a desistência de
   um cliente, que liga para a casa. Poder confirmar não dá ao balcão poder
-  para cancelar.
+  para cancelar;
+- **numa entrega, qualquer pessoa da equipa** marca «pagamento recebido» e
+  cancela por falta de pagamento — decidido a 15/11, por fazer. Fazer e enviar
+  o orçamento continua só da gerente (`pedidos.md` › O orçamento e o aceite).
 
 ## Entrar como funcionário: o PIN
 
