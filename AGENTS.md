@@ -149,30 +149,30 @@ enquanto se pagar na loja. ⚠️ Os campos são controlados e o envio é feito 
 reinício automático do `<form action>` do React 19: um erro do servidor nunca
 apaga o que a pessoa escreveu (`robustez.md` › Erros).
 
-### Decidido a 12/11 e 15/11 — por fazer, e tudo bloqueia o lançamento
+### Decidido a 12/11 e 15/11 — por fazer, e tudo bloqueia o lançamento (#55)
 
 Decisões da Andreia (12/11) e do Gonçalo (15/11). **Nada disto está ainda no
 código**; cada ponto está no ficheiro que o detalha, marcado «decidido, por
 fazer». ⚠️ **O site não vai para o ar com nada disto a meio.**
 
-1. **A `/ementa` sai** — a página, as `/ementa/<id>` e todos os links para lá,
+1. **A `/ementa` sai** (#123) — a página, as `/ementa/<id>` e todos os links para lá,
    o do cabeçalho incluído. O site fica com a página inicial e as encomendas
    (abaixo, «As páginas de produto»).
-2. **A carta passa a chamar-se «Dia a dia»** (o que se pede ao balcão: um
+2. **A carta passa a chamar-se «Dia a dia»** (#123; o que se pede ao balcão: um
    croissant, um pão com manteiga), e a secção «Da carta, por encomenda» passa a
    «Do dia a dia». Sai a regra «não juntar a encomenda à ementa» (abaixo, «O
    modelo de dados»).
-3. **Acabam as famílias.** A gerente cria categorias e ordena-as todas; cada
+3. **Acabam as famílias** (#124). A gerente cria categorias e ordena-as todas; cada
    produto é **simples** ou **composto** (`painel-gerente.md` › Produtos).
 4. **Tamanhos e grupos de opções**, no lugar de variantes e escolhas
    (`painel-gerente.md` › Tamanhos e grupos de opções; #88).
-5. **Os bolos personalizados abrem com o site**, com as 3 fotos de referência e
+5. **Os bolos personalizados abrem com o site** (#51), com as 3 fotos de referência e
    a 1 para imprimir (`bolos-personalizados.md`).
 6. **«Por confirmar» é para o que espera resposta da casa** — bolos sob
    orçamento, entregas, produtos com «Necessita de confirmação» —, não para
    marcar o que está pronto (`painel-balcao.md`).
 7. **Talão automático ao marcar «pagamento recebido»** de uma entrega
-   (`impressao.md`).
+   (`impressao.md`; os talões estão na #47).
 8. **Não se regista peso.** Ao quilo, «preço indicativo» no fecho, no email, no
    talão e no painel; o valor final é o da faturação da loja (`pedidos.md`).
 9. **Qualquer pessoa da equipa** marca «pagamento recebido» de uma entrega e a
@@ -266,7 +266,7 @@ JSON` poupa a próxima pessoa a desfazer a decisão.
 
 ## O modelo de dados — quatro ficheiros, quatro naturezas
 
-> ⚠️ **Decidido a 15/11, por fazer:** acabam as famílias (`ementa`, `festa`,
+> ⚠️ **Decidido a 15/11, por fazer (#124):** acabam as famílias (`ementa`, `festa`,
 > `bolo`, `box`, `medida`). A gerente cria categorias («Salgados», «Bolos»,
 > «Kits de festa»), e cada produto é **simples** (um croissant com sabores) ou
 > **composto** (um kit com número de pessoas e o que leva dentro) —
@@ -455,7 +455,7 @@ montra vista da rua é anunciar uma coisa e entregar outra, e é a mesma regra q
 proíbe banco de imagens no resto do site. O `FotoProduto` guarda o espaço e diz
 que a fotografia está por chegar.
 
-⚠️ **A `/ementa` sai — decidido a 15/11, por fazer.** Hoje os 95 artigos da
+⚠️ **A `/ementa` sai — decidido a 15/11, por fazer (#123).** Hoje os 95 artigos da
 carta têm página em `/ementa/<id>`, e a `/ementa` tem um painel que leva lá por
 um botão. Saem os dois, e todos os links para lá, **o do cabeçalho incluído**: o
 site fica com a página inicial e as encomendas. O que se encomenda do dia a dia

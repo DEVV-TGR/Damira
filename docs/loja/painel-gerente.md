@@ -59,7 +59,7 @@ detalhe de qualquer pedido.
 
 ## Produtos
 
-### Categorias e dois tipos de produto — decidido a 15/11, por fazer
+### Categorias e dois tipos de produto — decidido a 15/11, por fazer (#124)
 
 **Acabam as famílias** (`ementa`, `festa`, `bolo`, `box`, `medida`). O catálogo
 passa a ter só duas camadas:
@@ -104,7 +104,7 @@ bolos-rei de um Natal). Se a gerente baixar o limite abaixo do que já está
 vendido, o artigo deixa de estar à venda — **os pedidos já feitos nunca são
 cancelados por isso**.
 
-### Tamanhos e grupos de opções — decidido a 15/11, por fazer
+### Tamanhos e grupos de opções — decidido a 15/11, por fazer (#88)
 
 Substitui as variantes e as escolhas (abaixo, como estão hoje). São dois
 conceitos:

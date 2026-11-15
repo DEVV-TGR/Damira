@@ -42,7 +42,7 @@ talão** — um confirmado —, com `CANCELADO` em bloco invertido, a referênci
 levantamento previsto (ver `pedidos.md`). Um `por-confirmar` ou um
 `a-aguardar-aceite` cancelado nunca chegou à cozinha, e não imprime nada.
 
-**Talão de pagamento recebido** (decidido a 15/11, por fazer): sai sozinho quando
+**Talão de pagamento recebido** (decidido a 15/11, por fazer; #47): sai sozinho quando
 alguém da equipa marca «pagamento recebido» numa entrega, com a referência, o
 valor e a data da entrega, para quem a prepara saber que já está paga. O formato
 fecha-se na implementação.

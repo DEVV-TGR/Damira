@@ -32,7 +32,7 @@ o custo e o fim do intervalo da entrega; linhas com preço por fixar; a
 credencial do aceite; e a coluna `pede_confirmacao` dos produtos (#116, migração
 `0005`). Os estados e as colunas do Stripe **ficam**: dormem, não se apagam.
 
-⚠️ **O catálogo também muda — decidido a 15/11, por fazer.** Acaba a `familia`
+⚠️ **O catálogo também muda — decidido a 15/11, por fazer (#124, #88).** Acaba a `familia`
 dos produtos; ficam **categorias** criadas e ordenadas pela gerente (todas,
 kits incluídos) e dois tipos de produto, **simples** e **composto**; as
 variantes passam a **tamanhos**, e as escolhas a **grupos de opções** partilhados

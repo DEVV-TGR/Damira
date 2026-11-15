@@ -25,7 +25,7 @@ impressão de talões, conta de cliente com histórico no servidor e cancelament
 por contacto com a casa (registado pela gerente), bolos personalizados (abrem
 com o site, decidido a 15/11), textos legais e aviso de cookies.
 
-⚠️ **O lançamento espera por tudo o que está decidido**, e não abre com nada a
+⚠️ **O lançamento espera por tudo o que está decidido** (#55), e não abre com nada a
 meio — em particular a `/ementa` fora, as categorias e os dois tipos de
 produto, os tamanhos e grupos de opções, os bolos personalizados e os emails ao
 cliente (`AGENTS.md` › Decidido a 12/11 e 15/11).
