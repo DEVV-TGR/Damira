@@ -193,7 +193,7 @@ function Encomendas({
         locale={locale}
       />
 
-      {/* ── A carta, por encomenda ────────────────────────────────────── */}
+      {/* ── Do dia a dia, por encomenda ───────────────────────────────── */}
       <EmentaEncomendavel artigos={daEmenta} ordem={ordem} locale={locale} />
 
       {/* ── Como encomendar ──────────────────────────────────────────── */}

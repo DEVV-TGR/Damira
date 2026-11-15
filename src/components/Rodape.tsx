@@ -76,7 +76,6 @@ export function Rodape() {
           </div>
           <nav aria-label={t("paginas")} className="flex flex-wrap gap-x-6 gap-y-1 text-sm font-semibold uppercase tracking-widest">
             <Link href="/" className={ligacao}>{nav("inicio")}</Link>
-            <Link href="/ementa" className={ligacao}>{nav("ementa")}</Link>
             <Link href="/encomendas" className={ligacao}>{nav("encomendas")}</Link>
           </nav>
         </div>

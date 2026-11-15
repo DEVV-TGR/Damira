@@ -80,7 +80,7 @@ export function Raro({ ementa }: { ementa: Produto[] }) {
           </p>
 
           <p data-sc-cue="0.52 1">
-            <Link href="/ementa" className="cap__ligacao">
+            <Link href="/encomendas#da-ementa" className="cap__ligacao">
               {t("ligacao")}
             </Link>
           </p>
