@@ -29,7 +29,16 @@ Sobral testa as duas versões na impressora verdadeira (um fundo todo preto
 imprime mais devagar e pode manchar) e decide-se aí.
 
 **Bolos personalizados:** as fotos **não** saem no talão — uma térmica a preto e
-branco imprime-as ilegíveis. O talão diz «2 fotos — ver no painel».
+branco imprime-as ilegíveis. O talão anuncia cada tipo na sua linha, porque não
+são a mesma coisa (`bolos-personalizados.md`):
+
+- `FOTO PARA IMPRIMIR NO BOLO — ver no painel`, destacada, porque é um passo da
+  produção: se passar despercebida, o bolo sai sem ela;
+- `2 fotos de referência — ver no painel`.
+
+O talão de um bolo personalizado só sai depois de o cliente aceitar o preço
+que a gerente fixou (`bolos-personalizados.md`), por isso leva o preço final,
+como qualquer outra linha — nunca «sob orçamento».
 
 **Talão de cancelamento:** sai quando um pedido é cancelado, com
 `CANCELADO` em bloco invertido, a referência e o levantamento previsto (ver
