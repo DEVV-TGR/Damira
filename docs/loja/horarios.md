@@ -1,8 +1,14 @@
 # Horários — quando se pode levantar um pedido
 
-Este ficheiro decide **que dias e que horas aparecem no calendário** e **até
-quando um pedido pode ser cancelado**. As duas coisas saem do mesmo cálculo e
-vivem no mesmo módulo, `src/lib/horarios.ts`.
+Este ficheiro decide **que dias e que horas aparecem no calendário** e **quando
+começa a produção** de um pedido. As duas coisas saem do mesmo cálculo e vivem
+no mesmo módulo, `src/lib/horarios.ts`.
+
+⚠️ **Até quando se cancela já não sai daqui.** Desde a política de 10/11 o
+limite são **24 horas** antes da hora acordada, contadas em instantes, e o
+cliente cancela por contacto com a casa, nunca pelo site (`pedidos.md` ›
+Desistir, cancelar e alterar). O início da produção continua a servir para
+«Produzir hoje» e para a urgência do «Por confirmar».
 
 ## As três regras
 
@@ -47,9 +53,12 @@ O calendário mostra vagas de 30 minutos dentro do horário da loja. O tamanho �
 configurável.
 
 **Limitar pedidos por vaga** é um interruptor da gerente, desligado por defeito.
-Ligado, pede o número máximo. Um pedido `pendente` ocupa a vaga enquanto espera
-pelo pagamento (ver `pedidos.md`). Quem decide a última vaga é a base de dados,
-não o código (ver `robustez.md`).
+Ligado, pede o número máximo. Um pedido `por-confirmar`, `a-aguardar-aceite`,
+`confirmado` ou `entregue` ocupa a vaga; só `cancelado` e `expirado` a libertam
+(ver `pedidos.md` › O levantamento). Um `por-confirmar` ocupa-a enquanto espera
+pela resposta da casa: se não ocupasse, dois pedidos à espera para a mesma hora
+entravam os dois. Quem decide a última vaga é a base de dados, não o código (ver
+`robustez.md`).
 
 ## Até quando se pode encomendar
 
@@ -62,28 +71,37 @@ loja ou para as duas. Um dia de cozinha fechada não conta para produção; um d
 de loja fechada não tem vagas.
 
 ⚠️ **Fechar um dia não cancela os pedidos que já existem para ele.** O painel
-avisa a gerente, que fala com os clientes. Cancelar pedidos pagos às escondidas
-por causa de uma alteração de configuração é a pior maneira de descobrir que ela
+avisa a gerente, que fala com os clientes. Cancelar pedidos confirmados às
+escondidas por causa de uma alteração de configuração é a pior maneira de descobrir que ela
 existia.
 
 ## A loja em pausa e os esgotados
 
 São do `painel-balcao.md`, mas tocam aqui: com a loja em pausa não se criam
-pedidos — o calendário não muda, o checkout fecha e diz a que horas volta.
+pedidos — o calendário não muda, a página do pedido fecha e diz a que horas
+volta.
 «Esgotado hoje» tira o artigo das vagas de hoje.
 
-## Até quando se pode cancelar
+## Quando começa a produção
 
 A produção começa em:
 
 - `horas` — o levantamento **menos** N horas de cozinha, contadas para trás;
 - `dias` — a abertura da cozinha no **primeiro** dos N dias.
 
-O cliente pode cancelar enquanto `agora` for anterior ao início da produção. Num
-pedido com vários artigos conta o que começa mais cedo. (As outras regras do
-cancelamento estão em `pedidos.md`.)
+Num pedido com vários artigos conta o que começa mais cedo. O cálculo alimenta
+o separador «Produzir hoje» do balcão e a **urgência** de um `por-confirmar` em
+«Precisa de atenção»: falta pouco para a hora em que a produção teria de
+começar (`pedidos.md` › Confirmar).
 
-O mesmo cálculo alimenta o separador «Produzir hoje» do balcão.
+⚠️ **Já não é o limite de cancelar.** Era, no desenho anterior; a política de
+10/11 escolheu 24 horas, mesmo para um bolo que começa três dias antes (em
+aberto no `pedidos.md`, n.º 4). Também é proposta, e não regra, usar o início da
+produção como teto do `expiraEm` de um pedido para breve (n.º 1).
+
+⚠️ **As 48 h e as 24 h do `pedidos.md` contam-se em instantes**, e este ficheiro
+conta em hora de parede — a cozinha abre às 6h00 de Lisboa no verão e no
+inverno. É de propósito; não se juntam as duas contas numa função só.
 
 ## Um módulo, sem efeitos laterais
 

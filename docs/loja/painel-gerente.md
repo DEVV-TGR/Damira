@@ -13,12 +13,18 @@ depois disso.
 O topo do painel da gerente é uma lista do que espera por ela, e só aparece
 quando há alguma coisa:
 
-- pedidos pagos que chegaram depois de expirar (`chegouTarde`, ver `pedidos.md`);
+- pedidos **por confirmar**, desde que entram, com o tempo que falta até
+  expirarem e **com urgência** quando falta pouco para a produção ter de
+  começar (`pedidos.md` › Confirmar);
+- pedidos **à espera do cliente** (`a-aguardar-aceite`), que não é o mesmo que
+  à espera da casa;
 - possíveis pedidos duplicados (ver `robustez.md`);
-- reembolsos que falharam e disputas abertas (ver `pagamentos.md`);
-- pagamentos que o webhook não entregou e a verificação periódica apanhou;
 - pedidos marcados para um dia que entretanto foi fechado (ver `horarios.md`);
-- produtos por preencher (ver abaixo).
+- produtos por preencher (ver abaixo);
+- **(pagamento online, a dormir)** pedidos pagos que chegaram depois de expirar
+  (`chegouTarde`), reembolsos que falharam, disputas abertas e pagamentos que o
+  webhook não entregou (ver `pagamentos.md`). Hoje não aparecem: nenhum pedido
+  é pago online.
 
 **Cada aviso traz as suas decisões** — um aviso que só se lê não resolve nada
 (pedido do cliente a 04/10). O que ela decide tira-o da lista, e o facto fica
@@ -26,15 +32,30 @@ quando há alguma coisa:
 
 | Aviso | Decisões |
 |---|---|
-| Pago depois de expirar | **aceitar o pedido** · mudar a data · cancelar e reembolsar |
-| Possível duplicado | **comparar lado a lado** → «ficar com este» (o outro é cancelado e reembolsado por inteiro) · «são dois pedidos diferentes» |
-| Dia que fechou | mudar a data · cancelar e reembolsar · manter neste dia |
-| Reembolso falhado | «já devolvi por outra via» |
+| Por confirmar | **confirmar** (tal como está) · responder com o valor das linhas sem preço, uma hora nova ou o orçamento de uma entrega · recusar |
+| À espera do cliente | ver o que se respondeu · cancelar, se o cliente ligar a desistir |
+| Possível duplicado | **comparar lado a lado** → «ficar com este» (o outro é cancelado) · «são dois pedidos diferentes» |
+| Dia que fechou | mudar a data, com o acordo do cliente · cancelar · manter neste dia |
+| (pagamento online) Pago depois de expirar | aceitar o pedido · mudar a data · cancelar e reembolsar |
+| (pagamento online) Reembolso falhado | «já devolvi por outra via» |
+
+O «por confirmar» e o «à espera do cliente» não se dão por tratados: saem da
+lista quando o pedido muda de estado (`pedidos.md` › Avisos tratados).
+
+**Responder com preço ou hora novos pede o aceite do cliente.** O pedido passa a
+`a-aguardar-aceite`, o cliente recebe o email com o link, e só fica confirmado —
+e só imprime — quando ele carregar em «Aceitar» (`pedidos.md` › O aceite do
+cliente). Um «sim» sem nada de novo confirma logo, e também o pode dar o
+balcão. Depois de `expiraEm`, responder é recusado.
 
 Mudar a data só deixa escolher horas em que a loja está aberta e com vaga, e o
-servidor confirma ao gravar. Cancelar pergunta o reembolso — tudo, uma parte ou
-nada — e diz o valor antes de confirmar. Os mesmos botões estão no detalhe de
-qualquer pedido, com «reembolsar parte» para os que seguem.
+servidor confirma ao gravar; num pedido confirmado, regista uma hora que o
+cliente já aceitou ao telefone (`pedidos.md` › Mudar o levantamento).
+**Cancelar** pergunta de quem foi a iniciativa — do cliente, que ligou, ou da
+casa — e, num pedido confirmado, mostra quanto faltava para a hora acordada.
+Com menos de 24 horas a casa avalia caso a caso: o painel mostra, não bloqueia
+(`pedidos.md` › Desistir, cancelar e alterar). Os mesmos botões estão no
+detalhe de qualquer pedido.
 
 ## Produtos
 
@@ -112,17 +133,17 @@ lançamento, e é o que nos diz quando podemos fazer os testes reais.
 
 1. **O site.** As páginas são estáticas; gravar um produto revalida as páginas
    onde ele aparece. Sem isto, o site mostra o preço antigo durante horas.
-2. **O checkout.** Lê sempre da base de dados (ver `pedidos.md`), por isso já
-   cobra o preço novo.
-3. **O cesto de quem já lá tinha o artigo.** O cesto guarda o preço que viu. No
-   checkout, se o preço mudou, o cliente vê «o preço deste artigo mudou» antes
-   de pagar — nunca descobre no extrato.
+2. **A página do pedido.** Lê sempre da base de dados (ver `pedidos.md`), por
+   isso o pedido já leva o preço novo.
+3. **O cesto de quem já lá tinha o artigo.** O cesto guarda o preço que viu. Na
+   página do pedido, se o preço mudou, o cliente vê «o preço deste artigo mudou»
+   antes de fazer o pedido — nunca descobre ao balcão.
 
 ### ⚠️ Apagar é arquivar
 
 «Apagar» tira o produto de todo o lado, mas não o apaga da base de dados: os
 pedidos antigos continuam a apontar para ele. Um produto apagado a sério deixava
-pedidos pagos a referir uma coisa que não existe.
+pedidos antigos a referir uma coisa que não existe.
 
 ### Ordem das categorias
 
@@ -180,10 +201,15 @@ bebidas ficam na ordem do impresso), e as cartas também não se ordenam.
 ## Pedidos
 
 - Lista com filtros: dia, estado, referência, nome. Paginada (ver `robustez.md`).
-- Detalhe do pedido, com tudo o que o balcão vê e mais o histórico (quando foi
-  pago, impresso, entregue, cancelado, reembolsado).
-- **Reembolsar**, total ou parcial (ver `pagamentos.md`).
-- **Cancelar** (ver `pedidos.md`).
+- Detalhe do pedido, com tudo o que o balcão vê e mais o histórico (quando
+  entrou, foi confirmado, respondido, aceite, impresso, reagendado, entregue,
+  cancelado ou expirou — e porquê).
+- **Confirmar e responder** a um `por-confirmar` (ver «Precisa de atenção»).
+- **Cancelar**, registando o que se combinou ao telefone e de quem foi a
+  iniciativa (ver `pedidos.md`). O cliente não cancela pelo site.
+- **Mudar o levantamento** (ver `pedidos.md`).
+- **(pagamento online, a dormir)** Reembolsar, total ou parcial
+  (`pagamentos.md`). Sem pagamento online o botão não aparece.
 - **Reimprimir** o talão.
 - **Desfazer «entregue»** depois dos 5 minutos do balcão.
 
@@ -208,8 +234,10 @@ o ecrã di-lo. A implementação sobre a base de dados é do Sobral (#33).
 
 ## Definições da loja
 
-- **Aceitar cancelamentos pelo site** e **devolver o sinal ao cancelar** (ver
-  `pedidos.md`).
+- ⚠️ **Saíram «Aceitar cancelamentos pelo site» e «devolver o sinal ao
+  cancelar»** (contrato de 10/11): o cliente cancela por contacto com a casa, e
+  não há sinal. O interruptor «Pede sinal» da ficha do produto dorme com o
+  pagamento online (`pagamentos.md`).
 - **Valor mínimo das encomendas online**, se a casa o quiser (pergunta feita à
   Damira).
 

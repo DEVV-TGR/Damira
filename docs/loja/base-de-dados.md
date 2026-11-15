@@ -13,6 +13,25 @@ muda primeiro o contrato, num PR revisto pelo outro (`divisao.md`).
 O que falta fazer e confirmar quando houver conta Neon — a região, os ramos, as
 variáveis, a ordem dos passos — está em `ligar-a-neon.md`.
 
+## ⚠️ O esquema ainda é o do Stripe, e o contrato já não
+
+Desde a política de 10/11 o `pedidos.md` diz que **se paga na loja, ou por
+transferência numa entrega**, e que um pedido nasce `confirmado` ou
+`por-confirmar`. **Este ficheiro descreve as tabelas como estão**, e elas ainda
+são as do desenho com Stripe: o pedido nasce `pendente`, expira aos 31 minutos,
+e o `CHECK` do `pago_em` só deixa cancelar um pedido pago. Nada disso se corrige
+aqui à mão — muda no **PR próprio do esquema** (`pedidos.md` › Impactos na base
+de dados), revisto pelo Sobral, e este ficheiro muda com ele.
+
+Até lá, onde este ficheiro e o `pedidos.md` discordam, **o contrato é o que se
+implementa**, e as notas «⚠️ contrato de 10/11» abaixo marcam cada sítio. O
+que o PR do esquema tem de trazer, em resumo: os estados `por-confirmar`,
+`a-aguardar-aceite` e `confirmado`; `confirmado_em`, `expira_em`, `aceite_em` e
+a causa da expiração; o modo de pagamento `na-loja` e `transferencia`; a morada,
+o custo e o fim do intervalo da entrega; linhas com preço por fixar; a
+credencial do aceite; e a coluna `pede_confirmacao` dos produtos (#116, migração
+`0005`). Os estados e as colunas do Stripe **ficam**: dormem, não se apagam.
+
 ## As ferramentas
 
 - **Neon**, com o driver HTTP (`@neondatabase/serverless`). Dois ramos:
@@ -126,7 +145,7 @@ restrição impede que um erro crie a segunda.
 | `duracao_vaga_minutos`, `dias_a_frente` | `integer` | iguais |
 | `limite_por_vaga` | `integer` nulo | `limitePorVaga` |
 | `limiar_livre`, `limiar_media` | `integer` | `limiaresAfluencia` |
-| `aceitar_cancelamentos_site`, `devolver_sinal_ao_cancelar` | `boolean`, `false` por defeito | `DefinicoesLoja` |
+| `aceitar_cancelamentos_site`, `devolver_sinal_ao_cancelar` | `boolean`, `false` por defeito | `DefinicoesLoja` — ⚠️ contrato de 10/11: o cliente já não cancela pelo site, e não há sinal; as colunas ficam até ao PR do esquema decidir |
 | `valor_minimo_cent` | `integer` nulo | `valorMinimoCent` |
 | `pausa_ate` | `timestamptz` nulo | `pausaAte` |
 | `ordem_ementa` | `jsonb` | `OrdemEmenta` |
@@ -201,7 +220,11 @@ não (essas são os `UPDATE … WHERE estado = …`, abaixo). Ter `pago_em` é o
 que estar `pago`, `entregue` ou `cancelado` — só se cancela um pedido pago, e
 nada volta de pago para trás; um `entregue` tem `entregue_em`; um `cancelado`
 tem quando e por quem, e só ele; o `chegou_tarde` só existe com pagamento; os
-`avisos_tratados` são os quatro do contrato. ⚠️ **Fica de fora
+`avisos_tratados` são os quatro do contrato. ⚠️ **Contrato de 10/11: o `CHECK`
+do `pago_em` deixa de servir** — cancelar um pedido que nunca foi pago e
+entregar sem Stripe têm de ser possíveis. A restrição nova preserva a garantia
+dos pedidos pagos pelo Stripe, e não se resolve apagando a validação
+(`pedidos.md` › Impactos na base de dados). ⚠️ **Fica de fora
 `pago_online_cent <= total_cent`**: um montante que não bate ainda não tem regra
 (`pagamentos.md` › Em aberto, 8), e um `CHECK` que recusasse um pagamento
 recebido perdia um pedido pago.
@@ -289,7 +312,9 @@ o esquema: é a instrução da #49.
 ### `emails_por_enviar`
 
 Os emails — a confirmação ao cliente, o aviso à loja — gravam-se **na mesma
-transação** que os origina (a passagem a `pago`, o cancelamento) e só depois se
+transação** que os origina (hoje a passagem a `pago` e o cancelamento; com o
+contrato de 10/11, a criação, a confirmação, a resposta com orçamento, o aceite,
+a expiração e o cancelamento — `pedidos.md` › Os emails) e só depois se
 enviam (`pagamentos.md` › Em aberto, 3). Se o envio falhar, ou o processo morrer
 a meio, a linha fica, e repete-se quando a base de dados já está acordada por
 outra razão; o que ficar parado aparece no painel.
@@ -393,6 +418,8 @@ e um reagendar para lá era recusado.
 instante não tem de pensar nisso.
 
 **O que ocupa:** `pendente`, `pago` e `entregue`. `expirado` e `cancelado` não.
+⚠️ Contrato de 10/11: ocupam também `por-confirmar`, `a-aguardar-aceite` e
+`confirmado` (`pedidos.md` › O levantamento).
 O `ocupacao(desde, ate)` do contrato é um `SELECT` nesta tabela, sem cache, e
 devolve `{ inicio, pedidos: ocupadas }`.
 
@@ -411,6 +438,13 @@ pode pagar (`pedidos.md`). Quem o faz, por ordem:
 2. **uma limpeza que corre antes de ler a ocupação e dentro do `criarPedido`** —
    só quando há um cliente no site, ou seja, com a base de dados já acordada.
 
+⚠️ **Contrato de 10/11: um `por-confirmar` expira às 48 horas** (`expira_em`), e
+os lembretes à casa e o aviso ao cliente não podem depender de uma visita ao
+site (`pedidos.md` › Expirar às 48 horas). A limpeza na leitura continua a
+libertar a vaga; o que corre sem visitas, e como se concilia com a regra 6,
+está em aberto (`pedidos.md`, n.º 11). Os 31 minutos ficam para o `pendente`,
+que dorme com o pagamento online.
+
 Não há tarefa agendada a acordar a base de dados para isto (regra 6). A limpeza
 (`limparExpirados`, em `bd-pedidos.ts`) é uma instrução só: muda os pendentes antigos para `expirado` e desconta-os dos
 contadores. A lógica completa é da #41. O pedido expirado pelo id, no ponto 1,
@@ -427,7 +461,10 @@ não se vende nada duas vezes e só se liberta mais tarde.
   (`WHERE estado = 'pendente'`) em `ip` e em `cliente_email`. O `INSERT … SELECT … WHERE`
   não insere nada fora dos limites, e a instrução seguinte do lote — as linhas —
   falha na chave estrangeira por não haver pedido: o lote cai inteiro, e essa
-  falha é o `demasiados-pedidos`. Sem IP, só conta o email.
+  falha é o `demasiados-pedidos`. Sem IP, só conta o email. ⚠️ Contrato de
+  10/11: sem `pendente`, os limites contam os `por-confirmar`,
+  `a-aguardar-aceite` e `confirmado` por levantar (`robustez.md` › Limites), e
+  os índices parciais mudam com o PR do esquema.
 - **PIN e código da gerente**: tabela `limites`, chave `(chave, janela)`, com
   uma `contagem`. A janela é o início do intervalo (os 15 minutos do PIN), e a
   chave diz o quê e de onde (`pin:<dispositivo>`, `codigo:<email>`).

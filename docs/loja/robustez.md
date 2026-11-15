@@ -2,7 +2,7 @@
 
 O volume desta loja é pequeno: dezenas de pedidos por dia, umas centenas numa
 semana de Natal. O que a parte não é a carga — é o caso raro: dois clientes na
-última vaga, um webhook que não chega, um tablet sem rede, um serviço que atinge
+última vaga, um email que não sai, um tablet sem rede, um serviço que atinge
 o limite num sábado. As regras abaixo são para esses casos. **Não são para
 «escalar»**: não se acrescentam filas, réplicas ou camadas de cache que este
 volume não pede.
@@ -22,15 +22,21 @@ Por isso, nada que corra sozinho vai à base de dados sem necessidade:
 - **O polling do painel não lê pedidos.** Pergunta por um número de versão
   servido a partir da cache da Vercel, e só vai à base de dados quando a versão
   muda (ver `painel.md`).
-- **A verificação periódica de pagamentos pergunta primeiro ao Stripe** e só
-  consulta a base de dados se houver pagamentos para ver (ver `pagamentos.md`).
+- **Os lembretes à casa e a expiração às 48 h** (`pedidos.md` › Expirar às 48
+  horas) têm de correr sem depender de uma visita ao site — e por isso são a
+  única coisa que pode pedir uma exceção a esta regra. Como, e com que cadência,
+  está em aberto (`pedidos.md`, n.º 11): antes de escolher, saber se há pedidos
+  à espera sem acordar a base de dados, ou acordar a exceção às claras.
+- **(pagamento online, a dormir)** A verificação periódica de pagamentos
+  pergunta primeiro ao Stripe e só consulta a base de dados se houver
+  pagamentos para ver (ver `pagamentos.md`). Hoje não corre.
 - **O monitor de uptime não toca na base de dados** (ver «Monitorização»).
 
 ## Concorrência: a última vaga
 
 ⚠️ **«Ver se há vaga» e depois «reservar» vende a mesma vaga duas vezes.** Dois
-clientes veem a última vaga livre, os dois carregam em pagar, os dois passam a
-verificação. Quem decide tem de ser a base de dados, de uma só vez:
+clientes veem a última vaga livre, os dois carregam em «Fazer pedido», os dois
+passam a verificação. Quem decide tem de ser a base de dados, de uma só vez:
 
 - Vagas e quantidades por dia são **contadores** com uma restrição `CHECK`
   (`ocupadas <= limite`, ou sem limite quando o interruptor está desligado).
@@ -44,23 +50,27 @@ verificação. Quem decide tem de ser a base de dados, de uma só vez:
   muda o estado.
 
 Outros casos de duas pessoas ao mesmo tempo, já resolvidos noutros ficheiros:
-dois toques em «entregue» (atualização condicional), o mesmo evento do Stripe
-duas vezes (`pedidos.md`), a gerente a mudar um preço enquanto um cliente paga (o
-pedido guarda o preço do momento; o checkout avisa se mudou).
+dois toques em «entregue» ou em «Confirmar», dois cliques em «Aceitar»
+(atualizações condicionais, `pedidos.md`), a gerente a mudar um preço enquanto
+um cliente faz o pedido (o pedido guarda o preço do momento; a página do pedido
+avisa se mudou). No pagamento online, o mesmo evento do Stripe duas vezes
+(`pagamentos.md`).
 
-## Envios e pagamentos duplicados
+## Envios duplicados
 
 - Todos os botões que enviam ficam **desativados com indicador** até haver
   resposta.
-- **Criar pedido:** o browser gera uma chave quando o cliente entra no checkout e
-  envia-a com o pedido. Uma segunda chamada com a mesma chave devolve o mesmo
-  pedido e a mesma sessão Stripe (índice único).
-- Sessão Stripe, reembolsos: chave de idempotência (`pagamentos.md`).
-- Eventos do Stripe: guardados por id, com chave primária.
-- ⚠️ **Dois pedidos pagos iguais são legítimos para o sistema** — o cliente
-  abriu dois separadores. Mesmo email, mesmos artigos, mesma vaga, pagos com
-  menos de 10 minutos de diferença → «possível duplicado» em «Precisa de
-  atenção». A gerente decide e reembolsa.
+- **Criar pedido:** o browser gera uma chave quando o cliente entra na página
+  do pedido e envia-a com ele. Uma segunda chamada com a mesma chave devolve o
+  mesmo pedido (índice único), e não sai um segundo email.
+- **(pagamento online, a dormir)** Sessão Stripe e reembolsos: chave de
+  idempotência; eventos do Stripe guardados por id, com chave primária
+  (`pagamentos.md`).
+- ⚠️ **Dois pedidos iguais são legítimos para o sistema** — o cliente abriu dois
+  separadores. Mesmo email, mesmos artigos, mesma vaga, criados com menos de 10
+  minutos de diferença → «possível duplicado» em «Precisa de atenção». A
+  gerente fala com o cliente e cancela o que sobra (`pedidos.md` › Desistir,
+  cancelar e alterar).
 
 ## Limites de pedidos (rate limiting)
 
@@ -71,12 +81,14 @@ memória não servem: na Vercel cada pedido pode cair numa instância diferente.
 |---|---|
 | PIN do balcão | 5 erros → 15 min bloqueado (`painel.md`) |
 | Código da gerente | envios por hora e tentativas por código (`painel.md`) |
-| Criar pedido | 5 pendentes por IP e 3 por email ao mesmo tempo |
-| Fotos dos bolos personalizados | por pedido e por IP |
+| Criar pedido | 5 em aberto por IP e 3 por email ao mesmo tempo — `por-confirmar`, `a-aguardar-aceite` e `confirmado` por levantar |
+| Fotos dos bolos personalizados | por pedido (até 3 de referência e 1 para imprimir no bolo) e por IP |
 
-⚠️ **Porquê limitar a criação de pedidos.** Um pedido pendente reserva vaga e
-quantidades durante 31 minutos. Sem limite, um robô — ou alguém com má intenção
-— esvaziava o calendário da loja sem pagar um cêntimo. O campo-armadilha que já
+⚠️ **Porquê limitar a criação de pedidos.** Sem pagamento adiantado (`pedidos.md`
+› Dinheiro), um pedido reserva vaga e quantidades sem custar nada: um
+`por-confirmar` até 48 horas, e um `confirmado` até ao dia do levantamento. Sem
+limite, um robô — ou alguém com má intenção — esvaziava o calendário da loja sem
+pagar um cêntimo. O campo-armadilha que já
 existe em `pedidos.ts` continua.
 
 ## Serviços externos e os seus limites
@@ -85,13 +97,14 @@ existe em `pedidos.ts` continua.
 |---|---|---|
 | Neon | gratuito: 100 h de computação/mês, restauro de 6 h | plano Launch (ver «Backups») + a regra do topo |
 | Resend | gratuito: 100 emails/dia, 3.000/mês, 3 domínios | ver ⚠️ abaixo |
-| Stripe | pedidos por segundo — irrelevante a este volume | a verificação periódica pagina os resultados |
+| Stripe (a dormir) | pedidos por segundo — irrelevante a este volume | a verificação periódica pagina os resultados |
 | Vercel Blob | dentro do crédito do Pro | — |
 | Vercel (logs) | o Pro guarda só 1 dia de logs | ver «Logs» |
 
 ⚠️ **Resend.** A conta da DevPlus é partilhada por todos os clientes: os 100
-emails por dia são de todos. Cada pedido gasta 2 (cliente e loja), mais os
-códigos da gerente — um sábado de Natal chega lá, e a partir daí os emails
+emails por dia são de todos. Cada pedido gasta pelo menos 2 (cliente e loja), e
+um que espera pela casa gasta mais — a confirmação ou o orçamento, o aceite, os
+lembretes (`pedidos.md` › Os emails) —, mais os códigos da gerente — um sábado de Natal chega lá, e a partir daí os emails
 simplesmente deixam de sair. **A Damira tem a sua própria conta Resend**, com o
 domínio dela. Se passar os 100 por dia, o plano pago é custo dela.
 
@@ -115,7 +128,8 @@ o painel, não a caixa de correio.
 
 - Cada botão que envia: desativado e com indicador até à resposta.
 - Listas e painel: esqueletos com a forma do conteúdo, nunca ecrã branco.
-- Página de sucesso do pagamento: «A confirmar o pagamento…» (`pagamentos.md`).
+- Página do pedido criado: diz o estado — confirmado, ou por confirmar e até
+  quando espera (`pedidos.md` › Expirar às 48 horas).
 
 ## Estados vazios
 
@@ -160,8 +174,8 @@ calmo de um tablet desligado.
 
 - **Em cache:** as páginas públicas (ementa, produtos), revalidadas quando a
   gerente grava (`painel-gerente.md`); o número de versão do painel.
-- ⚠️ **Nunca em cache:** vagas, quantidades, o estado de um pedido, o checkout e
-  tudo o que está em `/painel`. Uma vaga em cache é uma vaga vendida duas vezes,
+- ⚠️ **Nunca em cache:** vagas, quantidades, o estado de um pedido, a página do
+  pedido, a página de aceite e tudo o que está em `/painel`. Uma vaga em cache é uma vaga vendida duas vezes,
   ou recusada a quem a viu livre.
 
 ## Monitorização
@@ -170,10 +184,12 @@ calmo de um tablet desligado.
   `/api/saude`, com aviso por email à DevPlus. O `/api/saude` responde só se a
   aplicação está de pé — ⚠️ **não consulta a base de dados**, ou um monitor de 5
   em 5 minutos mantinha-a acordada para sempre.
-- **Heartbeat da verificação de pagamentos:** no fim de cada execução, a tarefa
+- **Heartbeat das tarefas agendadas:** no fim de cada execução, uma tarefa
   agendada avisa um serviço de heartbeat externo (ex.: Healthchecks.io, plano
   gratuito). Se o aviso não chegar durante uma hora, o serviço avisa a DevPlus. É
   a única forma de saber que uma tarefa que devia correr *deixou* de correr.
+  Vale para a dos lembretes e expirações, se o n.º 11 do `pedidos.md` a decidir;
+  a verificação de pagamentos dorme com o pagamento online.
 - Os erros da base de dados aparecem no Sentry (ver «Logs»), não no monitor.
 
 ## Logs
@@ -181,8 +197,8 @@ calmo de um tablet desligado.
 - ⚠️ **A Vercel (Pro) guarda os logs só 1 dia.** Um erro de sexta à noite já não
   existe quando alguém olha no domingo. Os erros vão para o Sentry (plano
   gratuito), com aviso por email.
-- **Nunca nos logs:** email, telefone, NIF, moradas, dados do Stripe para além
-  dos ids. Regista-se a referência `DAM-…`, que chega para encontrar tudo.
+- **Nunca nos logs:** email, telefone, NIF, moradas, o link de aceite (é uma
+  credencial), dados do Stripe para além dos ids. Regista-se a referência `DAM-…`, que chega para encontrar tudo.
 
 ## Backups e restauro
 
