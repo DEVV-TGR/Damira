@@ -1,4 +1,10 @@
+import Image from "next/image";
 import { useTranslations } from "next-intl";
+
+/* Os cartões vão de uma coluna no telemóvel a três num ecrã largo; a página de
+   produto ocupa metade. Por excesso, que um cartão desfocado é pior do que uns
+   quilobytes a mais. */
+const TAMANHOS = "(min-width: 640px) 50vw, 100vw";
 
 /**
  * O lugar da fotografia de um produto.
@@ -16,8 +22,9 @@ import { useTranslations } from "next-intl";
  * vai ter, o cliente vê onde a fotografia entra, e ninguém fica com a ideia de
  * que aquilo é o produto.
  *
- * No dia em que houver fotografia, é preencher `produto.foto` e isto passa a
- * mostrá-la — uma linha, sem mexer no desenho.
+ * A fotografia de cada produto põe-na a gerente no painel (`FotosProduto`, #40),
+ * e é só a desse produto. Quando há, isto mostra a primeira (`fotoDe`); quando
+ * não há, continua a guardar o espaço.
  */
 export function FotoProduto({
   foto,
@@ -43,14 +50,14 @@ export function FotoProduto({
   const t = useTranslations("produto");
 
   if (foto) {
+    /* ⚠️ **`next/image`, e nunca um `<img>` direto ao Blob.** A CSP da loja só
+       deixa carregar imagens da própria origem (`next.config.ts`); pelo otimizador
+       a foto do Blob chega como `/_next/image`, que é a mesma origem — e já
+       reduzida ao tamanho do cartão, em vez dos 1600 px da página de produto. */
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={foto}
-        alt={alt}
-        style={{ aspectRatio: proporcao }}
-        className="w-full rounded-2xl object-cover"
-      />
+      <div style={{ aspectRatio: proporcao }} className="relative w-full overflow-hidden rounded-2xl">
+        <Image src={foto} alt={alt} fill sizes={TAMANHOS} className="object-cover" />
+      </div>
     );
   }
 
