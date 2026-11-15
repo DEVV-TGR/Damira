@@ -1,10 +1,19 @@
 # Pagamentos — Stripe
 
-⚠️ **A dormir desde 04/11/2026.** A casa decidiu que, para já, se paga na loja,
-ao levantar ou na entrega (`pedidos.md`). Nada deste ficheiro corre hoje: nenhum
-pedido nasce `pendente`, e a rota do webhook não tem pedidos para marcar. Fica
+⚠️ **A dormir desde 04/11/2026.** A casa decidiu que, para já, não há pagamento
+online: um levantamento paga-se na loja, ao levantar, e uma entrega paga-se por
+transferência, depois de o cliente aceitar o orçamento (`pedidos.md`). Nada
+deste ficheiro corre hoje, e a rota do webhook não tem pedidos para marcar. Fica
 escrito como estava — é o desenho para o dia em que o pagamento online voltar,
 e a casa disse «para já», não «nunca». Até lá, não se constrói mais nada aqui.
+
+⚠️ **O contrato novo ainda não está no código.** As regras do `pedidos.md` são
+as aprovadas para a implementação seguinte (#48): o fluxo novo não deverá criar
+pedidos `pendente`, mas essa implementação está por fazer. Hoje a página de
+compra ainda acaba num email à casa, e a fonte da base de dados
+(`bd-pedidos.ts`) ainda cria pedidos `pendente`, com o modelo do Stripe. Até
+esse PR entrar, o código não descreve o contrato, e o contrato não descreve o
+código.
 
 Como o dinheiro entra e sai. O que acontece ao pedido quando é pago, expira ou é
 cancelado está em `pedidos.md`; aqui está a ligação ao Stripe.

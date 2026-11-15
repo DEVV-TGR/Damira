@@ -111,12 +111,28 @@ pelo terminal em `scripts/bd.ts`.
 
 - [x] O comando: `npm run bd:migrar`.
 - [x] Correr no ramo `desenvolvimento` e confirmar as tabelas e as regras
-      (06/11). ⚠️ O `desenvolvimento` tem a mais a migração `0005` dos avisos de
-      dinheiro, do #108, que se fechou sem entrar no `main` quando o pagamento
-      online foi a dormir: uma tabela `avisos_dinheiro` vazia que o código não
-      lê. Não faz mal; some quando o ramo for recriado a partir do `production`.
+      (06/11).
 - [x] Só depois no `production` (09/11): as 5 migrações do `main`, da `0000` à
       `0004` — 14 tabelas, Postgres 18.6.
+- [x] O `desenvolvimento` voltou a ser igual ao `production` (15/11, «Reset
+      from parent»). Tinha a mais a `0005` dos avisos de dinheiro, do #108, que
+      se fechou sem entrar no `main`. Renumerar não chegava: a tabela
+      `avisos_dinheiro` ficava lá, e o `CREATE TABLE` rebentava quando os avisos
+      voltassem numa migração nova. O reset levou também os pedidos de teste de
+      06/11.
+- [x] A `0005_pede_confirmacao` (#116) no `desenvolvimento` (15/11), logo a
+      seguir ao reset: só o `bolo-por-medida` ficou com a caixa ligada.
+- [ ] A mesma `0005` no `production`, **antes** do merge do #116.
+
+⚠️ **O build lê a Neon, por isso uma coluna nova parte o deploy até a migração
+correr.** O build gera as páginas de produto a partir da base de dados, e o
+Drizzle passa a pedir a coluna assim que ela está no `esquema.ts`. Um PR que
+acrescenta uma coluna falha na Preview enquanto o `desenvolvimento` não tiver a
+migração, e partia o build de produção se entrasse no `main` antes do
+`production` (foi o que aconteceu ao #116 e ao #117 a 11/11). A ordem é sempre:
+migrar o `desenvolvimento`, refazer o deploy do PR, migrar o `production`, e só
+depois integrar. Migrar primeiro é seguro, porque o código antigo não pede a
+coluna nova.
 
 **Para correr um comando no `production`**, o endereço direto dele vive num
 ficheiro à parte, `.env.producao.local` (o git ignora-o), e passa-se com
