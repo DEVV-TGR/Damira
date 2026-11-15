@@ -80,7 +80,7 @@ dados.
 | `confirmado` | a casa vai fazê-lo | servidor, ao criar (sem nada a confirmar); a equipa, ao confirmar um «sim» sem nada novo; o aceite do cliente | sim | sim, uma vez |
 | `entregue` | o cliente levantou e pagou na loja; ou a entrega foi feita | balcão, com um toque | sim, no arquivo | não |
 | `expirado` | a casa não respondeu até `expiraEm`; ou, se aprovado o n.º 2, o cliente não aceitou a resposta a tempo | servidor (ver «Expirar às 48 horas» e «O aceite do cliente») | sim, à parte dos cancelados | não |
-| `cancelado` | a casa recusou ou cancelou, ou o cliente desistiu ou cancelou por contacto | a gerente (ver «Desistir, cancelar e alterar») | sim, riscado | talão de cancelamento, se o pedido já tinha talão |
+| `cancelado` | a casa recusou ou cancelou, ou o cliente desistiu ou cancelou por contacto | a gerente; ou qualquer pessoa da equipa, numa entrega por falta de pagamento (ver «Desistir, cancelar e alterar») | sim, riscado | talão de cancelamento, se o pedido já tinha talão |
 
 Transições permitidas — **e mais nenhuma**, salvo a proposta explicitamente
 marcada como ainda não ativa:
@@ -105,7 +105,9 @@ marcada como ainda não ativa:
 - `entregue → confirmado` — pelo balcão nos primeiros 5 minutos (desfazer um
   toque por engano); pela gerente a qualquer momento
 - `confirmado → cancelado` — a pedido do cliente, por contacto, ou por iniciativa
-  da casa; regista-o a gerente
+  da casa; regista-o a gerente. **Numa entrega sem a transferência recebida**,
+  cancelar por falta de pagamento pode-o qualquer pessoa da equipa (ver «O
+  orçamento e o aceite»)
 
 ⚠️ **`expirado` e `cancelado` não se confundem** (pedido da Andreia). Um pedido
 que expirou ficou sem resposta **da casa**, ou, se aprovado o n.º 2, sem aceite do
@@ -119,8 +121,8 @@ expiração (`causaExpiracao`): `sem-resposta-da-casa`; a causa
 online, o dinheiro entra no mesmo toque em que o pedido sai do balcão. Não há um
 estado «pago na loja» à parte: seria um segundo toque que ninguém dá numa fila
 de sábado — a mesma razão que tirou o «aceite» e o «pronta» (abaixo). Numa
-entrega, `entregue` é só «entregue»: a transferência é outra coisa (em aberto:
-ver n.º 3).
+entrega, `entregue` é só «entregue»: a transferência é outra coisa, uma marca
+à parte que não muda o estado (ver «O orçamento e o aceite»).
 
 ⚠️ **A criação ou a transição efetiva dispara os efeitos, uma vez só.**
 Quando já nasce `confirmado`, os efeitos saem da criação. Nas confirmações
@@ -289,10 +291,29 @@ Se houver produtos ao quilo numa entrega, a casa combina diretamente com o
 cliente, **antes do aceite**, como se apura e paga o valor final (§3). O site
 não o calcula (em aberto: ver n.º 3).
 
-Se a transferência não chegar no prazo, **a casa pode** cancelar e informar o
-cliente (§3). «Pode» não é automático: é a gerente que cancela, com
-`canceladoPor = gerente`, e o cliente recebe o email de cancelamento. Nada no
-site cancela uma entrega sozinho por falta de pagamento.
+**Depois do aceite, o dinheiro de uma entrega** (respostas da Andreia a 12/11,
+ao ponto 3 da política):
+
+- **Qualquer pessoa da equipa marca «transferência recebida»**, e não só a
+  gerente: o site não vê a conta da casa, e quem foi ao banco é quem o regista.
+  O pedido guarda **quando e quem** a marcou. **Não muda o estado**: uma entrega
+  paga continua `confirmado` até ser `entregue`.
+- **A cozinha prepara sem esperar pela transferência.** Uma entrega
+  `confirmado` entra nas listas e imprime o talão como qualquer outro pedido
+  confirmado, com a transferência ainda por receber. O painel e o talão dizem
+  **«transferência por receber»** enquanto não estiver marcada, para a casa ver
+  o risco que aceitou.
+- **Se a transferência não chegar no prazo, a casa pode** cancelar e informar o
+  cliente (§3). «Pode» não é automático: **qualquer pessoa da equipa** cancela
+  por falta de pagamento — mas só uma entrega `confirmado` **sem a
+  transferência marcada**, e o servidor verifica as duas coisas. Fica
+  `canceladoPor = gerente` (que quer dizer «a casa», seja quem tocar) e o
+  motivo, e o cliente recebe o email de cancelamento. Nada no site cancela uma
+  entrega sozinho por falta de pagamento.
+- **Fazer e enviar o orçamento continua a ser só da gerente**: fixa dinheiro.
+
+⚠️ **Ninguém cancela um pedido pago com este botão.** Com a transferência
+marcada, cancelar volta a ser só da gerente, com a devolução por escrito (§4).
 
 ## O aceite do cliente — `a-aguardar-aceite`
 
@@ -545,11 +566,14 @@ começa a ser feito três dias antes (em aberto: ver n.º 4). O início da produ
 continua a servir para «Produzir hoje» e para a urgência do «Por confirmar».
 
 **Quem regista.** A gerente regista também as desistências de pedidos à espera;
-a permissão do balcão para confirmar não lhe dá permissão para cancelar.
+a permissão do balcão para confirmar não lhe dá permissão para cancelar. **A
+única exceção é cancelar uma entrega por falta de pagamento**, que pode
+qualquer pessoa da equipa, nas condições de «O orçamento e o aceite».
 O pedido guarda `canceladoPor` — de quem foi a iniciativa,
 `cliente` ou `gerente` (a casa) — e `canceladoEm`. A gerente cancela e recusa
 com a mesma ação (`cancelarPedido`): o estado muda e a vaga e as quantidades
-libertam-se, juntos. O papel verifica-se no servidor.
+libertam-se, juntos. O papel verifica-se no servidor — e, para o balcão, também
+que o pedido é uma entrega `confirmado` sem a transferência marcada.
 
 ⚠️ **Cancelar não é só mudar um estado.** Se o pedido já estava `confirmado`, o
 talão já está na cozinha. Seja quem for a pedir, o balcão é avisado como num
@@ -641,18 +665,26 @@ regra que depende de um destes pontos remete para ele.
    mínima:* levantamento — nada: paga-se na caixa da loja, e há um toque em
    `entregue`; ao quilo — só a nota «valor indicativo» na página, no email, no
    talão e no painel, sem registar peso (o aviso no email acima já é obrigatório; falta fechar
-   os restantes registos); entrega — a gerente marca
-   «transferência recebida» (data e autor), que não muda o estado; devolução de
+   os restantes registos); devolução de
    uma transferência — uma nota com o valor e o motivo ao cancelar (a política
    pede a decisão por escrito, §4). Nada de livro de pagamentos nem de registo
-   de pesos. *Decide:* Gonçalo.
-4. **Produzir sem ter recebido a transferência, e cancelar sem custos a 24 h um
-   bolo que começou a ser feito 3 dias antes.** São riscos que o texto da
-   política aceita. *Exemplo:* uma entrega para sábado, com a transferência
-   ainda por chegar na quinta, quando o bolo começa. *Proposta nossa:* o site só
-   os torna visíveis — «transferência por receber» no painel e no talão — e
-   «pode cancelar» (§3) nunca é cancelamento automático. *Decide:* Andreia
-   (confirmar que aceita os dois).
+   de pesos. *Decide:* Gonçalo. **Já decidido e retirado** (Andreia, 12/11):
+   numa entrega, qualquer pessoa da equipa marca «transferência recebida» e
+   cancela por falta de pagamento (ver «O orçamento e o aceite»).
+
+   ⚠️ **Por confirmar com a Andreia:** ela escreveu que queria «uniformizar as
+   encomendas sob orçamento e os pedidos com entrega». Lemos: as duas esperam
+   juntas em «Por confirmar» e seguem as mesmas regras de quem marca e de quem
+   cancela; um levantamento sob orçamento **continua a pagar-se na loja**, como
+   diz o §2. Se ela queria dizer que também se paga antes, por transferência,
+   muda o `modoPagamento` desse pedido e o «cancelar por falta de pagamento»
+   passa a valer para ele.
+4. **Cancelar sem custos a 24 h um bolo que começou a ser feito 3 dias antes.**
+   É um risco que o texto da política aceita. *Exemplo:* um bolo de três dias
+   para sábado, cancelado na sexta de manhã. *Proposta nossa:* o site não o
+   impede, e mostra à equipa quanto faltava. *Decide:* Andreia (confirmar que
+   aceita). **Já decidido e retirado** (Andreia, 12/11): a cozinha prepara uma
+   entrega sem esperar pela transferência.
 5. **Não levantado.** *Exemplo:* um pedido para as 11h00 que ninguém levantou
    até ao fecho. *Proposta nossa:* não ganha estado; continua `confirmado` e
    aparece em «Precisa de atenção» no dia seguinte, para a casa decidir.
@@ -719,8 +751,12 @@ aprovado o contrato, o PR próprio do esquema deve explicitar:
   `entregue` ou `cancelado`. Deixa de servir: cancelar antes de pagar e entregar
   fora do Stripe têm de ser possíveis. A nova restrição preserva a garantia
   dos pedidos pagos pelo Stripe e os seus dados históricos; não se resolve
-  apagando a validação. O significado de `pagoEm` fora do Stripe e os registos
-  de transferências/devoluções dependem do n.º 3 e fecham-se antes da migração.
+  apagando a validação. O significado de `pagoEm` fora do Stripe e o registo
+  das devoluções dependem do n.º 3 e fecham-se antes da migração.
+- A transferência recebida de uma entrega: **quando e quem** a marcou (decidido
+  a 12/11). Os dois juntos ou nenhum, e só num pedido com `modoPagamento =
+  transferencia`. O motivo do cancelamento distingue «falta de pagamento», que
+  é o único que o balcão pode dar.
 - As transições, a reserva/libertação dos contadores e a gravação dos emails
   são atómicas. A criação já em `confirmado` produz igualmente um único aviso,
   email e pedido de impressão; não depende de uma transição posterior.
