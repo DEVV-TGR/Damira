@@ -51,7 +51,7 @@ design vem deles. O painel é nosso.
 | **Emails ao cliente:** os modelos (o texto e o aspeto de cada email do `pedidos.md` › Os emails) e a **página de aceite** do orçamento | **Emails ao cliente:** a fila (`emails_por_enviar`) e o envio |
 | **Login dos clientes** (Google, Facebook, código por email): os ecrãs | **Login dos clientes** (Google, Facebook, código por email): o servidor |
 | Stripe (**a dormir desde 04/11**): checkout, webhook, gravar os pagamentos na base de dados (a `FonteWebhook`, `src/lib/pagamentos/`), verificação periódica, reembolsos, sinal, e as contas Stripe e PayPal da casa | Entrada no painel: PIN, código por email da gerente, sessões e dispositivos |
-| A conta Resend e o domínio verificado, decidido a 09/11 | O Vercel Blob (a store, o token e as fotos) e a monitorização (uptime, Sentry, heartbeat — `robustez.md`) |
+| | O Vercel Blob (a store, o token e as fotos) e a monitorização (uptime, Sentry, heartbeat — `robustez.md`) |
 | Regras das combinações dos bolos personalizados | Impressão e talão |
 | | Textos legais e cookies |
 | | Tudo o que é presencial (ver abaixo) |
@@ -62,6 +62,10 @@ grava-o na fila na mesma instrução que muda o estado (`pedidos.md` › Os
 emails); no login, os ecrãs só falam com o servidor por `src/lib/conta.ts`,
 nunca com o `autenticacao.ts` (`AGENTS.md` › A conta de cliente). Mudar a forma
 de um lado é mudar o contrato, e pede a revisão do outro.
+
+**A conta Resend e o domínio verificado são dos dois**: os dois têm acesso, e os
+emails de teste manda-os quem estiver a trabalhar neles — o Gonçalo para ver um
+modelo, o Sobral para provar a fila e o envio.
 
 **A configuração na Vercel é de quem é dono da funcionalidade** — as variáveis,
 as integrações, os domínios e as tarefas agendadas de cada uma. Quem liga o
@@ -147,8 +151,8 @@ outro onde ela é obrigatória; apanha o básico onde não é.
    incomodar» desligado, carregador sempre ligado.
 3. **Conteúdo dos produtos** — a casa preenche fotos, alergénios e tempos de
    produção no painel. Os testes reais só acontecem depois disso; acompanhar.
-4. **Contas em nome da Damira** — Neon (plano Launch). O Resend passou para o
-   Gonçalo a 09/11, como as contas de pagamento (abaixo).
+4. **Contas em nome da Damira** — Neon (plano Launch). O Resend é dos dois (ver
+   «As áreas»); as contas de pagamento são do Gonçalo (abaixo).
 5. **Marketing** — fazer a ponte com quem trata do marketing da casa.
 6. **Advogada** — levar os textos legais e trazer a aprovação.
 7. **Testes na loja e formação** — com pedidos de teste e o tablet: um pedido
