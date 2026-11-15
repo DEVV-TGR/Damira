@@ -4,7 +4,7 @@ import { routing } from "./routing";
 
 export default getRequestConfig(async ({ requestLocale }) => {
   const pedido = await requestLocale;
-  /* Um idioma desconhecido no URL (`/de/ementa`) cai no português em vez de
+  /* Um idioma desconhecido no URL (`/de/encomendas`) cai no português em vez de
      rebentar — o `proxy.ts` já filtra a esmagadora maioria destes casos. */
   const locale = hasLocale(routing.locales, pedido)
     ? pedido
