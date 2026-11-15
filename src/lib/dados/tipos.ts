@@ -738,14 +738,18 @@ export type FontePainel = {
   listarPedidos(filtro: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<PaginaPedidos>>;
   pedidoDoPainel(id: string, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
   /**
-   * `pago → entregue`, **condicional**: dois toques ao mesmo tempo (ou em dois
+   * `confirmado → entregue` num pedido pago na loja, ou `pago → entregue` no do
+   * Stripe, **condicional**: dois toques ao mesmo tempo (ou em dois
    * dispositivos) entregam uma vez, e o segundo recebe o pedido já entregue.
-   * Com dinheiro em falta, só com `faltaCobrada: true` — o painel pergunta
-   * «Recebeu os 12,50 € em falta?» antes, e o servidor não confia que perguntou.
+   * Pago na loja, o dinheiro entra nesse toque e o `faltaCobrada` não conta. No
+   * do Stripe, com dinheiro em falta, só com `faltaCobrada: true` — o painel
+   * pergunta «Recebeu os 12,50 € em falta?» antes, e o servidor não confia que
+   * perguntou.
    */
   marcarEntregue(id: string, faltaCobrada: boolean, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
   /**
-   * `entregue → pago`. ⚠️ **A única regra de papel que a fonte verifica ela
+   * `entregue → confirmado` (pago na loja) ou `entregue → pago` (Stripe): volta
+   * ao estado de onde veio. ⚠️ **A única regra de papel que a fonte verifica ela
    * própria**, porque depende do pedido: o balcão só nos 5 minutos a seguir ao
    * `entregueEm`; a gerente a qualquer momento (`pedidos.md`).
    */
@@ -757,14 +761,16 @@ export type FontePainel = {
   /** Dá um aviso por tratado. O facto (`chegouTarde`, o dia fechado) fica. */
   tratarAviso(id: string, tipo: AvisoTratavel, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
   /**
-   * Muda o levantamento de um pedido `pago`. `levantamentoEm` em ISO; tem de ser
+   * Muda o levantamento de um pedido `confirmado` ou `pago`. `levantamentoEm` em ISO; tem de ser
    * uma hora em que a loja abre e com vaga (`validarLevantamento` com o horário
    * da loja), e no futuro. A vaga antiga liberta-se na mesma transação.
    */
   reagendarPedido(id: string, levantamentoEm: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
   /**
-   * `pago → cancelado`, pela gerente, com o reembolso escolhido: `0` é nenhum, e
-   * nunca mais do que o pago online ainda por devolver. Liberta a vaga.
+   * `→ cancelado`, pela gerente: um pedido pago na loja `por-confirmar`,
+   * `a-aguardar-aceite` ou `confirmado`, ou um `pago` do Stripe. Com o reembolso
+   * escolhido: `0` é nenhum, e nunca mais do que o pago online ainda por
+   * devolver — pago na loja, só `0`. Liberta a vaga.
    */
   cancelarPedido(id: string, reembolsoCent: number, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
   /**

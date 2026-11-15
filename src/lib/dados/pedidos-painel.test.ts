@@ -60,6 +60,21 @@ const pedido = (nome: string, alteracoes: Partial<Pedido> = {}): Pedido => ({
   ...alteracoes,
 });
 
+/* Um pedido pago na loja, como o site os cria desde o #132: confirmado ao nascer,
+   sem nada pago online. */
+const naLoja = (nome: string, alteracoes: Partial<Pedido> = {}): Pedido =>
+  pedido(nome, {
+    estado: "confirmado",
+    modoPagamento: "na-loja",
+    pagoOnlineCent: 0,
+    pagoEm: null,
+    confirmadoEm: lisboa(6, 9),
+    expiraEm: null,
+    aceiteEm: null,
+    causaExpiracao: null,
+    ...alteracoes,
+  });
+
 const fonte = async (pedidos: Pedido[], casa?: CasaDeTeste): Promise<FonteDeDados> => {
   const base = await fonteComPedidos(pedidos, casa);
   return { ...base, ...protegerPainel(base) };
@@ -290,3 +305,72 @@ describe("as decisões da gerente", () => {
   });
 });
 
+
+describe("os pedidos pagos na loja", () => {
+  it("o balcão entrega um confirmado com um toque: paga-se na loja, nesse toque", async () => {
+    /* `entregue` quer dizer «levantou e pagou» (`pedidos.md` › Os estados): não
+       há «dinheiro em falta» a perguntar, porque nada se pagou antes. */
+    const f = await fonte([naLoja("a")]);
+    const entregue = await f.marcarEntregue(u("a"), false, BALCAO);
+    expect(entregue.ok && entregue.valor).toMatchObject({ estado: "entregue", entregueEm: AGORA });
+    const outra = await f.marcarEntregue(u("a"), false, { ...BALCAO, agora: lisboa(7, 10, 1) });
+    expect(outra.ok && outra.valor.entregueEm).toEqual(AGORA);
+  });
+
+  it("desfazer o entregue volta a confirmado, e não a pago", async () => {
+    const f = await fonte([naLoja("a", { estado: "entregue", entregueEm: lisboa(7, 9, 58) })]);
+    const desfeito = await f.desfazerEntregue(u("a"), BALCAO);
+    expect(desfeito.ok && desfeito.valor).toMatchObject({ estado: "confirmado", entregueEm: null, confirmadoEm: lisboa(6, 9) });
+  });
+
+  it("um por confirmar não se entrega nem muda de hora: a casa ainda não disse que o faz", async () => {
+    const f = await fonte([naLoja("a", { estado: "por-confirmar", confirmadoEm: null, expiraEm: lisboa(8, 9) })]);
+    expect(await f.marcarEntregue(u("a"), true, BALCAO)).toEqual({ ok: false, erro: "estado-mudou" });
+    expect(await f.reagendarPedido(u("a"), lisboa(9, 11).toISOString(), GERENTE)).toEqual({
+      ok: false,
+      erro: "estado-mudou",
+    });
+  });
+
+  it("a gerente cancela um confirmado sem reembolso, e a vaga fica livre", async () => {
+    const quando = lisboa(8, 15);
+    const f = await fonte([naLoja("a")]);
+    expect(await f.ocupacao(quando, quando)).toEqual([{ inicio: quando, pedidos: 1 }]);
+    /* Nada se pagou online: não há nada a devolver. */
+    expect(await f.cancelarPedido(u("a"), 100, GERENTE)).toEqual({
+      ok: false,
+      erro: "dados-invalidos",
+      campos: ["reembolsoCent"],
+    });
+    const cancelado = await f.cancelarPedido(u("a"), 0, GERENTE);
+    expect(cancelado.ok && cancelado.valor).toMatchObject({ estado: "cancelado", canceladoEm: AGORA, canceladoPor: "gerente" });
+    expect(cancelado.ok && cancelado.valor.reembolsos).toEqual([]);
+    expect(await f.ocupacao(quando, quando)).toEqual([]);
+  });
+
+  it("e cancela um que ainda espera pela casa ou pelo cliente", async () => {
+    const f = await fonte([
+      naLoja("a", { estado: "por-confirmar", confirmadoEm: null, expiraEm: lisboa(8, 9) }),
+      naLoja("b", { estado: "a-aguardar-aceite", confirmadoEm: null, expiraEm: lisboa(8, 9) }),
+    ]);
+    for (const nome of ["a", "b"]) {
+      const cancelado = await f.cancelarPedido(u(nome), 0, GERENTE);
+      expect(cancelado.ok && cancelado.valor.estado).toBe("cancelado");
+    }
+  });
+
+  it("a gerente muda a hora de um confirmado", async () => {
+    const f = await fonte([naLoja("a")]);
+    const mudado = await f.reagendarPedido(u("a"), lisboa(9, 11).toISOString(), GERENTE);
+    expect(mudado.ok && mudado.valor).toMatchObject({ estado: "confirmado", levantamentoEm: lisboa(9, 11), reagendadoEm: AGORA });
+  });
+
+  it("um entregue ou um expirado não se cancela por aqui", async () => {
+    const f = await fonte([
+      naLoja("a", { estado: "entregue", entregueEm: lisboa(7, 9) }),
+      naLoja("b", { estado: "expirado", confirmadoEm: null, expiraEm: lisboa(7, 9), causaExpiracao: "sem-resposta-da-casa" }),
+    ]);
+    expect(await f.cancelarPedido(u("a"), 0, GERENTE)).toEqual({ ok: false, erro: "estado-mudou" });
+    expect(await f.cancelarPedido(u("b"), 0, GERENTE)).toEqual({ ok: false, erro: "estado-mudou" });
+  });
+});
