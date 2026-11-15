@@ -100,6 +100,14 @@ export const EsquemaProduto = z.object({
   vegan: z.boolean(),
   /** Marcado pela gerente, como o vegan (`painel-gerente.md`). Nunca deduzido. */
   semGluten: z.boolean(),
+  /**
+   * «Necessita de confirmação da loja» (decidido a 11/11, `painel-gerente.md`):
+   * um pedido com este produto fica à espera de a casa o confirmar. Marcado pela
+   * gerente, produto a produto. O valor de partida é o do `pedeConfirmacaoInicial`
+   * (`regras.ts`) — ligado só nos sob orçamento —, e daí para a frente é dela.
+   * ⚠️ Ainda **nenhum pedido muda de estado** por causa dele.
+   */
+  pedeConfirmacao: z.boolean(),
   fotos: z.array(z.string()),
   /** O sinal pedido no checkout, em percentagem. `null` = paga-se tudo. */
   sinalPercent: z.number().int().min(1).max(100).nullable(),

@@ -58,6 +58,9 @@ const NOVO: EntradaProduto = {
   alergenios: null,
   vegan: false,
   semGluten: false,
+  /* Desligada, como o «sob orçamento» da variante de um produto novo: é a
+     gerente que a liga, se quiser. */
+  pedeConfirmacao: false,
   fotos: [],
   sinalPercent: null,
   limite: null,
@@ -507,6 +510,14 @@ export function EditorProduto({
               %
             </div>
           )}
+        </div>
+        <div className="mt-4">
+          <Caixa
+            checked={e.pedeConfirmacao}
+            onChange={(v) => mudar({ pedeConfirmacao: v })}
+            titulo="Necessita de confirmação da loja"
+            explicacao="Um pedido com este produto fica à espera de a casa o confirmar."
+          />
         </div>
       </fieldset>
 
