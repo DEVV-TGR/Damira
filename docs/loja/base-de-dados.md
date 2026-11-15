@@ -367,6 +367,15 @@ o contador bate sempre com a soma dos reembolsos `pendente` e `concluido`.
   entregam uma vez.
 - **Os 5 minutos do balcão** para desfazer um «entregue» vão na mesma condição
   (`… AND entregue_em >= agora − 5 min`), com o `agora` do contexto.
+- **Os pedidos pagos na loja** (`modo_pagamento = 'na-loja'`) seguem as mesmas
+  ações do painel, com o estado de partida deles: entrega-se um `confirmado`
+  com um toque, sem «dinheiro em falta» a perguntar (paga-se nesse toque);
+  desfazer o «entregue» volta a `confirmado`, e não a `pago`; a gerente cancela
+  um `por-confirmar`, um `a-aguardar-aceite` ou um `confirmado`, sem reembolso,
+  e a vaga liberta-se; e reagenda um `confirmado`. As listas de estados vivem no
+  `regras.ts` (`podeCancelar`, `REAGENDAVEIS`, `estadoAntesDeEntregue`), para as
+  duas fontes decidirem igual. ⚠️ Confirmar, responder e aceitar ainda não
+  existem na `FontePainel`: chegam com o contrato do balcão (#125).
 - **Os efeitos vão na mesma instrução**, em passos do mesmo `WITH`
   (`bd-painel-pedidos.ts`): a vaga, o reembolso e a versão. Sem isso, um pedido que
   já não está no estado de partida descontava a vaga na mesma, e o driver HTTP da

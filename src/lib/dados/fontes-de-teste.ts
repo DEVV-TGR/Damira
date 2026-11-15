@@ -110,8 +110,8 @@ async function guardarPedido(db: BaseDeTeste, pedido: Pedido, limite: number | n
   for (const reembolso of pedido.reembolsos) {
     await db.insert(tabelaReembolsos).values({ ...reembolso, pedidoId: pedido.id });
   }
-  /* O que ocupa: pendente, pago e entregue (`base-de-dados.md`). */
-  if (pedido.estado === "pendente" || pedido.estado === "pago" || pedido.estado === "entregue") {
+  /* O que ocupa: tudo menos o cancelado e o expirado (`base-de-dados.md`). */
+  if (pedido.estado !== "cancelado" && pedido.estado !== "expirado") {
     await db
       .insert(vagas)
       .values({ inicio: pedido.levantamentoEm, ocupadas: 1, limite })
