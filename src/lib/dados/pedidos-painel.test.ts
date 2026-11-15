@@ -53,6 +53,10 @@ const pedido = (nome: string, alteracoes: Partial<Pedido> = {}): Pedido => ({
   reembolsos: [],
   avisosTratados: [],
   reagendadoEm: null,
+  confirmadoEm: null,
+  expiraEm: null,
+  aceiteEm: null,
+  causaExpiracao: null,
   ...alteracoes,
 });
 
