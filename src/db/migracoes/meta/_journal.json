@@ -50,6 +50,13 @@
       "when": 1794762268742,
       "tag": "0006_pedidos_na_loja",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794783137858,
+      "tag": "0007_linha_sem_preco",
+      "breakpoints": true
     }
   ]
 }

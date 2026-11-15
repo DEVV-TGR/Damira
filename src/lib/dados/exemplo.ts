@@ -300,7 +300,10 @@ const paraEmail = (nome: string) =>
 /* A linha como o pedido a guarda: a fotografia do momento, com o preço do
    catálogo (`pedidos.md`). Um pedido de exemplo nunca cobra o que o site não
    cobraria. */
-const linhaDoPedido = (produto: Produto, quantidade?: number): Pedido["linhas"][number] => {
+const linhaDoPedido = (
+  produto: Produto,
+  quantidade?: number,
+): Pedido["linhas"][number] & { precoUnitarioCent: number; totalCent: number } => {
   const variante = produto.variantes[0];
   const qtd = quantidade ?? produto.quantidadeMinima;
   const preco = variante.precoCent!;

@@ -140,6 +140,15 @@ describe("o que é válido entra", () => {
     expect(await db.select().from(linhasPedido)).toHaveLength(2);
   });
 
+  it("uma linha sem preço, com o preço e o total por saber", async () => {
+    /* O bolo por medida: a gerente fixa o preço ao responder (`pedidos.md` ›
+       O que o pedido guarda). `null` é «ainda não se sabe», nunca zero. */
+    await comPedido();
+    await db.insert(linhasPedido).values({ ...LINHA, precoUnitarioCent: null, totalCent: null });
+    const [linha] = await db.select().from(linhasPedido);
+    expect(linha).toMatchObject({ precoUnitarioCent: null, totalCent: null });
+  });
+
   it("meio quilo numa linha ao quilo", async () => {
     await comPedido();
     await db.insert(linhasPedido).values({ ...LINHA, unidade: "kg", quantidade: 0.5, totalCent: 850 });
@@ -440,6 +449,13 @@ describe("uma linha recusa", () => {
 
   it("preços negativos", async () => {
     expect(await tenta({ precoUnitarioCent: -1 })).toBe("linhas_pedido_precos");
+  });
+
+  it("o preço sem o total, ou o total sem o preço", async () => {
+    /* Um total sem preço unitário — ou o contrário — é meio preço fixado: os
+       dois sabem-se juntos ou nenhum. */
+    expect(await tenta({ precoUnitarioCent: null })).toBe("linhas_pedido_precos");
+    expect(await tenta({ totalCent: null })).toBe("linhas_pedido_precos");
   });
 
   it("uma unidade que não existe", async () => {

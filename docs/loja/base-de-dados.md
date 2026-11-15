@@ -259,8 +259,16 @@ de teste — o `LOJA_EM_TESTE` desse momento.
 | `escolhas` | `text[]` | **cópia** |
 | `unidade` | `text` | **cópia** |
 | `quantidade` | `numeric` `> 0` | `quantidade` |
-| `preco_unitario_cent`, `total_cent` | `integer` `>= 0` | o preço **desse dia** |
+| `preco_unitario_cent`, `total_cent` | `integer` nulo, `>= 0` | o preço **desse dia**; `null` os dois numa linha sem preço (migração `0007`) |
 | `notas` | `text` nulo | `notas` |
+
+**Uma linha sem preço** — o bolo por medida — guarda o preço unitário e o total
+a `null` até a gerente os fixar ao responder (`pedidos.md` › O que o pedido
+guarda). O `CHECK` `linhas_pedido_precos` obriga a saberem-se os dois juntos ou
+nenhum. ⚠️ **Que um pedido `confirmado` não tenha linhas sem preço não o garante
+a base de dados**: é uma regra entre duas tabelas, e um `CHECK` só vê a linha.
+Garante-o o código, que só cria `confirmado` com todos os preços e só confirma
+depois de a gerente os fixar.
 
 Chave primária `(pedido_id, posicao)`. A ligação a `produtos` é segura porque
 nenhum produto se apaga; e ⚠️ **nunca se lê o nome nem o preço através dela** —

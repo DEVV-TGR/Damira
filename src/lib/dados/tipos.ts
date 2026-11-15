@@ -341,8 +341,13 @@ export const EsquemaLinhaPedido = z.object({
   escolhas: z.array(z.string()),
   unidade: z.enum(["un", "kg"]),
   quantidade: z.number().positive(),
-  precoUnitarioCent: Cent,
-  totalCent: Cent,
+  /**
+   * `null` numa linha sem preço (o bolo por medida), até a gerente o fixar ao
+   * responder. Nunca se soma como zero: o total do pedido é só a parte conhecida
+   * (`pedidos.md` › Dinheiro). Os dois sabem-se juntos ou nenhum.
+   */
+  precoUnitarioCent: Cent.nullable(),
+  totalCent: Cent.nullable(),
   notas: z.string().nullable(),
 });
 

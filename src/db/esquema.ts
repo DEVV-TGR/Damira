@@ -512,8 +512,11 @@ export const linhasPedido = pgTable(
     unidade: text("unidade").notNull(),
     /* `numeric`: ao quilo pede-se meio quilo. */
     quantidade: numeric("quantidade", { mode: "number" }).notNull(),
-    precoUnitarioCent: integer("preco_unitario_cent").notNull(),
-    totalCent: integer("total_cent").notNull(),
+    /* `null` numa linha sem preço — o bolo por medida —, até a gerente o fixar
+       ao responder (`pedidos.md` › O que o pedido guarda). Nunca zero: zero é
+       «não custa nada», e `null` é «ainda não se sabe». */
+    precoUnitarioCent: integer("preco_unitario_cent"),
+    totalCent: integer("total_cent"),
     notas: text("notas"),
   },
   (t) => [
@@ -522,7 +525,12 @@ export const linhasPedido = pgTable(
     check("linhas_pedido_posicao", sql`${t.posicao} >= 0`),
     check("linhas_pedido_unidade", sql`${t.unidade} in (${umDe(["un", "kg"])})`),
     check("linhas_pedido_quantidade", sql`${t.quantidade} > 0`),
-    check("linhas_pedido_precos", sql`${t.precoUnitarioCent} >= 0 and ${t.totalCent} >= 0`),
+    /* Os dois juntos ou nenhum: um total sem preço unitário é meio preço fixado. */
+    check(
+      "linhas_pedido_precos",
+      sql`(${t.precoUnitarioCent} is null) = (${t.totalCent} is null)
+        and (${t.precoUnitarioCent} is null or (${t.precoUnitarioCent} >= 0 and ${t.totalCent} >= 0))`,
+    ),
   ],
 );
 
