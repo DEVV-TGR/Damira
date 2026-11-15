@@ -20,8 +20,13 @@
 
 **O talão leva:** referência, dia da semana e data de levantamento, hora,
 cliente e telefone, artigos (variante, escolhas, quantidade, notas), observações,
-total e `PAGO` ou `SINAL PAGO · FALTA 12,50 €`, NIF se o cliente o deu, e
-«documento sem valor fiscal».
+o que há a pagar — `A PAGAR NA LOJA · 23,50 €`, com `VALOR INDICATIVO` quando há
+produtos ao quilo (`pedidos.md` › Dinheiro) —, NIF se o cliente o deu, e
+«documento sem valor fiscal». Numa entrega paga-se por transferência, e o que o
+talão diz dela está em aberto (`pedidos.md`, n.º 3 e 4). Um talão nunca tem uma
+linha sem preço: só imprime um pedido confirmado, e aí a gerente já fixou tudo.
+(`PAGO` e `SINAL PAGO · FALTA 12,50 €` eram do pagamento online, e dormem com
+ele.)
 
 **Pedidos para hoje:** um bloco **invertido** no topo (fundo preto, texto branco)
 — `HOJE · QUINTA 14:30`. O talão inteiro a preto foi pedido na reunião; o
@@ -31,15 +36,23 @@ imprime mais devagar e pode manchar) e decide-se aí.
 **Bolos personalizados:** as fotos **não** saem no talão — uma térmica a preto e
 branco imprime-as ilegíveis. O talão diz «2 fotos — ver no painel».
 
-**Talão de cancelamento:** sai quando um pedido é cancelado, com
-`CANCELADO` em bloco invertido, a referência e o levantamento previsto (ver
-`pedidos.md`).
+**Talão de cancelamento:** sai quando é cancelado um pedido **que já tinha
+talão** — um confirmado —, com `CANCELADO` em bloco invertido, a referência e o
+levantamento previsto (ver `pedidos.md`). Um `por-confirmar` ou um
+`a-aguardar-aceite` cancelado nunca chegou à cozinha, e não imprime nada.
+
+**Talão de alteração:** sai quando a gerente reagenda um pedido confirmado,
+com a hora nova, para a cozinha não continuar com a antiga (`pedidos.md` ›
+Mudar o levantamento). O formato fecha-se na implementação.
 
 **Falhas:** se a impressora não responder, o balcão mostra o aviso vermelho e o
 alarme repete-se até alguém reimprimir ou dar por tratado (ver
 `painel-balcao.md`). Reimprimir é sempre possível, no balcão e na gerente.
 
-**Quando imprime:** uma vez, na transição para `pago` (ver `pedidos.md`) — nunca
-por receber um evento.
+**Quando imprime:** uma vez, quando o pedido fica `confirmado` — ao nascer, se
+não tinha nada a confirmar; quando a casa o confirma; ou quando o cliente aceita
+a resposta dela (ver `pedidos.md` › Os estados). Nunca um `por-confirmar` nem um
+`a-aguardar-aceite`: o talão é a ordem para a cozinha. E nunca outra vez por
+dois toques em «Confirmar», nem por desfazer um «entregue».
 
 `impressoEm` guarda-se quando a impressora confirma, não quando se manda.
