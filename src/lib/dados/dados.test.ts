@@ -14,6 +14,8 @@ import { FORMATO_REFERENCIA, type EntradaPedido, type FonteDeDados } from "./tip
    quarta às 7h30, à abertura da loja. */
 const AGORA = new TZDate(2026, 9, 5, 10, 0, "Europe/Lisbon");
 const QUARTA_7H30 = new TZDate(2026, 9, 7, 7, 30, "Europe/Lisbon").toISOString();
+/* O bolo por medida leva cinco dias de cozinha: a quarta seguinte chega. */
+const QUARTA_SEGUINTE_7H30 = new TZDate(2026, 9, 14, 7, 30, "Europe/Lisbon").toISOString();
 const TERCA_7H30 = new TZDate(2026, 9, 6, 7, 30, "Europe/Lisbon").toISOString();
 const CONTEXTO = { agora: AGORA, ip: "203.0.113.1", contaId: null };
 
@@ -240,15 +242,17 @@ describe.skipIf(NA_BASE_DE_DADOS)("criar o pedido", () => {
     expect(resultado).toEqual({ ok: false, erro: "indisponivel" });
   });
 
-  it("com os valores de exemplo, cria o pedido pendente com o total do servidor", async () => {
+  it("com os valores de exemplo, cria o pedido confirmado, a pagar na loja, com o total do servidor", async () => {
     const resultado = await fonteDeExemplo().criarPedido(entrada(), CONTEXTO);
     expect(resultado.ok).toBe(true);
     if (!resultado.ok) return;
     expect(resultado.pedido).toMatchObject({
-      estado: "pendente",
+      estado: "confirmado",
       totalCent: 33500,
-      modoPagamento: "total",
+      modoPagamento: "na-loja",
       pagoOnlineCent: 0,
+      confirmadoEm: AGORA,
+      expiraEm: null,
     });
     expect(resultado.pedido.referencia).toMatch(FORMATO_REFERENCIA);
     expect(resultado.pedido.referencia.startsWith("DAM-0510-")).toBe(true);
@@ -300,12 +304,47 @@ describe.skipIf(NA_BASE_DE_DADOS)("criar o pedido", () => {
     expect(resultado).toEqual({ ok: false, erro: "recusado" });
   });
 
-  it("recusa um cesto com um artigo sob orçamento", async () => {
+  it("um artigo sem preço: o pedido nasce por confirmar, com 48 h para a casa responder", async () => {
+    /* O bolo por medida não tem preço: a gerente fixa-o ao responder. O total é
+       só a parte conhecida, e a linha sem preço guarda `null`, nunca zero
+       (`pedidos.md` › Confirmar e › Dinheiro). */
     const resultado = await fonteDeExemplo().criarPedido(
-      entrada({ linhas: [{ produtoId: "bolo-por-medida", varianteId: "unica", quantidade: 1 }] }),
+      entrada({
+        levantamentoEm: QUARTA_SEGUINTE_7H30,
+        linhas: [
+          { produtoId: "bolo-por-medida", varianteId: "unica", quantidade: 1 },
+          { produtoId: "box-aniversario", varianteId: "unica", quantidade: 1 },
+        ],
+      }),
       CONTEXTO,
     );
-    expect(resultado.ok === false && resultado.erro).toBe("sob-orcamento");
+    if (!resultado.ok) throw new Error(`devia ter criado o pedido: ${resultado.erro}`);
+    expect(resultado.pedido).toMatchObject({
+      estado: "por-confirmar",
+      modoPagamento: "na-loja",
+      totalCent: 3500,
+      confirmadoEm: null,
+      expiraEm: new Date(AGORA.getTime() + 48 * 3_600_000),
+    });
+    expect(resultado.pedido.linhas[0]).toMatchObject({ produtoId: "bolo-por-medida", precoUnitarioCent: null, totalCent: null });
+    expect(resultado.pedido.linhas[1]).toMatchObject({ precoUnitarioCent: 3500, totalCent: 3500 });
+  });
+
+  it("o mínimo da loja só se confere quando se sabem todos os preços", async () => {
+    /* Com uma linha por orçar, a parte conhecida não diz quanto vai custar: quem
+       decide é a gerente, ao responder. Sem linhas por orçar, confere-se. */
+    const fonte = fonteDeExemplo({
+      definicoes: { aceitarCancelamentosSite: false, devolverSinalAoCancelar: false, valorMinimoCent: 5000, pausaAte: null },
+    });
+    const box = { produtoId: "box-aniversario", varianteId: "unica", quantidade: 1 };
+    const comBolo = await fonte.criarPedido(
+      entrada({ levantamentoEm: QUARTA_SEGUINTE_7H30, linhas: [{ produtoId: "bolo-por-medida", varianteId: "unica", quantidade: 1 }, box] }),
+      CONTEXTO,
+    );
+    expect(comBolo.ok && comBolo.pedido.estado).toBe("por-confirmar");
+    expect(
+      await fonte.criarPedido(entrada({ linhas: [box], chaveIdempotencia: "4f1b2c3d-1111-4222-8333-888888888888" }), CONTEXTO),
+    ).toEqual({ ok: false, erro: "abaixo-do-minimo-da-loja" });
   });
 
   it("recusa a loja em pausa", async () => {

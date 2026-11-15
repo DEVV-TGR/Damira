@@ -422,14 +422,17 @@ export type AvisoTratavel = (typeof AVISOS_TRATAVEIS)[number];
  *   não aprender nada.
  * - `indisponivel`: a vaga não existe para este cesto — ou o calendário ainda
  *   não pode ser calculado, porque falta a cozinha ou um tempo de produção.
- * - `demasiados-pedidos`: o limite por IP e por email. **Conta-o a base de
- *   dados**; a implementação provisória não o conta.
+ * - `demasiados-pedidos`: o limite de pedidos em curso por IP e por email.
+ *   **Conta-o a base de dados**; a implementação provisória não o conta.
+ *
+ * Não há erro para um artigo sem preço: desde o pagamento na loja, o pedido
+ * nasce `por-confirmar` e a gerente fixa o preço ao responder (`pedidos.md` ›
+ * Confirmar). O `sob-orcamento` que o recusava saiu.
  */
 export type ErroCriarPedido =
   | "dados-invalidos"
   | "recusado"
   | "artigo-invalido"
-  | "sob-orcamento"
   | "loja-em-pausa"
   | "abaixo-do-minimo-da-loja"
   | "indisponivel"
