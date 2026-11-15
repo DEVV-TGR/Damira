@@ -4,9 +4,10 @@
 > massa, o preço base de cada tamanho, e em que bolos se pode imprimir uma foto
 > (e se isso tem custo). O que está abaixo já está decidido; os valores não.
 
-> ⚠️ **Desde 09/11 o pagamento é só na loja**, ao balcão, no levantamento
-> (decisão da Damira). Este ficheiro já o diz; o `pagamentos.md` e o
-> `pedidos.md` mudam num PR próprio, porque o `pedidos.md` é o contrato.
+> ⚠️ **Paga-se só na loja**, ao balcão, no levantamento, e sem sinal
+> (decisão da casa a 04/11, confirmada na política de 10/11). O como do pedido
+> — por confirmar, a resposta da gerente, o aceite do cliente — é do contrato,
+> `pedidos.md`; este ficheiro só diz o que é próprio do bolo.
 
 ## O que é
 
@@ -58,23 +59,28 @@ só se vê quando o cliente vem buscar o bolo.
   é esse valor ser pago em loja — ficaria algo como sob orçamento»), e o
   pagamento só na loja fecha-a:
   - o cliente vê um **preço base por tamanho**, como «a partir de», que a gerente
-    define no painel. Os extras (o topper, a impressão da foto, uma cobertura mais
+    define no painel. É só para mostrar: a linha do bolo entra no pedido **sem
+    preço final**. Os extras (o topper, a impressão da foto, uma cobertura mais
     cara) são complementos (#88), com preço ou a 0 €;
-  - **o preço final é sempre da loja.** A gerente vê o pedido com as fotos,
-    confirma o preço com o cliente, e o cliente paga tudo ao balcão. Não há
-    sinal;
-  - por isso, **o bolo vai no mesmo cesto que o resto.** O cesto, o email, o
-    painel e o talão mostram o total dos produtos de preço fixo, com o bolo à
-    parte como «sob orçamento», e dizem que o total ainda não é final.
-- ⚠️ **Esse contacto da loja é a confirmação do bolo.** Um bolo personalizado não
-  entra em produção sem a loja ter falado com o cliente. Não precisa de uma regra
-  própria para quem encomenda e não aparece: o orçamento já obriga a falar com
-  ele antes de se gastar um ingrediente.
+  - **o bolo vai no mesmo cesto que o resto**, e o pedido inteiro fica
+    **por confirmar** (`pedidos.md` › Confirmar). O cesto, a página do pedido, o
+    email de «recebemos» e o painel mostram o total dos produtos de preço fixo,
+    com o bolo à parte como «sob orçamento», e dizem que o total ainda não é
+    final;
+  - **o preço final é sempre da loja.** A gerente vê o pedido com as fotos e
+    fixa o valor do bolo no painel. O cliente recebe-o por email e **aceita-o
+    por um link** — só aí o pedido fica confirmado (`pedidos.md` › O aceite do
+    cliente). Paga tudo ao balcão, ao levantar. Não há sinal.
+- ⚠️ **O aceite do cliente é a confirmação do bolo.** Um bolo personalizado não
+  entra em produção — nem sai talão para a cozinha — sem a gerente ter fixado o
+  preço e o cliente o ter aceite. Não precisa de uma regra própria para quem
+  encomenda e não aparece: o orçamento já obriga a ouvir o cliente antes de se
+  gastar um ingrediente.
 - **Fotos:** reduzidas no browser e enviadas diretamente para o Blob (como as dos
   produtos); limite de envios por pedido e por IP (`robustez.md`).
 - ⚠️ **As fotos são dados pessoais**, e a foto para imprimir quase sempre: é a
   cara de alguém, muitas vezes de uma criança. Apagam-se 30 dias depois do
-  levantamento, e as dos pedidos cancelados apagam-se logo. A advogada confirma o
+  levantamento, e as dos pedidos cancelados ou expirados apagam-se logo. A advogada confirma o
   prazo, e a política de privacidade tem de falar delas (#52).
 
 ## À espera da Damira

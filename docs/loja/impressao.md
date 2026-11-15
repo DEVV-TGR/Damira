@@ -36,8 +36,9 @@ são a mesma coisa (`bolos-personalizados.md`):
   produção: se passar despercebida, o bolo sai sem ela;
 - `2 fotos de referência — ver no painel`.
 
-O preço de um bolo personalizado é sob orçamento: o talão mostra-o como «sob
-orçamento» e diz que o total ainda não é final.
+O talão de um bolo personalizado só sai depois de o cliente aceitar o preço
+que a gerente fixou (`bolos-personalizados.md`), por isso leva o preço final,
+como qualquer outra linha — nunca «sob orçamento».
 
 **Talão de cancelamento:** sai quando um pedido é cancelado, com
 `CANCELADO` em bloco invertido, a referência e o levantamento previsto (ver
