@@ -85,6 +85,9 @@ const PENDENTE = {
 /** O mesmo pedido, depois de o Stripe o confirmar. */
 const PAGO_ONLINE = { ...PENDENTE, estado: "pago", pagoEm: PAGO, pagoOnlineCent: 1260 } as const;
 
+/** Um levantamento pago na loja, sem nada a confirmar: nasce confirmado (`pedidos.md`). */
+const NA_LOJA = { ...PENDENTE, estado: "confirmado", modoPagamento: "na-loja", confirmadoEm: CRIADO } as const;
+
 const LINHA = {
   pedidoId: PENDENTE.id,
   posicao: 0,
@@ -155,6 +158,27 @@ describe("o que é válido entra", () => {
       { ...PAGO_ONLINE, ...outro(6), chegouTarde: true },
     ]);
     expect(await db.select().from(pedidos)).toHaveLength(6);
+  });
+
+  it("um pedido pago na loja: confirmado, entregue e cancelado, nunca com data de pagamento", async () => {
+    await db.insert(produtos).values(NATA);
+    const outro = (n: number) => ({
+      id: `7f1c1f5e-8c1b-4d5a-9a43-1d2f3c4b5a6${n}`,
+      referencia: `DAM-0311-BBB${n + 2}`,
+      chaveIdempotencia: `3b7e1516-28ae-4d2a-8f15-0a1b2c3d4e5${n}`,
+    });
+    await db.insert(pedidos).values([
+      { ...NA_LOJA, ...outro(1) },
+      /* Levantou e pagou, no mesmo toque: o instante é o `entregue_em`. */
+      { ...NA_LOJA, ...outro(2), estado: "entregue", entregueEm: PAGO },
+      /* Cancelado por contacto com a casa, sem nada pago para devolver. */
+      { ...NA_LOJA, ...outro(3), estado: "cancelado", canceladoEm: PAGO, canceladoPor: "cliente" },
+    ]);
+    const guardados = await db.select().from(pedidos);
+    expect(guardados).toHaveLength(3);
+    for (const pedido of guardados) {
+      expect(pedido).toMatchObject({ modoPagamento: "na-loja", pagoEm: null, pagoOnlineCent: 0, confirmadoEm: CRIADO });
+    }
   });
 
   it("um reembolso com o estado do Stripe, de cada um dos cinco", async () => {
@@ -234,6 +258,32 @@ describe("um pedido recusa", () => {
     expect(await tenta({ estado: "pago", pagoOnlineCent: 1260 })).toBe("pedidos_pago_em");
     expect(await tenta({ pagoEm: PAGO })).toBe("pedidos_pago_em");
     expect(await tenta({ estado: "expirado", pagoEm: PAGO })).toBe("pedidos_pago_em");
+  });
+
+  it("um pedido da loja com data de pagamento, ou com dinheiro online", async () => {
+    expect(await tenta({ ...NA_LOJA, estado: "entregue", entregueEm: PAGO, pagoEm: PAGO })).toBe("pedidos_pago_em");
+    expect(
+      await tenta({ ...NA_LOJA, estado: "cancelado", canceladoEm: PAGO, canceladoPor: "gerente", pagoEm: PAGO }),
+    ).toBe("pedidos_pago_em");
+    expect(await tenta({ ...NA_LOJA, pagoOnlineCent: 100 })).toBe("pedidos_na_loja_sem_online");
+  });
+
+  it("um pedido da loja em pendente ou pago: são estados do Stripe", async () => {
+    expect(await tenta({ modoPagamento: "na-loja" })).toBe("pedidos_estado_do_modo");
+    expect(await tenta({ ...NA_LOJA, estado: "pago", pagoEm: PAGO })).toBe("pedidos_estado_do_modo");
+  });
+
+  it("um confirmado sem data de confirmação, e um entregue na loja também", async () => {
+    expect(await tenta({ ...NA_LOJA, confirmadoEm: null })).toBe("pedidos_confirmado_em");
+    expect(await tenta({ ...NA_LOJA, estado: "entregue", entregueEm: PAGO, confirmadoEm: null })).toBe(
+      "pedidos_confirmado_em",
+    );
+  });
+
+  it("um pedido do Stripe confirmado, ou com data de confirmação", async () => {
+    expect(await tenta({ confirmadoEm: CRIADO })).toBe("pedidos_confirmado_em");
+    expect(await tenta({ ...PAGO_ONLINE, estado: "confirmado", confirmadoEm: CRIADO })).toBe("pedidos_confirmado_em");
+    expect(await tenta({ estado: "confirmado" })).toBe("pedidos_confirmado_em");
   });
 
   it("um entregue sem data de entrega", async () => {

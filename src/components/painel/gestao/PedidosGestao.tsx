@@ -10,6 +10,7 @@ import { BOTAO_SECUNDARIO, MENSAGENS } from "../balcao/comum";
 const ROTULO_ESTADO: Record<Pedido["estado"], string> = {
   pendente: "Pendente",
   pago: "Pago",
+  confirmado: "Confirmado",
   entregue: "Entregue",
   expirado: "Expirado",
   cancelado: "Cancelado",

@@ -294,6 +294,7 @@ export const pedidoPorPagar = (
   reembolsos: [],
   avisosTratados: [],
   reagendadoEm: null,
+  confirmadoEm: null,
 });
 
 /**

@@ -203,6 +203,7 @@ export async function lerPedidos(
       canceladoEm: p.canceladoEm,
       canceladoPor: p.canceladoPor,
       reagendadoEm: p.reagendadoEm,
+      confirmadoEm: p.confirmadoEm,
     });
   });
 }

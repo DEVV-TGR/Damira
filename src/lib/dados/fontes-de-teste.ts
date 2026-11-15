@@ -97,6 +97,7 @@ async function guardarPedido(db: BaseDeTeste, pedido: Pedido, limite: number | n
     canceladoEm: pedido.canceladoEm,
     canceladoPor: pedido.canceladoPor,
     reagendadoEm: pedido.reagendadoEm,
+    confirmadoEm: pedido.confirmadoEm,
     chaveIdempotencia: pedido.id,
     procura: textoDeProcura(cliente.nome, pedido.referencia),
     reembolsoReservadoCent: devolvidos.reduce((soma, r) => soma + r.valorCent, 0),

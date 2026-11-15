@@ -156,6 +156,7 @@ export function fonteDeExemplo(
       reembolsos: [],
       avisosTratados: [],
       reagendadoEm: null,
+      confirmadoEm: null,
     };
     estado.pedidos.set(pedido.id, pedido);
     estado.porReferencia.set(pedido.referencia, pedido.id);
@@ -474,6 +475,7 @@ export function pedidosDoPainelDeExemplo(
       reembolsos: [],
       avisosTratados: [],
       reagendadoEm: null,
+      confirmadoEm: null,
     });
   });
   return pedidos;

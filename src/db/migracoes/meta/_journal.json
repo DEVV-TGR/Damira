@@ -43,6 +43,13 @@
       "when": 1794415422071,
       "tag": "0005_pede_confirmacao",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794762116323,
+      "tag": "0006_pedidos_na_loja",
+      "breakpoints": true
     }
   ]
 }

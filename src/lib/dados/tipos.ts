@@ -275,7 +275,31 @@ export type ResultadoCotacao =
 
 // ——— O pedido (pedidos.md) ———
 
-export const ESTADOS_PEDIDO = ["pendente", "pago", "entregue", "expirado", "cancelado"] as const;
+/**
+ * Os estados do contrato (`pedidos.md` › Os estados). Com o pagamento na loja,
+ * um levantamento sem nada a confirmar nasce `confirmado`. O `pendente` e o
+ * `pago` são do pagamento online: **dormem** (nenhum pedido lá entra enquanto
+ * ele estiver desligado), mas ficam, para o desenho não se perder.
+ */
+export const ESTADOS_PEDIDO = ["confirmado", "pendente", "pago", "entregue", "expirado", "cancelado"] as const;
+
+/**
+ * Como se paga (`pedidos.md` › Dinheiro): `na-loja` é o levantamento pago ao
+ * balcão, no toque do `entregue`. O `total` e o `sinal` são do Stripe, e dormem
+ * com ele. A `transferencia` das entregas entra quando a entrega for decidida
+ * (`pedidos.md` › Em aberto, 8).
+ */
+export const MODOS_PAGAMENTO = ["na-loja", "total", "sinal"] as const;
+
+/**
+ * Os pedidos ainda em curso, que contam nos limites de criar pedidos
+ * (`robustez.md` › Limites): o `pendente` do Stripe e, com o pagamento na loja,
+ * o `confirmado` por levantar.
+ */
+export const ESTADOS_EM_CURSO = ["pendente", "confirmado"] as const satisfies readonly (typeof ESTADOS_PEDIDO)[number][];
+
+/** Os modos do Stripe: só neles há `pendente`, `pago` e `pagoEm`. */
+export const MODOS_ONLINE = ["total", "sinal"] as const satisfies readonly (typeof MODOS_PAGAMENTO)[number][];
 
 /** A referência de balcão: `DAM-DDMM-XXXX`, sem letras que se confundem ao telefone. */
 export const FORMATO_REFERENCIA = /^DAM-[0-9]{4}-[A-HJ-NP-Z2-9]{4}$/;
@@ -319,7 +343,7 @@ export const EsquemaPedido = z.object({
   linhas: z.array(EsquemaLinhaPedido).min(1),
   observacoes: z.string().nullable(),
   totalCent: Cent,
-  modoPagamento: z.enum(["total", "sinal"]),
+  modoPagamento: z.enum(MODOS_PAGAMENTO),
   pagoOnlineCent: Cent,
   /** Só reembolsos `concluido`. O que falta pagar na loja calcula-se, não se guarda. */
   reembolsadoCent: Cent,
@@ -328,7 +352,15 @@ export const EsquemaPedido = z.object({
   /** O que a gerente já decidiu: o facto fica, o aviso sai (`pedidos.md` › Avisos tratados). */
   avisosTratados: z.array(z.enum(AVISOS_TRATAVEIS)),
   chegouTarde: z.boolean(),
+  /** Só do Stripe. Um pedido pago na loja nunca o tem: paga-se no toque do `entregue`. */
   pagoEm: z.date().nullable(),
+  /**
+   * Quando ficou `confirmado` — ao nascer, se não tinha nada a confirmar. Fica
+   * depois de entregue ou cancelado: o tempo de serviço mede-se daqui ao
+   * `entregueEm` (`pedidos.md`).
+   */
+  confirmadoEm: z.date().nullable(),
+  /** A primeira impressão que a impressora confirmou. Reimprimir não o muda. */
   impressoEm: z.date().nullable(),
   entregueEm: z.date().nullable(),
   canceladoEm: z.date().nullable(),
