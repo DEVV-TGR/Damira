@@ -80,7 +80,7 @@ dados.
 | `confirmado` | a casa vai fazê-lo | servidor, ao criar (sem nada a confirmar); a equipa, ao confirmar um «sim» sem nada novo; o aceite do cliente | sim | sim, uma vez |
 | `entregue` | o cliente levantou e pagou na loja; ou a entrega foi feita | balcão, com um toque | sim, no arquivo | não |
 | `expirado` | a casa não respondeu até `expiraEm`; ou, se aprovado o n.º 2, o cliente não aceitou a resposta a tempo | servidor (ver «Expirar às 48 horas» e «O aceite do cliente») | sim, à parte dos cancelados | não |
-| `cancelado` | a casa recusou ou cancelou, ou o cliente desistiu ou cancelou por contacto | a gerente (ver «Desistir, cancelar e alterar») | sim, riscado | talão de cancelamento, se o pedido já tinha talão |
+| `cancelado` | a casa recusou ou cancelou, ou o cliente desistiu ou cancelou por contacto | a gerente (ver «Desistir, cancelar e alterar»); numa entrega sem transferência, qualquer pessoa da equipa | sim, riscado | talão de cancelamento, se o pedido já tinha talão |
 
 Transições permitidas — **e mais nenhuma**, salvo a proposta explicitamente
 marcada como ainda não ativa:
@@ -119,8 +119,8 @@ expiração (`causaExpiracao`): `sem-resposta-da-casa`; a causa
 online, o dinheiro entra no mesmo toque em que o pedido sai do balcão. Não há um
 estado «pago na loja» à parte: seria um segundo toque que ninguém dá numa fila
 de sábado — a mesma razão que tirou o «aceite» e o «pronta» (abaixo). Numa
-entrega, `entregue` é só «entregue»: a transferência é outra coisa (em aberto:
-ver n.º 3).
+entrega, `entregue` é só «entregue»: a transferência marca-se à parte, com
+«pagamento recebido» (ver «O orçamento e o aceite»).
 
 ⚠️ **A criação ou a transição efetiva dispara os efeitos, uma vez só.**
 Quando já nasce `confirmado`, os efeitos saem da criação. Nas confirmações
@@ -287,12 +287,19 @@ testes. Vem da configuração.
 
 Se houver produtos ao quilo numa entrega, a casa combina diretamente com o
 cliente, **antes do aceite**, como se apura e paga o valor final (§3). O site
-não o calcula (em aberto: ver n.º 3).
+não o calcula nem regista peso (ver «Dinheiro»).
+
+**A transferência — decidido a 15/11, por fazer.** Quando chega, **qualquer
+pessoa da equipa** (o balcão ou a gerente) marca **«pagamento recebido»**, que
+guarda quando e quem, **não muda o estado** e imprime um talão (`impressao.md`).
+A casa **produz sem a transferência ter chegado** (a Andreia aceitou-o a 12/11):
+o painel e o talão mostram que ainda está por receber, e nada espera por ela.
 
 Se a transferência não chegar no prazo, **a casa pode** cancelar e informar o
-cliente (§3). «Pode» não é automático: é a gerente que cancela, com
-`canceladoPor = gerente`, e o cliente recebe o email de cancelamento. Nada no
-site cancela uma entrega sozinho por falta de pagamento.
+cliente (§3). «Pode» não é automático: cancela **qualquer pessoa da equipa**,
+com `canceladoPor = gerente` (a iniciativa é da casa), e o cliente recebe o email
+de cancelamento. Nada no site cancela uma entrega sozinho por falta de
+pagamento. **Fazer e enviar o orçamento continua a ser só da gerente.**
 
 ## O aceite do cliente — `a-aguardar-aceite`
 
@@ -401,10 +408,10 @@ identifica-se o que falta; não se aceita um orçamento incompleto. Nunca um
 combinado antes do aceite.
 
 ⚠️ **Ao quilo, o valor é indicativo** (§2). O preço final calcula-se na loja,
-com o peso efetivo e o preço por quilo indicado no site. O site apresenta como
-**indicativo** o valor de um pedido com produtos ao quilo, no fim do pedido —
-mesmo depois de confirmado. Onde mais o diz, e se regista alguma coisa do peso:
-(em aberto: ver n.º 3).
+com o peso efetivo e o preço por quilo indicado no site. **Não se regista peso**
+(decidido a 12/11): a nota **«preço indicativo»** aparece no fecho do pedido, no
+email, no talão e no painel — mesmo depois de confirmado —, e o valor final é o
+da **faturação da loja**. **À unidade, vale sempre o preço do site.**
 
 ⚠️ **O browser manda ids e quantidades, nunca preços.** O total recalcula-se no
 servidor a partir da base de dados, sempre, mesmo que o cesto já mostre um.
@@ -449,6 +456,13 @@ O email é obrigatório: é para lá que vão a confirmação, o orçamento e a
 referência.
 
 ## Os emails
+
+**Decidido a 12/11, por fazer:** os emails ao cliente são **recebido**,
+**confirmado**, **orçamento** (com o link para aceitar), **expirado** e
+**cancelado** — a tabela abaixo detalha quando sai cada um. **Todos levam a fila
+única e, quando há produtos ao quilo, o preço indicativo**, e **a Andreia revê os
+textos antes de irem para o ar**. A fila de envio é do Sobral; os modelos e a
+página de aceite são do Gonçalo (`divisao.md`).
 
 | Quando | A quem | O que diz |
 |---|---|---|
@@ -545,7 +559,10 @@ começa a ser feito três dias antes (em aberto: ver n.º 4). O início da produ
 continua a servir para «Produzir hoje» e para a urgência do «Por confirmar».
 
 **Quem regista.** A gerente regista também as desistências de pedidos à espera;
-a permissão do balcão para confirmar não lhe dá permissão para cancelar.
+a permissão do balcão para confirmar não lhe dá permissão para cancelar. **A
+única exceção** é cancelar uma entrega por falta de transferência, que qualquer
+pessoa da equipa faz (decidido a 15/11, por fazer; ver «O orçamento e o
+aceite»).
 O pedido guarda `canceladoPor` — de quem foi a iniciativa,
 `cliente` ou `gerente` (a casa) — e `canceladoEm`. A gerente cancela e recusa
 com a mesma ação (`cancelarPedido`): o estado muda e a vaga e as quantidades
@@ -636,23 +653,28 @@ regra que depende de um destes pontos remete para ele.
    n.º 1, escrito no email; passado isso o pedido expira com
    `sem-aceite-do-cliente` (a transição, a causa e o prazo são propostas). *Decide:*
    Andreia.
-3. **O que o site regista do dinheiro.** *Exemplo:* uma entrega aceite; a
-   transferência chega três dias depois — onde fica isso? *Proposta nossa,
-   mínima:* levantamento — nada: paga-se na caixa da loja, e há um toque em
-   `entregue`; ao quilo — só a nota «valor indicativo» na página, no email, no
-   talão e no painel, sem registar peso (o aviso no email acima já é obrigatório; falta fechar
-   os restantes registos); entrega — a gerente marca
-   «transferência recebida» (data e autor), que não muda o estado; devolução de
-   uma transferência — uma nota com o valor e o motivo ao cancelar (a política
-   pede a decisão por escrito, §4). Nada de livro de pagamentos nem de registo
-   de pesos. *Decide:* Gonçalo.
+3. **O que o site regista do dinheiro** — fechado em parte a 12/11 e 15/11.
+   - ~~Ao quilo~~ — **decidido:** não se regista peso; «preço indicativo» no
+     fecho, no email, no talão e no painel; o valor final é o da faturação da
+     loja; à unidade vale sempre o preço do site (ver «Dinheiro»).
+   - ~~Entrega~~ — **decidido:** **qualquer pessoa da equipa** marca «pagamento
+     recebido» (quando e quem), que não muda o estado e imprime um talão; e
+     qualquer pessoa cancela por falta de pagamento (ver «O orçamento e o
+     aceite»).
+   - Levantamento — nada a registar: paga-se na caixa da loja, e há um toque em
+     `entregue`.
+   - **Ainda em aberto:** devolver uma transferência ao cancelar. *Proposta
+     nossa:* uma nota com o valor e o motivo (a política pede a decisão por
+     escrito, §4). Nada de livro de pagamentos. *Decide:* Gonçalo.
 4. **Produzir sem ter recebido a transferência, e cancelar sem custos a 24 h um
-   bolo que começou a ser feito 3 dias antes.** São riscos que o texto da
-   política aceita. *Exemplo:* uma entrega para sábado, com a transferência
-   ainda por chegar na quinta, quando o bolo começa. *Proposta nossa:* o site só
-   os torna visíveis — «transferência por receber» no painel e no talão — e
-   «pode cancelar» (§3) nunca é cancelamento automático. *Decide:* Andreia
-   (confirmar que aceita os dois).
+   bolo que começou a ser feito 3 dias antes.**
+   - ~~Produzir sem a transferência~~ — **decidido a 12/11:** a Andreia aceita.
+     O site só o torna visível — «transferência por receber» no painel e no
+     talão — e «pode cancelar» (§3) nunca é cancelamento automático.
+   - **Ainda em aberto:** o cancelamento sem custos a 24 h de um bolo que
+     começou 3 dias antes. *Exemplo:* um bolo de 3 dias para sábado, cancelado
+     na sexta às 10h00. *Proposta nossa:* o site só o torna visível, como
+     acima. *Decide:* Andreia (confirmar que aceita).
 5. **Não levantado.** *Exemplo:* um pedido para as 11h00 que ninguém levantou
    até ao fecho. *Proposta nossa:* não ganha estado; continua `confirmado` e
    aparece em «Precisa de atenção» no dia seguinte, para a casa decidir.
@@ -708,6 +730,7 @@ Este contrato não contém uma migração. A implementação da base de dados é
 área do Sobral e exige a revisão dele quando preparada pelo Gonçalo. Depois de
 aprovado o contrato, o PR próprio do esquema deve explicitar:
 
+- O «pagamento recebido» de uma entrega (quando e quem), decidido a 15/11.
 - Os novos estados e modos de pagamento, conservando os do Stripe; os campos
   `confirmadoEm`, `expiraEm`, `aceiteEm` e a causa da expiração; preços de linhas
   ainda por orçar, morada, custo e fim do intervalo da entrega; o autor e o
