@@ -34,7 +34,12 @@ export default defineConfig({
         extends: true,
         test: {
           name: "bd",
-          include: ["src/lib/dados/dados.test.ts", "src/lib/dados/painel.test.ts", "src/lib/dados/ordem.test.ts"],
+          include: [
+            "src/lib/dados/dados.test.ts",
+            "src/lib/dados/painel.test.ts",
+            "src/lib/dados/ordem.test.ts",
+            "src/lib/dados/pedidos-painel.test.ts",
+          ],
           env: { TZ: "Pacific/Kiritimati", FONTE_DOS_TESTES: "bd" },
         },
       },

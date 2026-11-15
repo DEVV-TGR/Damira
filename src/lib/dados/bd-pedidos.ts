@@ -131,8 +131,13 @@ async function limparSemTravar(db: BaseDeDados, agora: Date): Promise<void> {
  * (`robustez.md` › Consultas). Valida-os com o `EsquemaPedido`: uma coluna que
  * deixe de bater com o contrato rebenta aqui, e não numa página.
  */
-export async function lerPedidos(db: BaseDeDados, condicao: SQL): Promise<Pedido[]> {
-  const linhas = await db.select().from(pedidos).where(condicao).orderBy(asc(pedidos.criadoEm), asc(pedidos.id));
+export async function lerPedidos(
+  db: BaseDeDados,
+  condicao: SQL,
+  { ordem = [asc(pedidos.criadoEm), asc(pedidos.id)], limite }: { ordem?: SQL[]; limite?: number } = {},
+): Promise<Pedido[]> {
+  const consulta = db.select().from(pedidos).where(condicao).orderBy(...ordem);
+  const linhas = await (limite === undefined ? consulta : consulta.limit(limite));
   if (linhas.length === 0) return [];
   const ids = linhas.map((p) => p.id);
   const [doCesto, devolvidos] = await Promise.all([
@@ -150,6 +155,7 @@ export async function lerPedidos(db: BaseDeDados, condicao: SQL): Promise<Pedido
 
   return linhas.map((p) => {
     const dele = devolvidos.filter((r) => r.pedidoId === p.id);
+    const falhas = dele.filter((r) => r.estado === "falhado");
     return EsquemaPedido.parse({
       id: p.id,
       referencia: p.referencia,
@@ -184,7 +190,12 @@ export async function lerPedidos(db: BaseDeDados, condicao: SQL): Promise<Pedido
       /* Não tem coluna: é a soma dos concluídos (`base-de-dados.md` › Os pedidos). */
       reembolsadoCent: dele.filter((r) => r.estado === "concluido").reduce((soma, r) => soma + r.valorCent, 0),
       reembolsos: dele.map((r) => ({ id: r.id, valorCent: r.valorCent, estado: r.estado, pedidoEm: r.pedidoEm })),
-      avisosTratados: p.avisosTratados,
+      /* O `reembolso-falhado` trata-se por reembolso: para o contrato, está tratado
+         quando houve falhas e nenhuma ficou por tratar (`base-de-dados.md`). */
+      avisosTratados: [
+        ...p.avisosTratados.filter((aviso) => aviso !== "reembolso-falhado"),
+        ...(falhas.length > 0 && falhas.every((r) => r.falhaTratadaEm !== null) ? ["reembolso-falhado"] : []),
+      ],
       chegouTarde: p.chegouTarde,
       pagoEm: p.pagoEm,
       impressoEm: p.impressoEm,

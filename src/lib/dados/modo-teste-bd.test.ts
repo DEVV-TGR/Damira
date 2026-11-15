@@ -3,7 +3,7 @@ import { addDays } from "date-fns";
 import { afterAll, describe, expect, it } from "vitest";
 import { loteEmTransacao } from "@/db/lote";
 import { catalogoDeTeste } from "@/db/teste";
-import { montarFonteBd, pedidosAindaNaoGuardados, type OpcoesDaFonteBd } from "./bd";
+import { montarFonteBd, type OpcoesDaFonteBd } from "./bd";
 import { comExemplo, COZINHA_DE_EXEMPLO, fonteDoAmbiente, LIMITE_POR_VAGA_DE_EXEMPLO, TEMPOS_DE_EXEMPLO } from "./exemplo";
 import { CONFIGURACAO_JSON } from "./json";
 import { EsquemaProduto, type ContextoPainel, type EntradaProduto, type FonteDeDados, type Produto } from "./tipos";
@@ -105,8 +105,8 @@ describe("nada de exemplo chega à base de dados", () => {
   });
 });
 
-describe("o painel dos pedidos, enquanto não está na base de dados", () => {
-  it("vê zero pedidos e nenhum aviso (os pedidos da loja já estão: `pedidos-bd.test.ts`)", async () => {
+describe("o painel dos pedidos, sem pedidos de exemplo por cima", () => {
+  it("diz a verdade: zero pedidos e nenhum aviso, numa base de dados vazia", async () => {
     const fonte = await daBaseDeDados();
     expect(await fonte.listarPedidos({}, GERENTE)).toEqual({ ok: true, valor: { pedidos: [], seguinte: null } });
     expect(await fonte.precisaDeAtencao(GERENTE)).toEqual({ ok: true, valor: [] });
@@ -144,7 +144,7 @@ describe("a fonte que o site escolhe", () => {
   });
 
   it("no ar, sem o modo de teste, a camada recusa-se a correr", async () => {
-    expect(() => comExemplo(pedidosAindaNaoGuardados as unknown as FonteDeDados, { VERCEL_ENV: "production" })).toThrow(
+    expect(() => comExemplo({} as unknown as FonteDeDados, { VERCEL_ENV: "production" })).toThrow(
       /modo de teste/,
     );
   });
