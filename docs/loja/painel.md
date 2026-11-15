@@ -27,7 +27,16 @@ fez cada coisa, só que foi alguém da equipa.
 ⚠️ **Esconder um botão não é proteger.** A gestão não é só escondida ao
 funcionário: não é gerada no servidor para ele, e **cada acção de gestão verifica
 o papel no servidor** antes de fazer o que quer que seja. Um funcionário que
-chegue a uma acção de reembolso tem de receber uma recusa, não um reembolso.
+chegue a uma acção de cancelar tem de receber uma recusa, não um cancelamento.
+
+Desde o contrato de 10/11 (`pedidos.md` › Confirmar) a fronteira passa a meio da
+confirmação, e também se verifica no servidor, em cada uma:
+
+- **o balcão confirma um pedido tal como está** — o preço e a hora não mudam;
+- **só a gerente** fixa o valor de uma linha sem preço, manda o orçamento de uma
+  entrega, muda a hora, cancela e recusa — incluindo registar a desistência de
+  um cliente, que liga para a casa. Poder confirmar não dá ao balcão poder
+  para cancelar.
 
 ## Entrar como funcionário: o PIN
 
@@ -66,7 +75,8 @@ O mesmo desenho do painel da Taskuinha:
 - ⚠️ **A gerente no tablet do balcão.** Se o dispositivo já tem sessão de
   funcionário, a opção «lembrar» do login da gerente aparece **desligada**. Ela
   pode ligá-la, mas tem de o decidir. Sem isto, uma entrada da gerente no tablet
-  deixava reembolsos e preços ao alcance da equipa durante 30 dias.
+  deixava cancelamentos, orçamentos e preços ao alcance da equipa durante 30
+dias.
 - A gerente vê a lista de dispositivos com sessão (tipo de aparelho, papel,
   último uso) e pode terminar qualquer um. É o «revogar o tablet» da proposta.
 
@@ -79,8 +89,8 @@ criação, último uso), e cada pedido ao painel confirma que ela ainda existe.
 Cookie `httpOnly`, `secure`, `sameSite: strict`.
 
 ⚠️ **O painel e a conta de cliente não se misturam.** A conta de cliente é
-`next-auth` com Google/Facebook (ver `AGENTS.md`); o painel tem sessão e cookie
-próprios. Entrar com o Google no site nunca dá acesso ao painel, nem que o email
+`next-auth` com Google, Facebook ou um código por email (ver `AGENTS.md`); o
+painel tem sessão e cookie próprios. Entrar com o Google no site nunca dá acesso ao painel, nem que o email
 seja o da gerente.
 
 ## Aguentar-se aberto o dia inteiro
@@ -130,8 +140,8 @@ ecrãs não mudam.
   aceite para não haver nada a configurar. `PAINEL_PIN_TESTE`, `PAINEL_SEGREDO` e
   `EMAILS_GERENTE` sobrepõem-se.
 - **Os pedidos que o painel mostra são de exemplo** (`pedidosDoPainelDeExemplo`,
-  em `src/lib/dados/exemplo.ts`), relativos ao dia de hoje: só o Stripe paga um
-  pedido, e sem eles o balcão e a gerente abriam vazios.
+  em `src/lib/dados/exemplo.ts`), relativos ao dia de hoje: a entrada provisória
+  não liga com a base de dados, e sem eles o balcão e a gerente abriam vazios.
 - ⚠️ **Enquanto estiver ligada, há um aviso no topo** («Entrada de teste»), que
   não se apaga — a mesma regra da faixa do modo de teste.
 - **O que não faz**, porque pede a base de dados: limitar tentativas, terminar
