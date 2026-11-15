@@ -71,7 +71,7 @@ const TENTATIVAS_DE_REFERENCIA = 5;
 function expirarPendentes(db: BaseDeDados, condicao: SQL) {
   return db.execute(sql`
     with expirados as (
-      update pedidos set estado = 'expirado'
+      update pedidos set estado = 'expirado', causa_expiracao = 'sem-pagamento'
       where estado = 'pendente' and ${condicao}
       returning levantamento_em
     ),
@@ -204,6 +204,9 @@ export async function lerPedidos(
       canceladoPor: p.canceladoPor,
       reagendadoEm: p.reagendadoEm,
       confirmadoEm: p.confirmadoEm,
+      expiraEm: p.expiraEm,
+      aceiteEm: p.aceiteEm,
+      causaExpiracao: p.causaExpiracao,
     });
   });
 }

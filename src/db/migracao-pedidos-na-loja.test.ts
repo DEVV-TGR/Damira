@@ -37,7 +37,7 @@ afterAll(async () => {
 });
 
 describe("a 0006 numa base com pedidos do Stripe", () => {
-  it("aceita-os todos como estavam, e não lhes inventa uma confirmação", async () => {
+  it("aceita-os todos como estavam, dá a causa aos expirados, e não lhes inventa uma confirmação", async () => {
     await migrate(db, { migrationsFolder: pasta });
     /* SQL e não o `db.insert`: o Drizzle já conhece a coluna nova e escrevia-a
        numa tabela que ainda não a tem. */
@@ -64,16 +64,18 @@ describe("a 0006 numa base com pedidos do Stripe", () => {
 
     await migrate(db, { migrationsFolder: MIGRACOES });
 
-    const { rows } = await cliente.query<{ estado: string; com_pagamento: boolean; confirmado_em: Date | null }>(
-      "select estado, pago_em is not null as com_pagamento, confirmado_em from pedidos order by referencia",
+    const { rows } = await cliente.query<{ estado: string; com_pagamento: boolean; confirmado_em: Date | null; causa: string | null }>(
+      "select estado, pago_em is not null as com_pagamento, confirmado_em, causa_expiracao as causa from pedidos order by referencia",
     );
+    /* O expirado ganha a causa dele — o `UPDATE` escrito à mão na 0006 —, e
+       mais nenhum muda. */
     expect(rows).toEqual([
-      { estado: "pendente", com_pagamento: false, confirmado_em: null },
-      { estado: "expirado", com_pagamento: false, confirmado_em: null },
-      { estado: "pago", com_pagamento: true, confirmado_em: null },
-      { estado: "pago", com_pagamento: true, confirmado_em: null },
-      { estado: "entregue", com_pagamento: true, confirmado_em: null },
-      { estado: "cancelado", com_pagamento: true, confirmado_em: null },
+      { estado: "pendente", com_pagamento: false, confirmado_em: null, causa: null },
+      { estado: "expirado", com_pagamento: false, confirmado_em: null, causa: "sem-pagamento" },
+      { estado: "pago", com_pagamento: true, confirmado_em: null, causa: null },
+      { estado: "pago", com_pagamento: true, confirmado_em: null, causa: null },
+      { estado: "entregue", com_pagamento: true, confirmado_em: null, causa: null },
+      { estado: "cancelado", com_pagamento: true, confirmado_em: null, causa: null },
     ]);
   });
 });

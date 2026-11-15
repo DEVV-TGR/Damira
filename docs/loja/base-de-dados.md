@@ -169,10 +169,13 @@ ordem — ficava órfã, fora da `/ementa`.
 |---|---|---|
 | `id` | `uuid` chave primária | `id` (o `json.ts` já gera um UUID) |
 | `referencia` | `text` único | `DAM-DDMM-XXXX` |
-| `estado` | `text` `CHECK` dos 6 estados (`ESTADOS_PEDIDO`) | `estado` |
+| `estado` | `text` `CHECK` dos 8 estados (`ESTADOS_PEDIDO`) | `estado` |
 | `criado_em`, `levantamento_em` | `timestamptz` | iguais |
 | `pago_em`, `impresso_em`, `entregue_em`, `cancelado_em`, `reagendado_em` | `timestamptz` nulo | iguais |
 | `confirmado_em` | `timestamptz` nulo | `confirmadoEm` — quando ficou `confirmado`; fica depois de entregue ou cancelado (migração `0006`) |
+| `expira_em` | `timestamptz` nulo | `expiraEm` — o prazo da casa num `por-confirmar`, 48 h corridas; fica depois |
+| `aceite_em` | `timestamptz` nulo | `aceiteEm` — quando o cliente aceitou a resposta da casa |
+| `causa_expiracao` | `text` nulo `CHECK` (`sem-resposta-da-casa`, `sem-pagamento`) | `causaExpiracao` — só num `expirado`, e sempre nele |
 | `cliente_nome`, `cliente_email`, `cliente_telefone` | `text` | `cliente` — o telefone é obrigatório, em E.164 (`CHECK ^\+[1-9][0-9]{6,14}$`), como no `EsquemaCliente` |
 | `cliente_nif`, `conta_id` | `text` nulo | `cliente` |
 | `observacoes` | `text` nulo | `observacoes` |
@@ -212,9 +215,13 @@ não (essas são os `UPDATE … WHERE estado = …`, abaixo). **Com o Stripe**, 
 um pedido pago, e nada volta de pago para trás. **Na loja** nunca há `pago_em`
 nem `pago_online_cent`: paga-se no toque do `entregue`, e o instante desse toque
 é o `entregue_em` (`pedidos.md` › Impactos na base de dados). Cada estado é do
-seu modo — `pendente` e `pago` só com o Stripe, `confirmado` só fora dele — e um
-`confirmado` tem `confirmado_em`, tal como um `entregue` na loja, que só lá chega
-vindo de confirmado. Um `entregue` tem `entregue_em`; um `cancelado`
+seu modo — `pendente` e `pago` só com o Stripe; `por-confirmar`,
+`a-aguardar-aceite` e `confirmado` só fora dele — e um `confirmado` tem
+`confirmado_em`, tal como um `entregue` na loja, que só lá chega vindo de
+confirmado. Um `por-confirmar` tem `expira_em`, depois do `criado_em`; quem tem
+`aceite_em` tem `confirmado_em`; e um `expirado` diz porquê, com a causa do seu
+modo — `sem-pagamento` com o Stripe, `sem-resposta-da-casa` só a quem tinha
+prazo. Um `entregue` tem `entregue_em`; um `cancelado`
 tem quando e por quem, e só ele; o `chegou_tarde` só existe com pagamento; os
 `avisos_tratados` são os quatro do contrato. ⚠️ **Fica de fora
 `pago_online_cent <= total_cent`**: um montante que não bate ainda não tem regra
@@ -427,7 +434,7 @@ pode pagar (`pedidos.md`). Quem o faz, por ordem:
    só quando há um cliente no site, ou seja, com a base de dados já acordada.
 
 Não há tarefa agendada a acordar a base de dados para isto (regra 6). A limpeza
-(`limparExpirados`, em `bd-pedidos.ts`) é uma instrução só: muda os pendentes antigos para `expirado` e desconta-os dos
+(`limparExpirados`, em `bd-pedidos.ts`) é uma instrução só: muda os pendentes antigos para `expirado`, com a causa `sem-pagamento`, e desconta-os dos
 contadores. A lógica completa é da #41. O pedido expirado pelo id, no ponto 1,
 usa a mesma instrução (`expirarPedido`).
 
@@ -439,9 +446,10 @@ não se vende nada duas vezes e só se liberta mais tarde.
 
 - **Criar pedido**: 5 pedidos em curso por IP e 3 por email ao mesmo tempo.
   Conta-se na própria instrução que insere o pedido, com índices parciais
-  (`WHERE estado in ('pendente', 'confirmado')`, o `ESTADOS_EM_CURSO`) em `ip` e
-  em `cliente_email`. ⚠️ Os índices já têm os `confirmado` desde a `0006`; a
-  contagem do `criarPedido` passa a contá-los no PR da fonte. O `INSERT … SELECT … WHERE`
+  (`WHERE estado in (…)`, o `ESTADOS_EM_CURSO`: os que esperam pela casa ou
+  pelo cliente, os `confirmado` e o `pendente` do Stripe) em `ip` e em
+  `cliente_email`. ⚠️ Os índices já os têm desde a `0006`; a contagem do
+  `criarPedido` passa a contá-los no PR da fonte. O `INSERT … SELECT … WHERE`
   não insere nada fora dos limites, e a instrução seguinte do lote — as linhas —
   falha na chave estrangeira por não haver pedido: o lote cai inteiro, e essa
   falha é o `demasiados-pedidos`. Sem IP, só conta o email.
@@ -515,7 +523,7 @@ Os de `robustez.md` › Consultas, e mais nenhum:
 - `pedidos(estado, levantamento_em)` — as listas do balcão
 - `pedidos(criado_em, id)` — o arquivo e os pedidos da gerente, por cursor
 - `pedidos(cliente_email)` — o histórico e os possíveis duplicados
-- `pedidos(ip)` e `pedidos(cliente_email)` parciais, só os em curso (`pendente` e `confirmado`) — os limites
+- `pedidos(ip)` e `pedidos(cliente_email)` parciais, só os em curso (`ESTADOS_EM_CURSO`) — os limites
 - `linhas_pedido(pedido_id)` — é o princípio da chave primária, não precisa de outro
 - `reembolsos(pedido_id)` — a soma do `reembolsadoCent` e a lista do painel
 - `emails_por_enviar(criado_em)` parcial, só os por enviar

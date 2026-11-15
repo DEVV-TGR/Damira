@@ -1,5 +1,5 @@
 {
-  "id": "7f4f0ac3-dde2-4599-a9af-f3d7e658c36e",
+  "id": "04520b10-0023-4c7f-9f69-e8d56beb09fb",
   "prevId": "a166197a-4c00-4ce3-a2dd-859688ac87c4",
   "version": "7",
   "dialect": "postgresql",
@@ -594,6 +594,24 @@
           "primaryKey": false,
           "notNull": false
         },
+        "expira_em": {
+          "name": "expira_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "aceite_em": {
+          "name": "aceite_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "causa_expiracao": {
+          "name": "causa_expiracao",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "impresso_em": {
           "name": "impresso_em",
           "type": "timestamp with time zone",
@@ -806,7 +824,7 @@
             }
           ],
           "isUnique": false,
-          "where": "\"pedidos\".\"estado\" in ('pendente', 'confirmado')",
+          "where": "\"pedidos\".\"estado\" in ('por-confirmar', 'a-aguardar-aceite', 'confirmado', 'pendente')",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -822,7 +840,7 @@
             }
           ],
           "isUnique": false,
-          "where": "\"pedidos\".\"estado\" in ('pendente', 'confirmado')",
+          "where": "\"pedidos\".\"estado\" in ('por-confirmar', 'a-aguardar-aceite', 'confirmado', 'pendente')",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -864,7 +882,7 @@
       "checkConstraints": {
         "pedidos_estado": {
           "name": "pedidos_estado",
-          "value": "\"pedidos\".\"estado\" in ('confirmado', 'pendente', 'pago', 'entregue', 'expirado', 'cancelado')"
+          "value": "\"pedidos\".\"estado\" in ('por-confirmar', 'a-aguardar-aceite', 'confirmado', 'pendente', 'pago', 'entregue', 'expirado', 'cancelado')"
         },
         "pedidos_referencia": {
           "name": "pedidos_referencia",
@@ -884,7 +902,7 @@
         },
         "pedidos_estado_do_modo": {
           "name": "pedidos_estado_do_modo",
-          "value": "case\n        when \"pedidos\".\"modo_pagamento\" in ('total', 'sinal') then \"pedidos\".\"estado\" not in ('confirmado')\n        when \"pedidos\".\"modo_pagamento\" in ('na-loja', 'total', 'sinal') then \"pedidos\".\"estado\" not in ('pendente', 'pago')\n        else true end"
+          "value": "case\n        when \"pedidos\".\"modo_pagamento\" in ('total', 'sinal')\n          then \"pedidos\".\"estado\" not in ('por-confirmar', 'a-aguardar-aceite', 'confirmado')\n        when \"pedidos\".\"modo_pagamento\" in ('na-loja', 'total', 'sinal') then \"pedidos\".\"estado\" not in ('pendente', 'pago')\n        else true end"
         },
         "pedidos_na_loja_sem_online": {
           "name": "pedidos_na_loja_sem_online",
@@ -905,6 +923,18 @@
         "pedidos_confirmado_em": {
           "name": "pedidos_confirmado_em",
           "value": "(\"pedidos\".\"confirmado_em\" is null or \"pedidos\".\"modo_pagamento\" not in ('total', 'sinal'))\n        and (\"pedidos\".\"confirmado_em\" is not null or not (\"pedidos\".\"estado\" = 'confirmado'\n          or (\"pedidos\".\"estado\" = 'entregue' and \"pedidos\".\"modo_pagamento\" not in ('total', 'sinal'))))"
+        },
+        "pedidos_expira_em": {
+          "name": "pedidos_expira_em",
+          "value": "(\"pedidos\".\"estado\" <> 'por-confirmar' or \"pedidos\".\"expira_em\" is not null)\n        and (\"pedidos\".\"expira_em\" is null\n          or (\"pedidos\".\"expira_em\" > \"pedidos\".\"criado_em\" and \"pedidos\".\"modo_pagamento\" not in ('total', 'sinal')))"
+        },
+        "pedidos_aceite_em": {
+          "name": "pedidos_aceite_em",
+          "value": "\"pedidos\".\"aceite_em\" is null or \"pedidos\".\"confirmado_em\" is not null"
+        },
+        "pedidos_causa_expiracao": {
+          "name": "pedidos_causa_expiracao",
+          "value": "(\"pedidos\".\"estado\" = 'expirado') = (\"pedidos\".\"causa_expiracao\" is not null)\n        and (\"pedidos\".\"causa_expiracao\" is null or (\"pedidos\".\"causa_expiracao\" in ('sem-resposta-da-casa', 'sem-pagamento')\n          and (\"pedidos\".\"causa_expiracao\" = 'sem-pagamento') = (\"pedidos\".\"modo_pagamento\" in ('total', 'sinal'))\n          and (\"pedidos\".\"causa_expiracao\" <> 'sem-resposta-da-casa' or \"pedidos\".\"expira_em\" is not null)))"
         },
         "pedidos_entregue_em": {
           "name": "pedidos_entregue_em",

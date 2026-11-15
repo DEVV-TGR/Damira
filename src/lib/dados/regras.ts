@@ -295,6 +295,9 @@ export const pedidoPorPagar = (
   avisosTratados: [],
   reagendadoEm: null,
   confirmadoEm: null,
+  expiraEm: null,
+  aceiteEm: null,
+  causaExpiracao: null,
 });
 
 /**

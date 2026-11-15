@@ -19,6 +19,7 @@ import {
    sem os atalhos do `tsconfig`. */
 import {
   AVISOS_TRATAVEIS,
+  CAUSAS_EXPIRACAO,
   ESTADOS_EM_CURSO,
   ESTADOS_PEDIDO,
   FORMATO_NIF,
@@ -335,6 +336,12 @@ export const pedidos = pgTable(
     pagoEm: instante("pago_em"),
     /** Quando ficou `confirmado`; fica depois de entregue ou cancelado (`pedidos.md`). */
     confirmadoEm: instante("confirmado_em"),
+    /** O prazo da resposta da casa a um `por-confirmar`: 48 horas corridas (`pedidos.md`). */
+    expiraEm: instante("expira_em"),
+    /** Quando o cliente aceitou a resposta da casa, pelo link (`pedidos.md` › O aceite do cliente). */
+    aceiteEm: instante("aceite_em"),
+    /** `sem-resposta-da-casa` ou `sem-pagamento`; só num `expirado`, e sempre nele. */
+    causaExpiracao: text("causa_expiracao"),
     impressoEm: instante("impresso_em"),
     entregueEm: instante("entregue_em"),
     canceladoEm: instante("cancelado_em"),
@@ -388,14 +395,15 @@ export const pedidos = pgTable(
     check("pedidos_nif", sql`${t.clienteNif} ~ ${formato(FORMATO_NIF)}`),
     check("pedidos_modo_pagamento", sql`${t.modoPagamento} in (${umDe(MODOS_PAGAMENTO)})`),
     /* Cada estado é de um modo: o `pendente` e o `pago` só existem com o Stripe,
-       o `confirmado` só com o pagamento fora dele. Um pedido da loja que caísse
+       os da confirmação da casa só fora dele. Um pedido da loja que caísse
        em `pago` passava a contar como pago online sem nunca o ter sido. Um modo
        que não existe não se julga aqui: recusa-o o `pedidos_modo_pagamento`,
        com o nome certo. */
     check(
       "pedidos_estado_do_modo",
       sql`case
-        when ${t.modoPagamento} in (${umDe(MODOS_ONLINE)}) then ${t.estado} not in ('confirmado')
+        when ${t.modoPagamento} in (${umDe(MODOS_ONLINE)})
+          then ${t.estado} not in ('por-confirmar', 'a-aguardar-aceite', 'confirmado')
         when ${t.modoPagamento} in (${umDe(MODOS_PAGAMENTO)}) then ${t.estado} not in ('pendente', 'pago')
         else true end`,
     ),
@@ -430,6 +438,26 @@ export const pedidos = pgTable(
         and (${t.confirmadoEm} is not null or not (${t.estado} = 'confirmado'
           or (${t.estado} = 'entregue' and ${t.modoPagamento} not in (${umDe(MODOS_ONLINE)}))))`,
     ),
+    /* Um `por-confirmar` sabe até quando espera — é por ele que expira — e o
+       prazo é sempre depois de nascer. Só existe fora do Stripe, que tem o seu
+       (os 31 minutos da sessão, contados do `criado_em`). */
+    check(
+      "pedidos_expira_em",
+      sql`(${t.estado} <> 'por-confirmar' or ${t.expiraEm} is not null)
+        and (${t.expiraEm} is null
+          or (${t.expiraEm} > ${t.criadoEm} and ${t.modoPagamento} not in (${umDe(MODOS_ONLINE)})))`,
+    ),
+    /* Aceitar é o que confirma: quem tem `aceite_em` tem `confirmado_em`. */
+    check("pedidos_aceite_em", sql`${t.aceiteEm} is null or ${t.confirmadoEm} is not null`),
+    /* Um expirado diz porquê, e só ele: a casa não respondeu (que só acontece a
+       quem tinha prazo), ou o Stripe não recebeu (que só acontece com ele). */
+    check(
+      "pedidos_causa_expiracao",
+      sql`(${t.estado} = 'expirado') = (${t.causaExpiracao} is not null)
+        and (${t.causaExpiracao} is null or (${t.causaExpiracao} in (${umDe(CAUSAS_EXPIRACAO)})
+          and (${t.causaExpiracao} = 'sem-pagamento') = (${t.modoPagamento} in (${umDe(MODOS_ONLINE)}))
+          and (${t.causaExpiracao} <> 'sem-resposta-da-casa' or ${t.expiraEm} is not null)))`,
+    ),
     check("pedidos_entregue_em", sql`${t.estado} <> 'entregue' or ${t.entregueEm} is not null`),
     /* Cancelado é final: quando, por quem, e o estado, os três ou nenhum. */
     check(
@@ -451,7 +479,8 @@ export const pedidos = pgTable(
     index("pedidos_cliente_email").on(t.clienteEmail),
     /* Os limites de criar pedidos (`robustez.md` › Limites): contam os pedidos
        ainda em curso — os `pendente` do Stripe e, com o pagamento na loja, os
-       `confirmado` por levantar —, por isso os índices só os têm a eles. */
+       que esperam e os `confirmado` por levantar —, por isso os índices só os
+       têm a eles. */
     index("pedidos_em_curso_por_ip").on(t.ip).where(sql`${t.estado} in (${umDe(ESTADOS_EM_CURSO)})`),
     index("pedidos_em_curso_por_email").on(t.clienteEmail).where(sql`${t.estado} in (${umDe(ESTADOS_EM_CURSO)})`),
   ],

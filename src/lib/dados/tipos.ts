@@ -277,11 +277,30 @@ export type ResultadoCotacao =
 
 /**
  * Os estados do contrato (`pedidos.md` › Os estados). Com o pagamento na loja,
- * um levantamento sem nada a confirmar nasce `confirmado`. O `pendente` e o
- * `pago` são do pagamento online: **dormem** (nenhum pedido lá entra enquanto
- * ele estiver desligado), mas ficam, para o desenho não se perder.
+ * um levantamento sem nada a confirmar nasce `confirmado`; o resto nasce
+ * `por-confirmar`, e passa a `a-aguardar-aceite` quando a casa responde com
+ * preço ou hora que o cliente ainda não viu. O `pendente` e o `pago` são do
+ * pagamento online: **dormem** (nenhum pedido lá entra enquanto ele estiver
+ * desligado), mas ficam, para o desenho não se perder.
  */
-export const ESTADOS_PEDIDO = ["confirmado", "pendente", "pago", "entregue", "expirado", "cancelado"] as const;
+export const ESTADOS_PEDIDO = [
+  "por-confirmar",
+  "a-aguardar-aceite",
+  "confirmado",
+  "pendente",
+  "pago",
+  "entregue",
+  "expirado",
+  "cancelado",
+] as const;
+
+/**
+ * Porque é que um pedido expirou (`pedidos.md` › Os estados): `expirado` e
+ * `cancelado` não se confundem, e dentro do expirado a causa também conta. A
+ * `sem-aceite-do-cliente` é proposta (`pedidos.md` › Em aberto, 2) e só entra
+ * quando for decidida.
+ */
+export const CAUSAS_EXPIRACAO = ["sem-resposta-da-casa", "sem-pagamento"] as const;
 
 /**
  * Como se paga (`pedidos.md` › Dinheiro): `na-loja` é o levantamento pago ao
@@ -294,9 +313,14 @@ export const MODOS_PAGAMENTO = ["na-loja", "total", "sinal"] as const;
 /**
  * Os pedidos ainda em curso, que contam nos limites de criar pedidos
  * (`robustez.md` › Limites): o `pendente` do Stripe e, com o pagamento na loja,
- * o `confirmado` por levantar.
+ * os que esperam pela casa ou pelo cliente e os `confirmado` por levantar.
  */
-export const ESTADOS_EM_CURSO = ["pendente", "confirmado"] as const satisfies readonly (typeof ESTADOS_PEDIDO)[number][];
+export const ESTADOS_EM_CURSO = [
+  "por-confirmar",
+  "a-aguardar-aceite",
+  "confirmado",
+  "pendente",
+] as const satisfies readonly (typeof ESTADOS_PEDIDO)[number][];
 
 /** Os modos do Stripe: só neles há `pendente`, `pago` e `pagoEm`. */
 export const MODOS_ONLINE = ["total", "sinal"] as const satisfies readonly (typeof MODOS_PAGAMENTO)[number][];
@@ -360,6 +384,16 @@ export const EsquemaPedido = z.object({
    * `entregueEm` (`pedidos.md`).
    */
   confirmadoEm: z.date().nullable(),
+  /**
+   * Até quando a casa tem para responder a um `por-confirmar`: `criadoEm + 48 h`
+   * corridas (`pedidos.md` › Expirar às 48 horas). `null` num pedido que nasceu
+   * confirmado. Fica depois de ele mudar de estado.
+   */
+  expiraEm: z.date().nullable(),
+  /** Quando o cliente aceitou a resposta da casa (`pedidos.md` › O aceite do cliente). */
+  aceiteEm: z.date().nullable(),
+  /** Só num `expirado`, e sempre nele. */
+  causaExpiracao: z.enum(CAUSAS_EXPIRACAO).nullable(),
   /** A primeira impressão que a impressora confirmou. Reimprimir não o muda. */
   impressoEm: z.date().nullable(),
   entregueEm: z.date().nullable(),
