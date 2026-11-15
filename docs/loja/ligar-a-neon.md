@@ -187,7 +187,7 @@ A casa começa a preencher os produtos no painel, e o que ela grava tem de ficar
       (ponto 8).
 - [ ] A conta Resend da Damira, para o código da gerente chegar por email (#26)
       — **criada com o email da gerente**, para o código lhe chegar antes de o
-      domínio estar verificado (ponto 8). Trata-a o Gonçalo, desde 09/11
+      domínio estar verificado (ponto 8). Os dois têm acesso a ela
       (`divisao.md`); o domínio damira.pt está ativo desde 02/11.
 
 ## 8. A entrada no painel (#33) — o que falta
