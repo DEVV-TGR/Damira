@@ -149,6 +149,42 @@ enquanto se pagar na loja. ⚠️ Os campos são controlados e o envio é feito 
 reinício automático do `<form action>` do React 19: um erro do servidor nunca
 apaga o que a pessoa escreveu (`robustez.md` › Erros).
 
+### Decidido a 12/11 e 15/11 — por fazer, e tudo bloqueia o lançamento
+
+Decisões da Andreia (12/11) e do Gonçalo (15/11). **Nada disto está ainda no
+código**; cada ponto está no ficheiro que o detalha, marcado «decidido, por
+fazer». ⚠️ **O site não vai para o ar com nada disto a meio.**
+
+1. **A `/ementa` sai** — a página, as `/ementa/<id>` e todos os links para lá,
+   o do cabeçalho incluído. O site fica com a página inicial e as encomendas
+   (abaixo, «As páginas de produto»).
+2. **A carta passa a chamar-se «Dia a dia»** (o que se pede ao balcão: um
+   croissant, um pão com manteiga), e a secção «Da carta, por encomenda» passa a
+   «Do dia a dia». Sai a regra «não juntar a encomenda à ementa» (abaixo, «O
+   modelo de dados»).
+3. **Acabam as famílias.** A gerente cria categorias e ordena-as todas; cada
+   produto é **simples** ou **composto** (`painel-gerente.md` › Produtos).
+4. **Tamanhos e grupos de opções**, no lugar de variantes e escolhas
+   (`painel-gerente.md` › Tamanhos e grupos de opções; #88).
+5. **Os bolos personalizados abrem com o site**, com as 3 fotos de referência e
+   a 1 para imprimir (`bolos-personalizados.md`).
+6. **«Por confirmar» é para o que espera resposta da casa** — bolos sob
+   orçamento, entregas, produtos com «Necessita de confirmação» —, não para
+   marcar o que está pronto (`painel-balcao.md`).
+7. **Talão automático ao marcar «pagamento recebido»** de uma entrega
+   (`impressao.md`).
+8. **Não se regista peso.** Ao quilo, «preço indicativo» no fecho, no email, no
+   talão e no painel; o valor final é o da faturação da loja (`pedidos.md`).
+9. **Qualquer pessoa da equipa** marca «pagamento recebido» de uma entrega e a
+   cancela por falta de pagamento; a casa produz sem a transferência ter
+   chegado. O orçamento continua só da gerente (`pedidos.md`, `painel.md`).
+10. **Login de clientes** com Google, Facebook ou um código por email sem
+    palavra-passe — este ainda não existe (abaixo, «A conta de cliente»).
+11. **Os emails ao cliente** — recebido, confirmado, orçamento com link para
+    aceitar, expirado e cancelado —, com a fila única e o preço indicativo, e os
+    textos revistos pela Andreia antes de irem para o ar (`pedidos.md` › Os
+    emails).
+
 ### A documentação muda no mesmo PR que o código
 
 Se um PR faz o código contradizer um ficheiro de `docs/loja/` ou uma secção deste
@@ -230,6 +266,13 @@ JSON` poupa a próxima pessoa a desfazer a decisão.
 
 ## O modelo de dados — quatro ficheiros, quatro naturezas
 
+> ⚠️ **Decidido a 15/11, por fazer:** acabam as famílias (`ementa`, `festa`,
+> `bolo`, `box`, `medida`). A gerente cria categorias («Salgados», «Bolos»,
+> «Kits de festa»), e cada produto é **simples** (um croissant com sabores) ou
+> **composto** (um kit com número de pessoas e o que leva dentro) —
+> `painel-gerente.md` › Produtos. Esta secção descreve os JSON como estão, e
+> reescreve-se no PR que passar o catálogo a categorias.
+
 A Damira deu-nos **sete impressos**, e eles não são todos a mesma coisa. A
 divisão dos dados segue a diferença que existe no negócio, não a que existe no
 papel:
@@ -244,16 +287,14 @@ papel:
 Há ainda `marca.json` (nome e redes, fonte única do cabeçalho e do rodapé) e
 `redes.json` (os *reels*): auxiliares, não fazem parte desta divisão.
 
-⚠️ **Não juntar a encomenda à ementa.** Um kit para setenta pessoas ao lado de um
-croissant é o que leva alguém a aparecer ao sábado à espera de o levar debaixo do
-braço. A separação está no site como duas páginas e aqui como dois ficheiros.
-
-**Isto continua a valer, com uma nuance que passou a existir em setembro de
-2026.** A `/encomendas` tem hoje uma secção — *Da carta, por encomenda* — com 70
-dos 95 artigos da ementa. O que evita o mal-entendido não é escondê-los: é a
-**quantidade mínima**, escrita no cabeçalho de cada categoria. Um artigo que só se
-pede à dúzia, ou ao quilo, nunca se confunde com um que se tira da vitrine — e
-quem quer um pastel continua a entrar na loja e a pedi-lo.
+**A encomenda e o dia a dia vivem juntos** (decidido a 15/11: saiu a regra que
+os separava). A carta passa a chamar-se **«Dia a dia»** — o que se pede ao
+balcão, um croissant, um pão com manteiga — e a secção da `/encomendas` que hoje
+se chama *Da carta, por encomenda* passa a **«Do dia a dia»** (decidido, por
+fazer). O que evita o mal-entendido de alguém aparecer ao sábado à espera de
+levar um kit debaixo do braço é a **quantidade mínima**, escrita no cabeçalho de
+cada categoria: um artigo que só se pede à dúzia, ou ao quilo, nunca se confunde
+com um que se tira da vitrine.
 
 **O mínimo é do produto**, desde outubro de 2026 (#40): `quantidadeMinima` e
 `multiplo` na `FonteDeDados`, e a gerente muda-os no painel, que é o que ela
@@ -263,6 +304,9 @@ para ninguém os ter de escrever. As bebidas, os pratos e a pausa continuam de
 fora (`aVendaOnline: false`): não se encomenda um galão para sexta-feira.
 
 ### A ementa tem `carta` além de `categoria`
+
+> Vale enquanto houver cartas no código. Com as categorias da gerente (decidido
+> a 15/11, por fazer), revê-se no mesmo PR — ver a armadilha 8.
 
 Porque as categorias **repetem-se entre cartas**: há `doces` na carta da casa e
 `doces` na vegan, `salgados` nas duas. A âncora de uma secção é por isso
@@ -411,18 +455,15 @@ montra vista da rua é anunciar uma coisa e entregar outra, e é a mesma regra q
 proíbe banco de imagens no resto do site. O `FotoProduto` guarda o espaço e diz
 que a fotografia está por chegar.
 
-**Os 95 artigos da carta também têm página**, em `/ementa/<id>`. ⚠️ Ficam
-debaixo de `/ementa` e não de `/encomendas`: é a mesma separação de sempre. O
-que as mantém do lado certo é dizerem o que o artigo é — os 70 encomendáveis
-mostram o botão de juntar **com a quantidade mínima ao lado do botão**, e os
-outros 25 não têm botão nenhum e dizem que se pedem ao balcão. Um galão com um
-botão de encomendar era prometer um serviço que a casa não tem.
-
-⚠️ **O painel da `/ementa` continua a existir**, e faz bem: quem percorre
-noventa e cinco artigos não quer sair da lista a cada curiosidade. A página é
-para quem quer o **endereço** — partilhar, guardar, ou chegar por uma pesquisa. O
-painel leva lá por um botão; sem ele eram noventa e cinco páginas que ninguém
-visitava.
+⚠️ **A `/ementa` sai — decidido a 15/11, por fazer.** Hoje os 95 artigos da
+carta têm página em `/ementa/<id>`, e a `/ementa` tem um painel que leva lá por
+um botão. Saem os dois, e todos os links para lá, **o do cabeçalho incluído**: o
+site fica com a página inicial e as encomendas. O que se encomenda do dia a dia
+vive na `/encomendas`, em «Do dia a dia», com a quantidade mínima ao lado do
+botão. ⚠️ Ao tirá-la, tirar também do `sitemap.xml` e das rotas estáticas, e
+procurar os links por `/ementa` em todo o `src/` — um link esquecido é um 404 no
+menu. A regra que ficava aqui, de um galão não ter botão de encomendar, continua:
+o que não se encomenda não ganha botão em lado nenhum.
 
 ⚠️ **O bolo por medida não vem do JSON.** Não é um produto de catálogo, é uma
 conversa: não tem preço e o que se escolhe são massas e recheios. Entra na lista
@@ -456,9 +497,11 @@ em `src/lib/autenticacao.ts`). Três decisões que se desfazem sem querer:
    porque quem não encontra lá o pedido conclui que ele se perdeu. Ver
    `historico.ts` e `ListaHistorico.tsx`.
 
-Ao Google e ao Facebook junta-se **um código por email**, para quem não quer
-ligar a conta a nenhum dos dois. Os ecrãs são do Gonçalo e o servidor é do
-Sobral (`docs/loja/divisao.md`); as três regras acima valem para os três.
+Ao Google e ao Facebook junta-se **um código por email, sem palavra-passe**,
+para quem não quer ligar a conta a nenhum dos dois — decidido a 15/11, por
+fazer: para clientes ainda não existe. Os ecrãs são do Gonçalo e o servidor é do
+Sobral (`docs/loja/divisao.md`); as três regras acima valem para os três, e a
+primeira mais do que todas: a conta continua facultativa.
 
 E uma peça que não é da conta mas nasceu com ela: **a referência do pedido**
 (`DAM-0309-4F7K`) é gerada **no servidor**, vai no assunto do email e volta no
@@ -514,7 +557,9 @@ primeiras sete vieram do Santo Burga e continuam a valer — o motor é o mesmo.
    acumulador em vírgula flutuante, à parte do DOM.
 8. **Uma categoria em duas cartas dá duas âncoras iguais.** É a armadilha nova
    deste site, e é a razão de a âncora ser `{carta}-{categoria}`. Ver
-   `SeccaoEmenta.tsx`.
+   `SeccaoEmenta.tsx`. ⚠️ Vale enquanto houver cartas: com a `/ementa` fora e
+   as categorias da gerente (decidido a 15/11, por fazer), revê-se no mesmo PR
+   — mas a armadilha volta se duas categorias puderem ter o mesmo nome.
 9. **`background: currentColor` resolve para a cor do *próprio* elemento.** Uma
    pastilha com `background: currentColor` e `color: transparent` fica
    transparente, não fica da cor herdada. Declarar as duas cores. Ver o fólio em

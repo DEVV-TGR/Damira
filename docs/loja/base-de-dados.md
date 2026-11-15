@@ -32,6 +32,14 @@ o custo e o fim do intervalo da entrega; linhas com preço por fixar; a
 credencial do aceite; e a coluna `pede_confirmacao` dos produtos (#116, migração
 `0005`). Os estados e as colunas do Stripe **ficam**: dormem, não se apagam.
 
+⚠️ **O catálogo também muda — decidido a 15/11, por fazer.** Acaba a `familia`
+dos produtos; ficam **categorias** criadas e ordenadas pela gerente (todas,
+kits incluídos) e dois tipos de produto, **simples** e **composto**; as
+variantes passam a **tamanhos**, e as escolhas a **grupos de opções** partilhados
+entre produtos, com mínimo, máximo e preço por opção (`painel-gerente.md` ›
+Produtos). Vai num PR de esquema próprio, com a importação do que já está no
+`production`; as tabelas abaixo descrevem o catálogo como está.
+
 ## As ferramentas
 
 - **Neon**, com o driver HTTP (`@neondatabase/serverless`). Dois ramos:

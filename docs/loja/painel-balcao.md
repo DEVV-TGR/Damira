@@ -7,7 +7,8 @@ aparece no ecrã e o que cada toque faz.
 **O balcão não mexe em preços, produtos, horários, cancelamentos, orçamentos nem
 no PIN.** Isso é da gerente (`painel-gerente.md`). O que o balcão pode fazer a
 mais desde o contrato de 10/11 é **confirmar um pedido tal como está** (ver
-«Um pedido por confirmar»).
+«Um pedido por confirmar») e, numa entrega, marcar «pagamento recebido» e
+cancelar por falta de pagamento (ver «Entregas e transferências»).
 
 ## O que se vê
 
@@ -34,6 +35,9 @@ conta-se por linha, com o tempo de cada produto. ⚠️ Um pedido de que não se
 quando começar — falta o horário da cozinha ou o tempo de um produto — não
 desaparece da lista: vai para `semInicio`, e o painel mostra-o à parte.
 
+**Os dois mantêm-se por agora** (15/11). Perguntámos à Andreia se o «Produzir
+hoje» lhe faz falta; se não fizer, sai. Até ela responder, fica.
+
 ⚠️ **«Levantam hoje» e «Produzir hoje» não são a mesma coisa.** Um bolo de 3 dias
 para sexta aparece em «Produzir» na terça e em «Levantam» na sexta. Juntar as
 duas (como a proposta fazia com «Para hoje») deixava a cozinha a descobrir o bolo
@@ -44,8 +48,8 @@ na manhã em que ele já devia estar pronto. O início da produção sai de
 (com variante, escolhas, quantidade e notas), observações e **o que há a pagar**,
 em grande — `A PAGAR NA LOJA · 23,50 €`, com «valor indicativo» quando há
 produtos ao quilo (`pedidos.md` › Dinheiro). Numa entrega, paga-se por
-transferência e não ao balcão; como o painel mostra se ela chegou está em
-aberto (`pedidos.md`, n.º 3 e 4).
+transferência e não ao balcão, e o pedido mostra se ela já chegou (ver
+«Entregas e transferências»).
 
 Os pedidos que se levantam hoje têm destaque em bloco invertido (fundo escuro,
 texto claro), como no talão.
@@ -77,7 +81,11 @@ DAM-… NÃO saiu» — e **o alarme repete-se** até alguém tocar em «Reimpri
 ## Um pedido por confirmar
 
 Entra quando o pedido tem um produto que «Necessita de confirmação da loja», uma
-linha sem preço, ou é para entregar (`pedidos.md` › Confirmar).
+linha sem preço, ou é para entregar (`pedidos.md` › Confirmar). ⚠️ **«Por
+confirmar» é para os pedidos à espera de resposta da casa** — bolos sob
+orçamento, entregas e produtos com a caixa ligada, todos juntos —, **e não para
+marcar o que já está pronto.** Não é um estado da cozinha (`pedidos.md` › Não há
+«aceite» nem «pronta»).
 
 - **O balcão ouve-o chegar:** o som toca e aparece o aviso, como num pedido
   novo — mas **não imprime**. O talão é a ordem para a cozinha, e a casa ainda
@@ -90,6 +98,19 @@ linha sem preço, ou é para entregar (`pedidos.md` › Confirmar).
   qualquer destas, mesmo que o botão lhe apareça.
 - Depois de `expiraEm`, «Confirmar» é recusado, mesmo que o pedido ainda não
   apareça como expirado.
+
+## Entregas e transferências — decidido a 15/11, por fazer
+
+Uma entrega paga-se por transferência, depois de o cliente aceitar o orçamento,
+e **a casa produz sem esperar por ela**. Por isso o pedido mostra se a
+transferência ainda está **por receber**, e **qualquer pessoa da equipa**:
+
+- marca **«pagamento recebido»** quando ela chega — guarda quando e quem, não
+  muda o estado, e sai um talão (`impressao.md`);
+- **cancela por falta de pagamento**, se ela não chegar no prazo. Nunca é
+  automático (`pedidos.md` › O orçamento e o aceite).
+
+O orçamento, esse, continua só da gerente.
 
 ## Um pedido cancelado
 
