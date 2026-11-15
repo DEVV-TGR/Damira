@@ -4,8 +4,10 @@ O que a equipa vê e faz no tablet. É também a primeira parte da vista da gere
 (ver `painel.md`). As regras do pedido estão em `pedidos.md`; aqui está só o que
 aparece no ecrã e o que cada toque faz.
 
-**O balcão não mexe em preços, produtos, horários, reembolsos nem no PIN.** Isso
-é da gerente (`painel-gerente.md`).
+**O balcão não mexe em preços, produtos, horários, cancelamentos, orçamentos nem
+no PIN.** Isso é da gerente (`painel-gerente.md`). O que o balcão pode fazer a
+mais desde o contrato de 10/11 é **confirmar um pedido tal como está** (ver
+«Um pedido por confirmar»).
 
 ## O que se vê
 
@@ -14,9 +16,14 @@ Três separadores, e nada de colunas de estado — a casa recusou-as na reunião
 
 | Separador | O que tem | Ordem |
 |---|---|---|
-| **Levantam hoje** | pedidos pagos com levantamento hoje | pela hora de levantamento |
+| **Levantam hoje** | pedidos confirmados com levantamento hoje | pela hora de levantamento |
 | **Produzir hoje** | o que tem de **começar** a ser feito hoje, agrupado por produto e somado | pela hora-limite |
-| **Próximos** | pedidos pagos para os dias seguintes | por dia e hora |
+| **Próximos** | pedidos confirmados para os dias seguintes | por dia e hora |
+
+⚠️ **Os `por-confirmar` e os `a-aguardar-aceite` não entram nestes três
+separadores** (`pedidos.md` › O levantamento): não se começa um bolo que ainda
+não está confirmado. Aparecem à parte, em «Por confirmar» — com o tempo que
+falta até expirarem — e como «à espera do cliente».
 
 Mais um **Arquivo** (entregues e cancelados) e uma **pesquisa** por referência ou
 nome — quem liga diz «DAM-0309-4F7K» ou «é a encomenda da Marta».
@@ -34,8 +41,11 @@ na manhã em que ele já devia estar pronto. O início da produção sai de
 `horarios.md`.
 
 **Cada pedido mostra:** referência, nome e telefone, hora de levantamento, artigos
-(com variante, escolhas, quantidade e notas), observações e o estado do
-pagamento — `PAGO` ou `SINAL PAGO · FALTA 12,50 €`, em grande.
+(com variante, escolhas, quantidade e notas), observações e **o que há a pagar**,
+em grande — `A PAGAR NA LOJA · 23,50 €`, com «valor indicativo» quando há
+produtos ao quilo (`pedidos.md` › Dinheiro). Numa entrega, paga-se por
+transferência e não ao balcão; como o painel mostra se ela chegou está em
+aberto (`pedidos.md`, n.º 3 e 4).
 
 Os pedidos que se levantam hoje têm destaque em bloco invertido (fundo escuro,
 texto claro), como no talão.
@@ -43,10 +53,15 @@ texto claro), como no talão.
 ## Um pedido novo
 
 ⚠️ **No modo de teste, «Simular pedido novo»** (e «com o talão a falhar»), ao
-fundo do balcão: sem pagamentos (#42) não chega nenhum pedido, e o som, o aviso
-e o alarme ficavam por experimentar. Só existe com `LOJA_EM_TESTE=1`
-(`simularPedidoDeTeste`, em `src/lib/dados/`), e não é da `FonteDeDados`: na
-base de dados só o `marcarPago` põe um pedido a `pago`.
+fundo do balcão: enquanto a compra acabar num email à casa não chega nenhum
+pedido ao painel, e o som, o aviso e o alarme ficavam por experimentar. Só
+existe com `LOJA_EM_TESTE=1` (`simularPedidoDeTeste`, em `src/lib/dados/`), e
+não é da `FonteDeDados`: na base de dados um pedido só nasce pelo `criarPedido`.
+
+Um pedido chega ao balcão como **novo** quando fica `confirmado` — ao nascer, se
+não tinha nada a confirmar, ou mais tarde, quando a casa o confirma ou o cliente
+aceita (`pedidos.md` › Os estados). Os efeitos saem uma vez só, dessa
+transição:
 
 1. O som toca **uma vez**.
 2. Aparece um aviso no canto: «Novo pedido DAM-… · 14:30 · talão impresso ✓».
@@ -59,6 +74,23 @@ DAM-… NÃO saiu» — e **o alarme repete-se** até alguém tocar em «Reimpri
 «Já tratei». É o único caso em que o som insiste: sem papel, o aviso no ecrã é a
 única coisa entre o pedido e o esquecimento. Detalhes em `impressao.md`.
 
+## Um pedido por confirmar
+
+Entra quando o pedido tem um produto que «Necessita de confirmação da loja», uma
+linha sem preço, ou é para entregar (`pedidos.md` › Confirmar).
+
+- **O balcão ouve-o chegar:** o som toca e aparece o aviso, como num pedido
+  novo — mas **não imprime**. O talão é a ordem para a cozinha, e a casa ainda
+  não o aceitou. Imprime quando ficar `confirmado`.
+- **O balcão pode confirmá-lo tal como está**: todas as linhas com preço, para
+  levantar, à hora que o cliente escolheu. Um toque em «Confirmar», e dois
+  toques (ou dois tablets) confirmam uma vez.
+- **Tudo o resto é da gerente**: fixar o valor de uma linha sem preço, mandar o
+  orçamento de uma entrega, mudar a hora, recusar. O servidor recusa ao balcão
+  qualquer destas, mesmo que o botão lhe apareça.
+- Depois de `expiraEm`, «Confirmar» é recusado, mesmo que o pedido ainda não
+  apareça como expirado.
+
 ## Um pedido cancelado
 
 Som, e um aviso vermelho que fica até alguém lhe tocar: «CANCELADO DAM-… —
@@ -69,12 +101,12 @@ lista até ao fim do dia e depois passa para o arquivo. (Ver `pedidos.md`.)
 
 O único toque do dia a dia: **Entregue**.
 
-- ⚠️ **Com dinheiro em falta, pergunta primeiro.** Se o pedido tem sinal, o toque
-  abre «Recebeu os 12,50 € em falta?» antes de marcar. Entregar um bolo sem cobrar
-  o resto é o erro mais caro que o balcão pode fazer, e o mais fácil numa hora de
-  ponta. A cobrança em si faz-se na caixa da loja, como hoje — o painel não
-  regista meios de pagamento. O servidor também não confia que se perguntou:
-  `marcarEntregue` recusa (`falta-cobrar`) sem a confirmação.
+- ⚠️ **`entregue` quer dizer «levantou e pagou»** (`pedidos.md` › Os estados).
+  Paga-se na caixa da loja, como hoje, no mesmo momento — o painel não regista
+  meios de pagamento, e não há um segundo toque de «pago».
+- **(pagamento online, a dormir)** Com sinal, o toque perguntava primeiro
+  «Recebeu os 12,50 € em falta?», e o `marcarEntregue` recusava
+  (`falta-cobrar`) sem a confirmação. Volta se o pagamento online voltar.
 - **Dois toques** (ou dois dispositivos) entregam uma vez: a passagem a
   `entregue` é condicional, e o segundo recebe o pedido já entregue.
 - **Desfazer:** durante 5 minutos, o pedido entregue mostra «Desfazer» e volta à
@@ -100,7 +132,7 @@ São dois campos do produto, e nenhum é o «à venda online» da gerente
   ligava um produto que a gerente tinha deixado desligado de propósito.
 
 **Os pedidos que já existem não são tocados.** Esgotar um produto trava pedidos
-novos, não cancela os pagos.
+novos, não cancela os confirmados.
 
 ## Pausar a loja
 
@@ -108,8 +140,7 @@ Para quando a cozinha está cheia: **30 min**, **1 h** ou **até amanhã**.
 
 - Com a loja em pausa não se criam pedidos. O site diz a que horas volta.
 - O balcão mostra no topo «Loja em pausa até 11:30 · Retomar agora».
-- Um pagamento que já estava a decorrer quando a pausa começou entra na mesma
-  (pago ganha sempre — ver `pedidos.md`).
+- Os pedidos que já existem, confirmados ou à espera, não são tocados.
 
 ## O tablet tem de estar acordado e com som
 
