@@ -485,7 +485,8 @@
       "irEncomendas": "See the orders",
       "rever": "Review and order",
       "reverTexto": "You already have items in your order. Choose the collection time and your details in the next step.",
-      "pausa": "The shop is paused until {quando}: the kitchen is full. You can order from then."
+      "pausa": "The shop is paused until {quando}: the kitchen is full. You can order from then.",
+      "avisoLegal": "By sending, you accept the <condicoes>ordering terms</condicoes> and the <privacidade>privacy policy</privacidade> (in Portuguese). As these are fresh or made-to-order products, there is no right of withdrawal; you can cancel free of charge up to 24 hours before, by phone."
     }
   },
   "bolos": {
@@ -514,6 +515,14 @@
     "encomendas": {
       "titulo": "Orders & parties",
       "descricao": "Party kits for 20, 40, or 70 people, custom decorated cakes, and boxes for special days, at Confeitaria e Pão Quente Damira in Ermesinde."
+    },
+    "privacidade": {
+      "titulo": "Privacy and cookies",
+      "descricao": "How Confeitaria e Pão Quente Damira handles the personal data of people who order on this site, how long it is kept and which cookies are used."
+    },
+    "condicoes": {
+      "titulo": "Ordering terms",
+      "descricao": "How ordering works at Confeitaria e Pão Quente Damira: confirmation, pickup and payment in store, delivery, changes and cancellations."
     }
   },
   "rodape": {
@@ -524,7 +533,11 @@
     "direitos": "All rights reserved.",
     "paginas": "Pages",
     "horario": "Opening hours",
-    "verMapa": "See on the map"
+    "verMapa": "See on the map",
+    "legal": "Legal information",
+    "privacidade": "Privacy and cookies",
+    "livroReclamacoes": "Complaints Book (Livro de Reclamações)",
+    "condicoes": "Ordering terms"
   },
   "naoEncontrada": {
     "titulo": "This one does not exist",
@@ -618,5 +631,12 @@
   "modoTeste": {
     "etiqueta": "Test mode",
     "aviso": "Nothing is charged, and the pick-up times and booked slots are examples."
+  },
+  "legal": {
+    "olho": "Legal information",
+    "atualizadaEm": "Last updated: {data}",
+    "apenasPortugues": "This page is only available in Portuguese, the language in which it was approved. If you have any questions, write to us at the address below — in English, if you prefer.",
+    "indice": "On this page",
+    "contacto": "Any questions? Write to us at"
   }
 }

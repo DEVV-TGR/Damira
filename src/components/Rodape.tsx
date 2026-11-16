@@ -11,6 +11,9 @@ import {
 import { URL_ESTUDIO } from "@/lib/site";
 import { Marca } from "@/components/Marca";
 
+/** O Livro de Reclamações Eletrónico, da Direção-Geral do Consumidor. */
+const URL_LIVRO_RECLAMACOES = "https://www.livroreclamacoes.pt/Inicio/";
+
 /**
  * O rodapé é o chão do site: numa página clara é o que diz que acabou.
  *
@@ -146,7 +149,18 @@ export function Rodape() {
         </div>
       </div>
 
+      {/* ⚠️ **O Livro de Reclamações é obrigatório e tem de estar à vista**
+          (DL 156/2005, na redação do DL 74/2017): quem vende online põe a
+          ligação ao livro eletrónico no site, de forma visível e destacada.
+          Não se esconde num menu nem só na página da privacidade. */}
       <div className="border-t border-papel/15">
+        <nav aria-label={t("legal")} className="envolvente flex flex-wrap gap-x-6 gap-y-1 pt-4 text-sm">
+          <Link href="/condicoes" className={ligacao}>{t("condicoes")}</Link>
+          <Link href="/privacidade" className={ligacao}>{t("privacidade")}</Link>
+          <a href={URL_LIVRO_RECLAMACOES} target="_blank" rel="noreferrer" className={ligacao}>
+            {t("livroReclamacoes")}
+          </a>
+        </nav>
         <div className="envolvente flex flex-wrap justify-between gap-2 py-5 text-xs text-papel/60">
           <p>© {ano} {marca.nome}. {t("direitos")}</p>
           <p>
