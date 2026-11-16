@@ -1,5 +1,6 @@
 import { and, eq, inArray, like, or, sql } from "drizzle-orm";
 import {
+  categoriaNova,
   colunasDasDefinicoes,
   colunasDosHorarios,
   colunasEditaveis,
@@ -213,6 +214,7 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
         const linhas = produtoParaLinhas(produto, 0);
         try {
           await emLote((d) => [
+            categoriaNova(d, linhas.categoria),
             /* Para o fim do catálogo, contado na própria instrução. */
             d.insert(produtos).values({
               ...linhas.produto,
@@ -245,6 +247,7 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
       const produto = EsquemaProduto.parse({ ...atual, ...lido.data, variantes: comIds(lido.data.variantes) });
       const linhas = produtoParaLinhas(produto, 0);
       await emLote((d) => [
+        categoriaNova(d, linhas.categoria),
         /* ⚠️ Só as colunas que a entrada traz: sem os interruptores do balcão,
            que a gerente não pode desfazer por gravar um preço. */
         d.update(produtos).set(colunasEditaveis(produto)).where(eq(produtos.id, id)),

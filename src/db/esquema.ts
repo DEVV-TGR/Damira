@@ -13,6 +13,7 @@ import {
   smallint,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 /* Relativo e não `@/`: estes são valores, e o `drizzle-kit` carrega este ficheiro
@@ -55,7 +56,63 @@ const umDe = (valores: readonly string[]) => sql.raw(valores.map((v) => `'${v}'`
    por isso: mudar a constante gera uma migração. */
 const formato = (expressao: RegExp) => sql.raw(`'${expressao.source}'`);
 
+/**
+ * Os dois tipos de produto (#124). Aqui e não no contrato: até a fronteira os
+ * expor (Gonçalo), só a base de dados os conhece — e o contrato importa-os
+ * daqui nesse dia, para os dois não se afastarem.
+ */
+export const TIPOS_PRODUTO = ["simples", "composto"] as const;
+export type TipoProduto = (typeof TIPOS_PRODUTO)[number];
+
 // ——— O catálogo ———
+
+/**
+ * As categorias da gerente (#124, decidido a 15/11): **todas** as do catálogo,
+ * kits e boxes incluídos, criadas, renomeadas e ordenadas por ela. Substituem a
+ * `familia`, a `carta` e a `categoria` dos produtos e a ordem gravada na `casa`
+ * — que ficam até a fronteira passar a ler isto (`base-de-dados.md` ›
+ * Categorias).
+ */
+export const categorias = pgTable(
+  "categorias",
+  {
+    /**
+     * Como o dos produtos: vai nas âncoras (`/encomendas#festas`) e nunca muda,
+     * mesmo quando a gerente muda o nome. As que vêm da carta ficam com o
+     * `{carta}-{categoria}` de hoje, que é a âncora que já existe.
+     */
+    id: text("id").primaryKey(),
+    nomePt: text("nome_pt").notNull(),
+    nomeEn: text("nome_en"),
+    /**
+     * A ordem da loja. ⚠️ **Sem `UNIQUE`, de propósito**: reordenar é trocar
+     * posições, e uma regra de unicidade recusava a troca a meio da instrução.
+     * Quem lê desempata pelo `id`.
+     */
+    posicao: integer("posicao").notNull(),
+    /**
+     * Uma categoria que já teve produtos não se apaga — os arquivados continuam
+     * a apontar para ela —, arquiva-se: a do Natal, em janeiro. Uma que nunca
+     * teve nenhum apaga-se.
+     */
+    arquivada: boolean("arquivada").notNull().default(false),
+  },
+  (t) => [
+    check("categorias_id_formato", sql`${t.id} ~ '^[a-z0-9-]+$'`),
+    /* Os mesmos 60 do `EsquemaOrdemCategorias`, e sem nome em branco: um
+       separador sem título na loja é uma secção que ninguém sabe o que é. */
+    check("categorias_nome_pt", sql`btrim(${t.nomePt}) <> '' and char_length(${t.nomePt}) <= 60`),
+    check("categorias_nome_en", sql`btrim(${t.nomeEn}) <> '' and char_length(${t.nomeEn}) <= 60`),
+    check("categorias_posicao", sql`${t.posicao} >= 0`),
+    /* ⚠️ **Duas categorias com o mesmo nome são a armadilha 8 de volta**: duas
+       secções iguais na loja, e a gerente sem saber em qual pôs o produto.
+       Sem distinguir maiúsculas, e só entre as que estão em uso — a do Natal
+       arquivada não impede a do Natal seguinte. */
+    uniqueIndex("categorias_nome_unico")
+      .on(sql`lower(${t.nomePt})`)
+      .where(sql`not ${t.arquivada}`),
+  ],
+);
 
 export const produtos = pgTable(
   "produtos",
@@ -66,6 +123,19 @@ export const produtos = pgTable(
     posicao: integer("posicao").notNull(),
     origem: text("origem").notNull(),
     familia: text("familia").notNull(),
+    /**
+     * A categoria da gerente (#124). Até a fronteira a ler, escreve-se a par da
+     * `familia`, da `carta` e da `categoria`, e sai delas (`categoriaDoProduto`).
+     */
+    categoriaId: text("categoria_id")
+      .notNull()
+      .references(() => categorias.id),
+    /**
+     * `simples` — um artigo, com preço — ou `composto` — um kit, com o que leva
+     * (#124). O que leva continua na `composicao` das variantes, porque muda com
+     * o tamanho: 20 pessoas não levam o mesmo que 70.
+     */
+    tipo: text("tipo").notNull(),
     nomePt: text("nome_pt").notNull(),
     nomeEn: text("nome_en"),
     descricaoPt: text("descricao_pt"),
@@ -122,6 +192,7 @@ export const produtos = pgTable(
       "produtos_ementa_com_carta",
       sql`${t.familia} <> 'ementa' or (${t.carta} is not null and ${t.categoria} is not null)`,
     ),
+    check("produtos_tipo", sql`${t.tipo} in (${umDe(TIPOS_PRODUTO)})`),
     check("produtos_unidade", sql`${t.unidade} in (${umDe(["un", "kg"])})`),
     /* O inglês pode faltar; o português não, se houver descrição. */
     check("produtos_descricao_pt", sql`${t.descricaoEn} is null or ${t.descricaoPt} is not null`),
