@@ -155,6 +155,7 @@ export function Rodape() {
           Não se esconde num menu nem só na página da privacidade. */}
       <div className="border-t border-papel/15">
         <nav aria-label={t("legal")} className="envolvente flex flex-wrap gap-x-6 gap-y-1 pt-4 text-sm">
+          <Link href="/condicoes" className={ligacao}>{t("condicoes")}</Link>
           <Link href="/privacidade" className={ligacao}>{t("privacidade")}</Link>
           <a href={URL_LIVRO_RECLAMACOES} target="_blank" rel="noreferrer" className={ligacao}>
             {t("livroReclamacoes")}

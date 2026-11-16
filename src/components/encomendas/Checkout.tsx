@@ -345,6 +345,24 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
           </p>
         )}
         {erros.geral && <Erro>{erros.geral}</Erro>}
+        {/* ⚠️ **Antes do botão, e não depois.** A lei pede que o cliente saiba
+            as condições e que não há livre resolução **antes** de ficar
+            vinculado (ponto 7 das condições); por baixo do botão lê-se
+            depois de carregar. */}
+        <p className="text-sm text-tinta-suave">
+          {t.rich("avisoLegal", {
+            condicoes: (texto) => (
+              <Link href="/condicoes" target="_blank" className="font-semibold text-tijolo underline underline-offset-4">
+                {texto}
+              </Link>
+            ),
+            privacidade: (texto) => (
+              <Link href="/privacidade" target="_blank" className="font-semibold text-tijolo underline underline-offset-4">
+                {texto}
+              </Link>
+            ),
+          })}
+        </p>
         <button
           type="submit"
           disabled={aPendente || pausa !== null}

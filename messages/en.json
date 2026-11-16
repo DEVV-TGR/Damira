@@ -485,7 +485,8 @@
       "irEncomendas": "See the orders",
       "rever": "Review and order",
       "reverTexto": "You already have items in your order. Choose the collection time and your details in the next step.",
-      "pausa": "The shop is paused until {quando}: the kitchen is full. You can order from then."
+      "pausa": "The shop is paused until {quando}: the kitchen is full. You can order from then.",
+      "avisoLegal": "By sending, you accept the <condicoes>ordering terms</condicoes> and the <privacidade>privacy policy</privacidade> (in Portuguese). As these are fresh or made-to-order products, there is no right of withdrawal; you can cancel free of charge up to 24 hours before, by phone."
     }
   },
   "bolos": {
@@ -518,6 +519,10 @@
     "privacidade": {
       "titulo": "Privacy and cookies",
       "descricao": "How Confeitaria e Pão Quente Damira handles the personal data of people who order on this site, how long it is kept and which cookies are used."
+    },
+    "condicoes": {
+      "titulo": "Ordering terms",
+      "descricao": "How ordering works at Confeitaria e Pão Quente Damira: confirmation, pickup and payment in store, delivery, changes and cancellations."
     }
   },
   "rodape": {
@@ -531,7 +536,8 @@
     "verMapa": "See on the map",
     "legal": "Legal information",
     "privacidade": "Privacy and cookies",
-    "livroReclamacoes": "Complaints Book (Livro de Reclamações)"
+    "livroReclamacoes": "Complaints Book (Livro de Reclamações)",
+    "condicoes": "Ordering terms"
   },
   "naoEncontrada": {
     "titulo": "This one does not exist",
@@ -629,8 +635,8 @@
   "legal": {
     "olho": "Legal information",
     "atualizadaEm": "Last updated: {data}",
-    "apenasPortugues": "This policy is only available in Portuguese, the language in which it was approved. For any question about your data, write to us at the address below — in English, if you prefer.",
+    "apenasPortugues": "This page is only available in Portuguese, the language in which it was approved. If you have any questions, write to us at the address below — in English, if you prefer.",
     "indice": "On this page",
-    "contacto": "Questions about your data:"
+    "contacto": "Any questions? Write to us at"
   }
 }

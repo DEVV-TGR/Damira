@@ -485,7 +485,8 @@
       "irEncomendas": "Ver as encomendas",
       "rever": "Rever e encomendar",
       "reverTexto": "Já tem artigos no pedido. Escolhe a hora de levantamento e os seus dados no passo seguinte.",
-      "pausa": "A loja está em pausa até {quando}: a cozinha está cheia. Pode encomendar a partir dessa hora."
+      "pausa": "A loja está em pausa até {quando}: a cozinha está cheia. Pode encomendar a partir dessa hora.",
+      "avisoLegal": "Ao enviar, aceita as <condicoes>condições de encomenda</condicoes> e a <privacidade>política de privacidade</privacidade>. Por serem produtos frescos ou feitos por medida, não há direito de livre resolução; pode cancelar sem custos até 24 horas antes, pelo telefone."
     }
   },
   "bolos": {
@@ -518,6 +519,10 @@
     "privacidade": {
       "titulo": "Privacidade e cookies",
       "descricao": "Como a Confeitaria e Pão Quente Damira trata os dados pessoais de quem encomenda no site, por quanto tempo os guarda e que cookies usa."
+    },
+    "condicoes": {
+      "titulo": "Condições de encomenda",
+      "descricao": "Como funcionam as encomendas na Confeitaria e Pão Quente Damira: confirmação, levantamento e pagamento na loja, entregas, alterações e cancelamentos."
     }
   },
   "rodape": {
@@ -531,7 +536,8 @@
     "verMapa": "Ver no mapa",
     "legal": "Informação legal",
     "privacidade": "Privacidade e cookies",
-    "livroReclamacoes": "Livro de Reclamações"
+    "livroReclamacoes": "Livro de Reclamações",
+    "condicoes": "Condições de encomenda"
   },
   "naoEncontrada": {
     "titulo": "Esta não existe",
@@ -631,6 +637,6 @@
     "atualizadaEm": "Última atualização: {data}",
     "apenasPortugues": "",
     "indice": "Nesta página",
-    "contacto": "Dúvidas sobre os seus dados:"
+    "contacto": "Alguma dúvida? Escreva-nos para"
   }
 }

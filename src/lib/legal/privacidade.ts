@@ -12,26 +12,9 @@
  * ⚠️ **Os prazos da secção 6 são promessas que o código tem de cumprir**: a
  * tarefa diária que apaga as fotografias e as observações aos 30 dias e anonimiza
  * os pedidos aos 12 meses. Se ela não existir, a política está errada.
- *
- * ## Porque é um ficheiro de dados e não JSX
- *
- * A advogada e a casa vão pedir mudanças de uma palavra. Num ficheiro só de
- * texto, cada mudança é uma linha de diff que se lê sem saber React.
- *
- * Só em português: é o texto que a advogada aprova, e uma tradução nossa seria
- * um segundo texto legal que ninguém aprovou. A `/en` diz isso por cima.
  */
 
-export type Bloco = string | { lista: string[] };
-
-export type Seccao = {
-  id: string;
-  titulo: string;
-  /** Escrita por nós (as partes «PROGRAMADORES» da casa), não pela casa. */
-  nossa?: boolean;
-  blocos: Bloco[];
-  subseccoes?: { titulo: string; nossa?: boolean; blocos: Bloco[] }[];
-};
+import type { Seccao } from "./tipos";
 
 /** A data que a secção 13 promete mostrar. Muda-se com cada alteração ao texto. */
 export const ATUALIZADA_EM = "2026-11-16";
