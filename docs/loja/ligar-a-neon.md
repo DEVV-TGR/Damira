@@ -140,9 +140,9 @@ nosso processo. Estas ficam por provar até haver a conta:
 - [ ] **O tempo de uma página** com o site na Vercel a ler da Neon.
 - [ ] **A base de dados adormece** ao fim de 5 minutos sem consultas, com o
       painel aberto: o polling não a pode acordar (regra 6 do `AGENTS.md`).
-- [ ] **Restauro**, antes do lançamento: repor um ponto do passado num ramo,
-      confirmar que os dados lá estão, e escrever os passos em `restauro.md`
-      (`robustez.md` › Backups).
+- [x] **Restauro** (16/11): repor um ponto do passado num ramo, confirmar que
+      os dados lá estão, e escrever os passos em `restauro.md`. ⚠️ Falta
+      repeti-lo com pedidos lá dentro, no dia de teste na loja (#54).
 
 ## 7. O que tem de estar ligado a 14/10
 

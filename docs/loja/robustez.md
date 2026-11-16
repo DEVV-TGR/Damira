@@ -195,7 +195,8 @@ em nome da Damira.
 ⚠️ **Um backup que nunca foi reposto não é um backup.** Antes do lançamento,
 restaura-se a base de dados para um ponto no passado num ramo da Neon, confirma-se
 que os pedidos estão lá, e escrevem-se os passos em `docs/loja/restauro.md`.
-Quem estiver de serviço num sábado segue esse papel, não a memória.
+Quem estiver de serviço num sábado segue esse papel, não a memória. Ensaiado a
+16/11/2026 com o catálogo; repete-se com pedidos no dia de teste na loja (#54).
 
 As fotos (Vercel Blob) não têm histórico: uma foto trocada desaparece. É
 aceitável — a casa tem as originais.
