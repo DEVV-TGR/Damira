@@ -10,7 +10,8 @@ import {
   type BaseDeDados,
   type DadosDaCasa,
 } from "./catalogo";
-import { casa, produtos, variantes } from "./esquema";
+import { categoriasDoCatalogo } from "./categorias";
+import { casa, categorias, produtos, variantes } from "./esquema";
 
 /**
  * # A migração do catálogo, JSON → base de dados (#28)
@@ -77,6 +78,8 @@ export async function importarCatalogo(db: BaseDeDados, origem: OrigemDoCatalogo
       );
     }
 
+    /* As categorias antes dos produtos, que apontam para elas. */
+    await tx.insert(categorias).values(categoriasDoCatalogo(catalogo, origem.casa.ordem));
     await tx.insert(produtos).values(linhas.map((l) => l.produto));
     await tx.insert(variantes).values(linhas.flatMap((l) => l.variantes));
     await tx.insert(casa).values(casaParaLinha(origem.casa));
