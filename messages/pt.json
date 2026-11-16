@@ -514,6 +514,10 @@
     "encomendas": {
       "titulo": "Encomendas e festas",
       "descricao": "Kits de festa para 20, 40 ou 70 pessoas, bolos decorados por medida e boxes para dias especiais, na Confeitaria e Pão Quente Damira, em Ermesinde."
+    },
+    "privacidade": {
+      "titulo": "Privacidade e cookies",
+      "descricao": "Como a Confeitaria e Pão Quente Damira trata os dados pessoais de quem encomenda no site, por quanto tempo os guarda e que cookies usa."
     }
   },
   "rodape": {
@@ -524,7 +528,10 @@
     "direitos": "Todos os direitos reservados.",
     "paginas": "Páginas",
     "horario": "Horário",
-    "verMapa": "Ver no mapa"
+    "verMapa": "Ver no mapa",
+    "legal": "Informação legal",
+    "privacidade": "Privacidade e cookies",
+    "livroReclamacoes": "Livro de Reclamações"
   },
   "naoEncontrada": {
     "titulo": "Esta não existe",
@@ -618,5 +625,12 @@
   "modoTeste": {
     "etiqueta": "Modo de teste",
     "aviso": "Não se cobra nada, e os prazos e as vagas ocupadas são de exemplo."
+  },
+  "legal": {
+    "olho": "Informação legal",
+    "atualizadaEm": "Última atualização: {data}",
+    "apenasPortugues": "",
+    "indice": "Nesta página",
+    "contacto": "Dúvidas sobre os seus dados:"
   }
 }

@@ -514,6 +514,10 @@
     "encomendas": {
       "titulo": "Orders & parties",
       "descricao": "Party kits for 20, 40, or 70 people, custom decorated cakes, and boxes for special days, at Confeitaria e Pão Quente Damira in Ermesinde."
+    },
+    "privacidade": {
+      "titulo": "Privacy and cookies",
+      "descricao": "How Confeitaria e Pão Quente Damira handles the personal data of people who order on this site, how long it is kept and which cookies are used."
     }
   },
   "rodape": {
@@ -524,7 +528,10 @@
     "direitos": "All rights reserved.",
     "paginas": "Pages",
     "horario": "Opening hours",
-    "verMapa": "See on the map"
+    "verMapa": "See on the map",
+    "legal": "Legal information",
+    "privacidade": "Privacy and cookies",
+    "livroReclamacoes": "Complaints Book (Livro de Reclamações)"
   },
   "naoEncontrada": {
     "titulo": "This one does not exist",
@@ -618,5 +625,12 @@
   "modoTeste": {
     "etiqueta": "Test mode",
     "aviso": "Nothing is charged, and the pick-up times and booked slots are examples."
+  },
+  "legal": {
+    "olho": "Legal information",
+    "atualizadaEm": "Last updated: {data}",
+    "apenasPortugues": "This policy is only available in Portuguese, the language in which it was approved. For any question about your data, write to us at the address below — in English, if you prefer.",
+    "indice": "On this page",
+    "contacto": "Questions about your data:"
   }
 }
