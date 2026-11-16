@@ -140,6 +140,27 @@ O esquema muda antes do código, e o site não pode parar a meio:
    `aparece_na_ementa` e a `ordem_ementa.categorias`, e sai o
    `src/db/categorias.ts`. Só depois de nada as ler.
 
+#### A ordem do deploy — a base de dados antes do código
+
+⚠️ **O `next build` lê os produtos da base de dados** (as páginas estáticas), e
+desde a `0008` pede o `categoria_id` e o `tipo`. Um build contra uma base sem a
+`0008` falha com `column "categoria_id" does not exist`. Foi o que aconteceu ao
+preview do #134: a Preview aponta para o `desenvolvimento` (`ligar-a-neon.md`),
+que não estava migrado.
+
+- **Preview:** migrar o `desenvolvimento` (`npm run bd:migrar`) e refazer o
+  deploy. Os previews de outros PRs, feitos a partir do `main`, passam a correr
+  sobre um esquema mais novo do que o código deles: ler continua a funcionar,
+  criar um produto ou um pedido pode falhar. É o ramo de desenvolvimento.
+- **Produção:** integrar → `npm run bd:migrar` no `production` → refazer o
+  deploy. Se o deploy correr antes da migração, o build falha e o site no ar
+  fica como estava: não parte nada, refaz-se depois.
+- **Entre migrar e o deploy novo ficar no ar** (uns minutos), o código antigo
+  corre sobre o esquema novo: ler e editar produtos funcionam, mas **criar um
+  produto no painel falha**, porque a coluna é obrigatória e o código antigo
+  não a escreve. Não se cria nenhum produto durante a passagem — não vale a
+  pena um `DEFAULT` inventado para tapar esses minutos.
+
 ### `produtos`
 
 | Coluna | Tipo | Do contrato |
