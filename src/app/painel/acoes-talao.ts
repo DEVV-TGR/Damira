@@ -8,7 +8,6 @@ import {
   envelopeSoap,
   ipDaRedeLocal,
   lerResposta,
-  type ModoCarateres,
   type RespostaImpressora,
 } from "@/lib/talao-epos";
 import { linhasDeTeste, TESTES, type Teste } from "@/lib/talao-exemplo";
@@ -38,24 +37,29 @@ export async function imprimirPeloPortatil(
   ip: string,
   teste: Teste,
   fundo: Fundo,
-  modo: ModoCarateres,
 ): Promise<ResultadoImpressaoTeste> {
   const ctx = await contextoDoPainel();
   if (!ctx) return { ok: false, codigo: "sem-permissao", estado: null };
   if (process.env.VERCEL) return { ok: false, codigo: "na-vercel", estado: null };
   if (!ipDaRedeLocal(ip)) return { ok: false, codigo: "ip-invalido", estado: null };
-  if (!TESTES.includes(teste) || !["bloco", "inteiro"].includes(fundo) || !["texto", "cp858"].includes(modo)) {
+  if (!TESTES.includes(teste) || !["bloco", "inteiro"].includes(fundo)) {
     return { ok: false, codigo: "dados-invalidos", estado: null };
   }
 
-  const xml = emEposPrint(linhasDeTeste(teste, fundo, ctx.agora), modo);
+  const xml = emEposPrint(linhasDeTeste(teste, fundo, ctx.agora));
   try {
-    const resposta = await fetch(enderecoDoServico(ip.trim()), {
+    /* O portátil fala com a impressora em http: está na mesma rede, e assim
+       não depende do certificado dela. */
+    const resposta = await fetch(enderecoDoServico(ip.trim(), "http"), {
       method: "POST",
       headers: { "Content-Type": "text/xml; charset=utf-8", SOAPAction: '""' },
       body: envelopeSoap(xml),
       signal: AbortSignal.timeout(15_000),
       cache: "no-store",
+      /* ⚠️ Sem seguir redirecionamentos: o `ipDaRedeLocal` só valida o endereço
+         de partida, e um redirecionamento levava o pedido para onde a resposta
+         dissesse — fora da rede local. */
+      redirect: "error",
     });
     return lerResposta(await resposta.text());
   } catch (erro) {

@@ -9,15 +9,17 @@ import { type Fundo, type Linha, talaoDeCancelamento, talaoDeCarateres, talaoDoP
  * # Os pedidos do teste de impressão
  *
  * Para a página `/painel/talao`, que leva o talão à impressora verdadeira antes
- * de haver pagamentos. Inventados de propósito e com ar de inventados — o
- * repositório é público, e nada aqui pode ser um cliente a sério.
+ * de os pedidos do site chegarem ao balcão. Inventados de propósito e com ar
+ * de inventados — o repositório é público, e nada aqui pode ser um cliente a
+ * sério.
  *
  * Escolhidos para pôr à prova o que pode correr mal no papel: o bloco
  * invertido do «HOJE», um nome de artigo que não cabe numa linha, uma nota,
- * observações compridas, os acentos, o «€», e o sinal com dinheiro em falta.
+ * observações compridas, os acentos, o «€» e o NIF. São pedidos como os de
+ * agora: `confirmado`, a pagar na loja (`pedidos.md`).
  */
 
-export type Exemplo = "hoje" | "amanha-com-sinal";
+export type Exemplo = "hoje" | "amanha";
 
 /** As 14:30 de Lisboa, `dias` depois de hoje — o «HOJE · QUINTA 14:30» da mensagem do Gonçalo. */
 function asDuasEMeia(agora: Date, dias: number): Date {
@@ -27,7 +29,7 @@ function asDuasEMeia(agora: Date, dias: number): Date {
 
 export function pedidoDeExemplo(agora: Date, exemplo: Exemplo): Pedido {
   const [, mes, dia] = diaDeLisboa(agora).split("-");
-  const comSinal = exemplo === "amanha-com-sinal";
+  const amanha = exemplo === "amanha";
   const linhas: Pedido["linhas"] = [
     {
       produtoId: "premium",
@@ -66,30 +68,36 @@ export function pedidoDeExemplo(agora: Date, exemplo: Exemplo): Pedido {
       notas: null,
     },
   ];
-  const totalCent = linhas.reduce((soma, l) => soma + l.totalCent, 0);
+  /* Os exemplos têm todos preço; o `?? 0` só cala o tipo, que admite linhas
+     sem preço nos pedidos por confirmar. */
+  const totalCent = linhas.reduce((soma, l) => soma + (l.totalCent ?? 0), 0);
   return {
     id: `exemplo-${exemplo}`,
     referencia: `DAM-${dia}${mes}-T3ST`,
-    estado: "pago",
+    estado: "confirmado",
     criadoEm: agora,
-    levantamentoEm: asDuasEMeia(agora, comSinal ? 1 : 0),
+    levantamentoEm: asDuasEMeia(agora, amanha ? 1 : 0),
     cliente: {
       nome: "Cliente de Teste",
       email: "teste@exemplo.pt",
       telefone: "+351900000000",
-      nif: comSinal ? "999999990" : null,
+      nif: amanha ? "999999990" : null,
       contaId: null,
     },
     linhas,
     observacoes: "Vem buscar a avó, que não sobe escadas — levar à porta, por favor. Pão de Ló sem açúcar à parte.",
     totalCent,
-    modoPagamento: comSinal ? "sinal" : "total",
-    pagoOnlineCent: comSinal ? totalCent - 1_250 : totalCent,
+    modoPagamento: "na-loja",
+    pagoOnlineCent: 0,
     reembolsadoCent: 0,
     reembolsos: [],
     avisosTratados: [],
     chegouTarde: false,
-    pagoEm: agora,
+    pagoEm: null,
+    confirmadoEm: agora,
+    expiraEm: null,
+    aceiteEm: null,
+    causaExpiracao: null,
     impressoEm: null,
     entregueEm: null,
     canceladoEm: null,
@@ -99,7 +107,7 @@ export function pedidoDeExemplo(agora: Date, exemplo: Exemplo): Pedido {
 }
 
 /** O que a página de teste imprime: os dois pedidos, o cancelamento e a folha dos carateres. */
-export const TESTES = ["hoje", "amanha-com-sinal", "cancelamento", "carateres"] as const;
+export const TESTES = ["hoje", "amanha", "cancelamento", "carateres"] as const;
 export type Teste = (typeof TESTES)[number];
 
 export function linhasDeTeste(teste: Teste, fundo: Fundo, agora: Date): Linha[] {

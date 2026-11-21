@@ -9,7 +9,6 @@ import {
   enderecoDoServico,
   envelopeSoap,
   lerResposta,
-  type ModoCarateres,
   type RespostaImpressora,
 } from "@/lib/talao-epos";
 import { linhasDeTeste, type Teste } from "@/lib/talao-exemplo";
@@ -18,15 +17,16 @@ import { BOTAO_PRINCIPAL, BOTAO_SECUNDARIO } from "./balcao/comum";
 /**
  * # O teste da impressora, na visita à loja
  *
- * Duas formas de mandar o mesmo talão, porque ainda não se sabe qual vai ser
- * a da loja (`impressao.md`):
+ * Duas formas de mandar o mesmo talão (`impressao.md`):
  *
  * - **pelo browser**: este aparelho fala direto com o IP da impressora. É
- *   como o tablet imprime se a loja tiver a TM-m30II base. Precisa de a página
- *   estar em `http://` — numa página `https://` o browser bloqueia o pedido.
- * - **pelo portátil**: o servidor do portátil manda-o (`acoes-talao.ts`). Não
- *   depende do browser, e serve para o teste do fundo preto se o primeiro
- *   falhar.
+ *   como o tablet imprime com a TM-m30II base, que é a da loja. Fala no
+ *   protocolo da página: no site no ar, em https, o que pede a impressora com
+ *   o https ligado, o certificado dela aceite no tablet e a autorização de
+ *   rede local no Chrome. **É o ensaio do caminho a sério.**
+ * - **pelo portátil**: o servidor do portátil manda-o (`acoes-talao.ts`), em
+ *   http. Só funciona com o site a correr no portátil, na rede da loja; serve
+ *   para ver o talão no papel sem depender do browser.
  *
  * O registo do fundo guarda cada tentativa, para se escrever no `impressao.md`
  * o que resultou e o que não.
@@ -36,13 +36,12 @@ const CHAVE_IP = "damira-talao-ip";
 
 const NOMES_TESTE: Record<Teste, string> = {
   hoje: "Pedido para hoje",
-  "amanha-com-sinal": "Amanhã, com sinal",
+  amanha: "Amanhã, com NIF",
   cancelamento: "Cancelamento",
   carateres: "Acentos e €",
 };
 
 const NOMES_FUNDO: Record<Fundo, string> = { bloco: "Só o bloco «HOJE»", inteiro: "Talão inteiro a preto" };
-const NOMES_MODO: Record<ModoCarateres, string> = { texto: "Texto (normal)", cp858: "Bytes PC858" };
 
 /** O que cada código quer dizer, em português de balcão. */
 const ERROS: Record<string, string> = {
@@ -58,14 +57,13 @@ const ERROS: Record<string, string> = {
   "sem-ligacao":
     "Não chegou à impressora. Confirmar o IP, que o portátil está no WiFi da loja, e que a impressora está ligada.",
   "sem-ligacao-browser":
-    "Não chegou à impressora. Confirmar o IP, que este aparelho está no WiFi da loja, que a página está em http:// e que o ePOS-Print está ligado na configuração da impressora. Se estiver tudo certo, a impressora pode estar a recusar pedidos do browser: experimentar «pelo portátil».",
+    "Não chegou à impressora. Confirmar o IP, que este aparelho está no WiFi da loja e que o ePOS-Print está ligado na configuração da impressora. Se a página estiver em https://: o https ligado na impressora, o certificado dela aceite neste browser (abrir o link da configuração e aceitar o aviso) e a autorização de rede local dada ao Chrome.",
 };
 
 type Tentativa = {
   hora: string;
   teste: Teste;
   fundo: Fundo;
-  modo: ModoCarateres;
   caminho: "browser" | "portátil";
   resultado: string;
   ok: boolean;
@@ -79,7 +77,6 @@ export function TesteTalao({ agoraIso }: { agoraIso: string }) {
   const [ip, setIp] = useState("");
   const [teste, setTeste] = useState<Teste>("hoje");
   const [fundo, setFundo] = useState<Fundo>("bloco");
-  const [modo, setModo] = useState<ModoCarateres>("texto");
   const [registo, setRegisto] = useState<Tentativa[]>([]);
   const [emHttps, setEmHttps] = useState(false);
   const [aEnviar, iniciar] = useTransition();
@@ -108,18 +105,19 @@ export function TesteTalao({ agoraIso }: { agoraIso: string }) {
   };
 
   const linhas = useMemo(() => linhasDeTeste(teste, fundo, agora), [teste, fundo, agora]);
-  const xml = useMemo(() => emEposPrint(linhas, modo), [linhas, modo]);
+  const xml = useMemo(() => emEposPrint(linhas), [linhas]);
+  const protocolo = emHttps ? "https" : "http";
 
   const anotar = (caminho: Tentativa["caminho"], resultado: string, ok: boolean) =>
-    setRegisto((r) => [{ hora: horaDeLisboa(new Date()), teste, fundo, modo, caminho, resultado, ok }, ...r]);
+    setRegisto((r) => [{ hora: horaDeLisboa(new Date()), teste, fundo, caminho, resultado, ok }, ...r]);
 
   const pelasDuasVias = {
     browser: () =>
       iniciar(async () => {
         /* O talão monta-se outra vez com a hora de agora: é o «Impresso às» que sai no papel. */
-        const documento = envelopeSoap(emEposPrint(linhasDeTeste(teste, fundo, new Date()), modo));
+        const documento = envelopeSoap(emEposPrint(linhasDeTeste(teste, fundo, new Date())));
         try {
-          const resposta = await fetch(enderecoDoServico(ip.trim()), {
+          const resposta = await fetch(enderecoDoServico(ip.trim(), protocolo), {
             method: "POST",
             /* Os mesmos cabeçalhos que o `epos-print.js` da Epson manda. */
             headers: {
@@ -129,6 +127,7 @@ export function TesteTalao({ agoraIso }: { agoraIso: string }) {
             },
             body: documento,
             signal: AbortSignal.timeout(15_000),
+            redirect: "error",
           });
           const lida = lerResposta(await resposta.text());
           anotar("browser", descrever(lida), lida.ok);
@@ -138,7 +137,7 @@ export function TesteTalao({ agoraIso }: { agoraIso: string }) {
       }),
     portatil: () =>
       iniciar(async () => {
-        const lida = await imprimirPeloPortatil(ip, teste, fundo, modo);
+        const lida = await imprimirPeloPortatil(ip, teste, fundo);
         anotar("portátil", descrever(lida), lida.ok);
       }),
   };
@@ -153,10 +152,18 @@ export function TesteTalao({ agoraIso }: { agoraIso: string }) {
       </p>
 
       {emHttps && (
-        <p className="mt-6 rounded-lg border border-tijolo/40 bg-tijolo/10 p-4 text-sm">
-          ⚠ Esta página está em <strong>https://</strong>, e o browser não deixa uma página segura falar com a
-          impressora em http://. Abrir a página a partir do portátil, em http:// (ver <code>impressao.md</code>).
-        </p>
+        <div className="mt-6 rounded-lg border border-tijolo/40 bg-tijolo/10 p-4 text-sm">
+          <p>
+            Esta página está em <strong>https://</strong>: «pelo browser» fala com a impressora em https, como o tablet
+            vai fazer na loja. Antes do primeiro talão, neste aparelho:
+          </p>
+          <ol className="mt-2 list-decimal pl-5">
+            <li>o https ligado na configuração da impressora;</li>
+            <li>abrir a configuração pelo link abaixo e aceitar o aviso do certificado;</li>
+            <li>autorizar o Chrome a aceder à rede local, quando o pedir.</li>
+          </ol>
+          <p className="mt-2">«Pelo portátil» só funciona com o site a correr no portátil (ver <code>impressao.md</code>).</p>
+        </div>
       )}
 
       <section className="mt-8 grid gap-6">
@@ -172,7 +179,7 @@ export function TesteTalao({ agoraIso }: { agoraIso: string }) {
           <span className="text-sm text-tinta-suave">
             Sai na folha de estado da impressora (segurar o botão FEED ao ligá-la).{" "}
             {ip.trim() && (
-              <a href={`http://${ip.trim()}/`} target="_blank" rel="noreferrer" className="underline">
+              <a href={`${protocolo}://${ip.trim()}/`} target="_blank" rel="noreferrer" className="underline">
                 Abrir a configuração da impressora
               </a>
             )}
@@ -181,7 +188,6 @@ export function TesteTalao({ agoraIso }: { agoraIso: string }) {
 
         <Escolha titulo="Talão" opcoes={NOMES_TESTE} valor={teste} mudar={setTeste} />
         <Escolha titulo="Fundo" opcoes={NOMES_FUNDO} valor={fundo} mudar={setFundo} />
-        <Escolha titulo="Carateres" opcoes={NOMES_MODO} valor={modo} mudar={setModo} />
 
         <div className="flex flex-wrap gap-3">
           <button type="button" className={BOTAO_PRINCIPAL} disabled={!ip.trim() || aEnviar} onClick={pelasDuasVias.browser}>
@@ -200,7 +206,7 @@ export function TesteTalao({ agoraIso }: { agoraIso: string }) {
           <ul className="mt-2 grid gap-2 text-sm">
             {registo.map((t, i) => (
               <li key={i} className={t.ok ? "text-tinta" : "text-tijolo"}>
-                {t.hora} · {NOMES_TESTE[t.teste]} · {NOMES_FUNDO[t.fundo]} · {NOMES_MODO[t.modo]} · pelo {t.caminho} —{" "}
+                {t.hora} · {NOMES_TESTE[t.teste]} · {NOMES_FUNDO[t.fundo]} · pelo {t.caminho} —{" "}
                 {t.resultado}
               </li>
             ))}
@@ -210,7 +216,7 @@ export function TesteTalao({ agoraIso }: { agoraIso: string }) {
 
       <section className="mt-10">
         <h2 className="font-semibold">Como deve sair</h2>
-        <p className="mt-1 text-sm text-tinta-suave">Aproximado: 48 colunas, como o papel de 80 mm.</p>
+        <p className="mt-1 text-sm text-tinta-suave">Aproximado: 46 colunas, o papel de 80 mm menos a margem.</p>
         <PreVisualizacao linhas={linhas} />
       </section>
 

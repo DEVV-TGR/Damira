@@ -19,10 +19,13 @@ import { formatarCent } from "@/lib/preco";
  */
 
 /**
- * Colunas de uma TM-m30 em papel de 80 mm, na letra normal (Font A). Com
+ * Colunas de uma TM-m30 em papel de 80 mm, na letra normal (Font A), **já
+ * descontada a margem**. A impressora imprime 576 pontos de largura (48
+ * colunas de 12); na visita, o talão a preto saía colado às bordas do papel, e
+ * o `talao-epos.ts` tira 12 pontos (1,5 mm) a cada lado. Ficam 46. Com
  * `grande` a letra tem o dobro da largura, e cabe metade.
  */
-export const COLUNAS = 48;
+export const COLUNAS = 46;
 
 export type Linha = {
   texto: string;
@@ -152,7 +155,10 @@ function cabecalho(c: Composicao, subtitulo: string) {
 function artigos(c: Composicao, pedido: Pedido, comPrecos: boolean) {
   for (const linha of pedido.linhas) {
     const nome = `${quantidade(linha)} ${linha.nome}${linha.variante ? ` (${linha.variante})` : ""}`;
-    const preco = formatarCent(linha.totalCent, "pt");
+    /* Uma linha sem preço só existe num pedido que a casa ainda não confirmou,
+       e esse não imprime (`pedidos.md`). Se chegar aqui, o talão diz que falta
+       o preço, em vez de escrever «0,00 €» à frente da cozinha. */
+    const preco = linha.totalCent === null ? "a definir" : formatarCent(linha.totalCent, "pt");
     for (const texto of comPrecos ? emColunas(nome, normalizar(preco), COLUNAS) : partir(nome, COLUNAS)) {
       c.linhaPronta(texto, { negrito: true });
     }
@@ -162,9 +168,24 @@ function artigos(c: Composicao, pedido: Pedido, comPrecos: boolean) {
 }
 
 /**
- * O talão de um pedido pago. Leva o que `impressao.md` › Decidido diz, por
- * esta ordem: primeiro o que a cozinha procura de relance (quando e qual), e
- * por fim o dinheiro.
+ * O que o cliente ainda tem de pagar, nas linhas grandes do fim do talão.
+ *
+ * Desde 04/11 paga-se na loja: o talão de um levantamento diz
+ * `A PAGAR NA LOJA` e o valor (`pedidos.md` › Dinheiro), e **nunca** `PAGO`,
+ * que era o pagamento online e mandava o balcão entregar sem cobrar. O `total`
+ * e o `sinal` são do Stripe, que está a dormir: ficam com o rótulo de antes
+ * para o dia em que voltar.
+ */
+function linhasDoPagamento(pedido: Pedido): string[] {
+  if (pedido.modoPagamento !== "na-loja") return partir(rotuloPagamento(pedido), COLUNAS / 2);
+  return ["A PAGAR NA LOJA", normalizar(formatarCent(pedido.totalCent - pedido.pagoOnlineCent, "pt"))];
+}
+
+/**
+ * O talão de um pedido confirmado — é a ordem para a cozinha (`pedidos.md` ›
+ * Estados). Leva o que `impressao.md` › Decidido diz, por esta ordem:
+ * primeiro o que a cozinha procura de relance (quando e qual), e por fim o
+ * dinheiro.
  */
 export function talaoDoPedido(pedido: Pedido, { agora, fundo }: OpcoesTalao): Linha[] {
   const c = new Composicao(fundo === "inteiro");
@@ -208,7 +229,7 @@ export function talaoDoPedido(pedido: Pedido, { agora, fundo }: OpcoesTalao): Li
     c.linhaPronta(texto, { negrito: true });
   }
   c.vazia();
-  c.escrever(rotuloPagamento(pedido), { grande: true, negrito: true, centro: true });
+  for (const texto of linhasDoPagamento(pedido)) c.linhaPronta(texto, { grande: true, negrito: true, centro: true });
   c.vazia();
   c.linhaPronta("Documento sem valor fiscal", { centro: true });
   c.linhaPronta(`Impresso ${DATA_CURTA.format(agora)} ${horaDeLisboa(agora)}`, { centro: true });
@@ -236,8 +257,9 @@ export function talaoDeCancelamento(pedido: Pedido, { agora, fundo }: OpcoesTala
 
 /**
  * Só para o teste na loja: todos os carateres que o talão usa, para se ver
- * quais a impressora não tem. Se algum sair como «?», o talão vai pelo outro
- * modo de carateres (`talao-epos.ts`).
+ * quais a impressora não tem. Na visita de 15/11 não saiu nenhum «?», e por
+ * isso o `talao-epos.ts` ficou só com o modo de texto. Fica para confirmar se
+ * um dia a impressora mudar.
  */
 export function talaoDeCarateres(): Linha[] {
   const c = new Composicao(false);

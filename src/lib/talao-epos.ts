@@ -4,24 +4,15 @@ import type { Linha } from "@/lib/talao";
  * # O talão em ePOS-Print XML
  *
  * A língua que as Epson TM falam pela rede. É a mesma pelos dois caminhos que
- * o modelo da loja vai decidir (`impressao.md`): mandada do tablet para o IP da
+ * a casa ainda vai escolher (`impressao.md`): mandada do tablet para o IP da
  * impressora, ou devolvida pelo servidor quando a impressora a vem buscar
  * (Server Direct Print). Só muda quem a entrega.
  *
- * Há **dois modos de carateres**, porque não se sabe ainda qual funciona na
- * impressora da loja, e o português não perdoa: um «Ã» trocado por «?» num
- * talão de «LEITÃO» é o que a cozinha vai ler.
- *
- * - `texto`: o texto vai como texto, e é a impressora que o converte para a
- *   sua tabela de carateres. É o modo normal do ePOS-Print, e o mais simples.
- * - `cp858`: o texto vai já convertido em bytes da tabela PC858 (o PC850 com o
- *   «€»), escolhida com `ESC t 19`, dentro de um `<command>`. Não depende da
- *   conversão da impressora — se o modo `texto` trocar acentos, este não troca.
- *
- * O teste na loja escolhe um; o outro sai.
+ * **O texto vai como texto**, e é a impressora que o converte para a sua
+ * tabela de carateres. Havia um segundo modo, com os bytes já convertidos para
+ * a PC858, para o caso de a impressora trocar acentos; na visita de 15/11 os
+ * dois imprimiram certo os acentos e o «€», e ficou o mais simples.
  */
-
-export type ModoCarateres = "texto" | "cp858";
 
 const NS_EPOS = "http://www.epson-pos.com/schemas/2011/03/epos-print";
 
@@ -32,50 +23,34 @@ const NS_EPOS = "http://www.epson-pos.com/schemas/2011/03/epos-print";
  */
 const ESPACAMENTO_COLADO = 24;
 
+/** A largura que a TM-m30 imprime em papel de 80 mm, em pontos (8 por mm). */
+const LARGURA_DO_PAPEL = 576;
+
+/**
+ * A margem de cada lado, em pontos: 12 = 1,5 mm, a largura de um carater.
+ * Na visita, o talão a preto chegava às bordas do papel; o Gonçalo pediu uma
+ * margem de 1 a 2 mm. É por isto que o `talao.ts` compõe 46 colunas e não 48.
+ */
+export const MARGEM_PONTOS = 12;
+
 const escaparXml = (texto: string): string =>
   texto.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-/** Os bytes 0x80–0xFF da tabela PC858, por ordem. Gerada a partir do codec `cp858` do Python. */
-const PC858_ALTA =
-  "ÇüéâäàåçêëèïîìÄÅ" +
-  "ÉæÆôöòûùÿÖÜø£Ø×ƒ" +
-  "áíóúñÑªº¿®¬½¼¡«»" +
-  "░▒▓│┤ÁÂÀ©╣║╗╝¢¥┐" +
-  "└┴┬├─┼ãÃ╚╔╩╦╠═╬¤" +
-  "ðÐÊËÈ€ÍÎÏ┘┌█▄¦Ì▀" +
-  "ÓßÔÒõÕµþÞÚÛÙýÝ¯´" +
-  "­±‗¾¶§÷¸°¨·¹³²■ ";
-
-const BYTE_PC858 = new Map([...PC858_ALTA].map((c, i) => [c, 0x80 + i]));
-
-/** Um texto em bytes PC858. O que a tabela não tem sai como «?», que é o que a impressora faria. */
-export function emPc858(texto: string): number[] {
-  return [...texto].map((c) => {
-    const codigo = c.codePointAt(0)!;
-    if (codigo >= 0x20 && codigo < 0x7f) return codigo;
-    return BYTE_PC858.get(c) ?? 0x3f;
-  });
-}
-
 const hex = (bytes: number[]): string => bytes.map((b) => b.toString(16).padStart(2, "0")).join("");
 
-const ESC = 0x1b;
 const GS = 0x1d;
+const doisBytes = (n: number) => [n & 0xff, n >> 8];
 
-/** As linhas em ESC/POS: tamanho (`GS !`), negrito (`ESC E`) e invertido (`GS B`) a cada linha. */
-function emEscPos(linhas: Linha[], colado: boolean): number[] {
-  const bytes = [ESC, 0x74, 19]; // ESC t 19: tabela PC858
-  if (colado) bytes.push(ESC, 0x33, ESPACAMENTO_COLADO);
-  for (const linha of linhas) {
-    bytes.push(GS, 0x21, linha.grande ? 0x11 : 0x00);
-    bytes.push(ESC, 0x45, linha.negrito ? 1 : 0);
-    bytes.push(GS, 0x42, linha.invertido ? 1 : 0);
-    bytes.push(...emPc858(linha.texto), 0x0a);
-  }
-  bytes.push(GS, 0x21, 0, ESC, 0x45, 0, GS, 0x42, 0);
-  if (colado) bytes.push(ESC, 0x32); // ESC 2: o espaçamento de origem
-  return bytes;
-}
+/**
+ * A margem esquerda (`GS L`) e a largura da área de impressão (`GS W`), em
+ * ESC/POS cru: o ePOS-Print XML não tem elemento para elas.
+ *
+ * ⚠️ **No fim do talão volta-se ao de origem.** A impressora guarda a margem
+ * até se desligar, e a mesma impressora pode imprimir outras coisas (o
+ * computador da loja): sem o reinício, tudo o que viesse a seguir saía mais
+ * estreito.
+ */
+const margens = (margem: number) => `<command>${hex([GS, 0x4c, ...doisBytes(margem), GS, 0x57, ...doisBytes(LARGURA_DO_PAPEL - 2 * margem)])}</command>`;
 
 function emElementosTexto(linhas: Linha[], colado: boolean): string {
   const partes = [`<text lang="en" smooth="true"/>`];
@@ -88,30 +63,47 @@ function emElementosTexto(linhas: Linha[], colado: boolean): string {
     );
   }
   partes.push(`<text dw="false" dh="false"/>`, `<text reverse="false" ul="false" em="false" color="color_1"/>`);
+  if (colado) partes.push(`<text linespc="30"/>`);
   return partes.join("");
 }
 
-/** O documento `<epos-print>`: o talão, três linhas de margem e o corte. */
-export function emEposPrint(linhas: Linha[], modo: ModoCarateres): string {
+/** O documento `<epos-print>`: a margem, o talão, três linhas de folga, o corte, e a margem de origem. */
+export function emEposPrint(linhas: Linha[]): string {
   /* Só vale a pena colar as linhas quando há fundo preto seguido; num talão
      normal o espaçamento de origem lê-se melhor. */
   const colado = linhas.filter((l) => l.invertido).length > 1;
-  const corpo =
-    modo === "cp858" ? `<command>${hex(emEscPos(linhas, colado))}</command>` : emElementosTexto(linhas, colado);
-  return `<epos-print xmlns="${NS_EPOS}">${corpo}<feed line="3"/><cut type="feed"/></epos-print>`;
+  return (
+    `<epos-print xmlns="${NS_EPOS}">` +
+    margens(MARGEM_PONTOS) +
+    emElementosTexto(linhas, colado) +
+    `<feed line="3"/><cut type="feed"/>` +
+    margens(0) +
+    `</epos-print>`
+  );
 }
 
 /**
  * O envelope SOAP que o serviço ePOS-Print da impressora espera, em
- * `http://<ip>/cgi-bin/epos/service.cgi`.
+ * `/cgi-bin/epos/service.cgi`.
  */
 export const envelopeSoap = (eposPrint: string): string =>
   `<?xml version="1.0" encoding="utf-8"?>` +
   `<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body>${eposPrint}</s:Body></s:Envelope>`;
 
-/** O endereço do serviço na impressora. `local_printer` é o nome que a Epson dá à impressora dela própria. */
-export const enderecoDoServico = (ip: string, timeoutMs = 10_000): string =>
-  `http://${ip}/cgi-bin/epos/service.cgi?devid=local_printer&timeout=${timeoutMs}`;
+export type Protocolo = "http" | "https";
+
+/**
+ * O endereço do serviço na impressora. `local_printer` é o nome que a Epson dá
+ * à impressora dela própria.
+ *
+ * ⚠️ **O protocolo segue o da página.** Uma página em https (o site no ar)
+ * não pode falar com a impressora em http: o browser recusa. Para o caminho do
+ * tablet, a impressora tem de ter o https ligado na configuração dela, e o
+ * certificado dela aceite uma vez no tablet (`impressao.md`). O http fica para
+ * o site a correr no portátil.
+ */
+export const enderecoDoServico = (ip: string, protocolo: Protocolo, timeoutMs = 10_000): string =>
+  `${protocolo}://${ip}/cgi-bin/epos/service.cgi?devid=local_printer&timeout=${timeoutMs}`;
 
 export type RespostaImpressora = { ok: true } | { ok: false; codigo: string; estado: string | null };
 

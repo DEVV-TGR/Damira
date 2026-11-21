@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { COLUNAS, type Linha, normalizar, partir, talaoDeCancelamento, talaoDeCarateres, talaoDoPedido } from "./talao";
-import { emEposPrint, emPc858, envelopeSoap, ipDaRedeLocal, lerResposta } from "./talao-epos";
+import { emEposPrint, enderecoDoServico, envelopeSoap, ipDaRedeLocal, lerResposta } from "./talao-epos";
 import { pedidoDeExemplo } from "./talao-exemplo";
 
 /** Quinta-feira, 8 de outubro de 2026, 10:00 em Lisboa (verão: UTC+1). */
@@ -39,9 +39,20 @@ describe("o talão de um pedido para hoje", () => {
     expect(tudo).toContain("Nota: Escrever «Parabéns, Leonor!» no bolo");
     expect(tudo).toContain("1,5 kg Bolo vegan de chocolate");
     expect(tudo).toContain("OBSERVAÇÕES");
-    expect(tudo).toContain("PAGO");
     expect(tudo).toContain("Documento sem valor fiscal");
     expect(tudo).not.toContain("NIF");
+  });
+
+  it("diz que se paga na loja, e quanto, em duas linhas grandes", () => {
+    const i = talao.findIndex((l) => l.texto.trim() === "A PAGAR NA LOJA");
+    expect(talao[i].grande).toBe(true);
+    expect(talao[i + 1].texto.trim()).toBe("233,30 €");
+  });
+
+  it("nunca diz PAGO nem SINAL: desde 04/11 paga-se na loja", () => {
+    const tudo = corrido(talao);
+    expect(tudo).not.toMatch(/\bPAGO\b/);
+    expect(tudo).not.toContain("SINAL");
   });
 
   it("o preço fica à direita, na primeira linha de um nome que não cabe", () => {
@@ -68,8 +79,8 @@ describe("o dia é o de Lisboa", () => {
   });
 });
 
-describe("o talão de um pedido para amanhã, com sinal", () => {
-  const pedido = pedidoDeExemplo(QUINTA, "amanha-com-sinal");
+describe("o talão de um pedido para amanhã", () => {
+  const pedido = pedidoDeExemplo(QUINTA, "amanha");
   const talao = talaoDoPedido(pedido, { agora: QUINTA, fundo: "bloco" });
 
   it("diz o dia e a data em grande, sem bloco invertido", () => {
@@ -77,12 +88,25 @@ describe("o talão de um pedido para amanhã, com sinal", () => {
     expect(textos(talao)).toContain("SEXTA 09/10 14:30");
   });
 
-  it("diz quanto falta cobrar, partido em duas linhas grandes", () => {
-    expect(textos(talao)).toEqual(expect.arrayContaining(["SINAL PAGO · FALTA", "12,50 €"]));
-  });
-
   it("leva o NIF quando o cliente o deu", () => {
     expect(textos(talao)).toContain("NIF 999999990");
+  });
+});
+
+describe("uma linha sem preço", () => {
+  it("diz «a definir» em vez de 0,00 €", () => {
+    const pedido = pedidoDeExemplo(QUINTA, "hoje");
+    const semPreco = { ...pedido, linhas: [{ ...pedido.linhas[0], precoUnitarioCent: null, totalCent: null }] };
+    const linha = talaoDoPedido(semPreco, { agora: QUINTA, fundo: "bloco" }).find((l) => l.texto.includes("Kit Premium"))!;
+    expect(linha.texto).toMatch(/a definir$/);
+  });
+});
+
+describe("o pagamento online, a dormir", () => {
+  it("um pedido do Stripe continua a dizer PAGO", () => {
+    const pedido = { ...pedidoDeExemplo(QUINTA, "hoje"), modoPagamento: "total" as const };
+    const pago = { ...pedido, pagoOnlineCent: pedido.totalCent };
+    expect(textos(talaoDoPedido(pago, { agora: QUINTA, fundo: "bloco" }))).toContain("PAGO");
   });
 });
 
@@ -131,25 +155,16 @@ describe("partir e normalizar", () => {
 });
 
 describe("ePOS-Print", () => {
-  it("em PC858, os acentos portugueses e o «€» têm o seu byte", () => {
-    expect(emPc858("ÇÃO €")).toEqual([0x80, 0xc7, 0x4f, 0x20, 0xd5]);
-    expect(emPc858("ãõçáéíóúâêôàºª«»·")).toEqual([
-      0xc6, 0xe4, 0x87, 0xa0, 0x82, 0xa1, 0xa2, 0xa3, 0x83, 0x88, 0x93, 0x85, 0xa7, 0xa6, 0xae, 0xaf, 0xfa,
-    ]);
+  it("põe a margem de 1,5 mm antes do talão, e volta à de origem depois do corte", () => {
+    const xml = emEposPrint(talaoDeCarateres());
+    /* GS L 12 0 · GS W 552 (0x0228) */
+    expect(xml.indexOf("<command>1d4c0c001d572802</command>")).toBeLessThan(xml.indexOf("<text"));
+    /* GS L 0 0 · GS W 576 (0x0240) */
+    expect(xml.indexOf("<command>1d4c00001d574002</command>")).toBeGreaterThan(xml.indexOf("<cut"));
   });
 
-  it("o que a tabela não tem sai como «?»", () => {
-    expect(emPc858("✓")).toEqual([0x3f]);
-  });
-
-  it("no modo `cp858`, escolhe a tabela 19 antes do texto", () => {
-    const xml = emEposPrint(talaoDeCarateres(), "cp858");
-    expect(xml).toMatch(/<command>1b7413/);
-    expect(xml).toContain('<cut type="feed"/>');
-  });
-
-  it("no modo `texto`, escapa o XML e marca o invertido", () => {
-    const xml = emEposPrint([{ texto: "A & B <C>", grande: false, negrito: true, invertido: true }], "texto");
+  it("escapa o XML e marca o invertido", () => {
+    const xml = emEposPrint([{ texto: "A & B <C>", grande: false, negrito: true, invertido: true }]);
     expect(xml).toContain("<text>A &amp; B &lt;C&gt;&#10;</text>");
     expect(xml).toContain('reverse="true"');
     expect(xml).toContain('em="true"');
@@ -157,10 +172,15 @@ describe("ePOS-Print", () => {
 
   it("cola as linhas só quando há fundo preto seguido", () => {
     const hoje = pedidoDeExemplo(QUINTA, "hoje");
-    expect(emEposPrint(talaoDoPedido(hoje, { agora: QUINTA, fundo: "bloco" }), "texto")).not.toContain("linespc");
-    expect(emEposPrint(talaoDoPedido(hoje, { agora: QUINTA, fundo: "inteiro" }), "texto")).toContain(
+    expect(emEposPrint(talaoDoPedido(hoje, { agora: QUINTA, fundo: "bloco" }))).not.toContain("linespc");
+    expect(emEposPrint(talaoDoPedido(hoje, { agora: QUINTA, fundo: "inteiro" }))).toContain(
       'linespc="24"',
     );
+  });
+
+  it("fala com a impressora no protocolo pedido", () => {
+    expect(enderecoDoServico("192.168.1.50", "https")).toMatch(/^https:\/\/192\.168\.1\.50\/cgi-bin\/epos\/service\.cgi\?/);
+    expect(enderecoDoServico("192.168.1.50", "http")).toMatch(/^http:\/\//);
   });
 
   it("vai num envelope SOAP", () => {
