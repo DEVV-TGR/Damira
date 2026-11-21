@@ -21,6 +21,13 @@ para o `.env.local` de cada um.
   (`src/db/importar-catalogo.ts`, na branch `feat/importar-catalogo`) — #28.
 - As tabelas da entrada no painel — sessões, códigos da gerente, limites de
   tentativas (`src/db/migracoes/0001_sessoes.sql`) — #33.
+- As tabelas dos pedidos — pedidos, linhas, reembolsos, emails por enviar, os
+  contadores das vagas e das quantidades, os eventos do Stripe
+  (`src/db/migracoes/0002_pedidos.sql`) — e o gatilho que não deixa mudar o
+  `de_teste` de um pedido (`0003_pedido_de_teste_imutavel.sql`), e a coluna que
+  liga um pedido ao pagamento do Stripe (`0004_pedido_payment_intent.sql`) — #27,
+  #41, #42. Para as ter num ramo da Neon, basta voltar a correr o `npm run bd:migrar`: só aplica
+  as que faltam.
 - Tudo testado no PGlite, no `npm test`.
 
 ## 1. Na visita (#26): criar a conta
@@ -73,6 +80,11 @@ dados, e mudá-la obriga a um novo deploy. E com ela **a entrada provisória do
 painel desliga-se** — o PIN dela é público, e o painel gravaria a sério —, por
 isso a entrada verdadeira (ponto 8) liga-se no mesmo deploy, ou o painel fica
 trancado até ela.
+
+⚠️ **Primeiro migrar o ramo, e só depois pôr a variável no ambiente — e a Preview
+também conta.** Com a `DATABASE_URL`, cada vista do calendário escreve em `pedidos`
+e em `vagas`. Sem a migração `0002` aplicada, o calendário parte-se
+(`relation "pedidos" does not exist`).
 
 ## Os comandos
 

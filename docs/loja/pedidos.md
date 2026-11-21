@@ -199,7 +199,9 @@ mas alguma coisa correu mal — um artigo que faltou. Nunca mais do que o que fo
 pago online e ainda não foi devolvido.
 
 ⚠️ Até ao Stripe (#49), a implementação provisória dá o reembolso como
-`concluido` logo, e o painel diz que é simulado.
+`concluido` logo, e o painel diz que é simulado. **Sobre a base de dados, nasce
+`pendente`**, e sem `stripe_refund_id` é trabalho por fazer: fica gravado, mas
+nenhum dinheiro volta até a #49 chamar o Stripe.
 
 ### Os estados, e de onde vêm
 

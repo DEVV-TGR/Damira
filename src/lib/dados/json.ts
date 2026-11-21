@@ -1,24 +1,14 @@
 import { randomUUID } from "node:crypto";
-import { tz } from "@date-fns/tz";
-import { format } from "date-fns";
 import { casa, DIAS_DA_SEMANA } from "@/data/casa";
 import { CARTAS, CATEGORIAS, ementa, SUBCATEGORIAS, type Artigo } from "@/data/ementa";
 import type { Box, KitBolo, Linha } from "@/data/encomendas";
 import { regraDe } from "@/lib/encomendavel";
-import {
-  FUSO,
-  PREDEFINICOES,
-  validarLevantamento,
-  type ArtigoDoCesto,
-  type HorarioSemanal,
-  type VagaOcupada,
-} from "@/lib/horarios";
-import { esgotadoHoje } from "@/lib/painel";
+import { PREDEFINICOES, type HorarioSemanal, type VagaOcupada } from "@/lib/horarios";
 import { PRODUTOS, type Produto as ProdutoDasEncomendas } from "@/lib/produtos";
 import mensagensEn from "../../../messages/en.json";
 import mensagensPt from "../../../messages/pt.json";
 import { criarPainelJson, type EstadoJson } from "./json-painel";
-import { cotarLinhas } from "./regras";
+import { conferirPedido, cotarLinhas, gerarReferencia, pedeConfirmacaoInicial, pedidoPorPagar } from "./regras";
 import {
   EsquemaEntradaPedido,
   EsquemaLinhaCesto,
@@ -68,7 +58,11 @@ const emCent = (euros: number, onde: string): number => {
 
 // ——— O catálogo ———
 
-const daEmenta = (artigo: Artigo): Produto => {
+/* O «necessita de confirmação» junta-se no fim, de uma vez, para os 107
+   (`montarCatalogo`): é calculado, e não um dado dos JSON. */
+type SemConfirmacao = Omit<Produto, "pedeConfirmacao">;
+
+const daEmenta = (artigo: Artigo): SemConfirmacao => {
   /* O mínimo e o passo da encomenda vivem ainda numa tabela por categoria (ver
      `encomendavel.ts`). Passam a ser por produto quando a gerente os puder
      editar; até lá, um artigo sem regra não se encomenda. */
@@ -141,7 +135,7 @@ const composicaoDe = (produto: ProdutoDasEncomendas): GrupoComposicao[] => {
   return [];
 };
 
-const daEncomenda = (produto: ProdutoDasEncomendas): Produto => {
+const daEncomenda = (produto: ProdutoDasEncomendas): SemConfirmacao => {
   const fonte = produto.fonte;
   const variantes =
     fonte && "escaloes" in fonte
@@ -203,10 +197,12 @@ const daEncomenda = (produto: ProdutoDasEncomendas): Produto => {
 };
 
 const montarCatalogo = (): Produto[] => {
-  const catalogo = EsquemaProduto.array().parse([
-    ...ementa.map(daEmenta),
-    ...PRODUTOS.map(daEncomenda),
-  ]);
+  const catalogo = EsquemaProduto.array().parse(
+    [...ementa.map(daEmenta), ...PRODUTOS.map(daEncomenda)].map((produto) => ({
+      ...produto,
+      pedeConfirmacao: pedeConfirmacaoInicial(produto),
+    })),
+  );
   /* A ementa e as encomendas vêm de ficheiros diferentes e agora partilham um
      espaço de ids. Um `nata` nos dois era um produto que tapava o outro. */
   const repetidos = catalogo
@@ -271,20 +267,6 @@ const ORDEM_JSON: OrdemEmenta = {
   cartas: [...CARTAS],
   categorias: [...CATEGORIAS],
   subcategorias: [...SUBCATEGORIAS],
-};
-
-// ——— A referência ———
-
-const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-
-/* ⚠️ O dia é o de **Lisboa**. O `gerarReferencia` do `historico.ts` usa o dia
-   UTC, e entre a meia-noite e a uma da manhã de verão dá o dia anterior — é a
-   regra 3 do AGENTS.md vista do lado da referência. Corrige-se no PR que liga
-   as páginas a esta fronteira; aqui já nasce certo. */
-const gerarReferencia = (agora: Date): string => {
-  let sufixo = "";
-  for (let i = 0; i < 4; i++) sufixo += ALFABETO[Math.floor(Math.random() * ALFABETO.length)];
-  return `DAM-${format(agora, "ddMM", { in: tz(FUSO) })}-${sufixo}`;
 };
 
 // ——— A fonte ———
@@ -424,83 +406,18 @@ export function criarFonteJsonComEstado(opcoes: OpcoesFonteJson = {}): { fonte: 
       const repetido = pedidos.get(porChave.get(dados.chaveIdempotencia) ?? "");
       if (repetido) return { ok: true, pedido: repetido };
 
-      if (definicoes.pausaAte && agora.getTime() < definicoes.pausaAte.getTime()) {
-        return { ok: false, erro: "loja-em-pausa" };
-      }
-
-      const cotacao = cotar(dados.linhas);
-      if (!cotacao.valida) return { ok: false, erro: "artigo-invalido", linhas: cotacao.linhas };
-      if (cotacao.semPreco > 0) return { ok: false, erro: "sob-orcamento", linhas: cotacao.linhas };
-      if (definicoes.valorMinimoCent !== null && cotacao.totalCent < definicoes.valorMinimoCent) {
-        return { ok: false, erro: "abaixo-do-minimo-da-loja" };
-      }
-
-      /* Sem a cozinha ou sem um tempo de produção, não há calendário — e um
-         pedido sem calendário é uma promessa sem data. */
-      const produtos = dados.linhas.map((linha) => porId.get(linha.produtoId)!);
-      if (configuracao.cozinha === null || produtos.some((p) => p.tempoProducao === null)) {
-        return { ok: false, erro: "indisponivel" };
-      }
-      const cesto: ArtigoDoCesto[] = produtos.map((p) => ({
-        tempo: p.tempoProducao!,
-        esgotadoHoje: esgotadoHoje(p, agora),
-      }));
-      const levantamentoEm = new Date(dados.levantamentoEm);
-      const validacao = validarLevantamento(
-        cesto,
-        levantamentoEm,
-        agora,
-        { ...configuracao, cozinha: configuracao.cozinha },
-        ocupacaoEntre(levantamentoEm, levantamentoEm),
-      );
-      if (!validacao.ok) return { ok: false, erro: validacao.motivo };
+      const conferido = await conferirPedido(dados, agora, {
+        definicoes,
+        configuracao,
+        produtoDe: (id) => porId.get(id),
+        ocupacaoDaVaga: (vaga) => ocupacaoEntre(vaga, vaga),
+      });
+      if (!conferido.ok) return conferido;
 
       let referencia = gerarReferencia(agora);
       while (porReferencia.has(referencia)) referencia = gerarReferencia(agora);
 
-      const pedido: Pedido = {
-        id: randomUUID(),
-        referencia,
-        estado: "pendente",
-        criadoEm: agora,
-        levantamentoEm,
-        cliente: { ...dados.cliente, contaId },
-        linhas: dados.linhas.map((linha, i) => {
-          const produto = produtos[i];
-          const variante = produto.variantes.find((v) => v.id === linha.varianteId)!;
-          const cotada = cotacao.linhas[i];
-          return {
-            produtoId: produto.id,
-            varianteId: variante.id,
-            /* Em português: a língua do pedido ainda não está decidida
-               (`pedidos.md` não tem `locale`). */
-            nome: produto.nome.pt,
-            variante: variante.rotulo?.pt ?? null,
-            escolhas: linha.escolhas,
-            unidade: produto.unidade,
-            quantidade: linha.quantidade,
-            precoUnitarioCent: cotada.precoUnitarioCent!,
-            totalCent: cotada.totalCent!,
-            notas: linha.notas,
-          };
-        }),
-        observacoes: dados.observacoes,
-        totalCent: cotacao.totalCent,
-        /* O sinal é por produto e o modo de pagamento é por pedido; o cesto misto
-           está em aberto. Até haver sinal em algum produto, paga-se tudo. */
-        modoPagamento: "total",
-        pagoOnlineCent: 0,
-        reembolsadoCent: 0,
-        chegouTarde: false,
-        pagoEm: null,
-        impressoEm: null,
-        entregueEm: null,
-        canceladoEm: null,
-        canceladoPor: null,
-        reembolsos: [],
-        avisosTratados: [],
-        reagendadoEm: null,
-      };
+      const pedido = pedidoPorPagar(dados, conferido, { id: randomUUID(), referencia, agora, contaId });
 
       pedidos.set(pedido.id, pedido);
       porReferencia.set(referencia, pedido.id);

@@ -129,6 +129,7 @@ describe("a ordem das categorias, como a gerente a deixa", () => {
       alergenios: null,
       vegan: false,
       semGluten: false,
+      pedeConfirmacao: false,
       fotos: [],
       sinalPercent: null,
       limite: null,

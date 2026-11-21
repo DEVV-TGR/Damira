@@ -232,7 +232,8 @@ describe("cotar o cesto: o preço calcula-se no servidor", () => {
   });
 });
 
-/* Só na volta dos JSON: os pedidos ainda não estão na base de dados. */
+/* Só na volta dos JSON: estes usam a `fonteDeExemplo`, que é dos JSON. O mesmo
+   cenário, contra a base de dados, está em `pedidos-bd.test.ts`. */
 describe.skipIf(NA_BASE_DE_DADOS)("criar o pedido", () => {
   it("sem os tempos da casa, responde indisponível em vez de inventar", async () => {
     const resultado = await criarFonteJson().criarPedido(entrada(), CONTEXTO);

@@ -1,0 +1,2 @@
+ALTER TABLE "pedidos" ADD COLUMN "stripe_payment_intent_id" text;--> statement-breakpoint
+ALTER TABLE "pedidos" ADD CONSTRAINT "pedidos_stripe_payment_intent_id_unique" UNIQUE("stripe_payment_intent_id");

@@ -8,8 +8,11 @@ import { horaDeLisboa } from "@/lib/painel-ligacao";
 import { BOTAO_SECUNDARIO, MENSAGENS } from "../balcao/comum";
 
 const ROTULO_ESTADO: Record<Pedido["estado"], string> = {
+  "por-confirmar": "Por confirmar",
+  "a-aguardar-aceite": "À espera do cliente",
   pendente: "Pendente",
   pago: "Pago",
+  confirmado: "Confirmado",
   entregue: "Entregue",
   expirado: "Expirado",
   cancelado: "Cancelado",

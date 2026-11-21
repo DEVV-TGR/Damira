@@ -65,6 +65,7 @@ const novoBolo = (alteracoes: Partial<EntradaProduto> = {}): EntradaProduto => (
   alergenios: ["gluten", "ovo"],
   vegan: false,
   semGluten: false,
+  pedeConfirmacao: false,
   fotos: [],
   sinalPercent: null,
   limite: null,

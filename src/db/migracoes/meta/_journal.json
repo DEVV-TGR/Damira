@@ -15,6 +15,48 @@
       "when": 1791212627057,
       "tag": "0001_sessoes",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793705021279,
+      "tag": "0002_pedidos",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793705032261,
+      "tag": "0003_pedido_de_teste_imutavel",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793972838755,
+      "tag": "0004_pedido_payment_intent",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794415422071,
+      "tag": "0005_pede_confirmacao",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794762268742,
+      "tag": "0006_pedidos_na_loja",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794783137858,
+      "tag": "0007_linha_sem_preco",
+      "breakpoints": true
     }
   ]
 }

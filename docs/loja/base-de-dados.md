@@ -82,6 +82,7 @@ o código que os testes provam é o mesmo que corre no site.
 | `a_venda_online`, `aparece_na_ementa` | `boolean` | iguais |
 | `alergenios` | `text[]` nulo | ⚠️ `NULL` é «por responder», `{}` é «sem alergénios» |
 | `vegan`, `sem_gluten` | `boolean` | iguais |
+| `pede_confirmacao` | `boolean`, `false` por defeito | `pedeConfirmacao` — «Necessita de confirmação da loja», da gerente (`painel-gerente.md`) |
 | `fotos` | `text[]` | os URLs do Vercel Blob (#32) |
 | `sinal_percent` | `integer` nulo, `CHECK` 1–100 | `sinalPercent` |
 | `limite_quantidade`, `limite_modo` | `integer`, `text` (`porDia`, `total`), nulos | `limite` |
@@ -94,6 +95,14 @@ dos pedidos. Um número por baixo obrigava a traduzir número ↔ código em cad
 leitura e escrita, sem ninguém de fora o ver. O código gera-se no servidor a
 partir do nome, como já faz o `json-painel.ts` (`croissant`, `croissant-2`…). O
 `produtos(slug)` único do `robustez.md` é esta chave primária.
+
+**O `pede_confirmacao` nasce calculado, e não do `DEFAULT`** (migração `0005`).
+O `false` por defeito é o de um produto novo. Os que já existem ficam ligados só
+se não tiverem preço nenhum — nenhuma variante com `preco_cent` —, a mesma conta
+do `pedeConfirmacaoInicial` (`regras.ts`); é um `UPDATE` escrito à mão a seguir
+à coluna que o `drizzle-kit` gera, e numa base vazia não muda nada. Daí para a
+frente é da gerente. A prova sobre uma base que já tem produtos está em
+`src/db/migracao-pede-confirmacao.test.ts`.
 
 ### `variantes`
 
@@ -160,22 +169,28 @@ ordem — ficava órfã, fora da `/ementa`.
 |---|---|---|
 | `id` | `uuid` chave primária | `id` (o `json.ts` já gera um UUID) |
 | `referencia` | `text` único | `DAM-DDMM-XXXX` |
-| `estado` | `text` `CHECK` dos 5 estados | `estado` |
+| `estado` | `text` `CHECK` dos 8 estados (`ESTADOS_PEDIDO`) | `estado` |
 | `criado_em`, `levantamento_em` | `timestamptz` | iguais |
 | `pago_em`, `impresso_em`, `entregue_em`, `cancelado_em`, `reagendado_em` | `timestamptz` nulo | iguais |
-| `cliente_nome`, `cliente_email`, `cliente_telefone` | `text` | `cliente` — o telefone é obrigatório (ver «Em aberto», 5) |
+| `confirmado_em` | `timestamptz` nulo | `confirmadoEm` — quando ficou `confirmado`; fica depois de entregue ou cancelado (migração `0006`) |
+| `expira_em` | `timestamptz` nulo | `expiraEm` — o prazo da casa num `por-confirmar`, 48 h corridas; fica depois |
+| `aceite_em` | `timestamptz` nulo | `aceiteEm` — quando o cliente aceitou a resposta da casa |
+| `causa_expiracao` | `text` nulo `CHECK` (`sem-resposta-da-casa`, `sem-pagamento`) | `causaExpiracao` — só num `expirado`, e sempre nele |
+| `cliente_nome`, `cliente_email`, `cliente_telefone` | `text` | `cliente` — o telefone é obrigatório, em E.164 (`CHECK ^\+[1-9][0-9]{6,14}$`), como no `EsquemaCliente` |
 | `cliente_nif`, `conta_id` | `text` nulo | `cliente` |
 | `observacoes` | `text` nulo | `observacoes` |
 | `total_cent`, `pago_online_cent` | `integer` `>= 0` | iguais |
-| `modo_pagamento` | `text` `CHECK` (`total`, `sinal`) | `modoPagamento` |
+| `modo_pagamento` | `text` `CHECK` (`na-loja`, `total`, `sinal`) | `modoPagamento` — o `total` e o `sinal` são do Stripe, e dormem |
 | `chegou_tarde` | `boolean` | `chegouTarde` |
 | `cancelado_por` | `text` nulo `CHECK` (`cliente`, `gerente`) | `canceladoPor` |
 | `avisos_tratados` | `text[]`, `CHECK` contra os 4 do contrato | `avisosTratados` |
 | `chave_idempotencia` | `uuid` único | **só da base de dados** |
 | `ip` | `text` nulo | **só da base de dados** |
 | `stripe_session_id` | `text` único, nulo | **só da base de dados** (#38) |
+| `stripe_payment_intent_id` | `text` único, nulo | **só da base de dados** (#42): liga ao pedido o que se fez no painel do Stripe |
 | `procura` | `text` | **só da base de dados** |
 | `reembolso_reservado_cent` | `integer` `>= 0`, `CHECK (… <= pago_online_cent)` | **só da base de dados** (ver «Reembolsos ao mesmo tempo») |
+| `de_teste` | `boolean`, **sem valor por defeito**, imutável | **só da base de dados** (ver «Os pedidos de teste») |
 
 **O `reembolsadoCent` não tem coluna.** O contrato define-o como a soma dos
 reembolsos `concluido`, e o `pedidos.md` avisa que um campo derivado guardado é um
@@ -194,6 +209,45 @@ escrita uma vez ao criar o pedido — é o que deixa encontrar «a encomenda da
 Márcia» escrevendo `marcia`, sem depender de uma extensão do Postgres que o
 PGlite e a Neon podiam ter de forma diferente.
 
+**O que tem de ser verdade em qualquer estado vive em `CHECK`**, e as transições
+não (essas são os `UPDATE … WHERE estado = …`, abaixo). **Com o Stripe**, ter
+`pago_em` é o mesmo que estar `pago`, `entregue` ou `cancelado` — só se cancela
+um pedido pago, e nada volta de pago para trás. **Na loja** nunca há `pago_em`
+nem `pago_online_cent`: paga-se no toque do `entregue`, e o instante desse toque
+é o `entregue_em` (`pedidos.md` › Impactos na base de dados). Cada estado é do
+seu modo — `pendente` e `pago` só com o Stripe; `por-confirmar`,
+`a-aguardar-aceite` e `confirmado` só fora dele — e um `confirmado` tem
+`confirmado_em`, tal como um `entregue` na loja, que só lá chega vindo de
+confirmado. Um `por-confirmar` tem `expira_em`, depois do `criado_em`; quem tem
+`aceite_em` tem `confirmado_em`; e um `expirado` diz porquê, com a causa do seu
+modo — `sem-pagamento` com o Stripe, `sem-resposta-da-casa` só a quem tinha
+prazo. Um `entregue` tem `entregue_em`; um `cancelado`
+tem quando e por quem, e só ele; o `chegou_tarde` só existe com pagamento; os
+`avisos_tratados` são os quatro do contrato. ⚠️ **Fica de fora
+`pago_online_cent <= total_cent`**: um montante que não bate ainda não tem regra
+(`pagamentos.md` › Em aberto, 8), e um `CHECK` que recusasse um pagamento
+recebido perdia um pedido pago.
+
+### Os pedidos de teste
+
+O site no ar corre em modo de teste até ao lançamento, contra a base de dados de
+produção, e os pedidos que lá ficam têm de sair das contas no lançamento
+(`pagamentos.md` › Ambientes). Por isso cada pedido diz **desde que nasce** se é
+de teste — o `LOJA_EM_TESTE` desse momento.
+
+- **Sem valor por defeito.** Um `default false` deixava passar em silêncio um
+  `criarPedido` que se esquecesse de o dizer, e os pedidos de teste do mês antes
+  do lançamento passavam por vendas. Assim, esquecê-lo é um erro.
+- **Não muda depois de nascer**: um gatilho recusa-o (migração `0003`, escrita à
+  mão — o `drizzle-kit` não gera gatilhos). Um `CHECK` só vê a linha nova, e o
+  que importa aqui é a diferença entre a velha e a nova.
+- **No lançamento** (#55), um comando desconta numa transação as vagas e as
+  quantidades dos pedidos de teste, e arquiva-os: ficam guardados, e fora das
+  vagas, das quantidades e das vendas. ⚠️ **Na mesma transação, tira os pendentes
+  de teste do `pendente`.** Senão, a limpeza seguinte desconta-os outra vez, a
+  vaga fica abaixo de zero e o `CHECK` recusa a limpeza a partir daí. Repor o ramo `production` a um ponto
+  anterior não serve — apagava o que a gerente fez no catálogo e nos horários.
+
 ### `linhas_pedido`
 
 | Coluna | Tipo | Do contrato |
@@ -205,8 +259,16 @@ PGlite e a Neon podiam ter de forma diferente.
 | `escolhas` | `text[]` | **cópia** |
 | `unidade` | `text` | **cópia** |
 | `quantidade` | `numeric` `> 0` | `quantidade` |
-| `preco_unitario_cent`, `total_cent` | `integer` `>= 0` | o preço **desse dia** |
+| `preco_unitario_cent`, `total_cent` | `integer` nulo, `>= 0` | o preço **desse dia**; `null` os dois numa linha sem preço (migração `0007`) |
 | `notas` | `text` nulo | `notas` |
+
+**Uma linha sem preço** — o bolo por medida — guarda o preço unitário e o total
+a `null` até a gerente os fixar ao responder (`pedidos.md` › O que o pedido
+guarda). O `CHECK` `linhas_pedido_precos` obriga a saberem-se os dois juntos ou
+nenhum. ⚠️ **Que um pedido `confirmado` não tenha linhas sem preço não o garante
+a base de dados**: é uma regra entre duas tabelas, e um `CHECK` só vê a linha.
+Garante-o o código, que só cria `confirmado` com todos os preços e só confirma
+depois de a gerente os fixar.
 
 Chave primária `(pedido_id, posicao)`. A ligação a `produtos` é segura porque
 nenhum produto se apaga; e ⚠️ **nunca se lê o nome nem o preço através dela** —
@@ -222,6 +284,59 @@ um pedido antigo diz o que se pagou nesse dia (`pedidos.md`).
 | `estado` | `text` `CHECK` (`pendente`, `concluido`, `falhado`) | `estado` |
 | `pedido_em` | `timestamptz` | `pedidoEm` |
 | `stripe_refund_id` | `text` único, nulo | **só da base de dados** (#49) |
+| `estado_stripe` | `text` nulo, `CHECK` dos 5 do Stripe | `estadoStripe`, quando a #49 o puser no contrato |
+| `motivo` | `text` nulo | `motivo` — o `failure_reason` do Stripe, ou um motivo nosso |
+| `falha_tratada_em` | `timestamptz` nulo, só num `falhado` | o aviso `reembolso-falhado` dado por tratado |
+
+**O mapeamento do `pedidos.md` está na base de dados.** Um `CHECK` só aceita
+`pending` e `requires_action` num `pendente`, `succeeded` num `concluido`, e
+`failed` e `canceled` num `falhado`: um `succeeded` gravado como falhado é
+recusado, venha de onde vier. O `estado_stripe` nulo é um reembolso a que o Stripe
+ainda não respondeu, ou um que demos nós por falhado.
+
+**A falha trata-se por reembolso, e não no `avisos_tratados` do pedido.** Para o
+contrato, `reembolso-falhado` aparece nos `avisosTratados` quando houve falhas e
+nenhuma ficou por tratar. Um
+segundo reembolso falhado no mesmo pedido ficava escondido pelo primeiro, já
+tratado. O aviso existe enquanto houver um `falhado` sem `falha_tratada_em`.
+
+⚠️ **Um reembolso `pendente` sem `stripe_refund_id` é trabalho por fazer.**
+Grava-se antes de se chamar o Stripe, no mesmo lote que soma ao
+`reembolso_reservado_cent`, e repete-se com a mesma chave (o `id`). Não há outra
+tabela de trabalho pendente para os reembolsos: seria guardar o mesmo facto em
+dois sítios.
+
+**Um reembolso feito no painel do Stripe** que não caiba ao lado de um pendente
+nosso — proposta, em resposta à pergunta do #100, por fechar com o Gonçalo: o
+nosso cede. Na mesma instrução que insere o do Stripe, os nossos
+`pendente` **ainda sem `stripe_refund_id`** passam a `falhado` com o motivo
+`cedeu-a-reembolso-externo`, e o reservado desconta-os. O Stripe não deixa
+reembolsar mais do que falta, contando com os pendentes, por isso o nosso ia ser
+recusado — a confirmar na sandbox, com o `…7726`. Se mesmo assim não couber, é
+uma inconsistência a sério: 5xx com alerta, e nunca um 200 a escondê-la. Não muda
+o esquema: é a instrução da #49.
+
+### `emails_por_enviar`
+
+Os emails — a confirmação ao cliente, o aviso à loja — gravam-se **na mesma
+transação** que os origina (a passagem a `pago`, o cancelamento) e só depois se
+enviam (`pagamentos.md` › Em aberto, 3). Se o envio falhar, ou o processo morrer
+a meio, a linha fica, e repete-se quando a base de dados já está acordada por
+outra razão; o que ficar parado aparece no painel.
+
+| Coluna | Tipo |
+|---|---|
+| `id` | `uuid` chave primária — é a chave de idempotência que vai ao Resend |
+| `pedido_id` | `uuid` → `pedidos` |
+| `modelo` | `text` — qual é o email; os nomes são da #42 |
+| `destinatario` | `text` |
+| `criado_em`, `ultima_tentativa_em`, `enviado_em` | `timestamptz` (os dois últimos nulos) |
+| `tentativas` | `integer` `>= 0` |
+| `ultimo_erro` | `text` nulo — o que o Resend respondeu, para o painel |
+
+**Não há chave única «natural»** (pedido, modelo, destinatário): o mesmo email
+pode ter de sair duas vezes — um pedido reagendado duas vezes. O que impede o
+duplicado é a transição só acontecer uma vez (`pedidos.md`).
 
 ### Reembolsos ao mesmo tempo
 
@@ -251,7 +366,11 @@ o contador bate sempre com a soma dos reembolsos `pendente` e `concluido`.
   — é o `estado-mudou` do contrato. Dois toques em «entregue», em dois tablets,
   entregam uma vez.
 - **Os 5 minutos do balcão** para desfazer um «entregue» vão na mesma condição
-  (`… AND entregue_em > agora − 5 min`), com o `agora` do contexto.
+  (`… AND entregue_em >= agora − 5 min`), com o `agora` do contexto.
+- **Os efeitos vão na mesma instrução**, em passos do mesmo `WITH`
+  (`bd-painel-pedidos.ts`): a vaga, o reembolso e a versão. Sem isso, um pedido que
+  já não está no estado de partida descontava a vaga na mesma, e o driver HTTP da
+  Neon não tem transações interativas para ler a meio.
 - **Cada escrita num pedido sobe `casa.versao_pedidos` na mesma instrução**, e a
   ação chama a seguir o `avisarQuePedidosMudaram()`. Assim o polling do painel
   não falha uma alteração e a base de dados continua a dormir (`painel.md`).
@@ -293,9 +412,11 @@ um bolo feito para ninguém.
 
 ⚠️ **Pago depois de expirar volta a ocupar, e nunca falha** (`pedidos.md`: pago
 ganha sempre). Nesse caminho a soma sobe o limite da linha até caber
-(`limite = GREATEST(limite, ocupadas + n)`): a vaga fica acima do limite, e isso
-é verdade — a cozinha tem mesmo mais um. A gerente vê o aviso `chegou-tarde` e
-decide.
+(`limite = CASE WHEN limite IS NULL THEN NULL ELSE GREATEST(limite, ocupadas + n) END`):
+a vaga fica acima do limite, e isso é verdade — a cozinha tem mesmo mais um. A
+gerente vê o aviso `chegou-tarde` e decide. ⚠️ O `CASE` faz falta: o `GREATEST`
+ignora os `NULL`, e `GREATEST(NULL, 3)` dá 3 — uma vaga sem limite ficava cheia,
+e um reagendar para lá era recusado.
 
 **A vaga identifica-se pelo instante em que começa**, e não por «dia + hora»: a
 25 de outubro a hora 01:00 repete-se. A loja não abre a essa hora, mas um
@@ -321,14 +442,25 @@ pode pagar (`pedidos.md`). Quem o faz, por ordem:
    só quando há um cliente no site, ou seja, com a base de dados já acordada.
 
 Não há tarefa agendada a acordar a base de dados para isto (regra 6). A limpeza
-é uma instrução só: muda os pendentes antigos para `expirado` e desconta-os dos
-contadores. A lógica completa é da #41.
+(`limparExpirados`, em `bd-pedidos.ts`) é uma instrução só: muda os pendentes antigos para `expirado`, com a causa `sem-pagamento`, e desconta-os dos
+contadores. A lógica completa é da #41. O pedido expirado pelo id, no ponto 1,
+usa a mesma instrução (`expirarPedido`).
+
+⚠️ **Se a limpeza falhar, o calendário e o `criarPedido` continuam.** O erro fica
+no log, com a regra que falhou, e a vaga fica ocupada: é o lado seguro, porque
+não se vende nada duas vezes e só se liberta mais tarde.
 
 ## Limites de pedidos
 
-- **Criar pedido**: 5 pendentes por IP e 3 por email ao mesmo tempo. Conta-se
-  na própria instrução que insere o pedido, com índices parciais
-  (`WHERE estado = 'pendente'`) em `ip` e em `cliente_email`.
+- **Criar pedido**: 5 pedidos em curso por IP e 3 por email ao mesmo tempo.
+  Conta-se na própria instrução que insere o pedido, com índices parciais
+  (`WHERE estado in (…)`, o `ESTADOS_EM_CURSO`: os que esperam pela casa ou
+  pelo cliente, os `confirmado` e o `pendente` do Stripe) em `ip` e em
+  `cliente_email`. ⚠️ Os índices já os têm desde a `0006`; a contagem do
+  `criarPedido` passa a contá-los no PR da fonte. O `INSERT … SELECT … WHERE`
+  não insere nada fora dos limites, e a instrução seguinte do lote — as linhas —
+  falha na chave estrangeira por não haver pedido: o lote cai inteiro, e essa
+  falha é o `demasiados-pedidos`. Sem IP, só conta o email.
 - **PIN e código da gerente**: tabela `limites`, chave `(chave, janela)`, com
   uma `contagem`. A janela é o início do intervalo (os 15 minutos do PIN), e a
   chave diz o quê e de onde (`pin:<dispositivo>`, `codigo:<email>`).
@@ -375,21 +507,34 @@ em `ligar-a-neon.md` › A entrada no painel.
 
 ## O Stripe
 
-`eventos_stripe`: `id` (o id do evento, chave primária), `tipo`, `recebido_em`.
-Um evento repetido bate na chave primária e não faz nada (`pagamentos.md`). Mais
-as colunas `pedidos.stripe_session_id` e `reembolsos.stripe_refund_id`, únicas.
-Estão no esquema para o Gonçalo não precisar de uma migração para começar a #42.
+`eventos_stripe`: `id` (o id do evento, chave primária), `tipo`, `api_version`
+(nulo — o Stripe não a dá em eventos antigos) e `recebido_em`. Um evento
+repetido bate na chave primária e faz cair o lote inteiro, e **só essa violação**
+quer dizer «repetido» (`pagamentos.md`). A versão da API guarda-se porque um
+evento nunca muda depois de criado: uma retentativa que chega depois de uma
+subida da API vem na forma antiga. Mais
+as colunas `pedidos.stripe_session_id`, `pedidos.stripe_payment_intent_id` e
+`reembolsos.stripe_refund_id`, únicas. Estão no esquema para o Gonçalo não
+precisar de uma migração para começar a #42.
+
+⚠️ **O `stripe_payment_intent_id` grava-o o `marcarPago`**, com o que a sessão
+traz. Um reembolso ou uma disputa feitos no painel do Stripe trazem o
+`payment_intent` e não o nosso id, e é por esta coluna que se encontra o pedido,
+sem uma consulta ao Stripe a cada evento (migração `0004`).
 
 ## Índices
 
 Os de `robustez.md` › Consultas, e mais nenhum:
 
-- `pedidos(referencia)`, `pedidos(chave_idempotencia)` e
-  `pedidos(stripe_session_id)`, únicos
+- `pedidos(referencia)`, `pedidos(chave_idempotencia)`,
+  `pedidos(stripe_session_id)` e `pedidos(stripe_payment_intent_id)`, únicos
 - `pedidos(estado, levantamento_em)` — as listas do balcão
 - `pedidos(criado_em, id)` — o arquivo e os pedidos da gerente, por cursor
 - `pedidos(cliente_email)` — o histórico e os possíveis duplicados
-- `pedidos(ip)` e `pedidos(cliente_email)` parciais, só `pendente` — os limites
+- `pedidos(ip)` e `pedidos(cliente_email)` parciais, só os em curso (`ESTADOS_EM_CURSO`) — os limites
+- `linhas_pedido(pedido_id)` — é o princípio da chave primária, não precisa de outro
+- `reembolsos(pedido_id)` — a soma do `reembolsadoCent` e a lista do painel
+- `emails_por_enviar(criado_em)` parcial, só os por enviar
 - as chaves primárias dos contadores, das sessões e dos limites
 
 ## A migração do catálogo (#28)
@@ -401,7 +546,8 @@ comparar com o `CATALOGO_JSON`, campo a campo, sem diferenças. Os ids ficam os 
 hoje: vão no URL.
 
 O horário da loja sai do `casa.json` para `casa.horario_loja`; a cozinha fica
-`NULL`. As fotos de `public/` passam para o Blob na #32.
+`NULL`. As fotos de `public/` ficam onde estão: nenhuma é de
+um produto, por isso não há nada a migrar para o Blob.
 
 ## O modo de teste e a base de dados
 
@@ -419,8 +565,17 @@ inventada ficava na base de dados como sendo a da casa. Há um teste que o prova
 e que falha se a camada deixar passar o exemplo para o painel.
 
 Os pedidos de exemplo do painel e o «Simular pedido novo» ficam na fonte dos
-JSON. **Enquanto os pedidos não estão na base de dados**, o site com ela diz a
-verdade: zero pedidos guardados (`pedidosAindaNaoGuardados`, em `bd.ts`).
+JSON. Com a base de dados, o balcão mostra os pedidos que lá estão, e abre vazio
+se não houver nenhum.
+
+⚠️ **O `criarPedido` confere o pedido pela vista, e grava-o na base de dados.**
+No modo de teste, os produtos não têm tempos de produção gravados (a casa ainda
+não os deu) e é a camada que os tapa. Um `criarPedido` que lesse a base de dados
+crua dava sempre «indisponível» enquanto o calendário mostrava vagas. Por isso
+lê os produtos, a casa e as vagas por uma **leitura** que o `fonteDoAmbiente` lhe
+dá: a vista com os exemplos (`bd-pedidos.ts` › `LeituraDoPedido`). A camada
+continua a não gravar nada; o pedido grava-se como sempre, com `de_teste` a
+`true` («Os pedidos de teste», acima).
 
 ## Os testes
 
@@ -431,12 +586,25 @@ base de dados, numa cópia limpa do catálogo importado para um PGlite
 (`src/lib/dados/fontes-de-teste.ts`). É a prova de que a troca no `index.ts`
 não muda nada para as páginas.
 
-Os testes que precisam do que ainda não está na base de dados — os pedidos, o
-modo de teste por cima dela — **saltam a volta `bd`, marcados**, com o motivo
-escrito ao lado. Uma função de pedido chamada na volta `bd` rebenta a dizê-lo,
-em vez de correr contra os JSON sem ninguém dar por isso. O
-`pedidos-painel.test.ts` e o `vagas-servidor.test.ts` entram na volta `bd` com
-as tabelas dos pedidos.
+Os testes que precisam do que a base de dados ainda não tem — os tempos de
+produção, que a casa ainda não deu — **saltam a volta `bd`, marcados**, com o
+motivo escrito ao lado. O `pedidos-painel.test.ts` é a especificação do painel
+dos pedidos, e corre nas duas voltas.
+
+**O que só a base de dados garante no painel** prova-se em
+`src/lib/dados/pedidos-painel-bd.test.ts`: dois tablets a entregar, dois reembolsos
+que juntos passam o pago, a última vaga ao reagendar com a leitura desatualizada,
+os contadores depois de cada mudança e o cursor sem saltos.
+
+**Os pedidos da loja provam-se em `src/lib/dados/pedidos-bd.test.ts`**, com o
+cenário dos testes do `criarPedido` dos JSON (o mesmo dia, o mesmo kit, o mesmo
+total) e o que só a base de dados garante: a última vaga recusada **mesmo com uma
+leitura desatualizada**, os limites por IP e por email, a limpeza que não expira
+aos 30 min 59 s e expira aos 31 min 1 s, e o `de_teste` conforme o modo.
+
+As regras das tabelas dos pedidos provam-se em `src/db/esquema-pedidos.test.ts`:
+cada `CHECK`, as chaves únicas e estrangeiras, o gatilho do `de_teste` e a
+reserva da última vaga com `ON CONFLICT`. As transições provam-se com a fonte.
 
 Além disso, `bd.test.ts` e `bd-escritas.test.ts` põem as duas fontes a
 responder às mesmas perguntas, lado a lado.
@@ -448,18 +616,21 @@ da visita.
 
 ## Em aberto
 
-1. **O limite por produto não se aplica em lado nenhum hoje** — o `json.ts` põe
-   sempre `null`. Falta dizer de que dia é o «por dia». Proposta: o **dia de
-   levantamento**, que é o único dia que o pedido tem; o dia de produção, num
-   bolo de três dias, são três. *(Gonçalo)*
+1. ~~De que dia é o limite «por dia»~~ — **o dia de levantamento**, decidido a
+   05/10. É o `dia` de `quantidades_dia`.
 2. **Os avisos `disputa` e `apanhado-pela-verificacao`** estão no contrato, mas
    o pedido ainda não tem onde os guardar. Entram numa migração própria, depois
    de o `pedidos.md` os ter (#42, #43). *(Gonçalo)*
-3. **Pago depois de expirar sobe o limite da vaga** (acima). É a forma de o
-   `marcarPago` nunca falhar; confirmar com quem o escreve. *(Gonçalo)*
+3. ~~Pago depois de expirar sobe o limite da vaga~~ — decidido a 05/10: volta a
+   ocupar mesmo acima do limite (o `GREATEST`, acima).
 4. **PIN de 4 ou 6 dígitos** — pergunta à Damira (#25). Não muda o esquema.
-5. **O telefone do cliente é obrigatório aqui, e opcional no contrato.** A
-   página de compra (#59) exige-o, até 40 caracteres, porque é por ele que o
-   balcão liga e o talão leva-o; o `EsquemaCliente` aceita `null`, até 30. O
-   `pedidos.md` lê-se como obrigatório, e é o que esta coluna segue. Falta o
-   contrato alinhar com a página (revisão do #59). *(Gonçalo)*
+5. ~~O telefone obrigatório aqui e opcional no contrato~~ — alinhado a 05/10
+   (#74): obrigatório nos dois, em E.164.
+6. **O `estadoStripe` e o `motivo` do reembolso** já têm colunas, e o contrato
+   ainda não os tem (`EsquemaReembolso`). Entram no contrato com a #49.
+   *(Gonçalo)*
+7. **As quantidades por produto ainda não se reservam.** As tabelas
+   (`quantidades_dia`, `quantidades_total`) existem, mas o `criarPedido` só
+   reserva a vaga: nenhum produto tem limite hoje, e o contrato não tem erro
+   para «este artigo esgotou» (`ErroCriarPedido`). Quando a gerente puser o
+   primeiro limite, falta esse erro e a soma no mesmo lote. *(Gonçalo)*

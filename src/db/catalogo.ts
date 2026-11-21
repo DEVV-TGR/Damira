@@ -61,6 +61,7 @@ export function colunasEditaveis(produto: Produto) {
     alergenios: produto.alergenios,
     vegan: produto.vegan,
     semGluten: produto.semGluten,
+    pedeConfirmacao: produto.pedeConfirmacao,
     fotos: produto.fotos,
     sinalPercent: produto.sinalPercent,
     limiteQuantidade: produto.limite?.quantidade ?? null,
@@ -126,6 +127,7 @@ export function linhasParaProduto(linha: LinhaProduto, linhasVariantes: LinhaVar
     alergenios: linha.alergenios,
     vegan: linha.vegan,
     semGluten: linha.semGluten,
+    pedeConfirmacao: linha.pedeConfirmacao,
     fotos: linha.fotos,
     sinalPercent: linha.sinalPercent,
     limite:
