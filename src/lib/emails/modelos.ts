@@ -12,6 +12,7 @@ import { FUSO } from "@/lib/horarios";
 import { formatarCent } from "@/lib/preco";
 import { telefoneArrumado } from "@/lib/telefone";
 import { BLOCOS, TEXTOS_EN, TEXTOS_LOJA, TEXTOS_PT, type ModeloCliente, type TextoModelo } from "./textos";
+import { escreverHtmlEmail } from "./html";
 import type { DadosCasa, DadosEmailPedido, ModeloEmail } from "./tipos";
 
 export function escreverEmail(
@@ -19,7 +20,7 @@ export function escreverEmail(
   dados: DadosEmailPedido,
   casa: DadosCasa,
   locale: Locale,
-): { assunto: string; texto: string } {
+): { assunto: string; texto: string; html: string } {
   const exigePrecos = [
     "criado-confirmado-cliente", "confirmado-cliente", "aceite-cliente", "aceite-loja",
     "reagendado-cliente", "reagendado-loja",
@@ -48,19 +49,21 @@ export function escreverEmail(
   };
   const nomeLinha = (linha: DadosEmailPedido["linhas"][number]) =>
     linha.detalhe ? `${linha.nome} (${linha.detalhe})` : linha.nome;
-  const linhas = (paraLoja: boolean, comUnitario: boolean) => dados.linhas.map((linha) => {
+  const partesLinhas = (paraLoja: boolean, comUnitario: boolean) => dados.linhas.map((linha) => {
     const nome = nomeLinha(linha);
     const quantidade = linha.unidade === "kg"
       ? `${new Intl.NumberFormat(lingua === "pt" ? "pt-PT" : "en-GB", { maximumFractionDigits: 20 }).format(linha.quantidade)} kg`
       : String(linha.quantidade);
     const unitario = linha.precoUnitCent === null ? null : dinheiro(linha.precoUnitCent);
-    const inicio = `  ${quantidade} × ${nome}`;
-    if (linha.totalCent === null) return `${inicio} — ${paraLoja ? TEXTOS_LOJA.semPreco : blocos.semPreco}`;
+    const inicio = `${quantidade} × ${nome}`;
+    if (linha.totalCent === null) return { nome: inicio, valor: paraLoja ? TEXTOS_LOJA.semPreco : blocos.semPreco };
     const total = dinheiro(linha.totalCent);
-    if (linha.aoQuilo && unitario !== null) return `${inicio} (${unitario}/kg) — ${total}`;
-    if (paraLoja && comUnitario && unitario !== null && !linha.fixadoAgora) return `${inicio} — ${unitario} — ${total}`;
-    return `${inicio} — ${total}`;
-  }).join("\n");
+    if (linha.aoQuilo && unitario !== null) return { nome: `${inicio} (${unitario}/kg)`, valor: total };
+    if (paraLoja && comUnitario && unitario !== null && !linha.fixadoAgora) return { nome: `${inicio} — ${unitario}`, valor: total };
+    return { nome: inicio, valor: total };
+  });
+  const linhas = (paraLoja: boolean, comUnitario: boolean) => partesLinhas(paraLoja, comUnitario)
+    .map((linha) => `  ${linha.nome} — ${linha.valor}`).join("\n");
   const temAoQuilo = dados.linhas.some((linha) => linha.aoQuilo);
   const indicativo = temAoQuilo ? blocos.sufixoIndicativo : "";
   const campos: Record<string, string | (() => string)> = {
@@ -128,5 +131,6 @@ export function escreverEmail(
   return {
     assunto: `${dados.modoDeTeste ? "[TESTE] " : ""}${preencher(textos.assunto)}`,
     texto: `${dados.modoDeTeste ? `${blocos.teste}\n\n` : ""}${texto}`,
+    html: escreverHtmlEmail({ corpo, campos, partesLinhas, blocos, dados, casa, lingua }),
   };
 }

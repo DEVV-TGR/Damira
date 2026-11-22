@@ -53,3 +53,6 @@ referencias/
 # ⚠️ **O que fica versionado é o que se lê**: o `BRIEF.md` de cada build e o
 # `FINGERPRINTS.md`. Regerar as capturas com o `shoot.mjs` — ver o AGENTS.md.
 scrollcraft/builds/*/lab/
+
+# Pré-visualizações dos modelos de email.
+.ver-html/

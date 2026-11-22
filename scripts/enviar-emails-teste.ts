@@ -33,6 +33,7 @@ async function executar() {
       ...(opcoes.responderPara ? { reply_to: opcoes.responderPara } : {}),
       subject: `[${indice + 1}/${exemplos.length} ${modelo} · ${locale}${variante ? ` · ${variante}` : ""}] ${email.assunto}`,
       text: email.texto,
+      html: email.html,
     };
   });
 

@@ -256,6 +256,7 @@ Referência do pedido: {referencia}.
 export const BLOCOS = {
   pt: {
     saudacao: "Olá, {primeiroNome},",
+    botaoAceitar: "Ver e aceitar a proposta",
     pagar: "Paga na loja, ao levantar. Não há nada a pagar antes.",
     fila: `No dia, dirija-se ao balcão e entre na fila de atendimento, como os restantes clientes: a fila é uma só, por ordem de chegada, com ou sem encomenda. A hora indicada é a hora a que o seu pedido está pronto.`,
     indicativo: `Os artigos ao quilo são pesados na loja, e o valor final calcula-se com o peso efetivo. Por isso o total acima é indicativo.`,
@@ -275,6 +276,7 @@ Até breve,
   },
   en: {
     saudacao: "Hello {primeiroNome},",
+    botaoAceitar: "View and accept the proposal",
     pagar: "Please pay in the shop at pick-up. There is nothing to pay in advance.",
     fila: `On the day, please go to the counter and join the queue with the other customers: there is one queue, in order of arrival, whether or not you have placed an order. The time given is when your order will be ready.`,
     indicativo: `Items sold by weight are weighed in the shop, and the final amount is calculated using the actual weight. The total above is therefore indicative.`,
