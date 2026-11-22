@@ -1,5 +1,17 @@
 // Os dados de cliente e pedido são inventados porque o repositório é público.
-import type { DadosCasa, DadosEmailPedido, ModeloEmail } from "./tipos";
+import type { Locale } from "../../i18n/routing";
+import { MODELOS_EMAIL, type DadosCasa, type DadosEmailPedido, type ModeloEmail } from "./tipos";
+
+type VarianteExemplo = "confirmado" | "por-confirmar" | "cliente" | "gerente";
+
+export function exemplosEmail(): { modelo: ModeloEmail; locale: Locale; variante: VarianteExemplo | undefined }[] {
+  return MODELOS_EMAIL.flatMap((modelo) => {
+    const linguas: Locale[] = modelo.endsWith("-loja") ? ["pt"] : ["pt", "en"];
+    const variantes: (VarianteExemplo | undefined)[] = modelo === "criado-loja" ? ["por-confirmar", "confirmado"]
+      : modelo === "cancelado-cliente" ? ["cliente", "gerente"] : [undefined];
+    return linguas.flatMap((locale) => variantes.map((variante) => ({ modelo, locale, variante })));
+  });
+}
 
 export const CASA_EXEMPLO: DadosCasa = {
   nome: "Confeitaria e Pão Quente Damira",
@@ -10,7 +22,7 @@ export const CASA_EXEMPLO: DadosCasa = {
 
 export function exemploEmail(
   modelo: ModeloEmail,
-  variante?: "confirmado" | "por-confirmar" | "cliente" | "gerente",
+  variante?: VarianteExemplo,
 ): DadosEmailPedido {
   const nata: DadosEmailPedido["linhas"][number] = {
     nome: "Pastel de nata", detalhe: null, quantidade: 12, unidade: "un",

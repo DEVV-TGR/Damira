@@ -19,7 +19,8 @@
     "bd:comparar": "tsx scripts/bd.ts comparar",
     "painel:pin": "tsx scripts/bd.ts pin",
     "test": "vitest run",
-    "emails:ver": "tsx scripts/ver-emails.ts"
+    "emails:ver": "tsx scripts/ver-emails.ts",
+    "emails:enviar": "tsx scripts/enviar-emails-teste.ts"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
