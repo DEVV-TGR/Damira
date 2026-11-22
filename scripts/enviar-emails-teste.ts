@@ -9,6 +9,7 @@
 import { setTimeout as esperar } from "node:timers/promises";
 import { lerArgumentosTeste, validarEmailTeste } from "../src/lib/emails/argumentos-teste";
 import { CASA_EXEMPLO, exemploEmail, exemplosEmail } from "../src/lib/emails/exemplo";
+import { ANEXO_LOGOTIPO } from "../src/lib/emails/html";
 import { escreverEmail } from "../src/lib/emails/modelos";
 
 async function executar() {
@@ -34,6 +35,8 @@ async function executar() {
       subject: `[${indice + 1}/${exemplos.length} ${modelo} · ${locale}${variante ? ` · ${variante}` : ""}] ${email.assunto}`,
       text: email.texto,
       html: email.html,
+      // O logótipo vai dentro do email (`cid:`); sem este anexo, o topo mostra só o texto alternativo.
+      attachments: [ANEXO_LOGOTIPO],
     };
   });
 

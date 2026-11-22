@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { BLOCOS } from "./textos";
 import { CASA_EXEMPLO, exemploEmail, exemplosEmail } from "./exemplo";
 import { escreverEmail } from "./modelos";
-import { escaparHtml } from "./html";
+import { ANEXO_LOGOTIPO, escaparHtml } from "./html";
 import { formatarCent } from "@/lib/preco";
 
 const CORES_PROIBIDAS = /#(?:698842|5f7a3b|1c7c54|d9f2e5|eda21c|fce8c3|b8322a|f7d1cd)/i;
@@ -19,10 +19,13 @@ describe.each(exemplosEmail())("HTML de $modelo · $locale · $variante", ({ mod
     expect(email.html).toContain('name="color-scheme" content="light"');
     expect(email.html).toContain('name="supported-color-schemes" content="light"');
     expect(email.html).toContain('role="presentation"');
-    expect(email.html).toContain("DAMIRA");
-    expect(email.html).toContain("Confeitaria e Pão Quente");
+    expect(email.html).toContain("Confeitaria · Pão Quente");
+    // Uma só imagem, o logótipo, embutida no próprio email e com texto alternativo para quando a bloqueiam.
+    expect(email.html.match(/<img\b/g)).toHaveLength(1);
+    expect(email.html).toMatch(/<img src="cid:logotipo-damira" width="\d+" height="\d+" alt="Damira"/);
+    expect(email.html).not.toMatch(/src="(?!cid:)/);
     // As chavetas da media query são CSS necessário; o corpo não pode ter marcadores.
-    expect(email.html.replace(/<style>[\s\S]*?<\/style>/g, "")).not.toMatch(/\{|undefined|null|<img|<link|<script/i);
+    expect(email.html.replace(/<style>[\s\S]*?<\/style>/g, "")).not.toMatch(/\{|undefined|null|<link|<script/i);
     expect(email.html).not.toMatch(CORES_PROIBIDAS);
     expect(email.html).not.toMatch(/opacity|rgba|@import|url\(/i);
     expect(Buffer.byteLength(email.html, "utf8")).toBeLessThan(60 * 1024);
@@ -68,7 +71,7 @@ describe.each(exemplosEmail())("HTML de $modelo · $locale · $variante", ({ mod
     expect(email.html).not.toContain(aviso);
     const teste = escreverEmail(modelo, { ...dados, modoDeTeste: true }, CASA_EXEMPLO, locale);
     expect(teste.html).toContain(aviso);
-    expect(teste.html.indexOf(aviso)).toBeLessThan(teste.html.indexOf(">DAMIRA<"));
+    expect(teste.html.indexOf(aviso)).toBeLessThan(teste.html.indexOf('src="cid:'));
   });
 
   it("escapa todos os dados, incluindo os blocos compostos", () => {
@@ -108,10 +111,11 @@ it("não interpreta marcadores escritos pelo cliente", () => {
 it("limita a abertura grande à primeira linha do criado-loja", () => {
   const dados = exemploEmail("criado-loja");
   const { html, texto } = escreverEmail("criado-loja", dados, CASA_EXEMPLO, "pt");
-  const grandes = [...html.matchAll(/<p style="([^"]*font-size:20px[^"]*)">([\s\S]*?)<\/p>/g)];
-  expect(grandes).toHaveLength(1);
-  expect(grandes[0][1]).toContain("font-weight:bold");
-  expect(grandes[0][2]).toBe(texto.split("\n")[0]);
+  const aberturas = [...html.matchAll(/<p class="abertura" style="([^"]*)">([\s\S]*?)<\/p>/g)];
+  expect(aberturas).toHaveLength(1);
+  expect(aberturas[0][1]).toContain("font-weight:bold");
+  // A referência vai a negrito dentro da frase; tirando as etiquetas, o texto é o mesmo.
+  expect(aberturas[0][2].replace(/<[^>]+>/g, "")).toBe(texto.split("\n")[0]);
   expect(html).toMatch(/<p style="[^"]*font-size:16px[^"]*">Entrou pelo site:/);
 });
 
@@ -122,32 +126,37 @@ it("destaca a negrito as linhas de aviso, incluindo o prazo e a faixa de teste",
     const avisos = texto.split("\n").filter((linha) => linha.startsWith("⚠️"));
     expect(avisos.length).toBeGreaterThan(0);
     for (const aviso of avisos) {
-      expect(html).toContain(`<strong style="font-weight:bold;">${escaparHtml(aviso)}</strong>`);
+      expect(html).toMatch(new RegExp(`<strong class="aviso" style="[^"]*font-weight:bold;[^"]*">${escaparHtml(aviso).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}</strong>`));
     }
   }
 });
 
 it("apresenta as etiquetas do criado-loja com o conteúdo normal por baixo", () => {
   const { html } = escreverEmail("criado-loja", exemploEmail("criado-loja"), CASA_EXEMPLO, "pt");
-  const estilo = "font-size:13px;color:#6B6461;letter-spacing:1px;font-weight:bold;";
-  for (const etiqueta of ["CLIENTE", "OBSERVAÇÕES"]) {
-    expect(html).toContain(`<span style="${estilo}">${etiqueta}</span><br>`);
-    const paragrafo = [...html.matchAll(/<p style="([^"]*)">([\s\S]*?)<\/p>/g)]
-      .find((resultado) => resultado[2].includes(`>${etiqueta}</span>`));
-    expect(paragrafo?.[1]).toContain("font-size:16px;");
-    expect(paragrafo?.[1]).not.toContain("font-weight:bold");
+  for (const etiqueta of ["CLIENTE", "OBSERVAÇÕES", "LEVANTAMENTO NA LOJA", "O QUE LEVA", "PAGAMENTO"]) {
+    expect(html).toMatch(new RegExp(`<div class="etiqueta" style="[^"]*text-transform:uppercase;[^"]*">${etiqueta}</div>`));
   }
-  expect(html).toContain(`<div style="${estilo}">LEVANTAMENTO NA LOJA</div>`);
-  expect(html).toMatch(/<td colspan="2" style="[^"]*font-weight:bold;">O QUE LEVA<\/td>/);
+  // O que vem por baixo da etiqueta é texto normal, e não outra abertura.
+  expect(html).toMatch(/>CLIENTE<\/div><p style="[^"]*font-size:16px;[^"]*">Nome: /);
 });
 
 it("reserva 65 % para os nomes e mantém os valores à direita na caixa do pedido", () => {
   const dados = exemploEmail("criado-loja");
   const { html } = escreverEmail("criado-loja", dados, CASA_EXEMPLO, "pt");
-  const linhas = [...html.matchAll(/<tr><td width="65%" valign="top"[^>]*>(.*?)<\/td><td align="right" valign="top"[^>]*>(.*?)<\/td><\/tr>/g)];
+  const linhas = [...html.matchAll(/<tr class="linha-pedido"><td width="65%"[^>]*>(.*?)<\/td><td align="right"[^>]*>(.*?)<\/td><\/tr>/g)];
   expect(linhas).toHaveLength(dados.linhas.length);
   expect(linhas[1][1]).toContain("Bolo por medida");
   expect(linhas[1][2]).toBe("SEM PREÇO, a fixar pela gerente");
+  // Um valor em euros não se parte; o texto de «sem preço» pode.
+  expect(html).toMatch(/white-space:nowrap;">15,60\s€<\/td>/);
+});
+
+it("parte o total em rótulo e valor, com o indicativo por baixo", () => {
+  const { html } = escreverEmail("criado-confirmado-cliente", exemploEmail("criado-confirmado-cliente"), CASA_EXEMPLO, "pt");
+  const total = /<tr class="linha-total">([\s\S]*?)<\/tr>/.exec(html)?.[1] ?? "";
+  expect(total).toMatch(/>Total<\/td>/);
+  expect(total).toMatch(/>49,60\s€<\/div>/);
+  expect(total).toContain("(indicativo)");
 });
 
 it.each([
@@ -156,8 +165,23 @@ it.each([
 ] as const)("usa a ação explícita no botão da resposta em %s", (locale, rotulo, introducao) => {
   const dados = exemploEmail("resposta-cliente");
   const { html, texto } = escreverEmail("resposta-cliente", dados, CASA_EXEMPLO, locale);
-  expect(html).toContain(`text-decoration:none;">${rotulo}</a>`);
+  expect(html).toMatch(new RegExp(`<a class="botao" href="${dados.linkAceitar}" style="[^"]*">${rotulo}</a>`));
   expect(html).not.toContain(introducao);
   expect(texto).toContain(introducao);
   expect(html).toContain(`href="${dados.linkAceitar}" style="color:#6B6461;">${dados.linkAceitar}</a>`);
+});
+
+it("leva o logótipo como anexo embutido, no formato do Resend", () => {
+  expect(ANEXO_LOGOTIPO.content_id).toBe("logotipo-damira");
+  expect(ANEXO_LOGOTIPO.content_type).toBe("image/png");
+  // Começa pela assinatura de um PNG.
+  expect(Buffer.from(ANEXO_LOGOTIPO.content, "base64").subarray(1, 4).toString()).toBe("PNG");
+});
+
+it.each(exemplosEmail())("a faixa de teste de $modelo · $locale lê-se: papel sobre tinta, sem nada a tinta lá dentro", ({ modelo, locale, variante }) => {
+  const { html } = escreverEmail(modelo, { ...exemploEmail(modelo, variante), modoDeTeste: true }, CASA_EXEMPLO, locale);
+  const faixa = /<td align="center" style="[^"]*background-color:#1F1D1B;[^"]*">([\s\S]*?)<\/td>/.exec(html);
+  expect(faixa?.[0]).toContain("color:#FAFBFB;");
+  expect(faixa?.[1]).not.toContain("#1F1D1B");
+  expect(faixa?.[1].replace(/<[^>]+>/g, "")).toBe(BLOCOS[modelo.endsWith("-loja") ? "pt" : locale].teste);
 });

@@ -330,8 +330,11 @@ npm run icons    # favicon + ícones, a partir de public/marca/ondas.png
 
 ⚠️ **São PNG rasterizados a 300 dpi, não vetores.** Chegam para cabeçalho,
 rodapé e ícones; não escalam para lá disso. Quando aparecer o vetor, trocar em
-`src/components/Marca.tsx` **e** correr `npm run icons`, ao mesmo tempo — são
-dois sítios e esquecer um deixa o site com duas marcas.
+`src/components/Marca.tsx`, correr `npm run icons` **e** `npm run marca:email`, ao
+mesmo tempo — são três sítios e esquecer um deixa o site com duas marcas. O
+terceiro é o logótipo dos emails (`src/lib/emails/logotipo.ts`): uma cópia a
+papel, já pintada, porque um email não tem CSS que pinte uma máscara, e que vai
+dentro do próprio email como anexo embutido (`cid:`).
 
 São máscaras de alfa e não imagens: guardam só a forma, e a cor vem do CSS. É o
 que permite o mesmo ficheiro servir o logótipo a tijolo sobre papel e a papel
