@@ -2,11 +2,14 @@
 import type { ModeloEmail } from "./tipos";
 
 // Os marcadores separam a redação da formatação e das condições do pedido.
+// Nos assuntos do cliente, o que aconteceu e a data vêm à frente e a referência no fim: a notificação
+// do telemóvel corta o assunto ao fim de uns 40 carateres, e «Pedido DAM-0212-K7Q2…» gastava-os
+// todos sem dizer nada. Nos da loja, a referência fica à frente: é por ela que a equipa procura.
 export type TextoModelo = { assunto: string; corpo: string; corpoGerente?: string };
 
 export const TEXTOS_PT = {
   "criado-confirmado-cliente": {
-    assunto: "Pedido {referencia} confirmado — {dataAssunto}",
+    assunto: "Pedido confirmado — {dataAssunto} · {referencia}",
     corpo: `{saudacao}
 
 O seu pedido está confirmado.
@@ -25,7 +28,7 @@ O que pediu:
 {rodape}`,
   },
   "criado-por-confirmar-cliente": {
-    assunto: "Pedido {referencia} recebido — a aguardar a resposta da loja",
+    assunto: "Pedido recebido, a aguardar a resposta da loja · {referencia}",
     corpo: `{saudacao}
 
 Recebemos o seu pedido. Ainda não está confirmado: tem um artigo que precisa da resposta da loja.
@@ -74,7 +77,7 @@ PAGAMENTO
 {fimLoja}`,
   },
   "confirmado-cliente": {
-    assunto: "Pedido {referencia} confirmado — {dataAssunto}",
+    assunto: "Pedido confirmado — {dataAssunto} · {referencia}",
     corpo: `{saudacao}
 
 A loja confirmou o seu pedido.
@@ -93,7 +96,7 @@ O que pediu:
 {rodape}`,
   },
   "resposta-cliente": {
-    assunto: "Pedido {referencia} — a nossa resposta, para aceitar",
+    assunto: "A nossa resposta ao seu pedido, para aceitar · {referencia}",
     corpo: `{saudacao}
 
 Respondemos ao seu pedido. Para o fazermos, precisamos que aceite o que mudou:
@@ -120,7 +123,7 @@ Referência do pedido: {referencia}.
 {morada}`,
   },
   "aceite-cliente": {
-    assunto: "Pedido {referencia} confirmado — {dataAssunto}",
+    assunto: "Pedido confirmado — {dataAssunto} · {referencia}",
     corpo: `{saudacao}
 
 Obrigado por aceitar. O seu pedido está confirmado.
@@ -161,7 +164,7 @@ PAGAMENTO
 {pagamentoLoja}{blocoIndicativo}`,
   },
   "reagendado-cliente": {
-    assunto: "Pedido {referencia} — nova hora de levantamento: {dataAssunto}",
+    assunto: "Nova hora de levantamento: {dataAssunto} · {referencia}",
     corpo: `{saudacao}
 
 Como combinámos consigo, a hora de levantamento do seu pedido mudou:
@@ -215,7 +218,7 @@ O QUE LEVA
 Responde-se no painel, em «Por confirmar».`,
   },
   "expirado-cliente": {
-    assunto: "Pedido {referencia} — não conseguimos responder a tempo",
+    assunto: "Não conseguimos responder a tempo ao seu pedido · {referencia}",
     corpo: `{saudacao}
 
 Pedimos desculpa: não respondemos a tempo ao seu pedido, e ele expirou.
@@ -230,7 +233,7 @@ Referência do pedido: {referencia}.
 {morada}`,
   },
   "cancelado-cliente": {
-    assunto: "Pedido {referencia} cancelado",
+    assunto: "Pedido cancelado · {referencia}",
     corpo: `{saudacao}
 
 Como nos pediu, cancelámos o seu pedido. Não há nada a pagar.
@@ -314,7 +317,7 @@ export type ModeloCliente = Exclude<ModeloEmail, `${string}-loja`>;
 
 export const TEXTOS_EN = {
   "criado-confirmado-cliente": {
-    assunto: "Order {referencia} confirmed — {dataAssunto}",
+    assunto: "Order confirmed — {dataAssunto} · {referencia}",
     corpo: `{saudacao}
 
 Your order is confirmed.
@@ -333,7 +336,7 @@ Your order:
 {rodape}`,
   },
   "criado-por-confirmar-cliente": {
-    assunto: "Order {referencia} received — awaiting the shop’s response",
+    assunto: "Order received, awaiting the shop’s response · {referencia}",
     corpo: `{saudacao}
 
 We have received your order. It is not yet confirmed: it includes an item that requires a response from the shop.
@@ -357,7 +360,7 @@ To withdraw or make changes, please call us on {telefoneCasa}. While the order i
 {morada}`,
   },
   "confirmado-cliente": {
-    assunto: "Order {referencia} confirmed — {dataAssunto}",
+    assunto: "Order confirmed — {dataAssunto} · {referencia}",
     corpo: `{saudacao}
 
 The shop has confirmed your order.
@@ -376,7 +379,7 @@ Your order:
 {rodape}`,
   },
   "resposta-cliente": {
-    assunto: "Order {referencia} — our response, for you to accept",
+    assunto: "Our response to your order, for you to accept · {referencia}",
     corpo: `{saudacao}
 
 We have responded to your order. To fulfil it, we need you to accept the changes:
@@ -403,7 +406,7 @@ Order reference: {referencia}.
 {morada}`,
   },
   "aceite-cliente": {
-    assunto: "Order {referencia} confirmed — {dataAssunto}",
+    assunto: "Order confirmed — {dataAssunto} · {referencia}",
     corpo: `{saudacao}
 
 Thank you for accepting. Your order is confirmed.
@@ -422,7 +425,7 @@ Your order:
 {rodape}`,
   },
   "reagendado-cliente": {
-    assunto: "Order {referencia} — new pick-up time: {dataAssunto}",
+    assunto: "New pick-up time: {dataAssunto} · {referencia}",
     corpo: `{saudacao}
 
 As agreed with you, your order’s pick-up time has changed:
@@ -439,7 +442,7 @@ The rest of your order remains unchanged.
 {rodape}`,
   },
   "expirado-cliente": {
-    assunto: "Order {referencia} — we were unable to respond in time",
+    assunto: "We were unable to respond to your order in time · {referencia}",
     corpo: `{saudacao}
 
 We are sorry: we did not respond to your order in time, and it has expired.
@@ -454,7 +457,7 @@ Order reference: {referencia}.
 {morada}`,
   },
   "cancelado-cliente": {
-    assunto: "Order {referencia} cancelled",
+    assunto: "Order cancelled · {referencia}",
     corpo: `{saudacao}
 
 As you requested, we have cancelled your order. There is nothing to pay.

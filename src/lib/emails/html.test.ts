@@ -62,8 +62,12 @@ describe.each(exemplosEmail())("HTML de $modelo · $locale · $variante", ({ mod
     if (email.texto.includes(CASA_EXEMPLO.telefone)) {
       expect(email.html).toContain('href="tel:+351229730939"');
     }
-    const frase = email.texto.split("\n\n")[modelo.endsWith("-loja") ? 0 : 1];
-    expect(email.html).toContain(`mso-hide:all;">${escaparHtml(frase)}</div>`);
+    // O pré-cabeçalho começa pela frase de abertura (a primeira linha dela).
+    const frase = email.texto.split("\n\n")[modelo.endsWith("-loja") ? 0 : 1].split("\n")[0];
+    const preheader = /mso-hide:all;">([\s\S]*?)<\/div>/.exec(email.html)?.[1] ?? "";
+    // Em texto corrido, os dois pontos do fim passam a ponto.
+    expect(preheader.startsWith(escaparHtml(frase).replace(/\s+/g, " ").trim().replace(/:$/, "."))).toBe(true);
+    expect(preheader).toContain("&zwnj;");
   });
 
   it("mostra a faixa apenas em modo de teste", () => {
@@ -184,4 +188,21 @@ it.each(exemplosEmail())("a faixa de teste de $modelo · $locale lê-se: papel s
   expect(faixa?.[0]).toContain("color:#FAFBFB;");
   expect(faixa?.[1]).not.toContain("#1F1D1B");
   expect(faixa?.[1].replace(/<[^>]+>/g, "")).toBe(BLOCOS[modelo.endsWith("-loja") ? "pt" : locale].teste);
+});
+
+it.each(exemplosEmail().filter(({ modelo }) => !modelo.endsWith("-loja")))(
+  "o assunto de $modelo · $locale diz o que aconteceu antes da referência",
+  ({ modelo, locale, variante }) => {
+    const dados = exemploEmail(modelo, variante);
+    const { assunto } = escreverEmail(modelo, dados, CASA_EXEMPLO, locale);
+    // A notificação corta o assunto: a referência vai no fim, para os primeiros carateres serem o estado.
+    expect(assunto.startsWith("Pedido DAM") || assunto.startsWith("Order DAM")).toBe(false);
+    expect(assunto.endsWith(`· ${dados.referencia}`)).toBe(true);
+  },
+);
+
+it("o pré-cabeçalho da confirmação junta a abertura e o levantamento", () => {
+  const { html } = escreverEmail("criado-confirmado-cliente", exemploEmail("criado-confirmado-cliente"), CASA_EXEMPLO, "pt");
+  const preheader = /mso-hide:all;">([\s\S]*?)<\/div>/.exec(html)?.[1] ?? "";
+  expect(preheader).toMatch(/^O seu pedido está confirmado\. Levantamento: domingo, 6 de dezembro de 2026, às 10:30\.&#847;/);
 });

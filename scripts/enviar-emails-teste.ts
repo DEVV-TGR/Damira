@@ -32,7 +32,8 @@ async function executar() {
       from: remetente,
       to: opcoes.para,
       ...(opcoes.responderPara ? { reply_to: opcoes.responderPara } : {}),
-      subject: `[${indice + 1}/${exemplos.length} ${modelo} · ${locale}${variante ? ` · ${variante}` : ""}] ${email.assunto}`,
+      // A etiqueta vai no fim: a notificação do telemóvel corta o assunto, e o princípio tem de ser o do email verdadeiro.
+      subject: `${email.assunto} [${indice + 1}/${exemplos.length} ${modelo} · ${locale}${variante ? ` · ${variante}` : ""}]`,
       text: email.texto,
       html: email.html,
       // O logótipo vai dentro do email (`cid:`); sem este anexo, o topo mostra só o texto alternativo.

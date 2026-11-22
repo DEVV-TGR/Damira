@@ -167,7 +167,19 @@ export function escreverHtmlEmail({ corpo, campos, partesLinhas, blocos, dados, 
   // A estrutura decide-se pelos marcadores do original, nunca pelo conteúdo que o cliente escreveu.
   const paragrafos = corpo.replace("{blocoIndicativo}", dados.linhas.some((linha) => linha.aoQuilo) ? `\n\n${blocos.indicativo}` : "").split("\n\n");
   const indiceFrase = paragrafos[0] === "{saudacao}" ? 1 : 0;
-  const preheader = escaparHtml(paragrafos[indiceFrase]).replace(/\{(\w+)\}/g, (_, chave: string) => escaparHtml(ler(chave)));
+  // O pré-cabeçalho é a linha que a caixa de entrada mostra a seguir ao assunto. O assunto já diz o que
+  // aconteceu; aqui junta-se a frase de abertura e, se o modelo a tiver, a linha do levantamento, em
+  // texto corrido. O enchimento invisível no fim impede o cliente de correio de puxar para lá o resto
+  // do corpo («Confeitaria · Pão Quente», «Olá, Maria»…).
+  const textoSimples = (modelo: string) => modelo.replace(/\{(\w+)\}/g, (_, chave: string) => ler(chave)).replace(/\s+/g, " ").trim();
+  const abertura = paragrafos[indiceFrase].split("\n")[0];
+  const linhaLevantamento = paragrafos.flatMap((parte) => parte.split("\n")).find((linha) => linha.includes("{levantamento}"));
+  const resumo = [abertura, linhaLevantamento && linhaLevantamento !== abertura ? linhaLevantamento : ""]
+    .map((linha) => textoSimples(linha ?? "")).filter(Boolean)
+    // Em texto corrido, «…o que mudou:» seguido de «Levantamento:» dava dois pontos seguidos: cada frase fecha com ponto.
+    .map((linha) => `${linha.charAt(0).toLocaleUpperCase(lingua === "pt" ? "pt-PT" : "en-GB")}${linha.slice(1)}`.replace(/:$/, "."))
+    .map((linha) => /[.!?]$/.test(linha) ? linha : `${linha}.`).join(" ");
+  const preheader = escaparHtml(resumo) + "&#847;&zwnj;&nbsp;".repeat(60);
   let rodape = "";
   const conteudo = paragrafos.map((original, indice) => {
     if (original.includes("{rodape}")) {
