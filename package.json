@@ -18,7 +18,8 @@
     "bd:importar": "tsx scripts/bd.ts importar",
     "bd:comparar": "tsx scripts/bd.ts comparar",
     "painel:pin": "tsx scripts/bd.ts pin",
-    "test": "vitest run"
+    "test": "vitest run",
+    "emails:ver": "tsx scripts/ver-emails.ts"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
