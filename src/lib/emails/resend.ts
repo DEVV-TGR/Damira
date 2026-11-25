@@ -17,7 +17,9 @@ export async function enviarPeloResend(mensagem: MensagemResend, chave: string, 
         subject: mensagem.assunto, text: mensagem.texto, html: mensagem.html, attachments: [ANEXO_LOGOTIPO] }),
     });
     if (resposta.ok) return { ok: true };
-    return { ok: false, codigo: `resend-${resposta.status}`, definitiva: resposta.status >= 400 && resposta.status < 500 && resposta.status !== 429 };
+    // Autorização/domínio afetam a conta inteira; corrigir configuração permite retomar a fila.
+    const recuperavel = [401, 403, 429].includes(resposta.status);
+    return { ok: false, codigo: `resend-${resposta.status}`, definitiva: resposta.status >= 400 && resposta.status < 500 && !recuperavel };
   } catch {
     return { ok: false, codigo: "resend-rede", definitiva: false };
   }

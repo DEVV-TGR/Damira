@@ -106,15 +106,18 @@ o painel, não a caixa de correio.
 
 A fila só se lê por chamada explícita, após uma ação que já acordou a base.
 Reserva de **2 minutos** e espera crescente entre tentativas: **2, 4, 8 e 16
-minutos**, até **5 tentativas**. Rede, timeout de 10 segundos, 429 e 5xx podem
-repetir numa volta posterior; outros 4xx são definitivos. Falta de dados do
-modelo também é definitiva. Configuração em falta antes do envio (chave, remetente malformado ou caixa de
-ensaio) deixa a fila intacta. Uma chave revogada ou um domínio recusado pelo
-fornecedor só se descobrem na resposta HTTP: os 4xx, salvo 429, ficam definitivos,
-como os restantes erros de endereço/remetente; corrigir configuração e rever os
-falhados antes de reenviar. Uma falha individual não impede o resto
-da volta. O resumo distingue enviados, falhados e saltados e nunca lança para
-o browser; marcar enviado falhado também não desfaz o pedido original.
+minutos**, até **5 tentativas**. Rede, timeout de 10 segundos, 401/403, 429 e
+5xx podem repetir numa volta posterior; os restantes 4xx (incluindo 400/422)
+são definitivos. Falta de dados do modelo também é definitiva. Configuração em
+falta antes do envio (chave, remetente malformado ou caixa de ensaio) deixa a
+fila intacta. Uma chave revogada ou um domínio recusado pelo fornecedor só se
+descobrem na resposta HTTP: **401/403 registam falha não definitiva e param a
+volta**, sem reservar as outras linhas. Depois de corrigir a configuração,
+a linha pode ser tentada de novo, com a mesma chave de idempotência, a espera,
+o máximo de tentativas e a janela de 24 h já existentes.
+Uma falha individual não impede o resto da volta. O resumo distingue enviados,
+falhados e saltados e nunca lança para o browser; uma falha ao marcar enviado
+também não desfaz o pedido original.
 
 O intervalo de 600 ms evita rajadas dentro da mesma volta. Voltas simultâneas
 podem ainda encontrar 429: fica registado, a volta para sem reservar as outras
@@ -141,6 +144,12 @@ O script `scripts/enviar-fila-emails.ts` só executa com
 Production, exige `LOJA_EM_TESTE=1` e confere o servidor da ligação com o
 hostname do desenvolvimento confirmado pelo utilizador na Neon, antes de
 qualquer consulta. Não carrega `.env`.
+
+**Bloqueador de ligar os emails da compra:** uma falha recuperável ainda só se
+repete quando outra ação chama o emissor. Antes de os emails ao cliente dependerem
+disto, a etapa 2 tem de garantir tentativas automáticas antes das 24 h desde a
+criação da linha, mesmo sem visitas. Uma volta diária só chega se respeitar essa
+margem; não se deve assumir que o próximo pedido chega a tempo.
 
 A idempotência do Resend dura 24 horas. Uma linha já tentada que chegue às 24 h
 desde a sua criação fica terminal para revisão manual (`idempotencia-expirada`),

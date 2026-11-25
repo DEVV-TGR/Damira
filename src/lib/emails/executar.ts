@@ -109,7 +109,7 @@ export async function executarEmissor(
           await fonte.registarFalhaEmail(reserva, resultado.codigo, resultado.definitiva);
           console.error("[emails]", referencia, linha.modelo, resultado.codigo);
           resumo.falhados++;
-          if (resultado.codigo === "resend-429") break;
+          if (["resend-401", "resend-403", "resend-429"].includes(resultado.codigo)) break;
         }
       } catch (erro) {
         registarErro(erro, referencia, linha.modelo);

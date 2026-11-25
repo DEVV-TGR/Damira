@@ -38,18 +38,18 @@ describe("emissor com Postgres", () => {
     expect(linha).toMatchObject({ tentativas: 1, enviadoEm: agora, ultimoErro: null });
     await executar(buscar); expect(buscar).toHaveBeenCalledTimes(1);
   });
-  it.each([503, 429])("%s só repete mais tarde, com a mesma chave", async status => {
+  it.each([401, 403, 503, 429])("%s só repete mais tarde, com a mesma chave", async status => {
     await preparar(); const buscar = sucesso(); buscar.mockResolvedValueOnce(new Response("dados privados", { status }));
     expect(await executar(buscar)).toMatchObject({ falhados: 1 });
     await executar(buscar, mais(119999)); expect(buscar).toHaveBeenCalledTimes(1);
     await executar(buscar, mais(120000)); expect(buscar).toHaveBeenCalledTimes(2);
     expect(buscar.mock.calls.map(c => (c[1]!.headers as Record<string, string>)["Idempotency-Key"])).toEqual([linhaDeEmail().id, linhaDeEmail().id]);
   });
-  it("um 400 fica definitivo, distinguível de um saltado", async () => {
-    await preparar(); const buscar = vi.fn<typeof fetch>().mockResolvedValue(new Response("email privado", { status: 400 }));
+  it.each([400, 422])("um %s fica definitivo, distinguível de um saltado", async status => {
+    await preparar(); const buscar = vi.fn<typeof fetch>().mockResolvedValue(new Response("email privado", { status }));
     await executar(buscar); await executar(buscar, mais(960000));
     expect(buscar).toHaveBeenCalledTimes(1);
-    expect(await fonte.emailsFalhados(10)).toMatchObject([{ tentativas: 5, ultimoErro: "resend-400", saltado: false }]);
+    expect(await fonte.emailsFalhados(10)).toMatchObject([{ tentativas: 5, ultimoErro: `resend-${status}`, saltado: false }]);
   });
   it("recupera uma reserva que morreu sem resposta", async () => {
     await preparar(); await fonte.reservarEmail(linhaDeEmail().id, agora);
@@ -139,10 +139,10 @@ describe("emissor com Postgres", () => {
     await base.db.insert(emailsPorEnviar).values([posterior, { ...linhaDeEmail(), id: "00000000-0000-4000-8000-000000000004", destinatario: "outra-caixa@example.com", criadoEm: mais(2000) }]);
     expect(await fonte.emailsPendentes({ agora: mais(3000), limite: 1 })).toMatchObject([{ destinatario: "outra-caixa@example.com" }]);
   });
-  it("um 429 para a volta antes de gastar tentativas das outras caixas", async () => {
+  it.each([401, 403, 429])("um %s para a volta e deixa as outras caixas sem tentativas", async status => {
     await preparar();
     await base.db.insert(emailsPorEnviar).values({ ...linhaDeEmail(), id: "00000000-0000-4000-8000-000000000003", destinatario: "outra-caixa@example.com" });
-    const buscar = vi.fn<typeof fetch>().mockResolvedValue(new Response("", { status: 429 }));
+    const buscar = vi.fn<typeof fetch>().mockResolvedValue(new Response("", { status }));
     await executar(buscar); expect(buscar).toHaveBeenCalledTimes(1);
     const linhas = await base.db.select().from(emailsPorEnviar);
     expect(linhas.map(l => l.tentativas).sort()).toEqual([0, 1]);

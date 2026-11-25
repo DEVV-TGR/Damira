@@ -507,7 +507,13 @@ com o logótipo embutido, até 10 por volta. `enviarDepois()` usa `after()` do N
 chama-se **depois da transação bem-sucedida**, na ação que acabou de pôr emails na
 fila. **As chamadas ainda não estão ligadas**: entram com o #139 e a compra.
 Os despertadores, os lembretes e a volta diária são da etapa 2; o ecrã dos falhados
-é do painel. Não há consultas periódicas nesta etapa.
+é do painel. Não há consultas periódicas nesta etapa. **Não ligar os emails da
+compra antes de haver novas tentativas automáticas dentro da janela de 24 h**:
+com um 503 e sem mais ações, a linha pode chegar a `idempotencia-expirada` sem
+ter sido repetida. A etapa 2 tem de resolver este caso sem depender de visitas.
+Antes de ligar o helper, confirmar na Vercel a presença de `RESEND_API_KEY` e
+`EMAIL_REMETENTE` e decidir se Production mantém `EMAILS_SO_PARA` preenchida.
+A existência da integração ou do domínio verificado não confirma estas variáveis.
 
 Uma reserva condicional incrementa `tentativas` e grava `ultima_tentativa_em`;
 só quem a recebe envia. A conclusão confere a tentativa, para um processo antigo
