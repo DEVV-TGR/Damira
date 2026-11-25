@@ -37,6 +37,7 @@ const pedido = (nome: string, alteracoes: Partial<Pedido> = {}): Pedido => ({
       precoUnitarioCent: 33500,
       totalCent: 33500,
       notas: null,
+      precoDaProposta: false,
     },
   ],
   observacoes: null,
@@ -45,6 +46,7 @@ const pedido = (nome: string, alteracoes: Partial<Pedido> = {}): Pedido => ({
   pagoOnlineCent: 33500,
   reembolsadoCent: 0,
   chegouTarde: false,
+  propostaVersao: 0, propostaEm: null, levantamentoAnteriorEm: null,
   pagoEm: lisboa(6, 9, 5),
   impressoEm: null,
   entregueEm: null,
@@ -390,7 +392,7 @@ describe("os pedidos pagos na loja", () => {
   it("e cancela um que ainda espera pela casa ou pelo cliente", async () => {
     const f = await fonte([
       naLoja("a", { estado: "por-confirmar", confirmadoEm: null, expiraEm: lisboa(8, 9) }),
-      naLoja("b", { estado: "a-aguardar-aceite", confirmadoEm: null, expiraEm: lisboa(8, 9) }),
+      naLoja("b", { estado: "a-aguardar-aceite", confirmadoEm: null, expiraEm: lisboa(8, 9), propostaVersao: 1, propostaEm: lisboa(7, 9) }),
     ]);
     for (const nome of ["a", "b"]) {
       const cancelado = await f.cancelarPedido(u(nome), 0, GERENTE);

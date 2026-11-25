@@ -148,6 +148,7 @@ export function fonteDeExemplo(
       pagoOnlineCent: totalCent,
       reembolsadoCent: 0,
       chegouTarde: false,
+      propostaVersao: 0, propostaEm: null, levantamentoAnteriorEm: null,
       pagoEm,
       impressoEm: talaoFalhou ? null : new Date(pagoEm.getTime() + 5_000),
       entregueEm: null,
@@ -318,6 +319,7 @@ const linhaDoPedido = (
     precoUnitarioCent: preco,
     totalCent: Math.round(preco * qtd),
     notas: null,
+    precoDaProposta: false,
   };
 };
 
@@ -473,6 +475,7 @@ export function pedidosDoPainelDeExemplo(
       pagoOnlineCent: p.sinal ? Math.round(totalCent * 0.3) : totalCent,
       reembolsadoCent: 0,
       chegouTarde: p.chegouTarde ?? false,
+      propostaVersao: 0, propostaEm: null, levantamentoAnteriorEm: null,
       pagoEm,
       impressoEm: new Date(pagoEm.getTime() + 60_000),
       entregueEm: estado === "entregue" ? new Date(levantamentoEm.getTime() + 5 * 60_000) : null,

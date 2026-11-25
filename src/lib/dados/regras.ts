@@ -282,6 +282,7 @@ export async function conferirPedido(
         precoUnitarioCent: cotada.precoUnitarioCent,
         totalCent: cotada.totalCent,
         notas: linha.notas,
+        precoDaProposta: false,
       };
     }),
   };
@@ -327,6 +328,9 @@ export const pedidoNaLoja = (
   expiraEm: conferido.porConfirmar ? new Date(agora.getTime() + PRAZO_DA_RESPOSTA_MS) : null,
   aceiteEm: null,
   causaExpiracao: null,
+  propostaVersao: 0,
+  propostaEm: null,
+  levantamentoAnteriorEm: null,
 });
 
 // ——— O painel ———

@@ -122,6 +122,7 @@ const linha = (produtoId: string, quantidade = 1): Pedido["linhas"][number] => (
   precoUnitarioCent: 1000,
   totalCent: 1000 * quantidade,
   notas: null,
+  precoDaProposta: false,
 });
 
 const pedido = (id: string, alteracoes: Partial<Pedido> = {}): Pedido => ({
@@ -138,6 +139,7 @@ const pedido = (id: string, alteracoes: Partial<Pedido> = {}): Pedido => ({
   pagoOnlineCent: 1000,
   reembolsadoCent: 0,
   chegouTarde: false,
+  propostaVersao: 0, propostaEm: null, levantamentoAnteriorEm: null,
   pagoEm: lisboa(10, 5, 9, 5),
   impressoEm: null,
   entregueEm: null,

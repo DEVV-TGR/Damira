@@ -349,6 +349,11 @@ export const EsquemaLinhaPedido = z.object({
   precoUnitarioCent: Cent.nullable(),
   totalCent: Cent.nullable(),
   notas: z.string().nullable(),
+  /**
+   * O preço foi fixado pela casa numa proposta, e não visto pelo cliente ao pedir: é o que a página
+   * do aceite e o email destacam (`pedidos.md` › O aceite do cliente).
+   */
+  precoDaProposta: z.boolean().default(false),
 });
 
 /** Um reembolso pedido ao Stripe. O estado vem do webhook, não da resposta (`pagamentos.md`). */
@@ -397,6 +402,14 @@ export const EsquemaPedido = z.object({
   expiraEm: z.date().nullable(),
   /** Quando o cliente aceitou a resposta da casa (`pedidos.md` › O aceite do cliente). */
   aceiteEm: z.date().nullable(),
+  /**
+   * A versão da proposta da casa: sobe a cada resposta com preço ou hora novos. O link do aceite
+   * assina-a, e uma resposta revista invalida o link anterior. `0` é «nunca houve proposta».
+   */
+  propostaVersao: z.number().int().nonnegative().default(0),
+  propostaEm: z.date().nullable().default(null),
+  /** A hora que o cliente pediu, quando a proposta a mudou («12h00, em vez das 10h30»). */
+  levantamentoAnteriorEm: z.date().nullable().default(null),
   /** Só num `expirado`, e sempre nele. */
   causaExpiracao: z.enum(CAUSAS_EXPIRACAO).nullable(),
   /** A primeira impressão que a impressora confirmou. Reimprimir não o muda. */
