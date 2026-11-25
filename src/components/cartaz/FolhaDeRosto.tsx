@@ -28,9 +28,7 @@ export function FolhaDeRosto() {
           {t("olho")}, {marca("desde", { ano: casa.desde })}
         </p>
 
-        {/* A assinatura da casa, em caixa alta e muito condensada: é o registo
-            dos impressos, e a Bricolage tem eixo de largura para lá chegar sem
-            trocar de família. O ponto final é da montra e fica. */}
+        {/* O ponto final faz parte da assinatura pintada na montra. */}
         <h1 id="capa" className="capa__titulo">
           {marca("assinatura")}.
         </h1>

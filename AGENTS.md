@@ -356,9 +356,9 @@ São máscaras de alfa e não imagens: guardam só a forma, e a cor vem do CSS. 
 que permite o mesmo ficheiro servir o logótipo a tijolo sobre papel e a papel
 sobre tinta.
 
-**As duas fontes são aproximações.** A Bricolage Grotesque e a Instrument Sans
-aproximam o impresso; as verdadeiras não se identificam a partir de um PDF
-achatado. Trocam-se em `src/app/[locale]/layout.tsx`.
+**O site público usa Caros** nos títulos e no corpo, via `next/font/local` em
+`src/app/[locale]/layout.tsx`. O painel usa Bricolage Grotesque e Instrument
+Sans, declaradas em `src/lib/fontes.ts`.
 
 ## Cores e contraste
 

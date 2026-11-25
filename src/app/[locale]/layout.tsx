@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import fonteLocal from "next/font/local";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
@@ -16,8 +17,16 @@ import { MODO_CONTA } from "@/lib/conta";
 import { routing, type Locale } from "@/i18n/routing";
 import { URL_SITE, urlLocalizado } from "@/lib/site";
 import { imagensDePartilha } from "@/lib/metadata";
-import { corpo, display } from "@/lib/fontes";
 import "../globals.css";
+
+const caros = fonteLocal({
+  src: [
+    { path: "./_fontes/caros-regular.woff", weight: "400", style: "normal" },
+    { path: "./_fontes/caros-bold.woff", weight: "700", style: "normal" },
+  ],
+  variable: "--fonte-caros",
+  display: "swap",
+});
 
 /** As duas línguas geram-se no `build`; não há renderização a pedido. */
 export function generateStaticParams() {
@@ -93,7 +102,7 @@ export default async function LayoutIdioma({
   const nav = await getTranslations({ locale, namespace: "nav" });
 
   return (
-    <html lang={locale} className={`${display.variable} ${corpo.variable}`}>
+    <html lang={locale} className={`${caros.variable} site-publico`}>
       <body>
         {/* ⚠️ **O provedor da conta envolve tudo, mas só monta o `next-auth`
             quando há chaves.** Sem elas o modo é `demonstracao`, a conta vive no
