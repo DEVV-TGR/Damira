@@ -93,7 +93,7 @@ export async function executarEmissor(
           await fonte.registarFalhaEmail(reserva, "idempotencia-expirada", true);
           resumo.falhados++; continue;
         }
-        if (reserva.ultimaTentativaEm && +instanteAtual() >= +reserva.ultimaTentativaEm + JANELA_RESERVA_MS) {
+        if (reserva.ultimaTentativaEm && +instanteAtual() >= +reserva.ultimaTentativaEm + JANELA_RESERVA_MS - 15_000) {
           await fonte.registarFalhaEmail(reserva, "reserva-expirada", false);
           resumo.falhados++; continue;
         }
@@ -109,6 +109,7 @@ export async function executarEmissor(
           await fonte.registarFalhaEmail(reserva, resultado.codigo, resultado.definitiva);
           console.error("[emails]", referencia, linha.modelo, resultado.codigo);
           resumo.falhados++;
+          if (resultado.codigo === "resend-429") break;
         }
       } catch (erro) {
         registarErro(erro, referencia, linha.modelo);

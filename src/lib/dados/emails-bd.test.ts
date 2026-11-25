@@ -126,6 +126,36 @@ describe("emissor com Postgres", () => {
     expect(await executar(buscar, agora, { ...ambiente, EMAIL_REMETENTE: "" })).toMatchObject({ enviados: 1 });
     expect(JSON.parse(buscar.mock.calls[0][1]!.body as string).from).toBe("Confeitaria Damira <onboarding@resend.dev>");
   });
+  it("não deixa um cancelamento ultrapassar uma confirmação em espera", async () => {
+    await preparar({ modelo: "confirmado-cliente", tentativas: 1, ultimaTentativaEm: agora, ultimoErro: "resend-503" });
+    const posterior = { ...linhaDeEmail(), id: "00000000-0000-4000-8000-000000000003", modelo: "cancelado-cliente", criadoEm: mais(1000) };
+    await base.db.insert(emailsPorEnviar).values(posterior);
+    expect(await fonte.reservarEmail(posterior.id, mais(2000))).toBeNull();
+    expect(await fonte.emailsPendentes({ agora: mais(2000), limite: 10 })).toEqual([]);
+  });
+  it("linhas à espera não escondem um pedido novo pronto no limite da volta", async () => {
+    await preparar({ modelo: "confirmado-cliente", tentativas: 1, ultimaTentativaEm: agora, ultimoErro: "resend-503" });
+    const posterior = { ...linhaDeEmail(), id: "00000000-0000-4000-8000-000000000003", modelo: "cancelado-cliente", criadoEm: mais(1000) };
+    await base.db.insert(emailsPorEnviar).values([posterior, { ...linhaDeEmail(), id: "00000000-0000-4000-8000-000000000004", destinatario: "outra-caixa@example.com", criadoEm: mais(2000) }]);
+    expect(await fonte.emailsPendentes({ agora: mais(3000), limite: 1 })).toMatchObject([{ destinatario: "outra-caixa@example.com" }]);
+  });
+  it("um 429 para a volta antes de gastar tentativas das outras caixas", async () => {
+    await preparar();
+    await base.db.insert(emailsPorEnviar).values({ ...linhaDeEmail(), id: "00000000-0000-4000-8000-000000000003", destinatario: "outra-caixa@example.com" });
+    const buscar = vi.fn<typeof fetch>().mockResolvedValue(new Response("", { status: 429 }));
+    await executar(buscar); expect(buscar).toHaveBeenCalledTimes(1);
+    const linhas = await base.db.select().from(emailsPorEnviar);
+    expect(linhas.map(l => l.tentativas).sort()).toEqual([0, 1]);
+  });
+  it("não inicia o fetch quando a reserva não cobre os 10 s de timeout e folga", async () => {
+    await preparar(); const buscar = sucesso(); let decorrido = 0;
+    const lenta = { ...fonte, pedidoDoEmail: async (id: string) => {
+      const pedido = await fonte.pedidoDoEmail(id); decorrido = 110000; return pedido;
+    } };
+    expect(await executarEmissor({ agora }, { fonte: lenta, ambiente, casa, buscar, decorrido: () => decorrido })).toMatchObject({ falhados: 1 });
+    expect(buscar).not.toHaveBeenCalled();
+    expect(await fonte.emailsFalhados(10)).toMatchObject([{ ultimoErro: "reserva-expirada" }]);
+  });
   it("fora de produção sem caixa segura não consulta nem gasta tentativas", async () => {
     await preparar(); const buscar = sucesso(); const ler = vi.spyOn(fonte, "emailsPendentes");
     await executar(buscar, agora, { ...ambiente, EMAILS_SO_PARA: "" });

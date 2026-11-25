@@ -530,8 +530,10 @@ cliente abre uma resposta ao email público da casa, em vez do endereço técnic
 
 Um `lembrete-loja` cujo pedido já não está `por-confirmar` é saltado:
 `ultimo_erro = 'saltado: lembrete-sem-espera'`, tentativas no máximo, enviado nulo.
-Uma linha de estado posterior para o mesmo pedido e destinatário só se reserva
-depois de o recibo inicial sair ou ficar definitivamente falhado. Assim duas
+Para o mesmo pedido e destinatário, o recibo inicial tem prioridade; as
+restantes linhas seguem `criado_em, id`. Uma só se reserva quando as anteriores
+saíram ou ficaram definitivamente falhadas. A seleção ignora as bloqueadas por
+antecessores reservados ou à espera de nova tentativa, sem ocultar outros pedidos. Assim duas
 voltas ou uma espera de nova tentativa não invertem os envios.
 O recibo `criado-por-confirmar-cliente` segue mesmo que o pedido tenha mudado:
 documenta o envio inicial; o novo estado tem o seu próprio email na fila.

@@ -16,16 +16,25 @@ export function criarEmailsBd(db: BaseDeDados): FonteEmails {
       ${fila.ultimaTentativaEm} + (${JANELA_RESERVA_MS} * power(2, greatest(0, ${fila.tentativas} - 1))) * interval '1 millisecond'
         <= ${agora.toISOString()}::timestamptz)`,
   );
-  // O novo estado não pode ultrapassar o recibo, mesmo que outra volta o esteja a enviar.
-  const semReciboPendente = (agora: Date) => sql`not exists (
+  // Na leitura só excluímos antecessores em espera/reservados; os prontos podem sair na mesma volta.
+  const semAnteriorPendente = (agora: Date, soIndisponiveis = false) => sql`not exists (
     select 1 from emails_por_enviar anterior
     where anterior.pedido_id = ${fila.pedidoId} and anterior.destinatario = ${fila.destinatario}
-      and anterior.id <> ${fila.id}
-      and anterior.modelo in ('criado-confirmado-cliente', 'criado-por-confirmar-cliente')
-      and ${fila.modelo} not in ('criado-confirmado-cliente', 'criado-por-confirmar-cliente')
+      and anterior.modelo <> 'resposta-cliente'
+      and (
+        (anterior.modelo in ('criado-confirmado-cliente', 'criado-por-confirmar-cliente')
+          and ${fila.modelo} not in ('criado-confirmado-cliente', 'criado-por-confirmar-cliente'))
+        or ((anterior.modelo in ('criado-confirmado-cliente', 'criado-por-confirmar-cliente')) =
+            (${fila.modelo} in ('criado-confirmado-cliente', 'criado-por-confirmar-cliente'))
+          and (anterior.criado_em, anterior.id) < (${fila.criadoEm}, ${fila.id}))
+      )
       and anterior.enviado_em is null
       and (anterior.tentativas < ${MAXIMO_TENTATIVAS} or
         (anterior.ultimo_erro is null and anterior.ultima_tentativa_em + interval '2 minutes' > ${agora.toISOString()}::timestamptz))
+      and (not ${soIndisponiveis}::boolean or
+        (anterior.ultima_tentativa_em is not null and anterior.ultima_tentativa_em +
+          (${JANELA_RESERVA_MS} * power(2, greatest(0, anterior.tentativas - 1))) * interval '1 millisecond'
+            > ${agora.toISOString()}::timestamptz))
   )`;
   const minhaReserva = (reserva: LinhaEmail) => and(
     eq(fila.id, reserva.id), isNull(fila.enviadoEm), eq(fila.tentativas, reserva.tentativas),
@@ -33,12 +42,12 @@ export function criarEmailsBd(db: BaseDeDados): FonteEmails {
   );
   return {
     async emailsPendentes({ agora, limite }) {
-      return db.select().from(fila).where(disponivel(agora))
+      return db.select().from(fila).where(and(disponivel(agora), semAnteriorPendente(agora, true)))
         .orderBy(asc(fila.criadoEm), asc(fila.id)).limit(limiteSeguro(limite));
     },
     async reservarEmail(id, agora) {
       const [linha] = await db.update(fila).set({ tentativas: sql`${fila.tentativas} + 1`, ultimaTentativaEm: agora, ultimoErro: null })
-        .where(and(eq(fila.id, id), disponivel(agora), semReciboPendente(agora))).returning();
+        .where(and(eq(fila.id, id), disponivel(agora), semAnteriorPendente(agora))).returning();
       return linha ?? null;
     },
     async marcarEmailEnviado(reserva, agora) {

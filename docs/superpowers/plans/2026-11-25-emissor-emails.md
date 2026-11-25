@@ -47,9 +47,13 @@ fetch, ordem do recibo, hora de conclusão, reserva não suportada, remetente de
 teste, aviso de teste no script, servidor confirmado no ensaio).
 Decisões: contactos continuam no JSON como no site; janela conservadora desde a
 criação; não há envio nem ensaio real porque a chave Resend ainda não existe
-(confirmado pelo Tomás nesta sessão). Revisão pelo Claude bloqueada por OAuth
-expirado; o PR só se abre após revisão ou dispensa explícita dessa regra.
+(confirmado pelo Tomás nesta sessão). Revisão pelo Claude concluída depois de renovar a sessão. Correções adicionais:
+ordem geral por pedido/destinatário, seleção sem linhas em espera, parar no 429
+e margem de 15 s para o fetch na reserva. Os 4xx (exceto 429) continuam
+definitivos por requisito; não se acrescentou TTL aos recibos, que o pedido
+manda conservar mesmo após mudança de estado. A documentação clarifica as
+falhas de configuração descobertas só na resposta do fornecedor.
 
-Verificação final: lint verde; 1209 testes verdes/39 ignorados; build Webpack
+Verificação final: lint verde; 1213 testes verdes/39 ignorados; build Webpack
 e TypeScript verdes em cópia sem ambiente, 41 páginas. Script sem flags
 executado sem consultas nem envios. PR preparado localmente, por abrir.

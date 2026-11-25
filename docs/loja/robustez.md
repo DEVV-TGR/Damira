@@ -108,13 +108,19 @@ A fila só se lê por chamada explícita, após uma ação que já acordou a bas
 Reserva de **2 minutos** e espera crescente entre tentativas: **2, 4, 8 e 16
 minutos**, até **5 tentativas**. Rede, timeout de 10 segundos, 429 e 5xx podem
 repetir numa volta posterior; outros 4xx são definitivos. Falta de dados do
-modelo também é definitiva. Erros de configuração globais (chave, remetente inválido ou
-caixa de ensaio) deixam a fila intacta. Uma falha individual não impede o resto
+modelo também é definitiva. Configuração em falta antes do envio (chave, remetente malformado ou caixa de
+ensaio) deixa a fila intacta. Uma chave revogada ou um domínio recusado pelo
+fornecedor só se descobrem na resposta HTTP: os 4xx, salvo 429, ficam definitivos,
+como os restantes erros de endereço/remetente; corrigir configuração e rever os
+falhados antes de reenviar. Uma falha individual não impede o resto
 da volta. O resumo distingue enviados, falhados e saltados e nunca lança para
 o browser; marcar enviado falhado também não desfaz o pedido original.
 
 O intervalo de 600 ms evita rajadas dentro da mesma volta. Voltas simultâneas
-podem ainda encontrar 429: fica registado e espera pela tentativa seguinte.
+podem ainda encontrar 429: fica registado, a volta para sem reservar as outras
+linhas e espera pela tentativa seguinte. As cinco tentativas também se aplicam
+a quotas esgotadas: se a indisponibilidade durar mais do que as esperas, ficam
+falhadas e exigem revisão, sem desaparecerem.
 O limite de 10 envios e a paragem antes de iniciar outra linha após 45 s limitam
 a duração (um último timeout pode levar mais 10 s); ainda não há rota nem duração Vercel a
 configurar, porque os chamadores entram nos PRs seguintes.
