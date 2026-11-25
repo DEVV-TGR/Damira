@@ -124,15 +124,10 @@ pelo terminal em `scripts/bd.ts`.
       seguir ao reset: só o `bolo-por-medida` ficou com a caixa ligada.
 - [ ] A mesma `0005` no `production`, **antes** do merge do #116.
 
-⚠️ **O build lê a Neon, por isso uma coluna nova parte o deploy até a migração
-correr.** O build gera as páginas de produto a partir da base de dados, e o
-Drizzle passa a pedir a coluna assim que ela está no `esquema.ts`. Um PR que
-acrescenta uma coluna falha na Preview enquanto o `desenvolvimento` não tiver a
-migração, e partia o build de produção se entrasse no `main` antes do
-`production` (foi o que aconteceu ao #116 e ao #117 a 11/11). A ordem é sempre:
-migrar o `desenvolvimento`, refazer o deploy do PR, migrar o `production`, e só
-depois integrar. Migrar primeiro é seguro, porque o código antigo não pede a
-coluna nova.
+- [ ] **Em cada alteração ao esquema**, seguir
+      [A ordem do deploy](base-de-dados.md#a-ordem-do-deploy--a-base-de-dados-antes-do-código)
+      antes de migrar e integrar, tanto na Preview como em produção. A regra e
+      as limitações de compatibilidade vivem só nesse ponto.
 
 **Para correr um comando no `production`**, o endereço direto dele vive num
 ficheiro à parte, `.env.producao.local` (o git ignora-o), e passa-se com

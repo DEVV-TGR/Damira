@@ -142,6 +142,11 @@ O esquema muda antes do código, e o site não pode parar a meio:
 
 #### A ordem do deploy — a base de dados antes do código
 
+Este ponto é a fonte única da ordem de migração e deploy; a checklist de
+`ligar-a-neon.md` remete para aqui. **Migrar primeiro não é sempre compatível
+com o código antigo:** é preciso verificar também as escritas, não só as
+leituras. Na `0008`, as colunas obrigatórias criam a janela descrita abaixo.
+
 ⚠️ **O `next build` lê os produtos da base de dados** (as páginas estáticas), e
 desde a `0008` pede o `categoria_id` e o `tipo`. Um build contra uma base sem a
 `0008` falha com `column "categoria_id" does not exist`. Foi o que aconteceu ao
@@ -160,6 +165,12 @@ que não estava migrado.
   produto no painel falha**, porque a coluna é obrigatória e o código antigo
   não a escreve. Não se cria nenhum produto durante a passagem — não vale a
   pena um `DEFAULT` inventado para tapar esses minutos.
+
+A `0008` mantém o preenchimento e o `NOT NULL` na mesma migração, como revisto
+no #134. Dividir em expansão e contração exigiria uma segunda migração e um
+novo preenchimento dos produtos criados pelo código antigo entre as duas.
+**Esta passagem faz-se antes de a casa recriar o catálogo por categorias e
+nunca no dia do lançamento.**
 
 ### `produtos`
 
