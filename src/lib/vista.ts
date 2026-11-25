@@ -83,7 +83,39 @@ export const porCategoria = (
   carta: string,
   categoria: string,
 ): Produto[] =>
-  artigos.filter((artigo) => artigo.carta === carta && artigo.categoria === categoria);
+  porOrdemAlfabetica(
+    artigos.filter((artigo) => artigo.carta === carta && artigo.categoria === categoria),
+    "pt",
+  );
+
+/**
+ * Os produtos por ordem alfabética do nome, na língua de quem lê (decidido a
+ * 25/11: **tudo** nas encomendas e no painel, kits e bolos incluídos).
+ *
+ * ⚠️ Ordena-se aqui, ao mostrar, e não se confia na ordem em que chegam: um
+ * produto que a gerente acabou de criar entra no sítio certo sem ninguém
+ * mexer em nada, e a ordem não depende de como a base de dados os devolve.
+ * O `localeCompare` com `sensitivity: "base"` põe «Éclair» ao pé de «Empada»,
+ * e não depois do «Z».
+ */
+export const porOrdemAlfabetica = (produtos: readonly Produto[], locale: Locale): Produto[] =>
+  [...produtos].sort((a, b) =>
+    nomeDe(a, locale).localeCompare(nomeDe(b, locale), locale, { sensitivity: "base", numeric: true }),
+  );
+
+/** O texto em que a pesquisa da página procura: os dois nomes, sem acentos nem maiúsculas. */
+export const textoDeProcura = (produto: Produto): string => paraProcura(`${produto.nome.pt} ${produto.nome.en ?? ""}`);
+
+/** «Pão de Ló» encontra-se com «pao de lo». */
+export const paraProcura = (texto: string): string =>
+  texto.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
+
+/**
+ * A grelha de todos os cartões das encomendas — kits, bolos, boxes e a carta.
+ * Uma só, para todos os produtos terem o mesmo tamanho (decidido a 25/11): duas
+ * colunas no telemóvel e seis num monitor.
+ */
+export const GRELHA_CARTOES = "grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6";
 
 /** As cartas que têm mesmo artigos, pela ordem da ementa. */
 export const cartasComArtigos = (artigos: readonly Produto[], ordem: OrdemEmenta): string[] =>

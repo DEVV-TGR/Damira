@@ -145,9 +145,9 @@ export function PedidoCartao({
                 type="button"
                 onClick={() => (falta > 0 ? setConfirmarFalta(true) : entregarJa(false))}
                 disabled={aEnviar}
-                className={`${BOTAO_PRINCIPAL} min-h-14 w-full sm:w-auto sm:px-10`}
+                className={`${BOTAO_PRINCIPAL} min-h-[60px] w-full text-base`}
               >
-                {aEnviar ? "A marcar…" : "Entregue"}
+                {aEnviar ? "A marcar…" : "✓ Entregue"}
               </button>
             )}
           </div>

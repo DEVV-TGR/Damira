@@ -232,11 +232,18 @@ papel:
 Há ainda `marca.json` (nome e redes, fonte única do cabeçalho e do rodapé) e
 `redes.json` (os *reels*): auxiliares, não fazem parte desta divisão.
 
-**A encomenda e o dia a dia vivem juntos.** Havia aqui uma regra para não
+**A encomenda e a carta vivem juntas.** Havia aqui uma regra para não
 juntar a encomenda à ementa; saiu com a `/ementa` (#123, decisão de 12/11). A
-carta chama-se agora **«Dia a dia»** — o que se pede ao balcão, um croissant,
-um pão com manteiga — e o que dela se encomenda vive na `/encomendas`, na secção
-**«Do dia a dia»**: 70 dos 95 artigos. Os dois ficheiros continuam separados
+carta — o que se pede ao balcão, um croissant, um pão com manteiga — **continua
+a chamar-se «Carta»** (decidido a 25/11: a troca para «Dia a dia» de 15/11 foi
+desfeita), e o que dela se encomenda vive na `/encomendas`, na secção
+**«Da carta»**: 70 dos 95 artigos.
+
+**Na `/encomendas`, todos os produtos têm o mesmo cartão e a mesma grelha**
+(`GRELHA_CARTOES`, em `vista.ts`) — kits, bolos, boxes e carta —, **todos por
+ordem alfabética** (`porOrdemAlfabetica`), e há uma pesquisa por cima deles
+(`PesquisaProdutos`). Decidido a 25/11. A lista de produtos do painel segue a
+mesma ordem; só as categorias da carta seguem a ordem da gerente (#87). Os dois ficheiros continuam separados
 (`ementa.json` e `encomendas.json`) até o catálogo passar a categorias (#124).
 
 O que evita alguém aparecer ao sábado à espera de levar um kit debaixo do braço
@@ -257,8 +264,8 @@ fora (`aVendaOnline: false`): não se encomenda um galão para sexta-feira.
 Porque as categorias **repetem-se entre cartas**: há `doces` na carta da casa e
 `doces` na vegan, `salgados` nas duas. Na `/ementa`, que saiu a 12/11, a âncora
 de uma secção era por isso `{carta}-{categoria}` e não só a categoria — duas
-âncoras iguais deixavam uma delas inalcançável, sem aviso nenhum. Na «Do dia a
-dia» é o título colado que leva a carta à frente («Vegan, Doces»). Revê-se com
+âncoras iguais deixavam uma delas inalcançável, sem aviso nenhum. Na «Da carta» é
+o título colado que leva a carta à frente («Vegan, Doces»). Revê-se com
 as categorias da gerente (#124).
 
 ### `unidade` decide se o preço está certo ou errado
@@ -413,7 +420,7 @@ rodapé, a folha de rosto e o capítulo do vegan, que agora levam a
 `/encomendas#da-ementa`. ⚠️ **Antes de pôr um link para `/ementa` em lado
 nenhum, a página tem de voltar a existir**: um link esquecido é um 404 no menu.
 
-**Os artigos do dia a dia não têm página.** O cartão (`CartaoArtigo`) é tudo:
+**Os artigos da carta não têm página.** O cartão (`CartaoArtigo`) é tudo:
 nome, preço e o botão compacto, **com a quantidade mínima no cabeçalho da
 categoria**. Um artigo com variantes (o chocolate do Dubai, quatro pesos) tem
 **um botão por variante** no próprio cartão — antes mandava para a página do
@@ -508,7 +515,7 @@ primeiras sete vieram do Santo Burga e continuam a valer — o motor é o mesmo.
    acumulador em vírgula flutuante, à parte do DOM.
 8. **Uma categoria em duas cartas dá duas âncoras iguais.** É a armadilha nova
    deste site, e foi a razão de a âncora da `/ementa` ser `{carta}-{categoria}`.
-   A página saiu (#123), e com ela o `SeccaoEmenta.tsx`; na «Do dia a dia» a
+   A página saiu (#123), e com ela o `SeccaoEmenta.tsx`; na «Da carta» a
    categoria não tem âncora, e o título colado leva o nome da carta à frente
    («Vegan, Doces») pela mesma razão. Volta a morder no dia em que alguém der
    um `id` a uma categoria, ou em que duas categorias puderem ter o mesmo nome.

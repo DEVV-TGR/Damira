@@ -18,7 +18,7 @@ import { caminhoDoProduto } from "@/lib/vista";
  * e assim continua sem dados nenhuns.
  *
  * ⚠️ **Os artigos do dia a dia não têm página** desde que a `/ementa` saiu
- * (#123, decisão de 12/11): encomendam-se no cartão, na secção «Do dia a dia»
+ * (#123, decisão de 12/11): encomendam-se no cartão, na secção «Da carta»
  * da `/encomendas`. Voltar a pô-los aqui era anunciar ao Google 95 endereços
  * que dão 404.
  */

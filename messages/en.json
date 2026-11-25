@@ -19,7 +19,7 @@
       "olho": "Bakery and pastry shop",
       "lede": "Open at seven every morning, every day. Hot bread at the counter, lunch at the table, and a case of pastries until nine at night.",
       "credito": "The line is not ours. It is painted on the shop window, beside the door.",
-      "verEmenta": "Everyday",
+      "verEmenta": "From the menu",
       "encomendar": "Order",
       "atalhos": "Shortcuts"
     },
@@ -87,23 +87,23 @@
       "titulo": "More than half of what we make is vegan",
       "de": "of {total} items",
       "texto": "Not one item marked with a leaf at the end of a list. A whole counter alongside the other one: savouries, pastries, and whole cakes sold by the kilo.",
-      "ligacao": "Order from Everyday"
+      "ligacao": "Order from the menu"
     },
     "provar": {
       "numeral": "VII",
-      "olho": "Everyday",
+      "olho": "The menu",
       "titulo": "Four counters, one price from each",
       "texto": "{total} items in all. Here are the four counters and one real price from each, so you do not have to click anything just to know what it costs.",
       "quantos": "{n} items",
       "quilo": "kilo",
       "semPreco": "on request",
-      "verEmenta": "Order from Everyday"
+      "verEmenta": "Order from the menu"
     },
     "festa": {
       "numeral": "VIII",
       "olho": "Orders",
       "titulo": "From a dozen to a party of seventy",
-      "texto": "Party kits at a fixed price, made-to-order cakes, boxes for two — and seventy everyday items you can take by the dozen or by the kilo.",
+      "texto": "Party kits at a fixed price, made-to-order cakes, boxes for two — and seventy menu items you can take by the dozen or by the kilo.",
       "pessoas": "{n} people",
       "desde": "from {preco}",
       "verFamilia": "View",
@@ -121,8 +121,8 @@
           "detalhe": "{n} ready boxes, for a breakfast or a birthday."
         },
         "carta": {
-          "nome": "Everyday",
-          "detalhe": "{n} everyday items to order, by the dozen or by the kilo."
+          "nome": "From the menu",
+          "detalhe": "{n} menu items to order, by the dozen or by the kilo."
         }
       },
       "nota": "All of this needs notice. The quote is settled by phone or through the form.",
@@ -246,7 +246,7 @@
         "bolo": "Custom cake",
         "box": "Box",
         "outro": "Something else",
-        "ementa": "Everyday"
+        "ementa": "From the menu"
       },
       "campos": {
         "tipo": "What would you like to order",
@@ -329,9 +329,16 @@
         "falta": "Choose the flavour first."
       }
     },
+    "procura": {
+      "rotulo": "Search products",
+      "exemplo": "Kit, cake, croissant…",
+      "limpar": "Clear",
+      "resultados": "{n, plural, one {# product} other {# products}} matching “{texto}”",
+      "nenhum": "No product matches “{texto}”. Try another word, or give us a call."
+    },
     "daEmenta": {
-      "titulo": "Everyday, to order",
-      "texto": "Seventy everyday items the shop makes to order, for taking away in quantity: savouries and pastries by the dozen, vegan cakes by the kilo, and the chocolate in all four sizes.",
+      "titulo": "From the menu, to order",
+      "texto": "Seventy menu items the shop makes to order, for taking away in quantity: savouries and pastries by the dozen, vegan cakes by the kilo, and the chocolate in all four sizes.",
       "aviso": "This is not the counter. Every line has a minimum quantity and needs notice — a single pastry is something you ask for in the shop, no booking needed. Cakes are sold by weight, and the final amount is settled at pickup.",
       "regraUn": "Minimum {minimo} units, in steps of {passo}",
       "regraKg": "Minimum {minimo} kg, sold by weight",
@@ -342,7 +349,7 @@
       "festas": "Parties",
       "kits-bolo": "Cakes",
       "boxes": "Boxes",
-      "da-ementa": "Everyday",
+      "da-ementa": "From the menu",
       "pedido": "Order"
     },
     "calendario": {
