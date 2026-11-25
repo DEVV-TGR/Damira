@@ -452,6 +452,36 @@ escolhas leva **exatamente uma** por linha, e das dele; um sem escolhas, nenhuma
 (`escolha-invalida`). Para misturar sabores, uma linha por sabor, e cada uma
 conta o seu mínimo — 12 de alheira e 12 de legumes (decidido a 05/10).
 
+### Personalização (#88, por implementar)
+
+Decidido a 25/11 (`painel-gerente.md` › Simples e compostos). O browser manda
+só ids e quantidades (regra 1), e o servidor calcula o **preço da unidade**:
+
+- **simples** = preço do tamanho escolhido (ou o preço do produto, se não tiver
+  tamanhos) + variâncias escolhidas + Σ (extra × quantidade). Tirar não
+  desconta;
+- **composto** = preço do grupo escolhido. O que vem dentro não soma.
+
+Tudo × quantidade da linha (unidades ou quilos), em cêntimos. E recusa:
+
+- o que não existe no produto ou está desligado;
+- num simples, uma variância sem escolha ou com mais de uma, ou um extra acima
+  do máximo que a gerente definiu;
+- num composto, um grupo que não seja dele, ou uma variância em falta num
+  simples lá dentro.
+
+**Não valida mais nada**: o conteúdo é da gerente. Um preço sob orçamento
+(tamanho ou grupo) põe a linha sob orçamento, com o resto escrito ao lado. A
+linha guarda **uma cópia** do que foi escolhido — variâncias, opções, extras,
+e no composto o nome do grupo e os produtos que levava, com as quantidades —, e
+a regra de baixo vale para ela.
+
+⚠️ **Em aberto — o mínimo por linha.** A regra de cima (05/10) faz cada linha
+contar o seu mínimo. Com opções e extras, «6 com queijo e 6 sem» são duas linhas
+de 6, e as duas são recusadas por um mínimo de 12. Ou continua por linha (cada
+lote de 12 sai igual da cozinha), ou passa a contar pela soma do produto no
+pedido. *Decide:* Gonçalo, com a casa.
+
 ⚠️ **Nunca se recalcula um pedido antigo a partir do produto atual.** A gerente
 muda preços e nomes quando quer; um pedido de ontem tem de continuar a dizer o
 que se combinou ontem — no painel e no talão reimpresso.
