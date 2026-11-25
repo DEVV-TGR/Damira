@@ -77,6 +77,16 @@ type Opcoes = {
   lingua: "pt" | "en";
 };
 
+/**
+ * O aviso de modo de teste: o dos exemplos, ou — num pedido só por email, com o
+ * site em teste — o que diz que o pedido pode ser verdadeiro. Vive aqui e não
+ * nos modelos porque o texto e o HTML usam o mesmo, e os modelos importam este
+ * ficheiro.
+ */
+export function avisoDeTeste(dados: Pick<DadosEmailPedido, "soPorEmail">, blocos: { teste: string }): string {
+  return dados.soPorEmail ? TEXTOS_LOJA.testeSite : blocos.teste;
+}
+
 export function escaparHtml(texto: string): string {
   return texto.replace(/[&<>"']/g, (caracter) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -257,7 +267,7 @@ export function escreverHtmlEmail({ corpo, campos, partesLinhas, blocos, dados, 
   }).join("");
 
   const faixaTeste = dados.modoDeTeste
-    ? `<tr><td align="center" style="padding:10px 24px;background-color:${TINTA};font-size:13px;line-height:20px;color:${PAPEL};border-radius:12px 12px 0 0;">${preencher(blocos.teste)}</td></tr>`
+    ? `<tr><td align="center" style="padding:10px 24px;background-color:${TINTA};font-size:13px;line-height:20px;color:${PAPEL};border-radius:12px 12px 0 0;">${preencher(avisoDeTeste(dados, blocos))}</td></tr>`
     : "";
   // Com a imagem bloqueada, o texto alternativo aparece no lugar dela: daí o estilo no próprio <img>.
   const topo = `<tr><td class="topo" align="center" bgcolor="${TIJOLO}" style="padding:32px 24px;background-color:${TIJOLO};${dados.modoDeTeste ? "" : "border-radius:12px 12px 0 0;"}">`

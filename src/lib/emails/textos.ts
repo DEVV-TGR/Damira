@@ -421,6 +421,12 @@ export const TEXTOS_LOJA = {
   pretendida: " — pretendida",
   fimConfirmado: "Confirmado: o talão sai no balcão.",
   fimPorConfirmar: "Responde-se no painel, em «Por confirmar».",
+  // Só para os pedidos que ainda não ficam guardados (`soPorEmail`): nada os confirmou, e não há painel nem talão.
+  novo: "NOVO",
+  // O site está no ar em modo de teste até ao lançamento, e um cliente pode encomendar a sério:
+  // dizer à casa que «não corresponde a um pedido real» fazia-a ignorar um pedido verdadeiro.
+  testeSite: "⚠️ MODO DE TESTE no site — os prazos são de exemplo e não se cobrou nada. O pedido pode ser verdadeiro: confirme com o cliente.",
+  fimSoPorEmail: "Este pedido ainda não fica no painel nem sai talão: existe só neste email. Responder a este email chega ao cliente.",
   pagamento: "Na loja, ao levantar: {valor}{indicativo}",
   pagamentoIncompleto: "Na loja, ao levantar. Conhecido até agora: {valor}{indicativo} (sem preço: {semPrecos}).",
 } as const;

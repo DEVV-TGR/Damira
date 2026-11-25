@@ -136,7 +136,11 @@ cozinha, as horas são as da loja e a escolhida é **pretendida**, a confirmar) 
 os dados da pessoa. O botão do carrinho não aparece nesta página. O formulário que vivia no
 fundo das encomendas saiu. ⚠️ **Até ao pagamento online (#38) o pedido acaba num
 email à casa**, por secções e com todos os dados (os opcionais vazios
-escrevem-se «—»); com o Stripe, o botão do fim passa a «Pagar» e o resto da
+escrevem-se «—»). Desde 25/11 esse email é o **modelo `criado-loja`** (moldura,
+logótipo, assunto que começa pelo estado — `src/lib/emails/compra.ts`) com a
+marca **`soPorEmail`**: sem ela, o modelo diria «responde-se no painel» e «o
+talão sai no balcão», que só são verdade quando o pedido ficar guardado (#126).
+Sem hora de levantamento, ou se o modelo falhar, vai o texto simples de antes; com o Stripe, o botão do fim passa a «Pagar» e o resto da
 página fica. ⚠️ Os campos são controlados e o envio é feito à mão, sem o
 reinício automático do `<form action>` do React 19: um erro do servidor nunca
 apaga o que a pessoa escreveu (`robustez.md` › Erros).

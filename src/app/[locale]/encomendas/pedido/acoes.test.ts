@@ -148,8 +148,40 @@ describe("enviarCompra: sem dados da cozinha, a hora é pretendida", () => {
     if (!vagas.ok) throw new Error("devia haver horas");
     expect(vagas.aConfirmar).toBe(true);
     const vaga = vagas.vagas[3];
-    const { corpo, registo } = await corpoDe({ levantamento: vaga.inicio, data: "" });
-    expect(corpo).toMatch(/LEVANTAMENTO NA LOJA\n.* \(hora de Lisboa\) — HORA PRETENDIDA, a confirmar com o cliente/);
+    const { corpo, registo, assunto } = await corpoDe({ levantamento: vaga.inicio, data: "" });
+    /* Com hora, o email é o modelo `criado-loja` (#137): por confirmar, porque a
+       hora é pretendida — e sem painel nem prazo, porque o pedido ainda não fica
+       guardado. */
+    expect(assunto).toMatch(new RegExp(`^Pedido ${registo.referencia} — POR CONFIRMAR · Cliente de Teste · `));
+    expect(corpo).toMatch(/LEVANTAMENTO NA LOJA\n.* \(hora de Lisboa\) — pretendida/);
+    expect(corpo).toContain("Este pedido ainda não fica no painel nem sai talão");
+    expect(corpo).not.toContain("Responde-se no painel");
+    expect(corpo).not.toContain("Responder até");
     expect(registo.data).toBe(vaga.data);
+  });
+
+  it("com chave, vai também o HTML com o logótipo embutido", async () => {
+    process.env.RESEND_API_KEY = "re_teste";
+    const enviado = vi.fn<(url: string, pedido: { body: string }) => Promise<Response>>(async () => new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", enviado);
+    const vagas = await consultarVagas(linhasDoCesto(CESTO));
+    if (!vagas.ok) throw new Error("devia haver horas");
+    expect((await enviar({ levantamento: vagas.vagas[3].inicio, data: "" })).estado).toBe("enviado");
+    const corpo = JSON.parse(enviado.mock.calls[0][1].body);
+    expect(corpo.html).toContain("cid:");
+    expect(corpo.attachments).toHaveLength(1);
+    expect(corpo.text).toContain("O QUE LEVA");
+    expect(corpo.subject).toContain("POR CONFIRMAR");
+  });
+
+  it("sem hora, vai o texto simples de antes e sem HTML", async () => {
+    process.env.RESEND_API_KEY = "re_teste";
+    const enviado = vi.fn<(url: string, pedido: { body: string }) => Promise<Response>>(async () => new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", enviado);
+    expect((await enviar()).estado).toBe("enviado");
+    const corpo = JSON.parse(enviado.mock.calls[0][1].body);
+    expect(corpo.html).toBeUndefined();
+    expect(corpo.attachments).toBeUndefined();
+    expect(corpo.text).toContain("hora a combinar com o cliente");
   });
 });

@@ -6,6 +6,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { cestoEmTexto, estimativa, pessoasSugeridas, tipoSugerido } from "@/lib/cesto";
 import { configuracaoDaCasa, cotarCesto, definicoesLoja, ocupacao, produtoPorId } from "@/lib/dados";
 import { enviarEmailDePedido } from "@/lib/email";
+import { emailDaCompraParaLoja } from "@/lib/emails/compra";
 import { gerarReferencia } from "@/lib/historico";
 import { emModoDeTeste } from "@/lib/modo-teste";
 import { itensDoServidor } from "@/lib/pedido-servidor";
@@ -41,7 +42,8 @@ const fonte = { configuracaoDaCasa, cotarCesto, ocupacao, produtoPorId };
  * 2. confirma-se a hora com o mesmo motor do calendário — e a data do pedido
  *    passa a ser a dela, em Lisboa;
  * 3. valida-se o resto; e
- * 4. escreve-se o email por secções e manda-se à casa.
+ * 4. escreve-se o email à casa com o modelo `criado-loja` (moldura, logótipo,
+ *    assunto com o estado) e manda-se; sem hora de levantamento, vai o texto simples.
  *
  * ⚠️ **Até ao Stripe (#38) o pedido acaba aqui, num email.** Com o Stripe, este
  * passo passa a criar o pedido `pendente` e a sessão de pagamento.
@@ -125,10 +127,28 @@ export async function enviarCompra(_anterior: Resultado, dados: FormData): Promi
     dados: validado.data,
     cesto,
   });
+  /* O email da casa com a moldura da Damira e o assunto que diz o estado (#137).
+     ⚠️ **Nunca à custa do pedido**: sem hora, ou se o modelo recusar os dados, vai
+     o texto simples de antes — um pedido não se perde por causa de uma moldura. */
+  let modelo: ReturnType<typeof emailDaCompraParaLoja> = null;
+  try {
+    modelo = emailDaCompraParaLoja({
+      referencia,
+      criadoEm: agora,
+      modoDeTeste: emModoDeTeste(),
+      levantamento,
+      aConfirmar,
+      dados: validado.data,
+      itens: refeito.itens,
+    });
+  } catch (erro) {
+    console.error(`[pedidos] ${referencia}: o modelo do email falhou, vai o texto simples:`, erro);
+  }
   const quando = levantamento ? format(levantamento, "d/M HH:mm", LISBOA) : data;
   /* ⚠️ **A referência vai no assunto.** É por ela que quem atende procura o
      email quando o cliente liga a dizer o código. */
-  const assunto = `Pedido ${referencia} — ${validado.data.nome} · levantamento ${quando}`;
+  const assunto = modelo?.assunto ?? `Pedido ${referencia} — ${validado.data.nome} · levantamento ${quando}`;
+  const textoDoEmail = modelo?.texto ?? corpo;
 
   const registo: Registo = {
     referencia,
@@ -139,8 +159,14 @@ export async function enviarCompra(_anterior: Resultado, dados: FormData): Promi
     semPreco,
   };
 
-  const envio = await enviarEmailDePedido({ referencia, assunto, corpo, responderPara: validado.data.email });
+  const envio = await enviarEmailDePedido({
+    referencia,
+    assunto,
+    corpo: textoDoEmail,
+    html: modelo?.html,
+    responderPara: validado.data.email,
+  });
   return envio === "enviado"
     ? { estado: "enviado", registo }
-    : { estado: "sem-servico", assunto, corpo, destino: DESTINO_PEDIDOS, registo };
+    : { estado: "sem-servico", assunto, corpo: textoDoEmail, destino: DESTINO_PEDIDOS, registo };
 }
