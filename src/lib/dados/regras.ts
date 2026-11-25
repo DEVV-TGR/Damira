@@ -294,6 +294,10 @@ export const pedidoPorPagar = (
   reembolsos: [],
   avisosTratados: [],
   reagendadoEm: null,
+  confirmadoEm: null,
+  expiraEm: null,
+  aceiteEm: null,
+  causaExpiracao: null,
 });
 
 /**

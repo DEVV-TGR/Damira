@@ -19,11 +19,15 @@ import {
    sem os atalhos do `tsconfig`. */
 import {
   AVISOS_TRATAVEIS,
+  CAUSAS_EXPIRACAO,
+  ESTADOS_EM_CURSO,
   ESTADOS_PEDIDO,
   FORMATO_NIF,
   FORMATO_REFERENCIA,
   FORMATO_TELEFONE,
   type GrupoComposicao,
+  MODOS_ONLINE,
+  MODOS_PAGAMENTO,
   type OrdemEmenta,
 } from "../lib/dados/tipos";
 import type { DiaFechado, HorarioSemanal } from "@/lib/horarios";
@@ -330,6 +334,14 @@ export const pedidos = pgTable(
     criadoEm: instante("criado_em").notNull(),
     levantamentoEm: instante("levantamento_em").notNull(),
     pagoEm: instante("pago_em"),
+    /** Quando ficou `confirmado`; fica depois de entregue ou cancelado (`pedidos.md`). */
+    confirmadoEm: instante("confirmado_em"),
+    /** O prazo da resposta da casa a um `por-confirmar`: 48 horas corridas (`pedidos.md`). */
+    expiraEm: instante("expira_em"),
+    /** Quando o cliente aceitou a resposta da casa, pelo link (`pedidos.md` › O aceite do cliente). */
+    aceiteEm: instante("aceite_em"),
+    /** `sem-resposta-da-casa` ou `sem-pagamento`; só num `expirado`, e sempre nele. */
+    causaExpiracao: text("causa_expiracao"),
     impressoEm: instante("impresso_em"),
     entregueEm: instante("entregue_em"),
     canceladoEm: instante("cancelado_em"),
@@ -381,7 +393,26 @@ export const pedidos = pgTable(
     /* E.164, como o `EsquemaCliente`: é por ele que o balcão liga. */
     check("pedidos_telefone", sql`${t.clienteTelefone} ~ ${formato(FORMATO_TELEFONE)}`),
     check("pedidos_nif", sql`${t.clienteNif} ~ ${formato(FORMATO_NIF)}`),
-    check("pedidos_modo_pagamento", sql`${t.modoPagamento} in (${umDe(["total", "sinal"])})`),
+    check("pedidos_modo_pagamento", sql`${t.modoPagamento} in (${umDe(MODOS_PAGAMENTO)})`),
+    /* Cada estado é de um modo: o `pendente` e o `pago` só existem com o Stripe,
+       os da confirmação da casa só fora dele. Um pedido da loja que caísse
+       em `pago` passava a contar como pago online sem nunca o ter sido. Um modo
+       que não existe não se julga aqui: recusa-o o `pedidos_modo_pagamento`,
+       com o nome certo. */
+    check(
+      "pedidos_estado_do_modo",
+      sql`case
+        when ${t.modoPagamento} in (${umDe(MODOS_ONLINE)})
+          then ${t.estado} not in ('por-confirmar', 'a-aguardar-aceite', 'confirmado')
+        when ${t.modoPagamento} in (${umDe(MODOS_PAGAMENTO)}) then ${t.estado} not in ('pendente', 'pago')
+        else true end`,
+    ),
+    /* Sem Stripe não entra dinheiro online. O que se paga na loja calcula-se
+       (`pedidos.md` › Dinheiro), e um `pago_online_cent` a mais tirava-o à conta. */
+    check(
+      "pedidos_na_loja_sem_online",
+      sql`${t.modoPagamento} in (${umDe(MODOS_ONLINE)}) or ${t.pagoOnlineCent} = 0`,
+    ),
     /* ⚠️ Fica de fora `pago_online_cent <= total_cent`: um montante que não bate
        ainda não tem regra (`pagamentos.md` › Em aberto, 8), e um `CHECK` que
        recusasse um pagamento recebido perdia um pedido pago. */
@@ -390,11 +421,42 @@ export const pedidos = pgTable(
       "pedidos_reembolso_reservado",
       sql`${t.reembolsoReservadoCent} >= 0 and ${t.reembolsoReservadoCent} <= ${t.pagoOnlineCent}`,
     ),
-    /* Só se cancela um pedido pago, e nada volta de expirado ou de pago para
-       trás de pago: ter a data do pagamento é o mesmo que ter sido pago. */
+    /* Com o Stripe, só se cancela um pedido pago, e nada volta de expirado ou de
+       pago para trás de pago: ter a data do pagamento é o mesmo que ter sido
+       pago. Fora dele nunca há data de pagamento — na loja, paga-se no toque do
+       `entregue`, e o instante desse toque é o `entregue_em` (`pedidos.md` ›
+       Impactos na base de dados). A garantia do Stripe fica igual. */
     check(
       "pedidos_pago_em",
-      sql`(${t.pagoEm} is not null) = (${t.estado} in (${umDe(["pago", "entregue", "cancelado"])}))`,
+      sql`(${t.pagoEm} is not null) = (${t.modoPagamento} in (${umDe(MODOS_ONLINE)}) and ${t.estado} in (${umDe(["pago", "entregue", "cancelado"])}))`,
+    ),
+    /* Um confirmado diz quando ficou, e um entregue na loja também, porque só
+       chega lá vindo de confirmado. Com o Stripe nunca há confirmação. */
+    check(
+      "pedidos_confirmado_em",
+      sql`(${t.confirmadoEm} is null or ${t.modoPagamento} not in (${umDe(MODOS_ONLINE)}))
+        and (${t.confirmadoEm} is not null or not (${t.estado} = 'confirmado'
+          or (${t.estado} = 'entregue' and ${t.modoPagamento} not in (${umDe(MODOS_ONLINE)}))))`,
+    ),
+    /* Um `por-confirmar` sabe até quando espera — é por ele que expira — e o
+       prazo é sempre depois de nascer. Só existe fora do Stripe, que tem o seu
+       (os 31 minutos da sessão, contados do `criado_em`). */
+    check(
+      "pedidos_expira_em",
+      sql`(${t.estado} <> 'por-confirmar' or ${t.expiraEm} is not null)
+        and (${t.expiraEm} is null
+          or (${t.expiraEm} > ${t.criadoEm} and ${t.modoPagamento} not in (${umDe(MODOS_ONLINE)})))`,
+    ),
+    /* Aceitar é o que confirma: quem tem `aceite_em` tem `confirmado_em`. */
+    check("pedidos_aceite_em", sql`${t.aceiteEm} is null or ${t.confirmadoEm} is not null`),
+    /* Um expirado diz porquê, e só ele: a casa não respondeu (que só acontece a
+       quem tinha prazo), ou o Stripe não recebeu (que só acontece com ele). */
+    check(
+      "pedidos_causa_expiracao",
+      sql`(${t.estado} = 'expirado') = (${t.causaExpiracao} is not null)
+        and (${t.causaExpiracao} is null or (${t.causaExpiracao} in (${umDe(CAUSAS_EXPIRACAO)})
+          and (${t.causaExpiracao} = 'sem-pagamento') = (${t.modoPagamento} in (${umDe(MODOS_ONLINE)}))
+          and (${t.causaExpiracao} <> 'sem-resposta-da-casa' or ${t.expiraEm} is not null)))`,
     ),
     check("pedidos_entregue_em", sql`${t.estado} <> 'entregue' or ${t.entregueEm} is not null`),
     /* Cancelado é final: quando, por quem, e o estado, os três ou nenhum. */
@@ -415,10 +477,12 @@ export const pedidos = pgTable(
     index("pedidos_criado_em_id").on(t.criadoEm, t.id),
     /* O histórico da conta e os possíveis duplicados. */
     index("pedidos_cliente_email").on(t.clienteEmail),
-    /* Os limites de criar pedidos (`robustez.md` › Limites): só contam os
-       pendentes, por isso os índices só os têm a eles. */
-    index("pedidos_pendentes_por_ip").on(t.ip).where(sql`${t.estado} = 'pendente'`),
-    index("pedidos_pendentes_por_email").on(t.clienteEmail).where(sql`${t.estado} = 'pendente'`),
+    /* Os limites de criar pedidos (`robustez.md` › Limites): contam os pedidos
+       ainda em curso — os `pendente` do Stripe e, com o pagamento na loja, os
+       que esperam e os `confirmado` por levantar —, por isso os índices só os
+       têm a eles. */
+    index("pedidos_em_curso_por_ip").on(t.ip).where(sql`${t.estado} in (${umDe(ESTADOS_EM_CURSO)})`),
+    index("pedidos_em_curso_por_email").on(t.clienteEmail).where(sql`${t.estado} in (${umDe(ESTADOS_EM_CURSO)})`),
   ],
 );
 
@@ -448,8 +512,11 @@ export const linhasPedido = pgTable(
     unidade: text("unidade").notNull(),
     /* `numeric`: ao quilo pede-se meio quilo. */
     quantidade: numeric("quantidade", { mode: "number" }).notNull(),
-    precoUnitarioCent: integer("preco_unitario_cent").notNull(),
-    totalCent: integer("total_cent").notNull(),
+    /* `null` numa linha sem preço — o bolo por medida —, até a gerente o fixar
+       ao responder (`pedidos.md` › O que o pedido guarda). Nunca zero: zero é
+       «não custa nada», e `null` é «ainda não se sabe». */
+    precoUnitarioCent: integer("preco_unitario_cent"),
+    totalCent: integer("total_cent"),
     notas: text("notas"),
   },
   (t) => [
@@ -458,7 +525,12 @@ export const linhasPedido = pgTable(
     check("linhas_pedido_posicao", sql`${t.posicao} >= 0`),
     check("linhas_pedido_unidade", sql`${t.unidade} in (${umDe(["un", "kg"])})`),
     check("linhas_pedido_quantidade", sql`${t.quantidade} > 0`),
-    check("linhas_pedido_precos", sql`${t.precoUnitarioCent} >= 0 and ${t.totalCent} >= 0`),
+    /* Os dois juntos ou nenhum: um total sem preço unitário é meio preço fixado. */
+    check(
+      "linhas_pedido_precos",
+      sql`(${t.precoUnitarioCent} is null) = (${t.totalCent} is null)
+        and (${t.precoUnitarioCent} is null or (${t.precoUnitarioCent} >= 0 and ${t.totalCent} >= 0))`,
+    ),
   ],
 );
 
