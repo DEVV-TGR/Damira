@@ -7,81 +7,11 @@
   },
   "nav": {
     "inicio": "Início",
-    "ementa": "Ementa",
     "encomendas": "Encomendas",
     "todasEncomendas": "Ver todas as encomendas",
     "voltarAtras": "Voltar atrás",
     "saltarParaConteudo": "Saltar para o conteúdo",
     "mudarIdioma": "English"
-  },
-  "inicio": {
-    "heroTexto": "Abre às sete e fecha às nove. Pão quente e torradas de manhã, hambúrgueres e leitão à hora de almoço, e uma vitrine de doces o dia inteiro — metade dela vegan.",
-    "verEmenta": "Ver a ementa",
-    "verEncomendas": "Encomendas e festas",
-    "combinacoes": {
-      "olho": "Combinações perfeitas",
-      "titulo": "O que a casa recomenda",
-      "texto": "Seis pares que estão escritos no fim do nosso menu. Não é uma lista de mais vendidos — é o que sabe bem com o quê.",
-      "verTudo": "Ver a ementa completa",
-      "pares": [
-        {
-          "a": "Café",
-          "b": "Brigadeiro"
-        },
-        {
-          "a": "Affogato Latte",
-          "b": "American Cookie"
-        },
-        {
-          "a": "Matcha Latte Gelado",
-          "b": "Croissant Recheado"
-        },
-        {
-          "a": "Cappuccino",
-          "b": "Bolo com Calda de Brigadeiro"
-        },
-        {
-          "a": "Hambúrguer da Casa",
-          "b": "Príncipe"
-        },
-        {
-          "a": "Tosta de Frango da Casa",
-          "b": "Sumo Natural de Fruta"
-        }
-      ]
-    },
-    "vegan": {
-      "titulo": "Metade da vitrine é vegan",
-      "doces": "Doces à unidade",
-      "salgados": "Salgados",
-      "bolos": "Bolos inteiros",
-      "opcoesBolo": "Opções de bolo por medida",
-      "verCarta": "Ver a carta vegan",
-      "proporcao": "{vegan} dos {total} artigos da nossa ementa são vegan — não é uma prateleira à parte, é metade da casa."
-    },
-    "festas": {
-      "olho": "Kit Festas",
-      "titulo": "De vinte a setenta pessoas",
-      "texto": "Três gamas, três dimensões e preço fechado. Miniaturas salgadas e fritas, mini pizzas, tábuas de queijos, bolas de carne — e a parte doce, que é a nossa.",
-      "desde": "desde {preco}",
-      "pessoas": "{n} pessoas",
-      "verEncomendas": "Ver tudo o que levam"
-    },
-    "fotografia": {
-      "titulo": "A casa, por dentro",
-      "texto": "O pão, a doçaria, os bombons e o prato do dia. As fotografias são da casa — todas com a marca dela.",
-      "credito": "Fotografias da Confeitaria e Pão Quente Damira.",
-      "legendas": {
-        "pao": "Pães da aldeia acabados de cozer, na montra.",
-        "tartes": "Tarteletes de morango a serem montadas, numa bandeja.",
-        "bombons": "Bombons dourados, alinhados numa travessa.",
-        "almoco": "Prato de peixe grelhado com legumes, do almoço."
-      }
-    },
-    "fecho": {
-      "titulo": "Antes de ir",
-      "texto": "Ao balcão todos os dias das sete às nove. Para uma festa, com um telefonema à frente."
-    }
   },
   "cartaz": {
     "folio": "Capítulos",
@@ -89,7 +19,7 @@
       "olho": "Confeitaria e Pão Quente",
       "lede": "Abre às sete da manhã, todos os dias. Pão quente ao balcão, almoço à mesa, e uma vitrine de doces até às nove da noite.",
       "credito": "A frase não é nossa. Está pintada no vidro da montra, ao lado da porta.",
-      "verEmenta": "Ver a ementa",
+      "verEmenta": "Da carta",
       "encomendar": "Encomendar",
       "atalhos": "Atalhos"
     },
@@ -154,20 +84,20 @@
     "raro": {
       "numeral": "II",
       "olho": "O raro",
-      "titulo": "Mais de metade da ementa é vegan",
+      "titulo": "Mais de metade do que a casa faz é vegan",
       "de": "de {total} artigos",
-      "texto": "Não é um artigo assinalado com uma folha no fim da lista. É uma carta inteira, a par da outra: salgados, doces e bolos inteiros, ao quilo.",
-      "ligacao": "Ver a carta vegan"
+      "texto": "Não é um artigo assinalado com uma folha no fim da lista. É uma vitrine inteira, a par da outra: salgados, doces e bolos inteiros, ao quilo.",
+      "ligacao": "Encomendar da carta"
     },
     "provar": {
       "numeral": "VII",
-      "olho": "A ementa",
-      "titulo": "Quatro cartas, um preço de cada",
-      "texto": "São {total} artigos ao todo. Aqui ficam as quatro cartas e um preço de cada uma, para não ter de carregar em nada só para saber quanto custa.",
+      "olho": "A carta",
+      "titulo": "Quatro vitrines, um preço de cada",
+      "texto": "São {total} artigos ao todo. Aqui ficam as quatro vitrines e um preço de cada uma, para não ter de carregar em nada só para saber quanto custa.",
       "quantos": "{n} artigos",
       "quilo": "quilo",
       "semPreco": "sob consulta",
-      "verEmenta": "Ver a ementa completa"
+      "verEmenta": "Encomendar da carta"
     },
     "festa": {
       "numeral": "VIII",
@@ -192,7 +122,7 @@
         },
         "carta": {
           "nome": "Da carta",
-          "detalhe": "{n} artigos da ementa por encomenda, à dúzia ou ao quilo."
+          "detalhe": "{n} artigos da carta por encomenda, à dúzia ou ao quilo."
         }
       },
       "nota": "Tudo isto pede antecedência. O orçamento fecha-se por telefone ou pelo formulário.",
@@ -241,32 +171,20 @@
     }
   },
   "ementa": {
-    "titulo": "Ementa",
-    "intro": "Quatro cartas: o balcão de todos os dias, o almoço de fim-de-semana, a vegan e o chocolate.",
-    "navegar": "Cartas",
     "vegan": "Vegan",
     "porQuilo": " /kg",
-    "sabores": "Sabores",
     "cartas": {
       "casa": {
-        "curto": "Da casa",
-        "titulo": "A carta da casa",
-        "texto": "O que há ao balcão todos os dias, das sete às nove: pausas, salgados quentes, doces e bebidas."
+        "curto": "Da casa"
       },
       "fim-de-semana": {
-        "curto": "Sábado e domingo",
-        "titulo": "Almoço de sábado e domingo",
-        "texto": "Ao fim-de-semana há pratos. Leitão à Bairrada, prego no prato — e os hambúrgueres da carta da casa continuam a sair."
+        "curto": "Sábado e domingo"
       },
       "vegan": {
-        "curto": "Vegan",
-        "titulo": "A carta vegan",
-        "texto": "Doces, salgados e bolos inteiros, todos vegan. É uma carta completa e não uma prateleira de exceções."
+        "curto": "Vegan"
       },
       "chocolate": {
-        "curto": "Chocolate",
-        "titulo": "Chocolate do Dubai",
-        "texto": "Feito cá, em quatro formatos, do quadrado de bolso à barra de meio quilo."
+        "curto": "Chocolate"
       }
     },
     "categorias": {
@@ -283,25 +201,7 @@
       "milkshakes": "Milkshakes",
       "quentes": "Bebidas quentes",
       "frias": "Bebidas frias"
-    },
-    "notas": {
-      "batata": "Os hambúrgueres, a tosta de frango e as sandes assinalados no menu acompanham com batata.",
-      "sabores": "Pergunte ao balcão que sabores temos disponíveis hoje.",
-      "palhinhas": "Experimente a sua bebida com as nossas palhinhas comestíveis, por mais 1 €.",
-      "iva": "I.V.A. incluído à taxa em vigor.",
-      "alergenios": "Informação sobre alergénios disponível na loja — é só perguntar.",
-      "precos": "Preços das cartas de 2025 e 2026, por confirmar."
-    },
-    "abrir": "Ver em detalhe",
-    "fechar": "Fechar",
-    "procurar": "Procurar na ementa",
-    "procurarDica": "Escreva um nome: croissant, tosta, vegan…",
-    "limpar": "Limpar",
-    "aMostrar": "{n} de {total} artigos",
-    "semResultados": "Nada com esse nome",
-    "semResultadosTexto": "Tente outra palavra, ou limpe a procura para voltar às quatro cartas.",
-    "quantosArtigos": "{n, plural, one {# artigo} other {# artigos}}",
-    "verPagina": "Ver a página deste artigo"
+    }
   },
   "encomendas": {
     "olho": "Por encomenda",
@@ -429,9 +329,16 @@
         "falta": "Escolha o sabor primeiro."
       }
     },
+    "procura": {
+      "rotulo": "Procurar produto",
+      "exemplo": "Kit, bolo, croissant…",
+      "limpar": "Limpar",
+      "resultados": "{n, plural, one {# produto} other {# produtos}} com «{texto}»",
+      "nenhum": "Nenhum produto com «{texto}». Experimente outra palavra, ou telefone-nos."
+    },
     "daEmenta": {
-      "titulo": "Da carta, por encomenda",
-      "texto": "Setenta artigos da ementa que a casa faz por encomenda, para levar em quantidade: salgados e doces à dúzia, bolos vegan ao quilo, e o chocolate nos quatro formatos.",
+      "titulo": "Da carta",
+      "texto": "Setenta artigos da carta que a casa faz por encomenda, para levar em quantidade: salgados e doces à dúzia, bolos vegan ao quilo, e o chocolate nos quatro formatos.",
       "aviso": "Isto não é o balcão. Cada linha tem uma quantidade mínima e precisa de antecedência — um pastel avulso pede-se na loja, sem marcar nada. Os bolos vendem-se ao peso, e o valor final acerta-se no levantamento.",
       "regraUn": "Mínimo {minimo} unidades, de {passo} em {passo}",
       "regraKg": "Mínimo {minimo} kg, vendido ao peso",
@@ -481,7 +388,7 @@
       "observacoesDica": "Alergias, o nome a escrever no bolo, a cor do laço…",
       "telefoneAjuda": "Ligamos só se for preciso acertar alguma coisa.",
       "vazio": "O seu pedido está vazio.",
-      "vazioTexto": "Junte ao pedido o que quiser, nas encomendas ou na ementa, e volte aqui.",
+      "vazioTexto": "Junte ao pedido o que quiser das encomendas, e volte aqui.",
       "irEncomendas": "Ver as encomendas",
       "rever": "Rever e encomendar",
       "reverTexto": "Já tem artigos no pedido. Escolhe a hora de levantamento e os seus dados no passo seguinte.",
@@ -492,7 +399,7 @@
     "titulo": "Um bolo à sua maneira",
     "texto": "A massa, o recheio, a cobertura, o que leva em cima e o que lhe fica à volta. São {classica} escolhas na linha clássica e {vegan} na vegan.",
     "soVegan": "Só na linha vegan",
-    "semPrecos": "O preço de um bolo por medida depende do peso, do recheio e da decoração — dizemo-lo por telefone, com o pedido à frente. Os bolos de catálogo, esses, têm preço na ementa.",
+    "semPrecos": "O preço de um bolo por medida depende do peso, do recheio e da decoração — dizemo-lo por telefone, com o pedido à frente. Os bolos de catálogo, esses, têm preço nas encomendas.",
     "grupos": {
       "massas": "Massas",
       "recheios": "Recheios",
@@ -505,11 +412,7 @@
     "imagemAlt": "A montra da Confeitaria e Pão Quente Damira, em Ermesinde, com o letreiro e a frase «Histórias com sabor» pintada no vidro.",
     "inicio": {
       "titulo": "Confeitaria e Pão Quente Damira — Ermesinde, desde 1996",
-      "descricao": "Confeitaria, padaria e cozinha em Ermesinde. Pão quente e vitrine cheia todos os dias, das 7h30 às 20h. Carta vegan completa, kits de festa e bolos por encomenda."
-    },
-    "ementa": {
-      "titulo": "Ementa",
-      "descricao": "A ementa da Confeitaria e Pão Quente Damira: pausas e salgados ao balcão, almoço de fim-de-semana, uma carta vegan completa e o Chocolate do Dubai."
+      "descricao": "Confeitaria, padaria e cozinha em Ermesinde. Pão quente e vitrine cheia todos os dias, das 7h30 às 20h. Doces e salgados vegan, kits de festa e bolos por encomenda."
     },
     "encomendas": {
       "titulo": "Encomendas e festas",
@@ -607,12 +510,7 @@
     "juntado": "Juntado ao pedido",
     "avisoPreco": "É o preço de tabela, não uma conta a pagar. A entrega não está incluída e o valor final vem na nossa resposta.",
     "descricaoGenerica": "{nome}, por encomenda na Confeitaria e Pão Quente Damira, em Ermesinde.",
-    "voltarEmenta": "← Toda a carta",
     "porQuilo": " /kg",
-    "minimoUn": "Mínimo {minimo} unidades, de {passo} em {passo}",
-    "minimoKg": "Mínimo {minimo} kg, vendido ao peso",
-    "soAoBalcao": "Este pede-se ao balcão, na hora — não se encomenda com antecedência.",
-    "prazoDaCarta": "A antecedência mínima está por confirmar. Telefone-nos e dizemos-lhe logo se dá para a data que quer.",
     "cadaCurto": "un."
   },
   "modoTeste": {

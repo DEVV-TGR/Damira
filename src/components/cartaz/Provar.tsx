@@ -95,7 +95,7 @@ export function Provar({
       </ul>
 
       <p className="provar__accao" data-sc-in>
-        <Link className="cap__accao cap__accao--principal" href="/ementa">
+        <Link className="cap__accao cap__accao--principal" href="/encomendas#da-ementa">
           {t("verEmenta")}
         </Link>
       </p>

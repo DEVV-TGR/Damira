@@ -63,7 +63,7 @@ export function FotosProduto({
   const ocupado = estado !== null;
 
   return (
-    <div className="mt-3">
+    <div>
       {fotos.length > 0 ? (
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {fotos.map((foto, i) => (
@@ -71,7 +71,7 @@ export function FotosProduto({
               {/* eslint-disable-next-line @next/next/no-img-element -- miniatura no painel, sem otimizador */}
               <img src={foto} alt={`Foto ${i + 1}`} className="aspect-[4/3] w-full rounded-xl object-cover" />
               {i === 0 ? (
-                <p className="mt-1 text-xs font-semibold">Principal — é a que o site mostra</p>
+                <p className="mt-1 text-xs font-semibold">Principal · é a que o site mostra</p>
               ) : (
                 <button
                   type="button"
@@ -96,7 +96,7 @@ export function FotosProduto({
         </ul>
       ) : (
         <p className="text-sm text-tinta-suave">
-          Sem fotos. O site guarda o espaço e diz que a fotografia está por chegar — nunca põe lá outra.
+          Sem fotos. O site mostra «fotografia por chegar» no lugar dela.
         </p>
       )}
 
@@ -125,7 +125,7 @@ export function FotosProduto({
       <p aria-live="polite" className="mt-2 text-sm text-tinta-suave">
         {estado
           ? `${estado.fase === "a-reduzir" ? "A preparar" : "A enviar"} a foto${estado.de > 1 ? ` ${estado.n} de ${estado.de}` : ""}…`
-          : "Só a foto deste produto — nunca uma da loja ou de outro artigo. Fica no site quando gravar."}
+          : "Só fotos deste produto, nunca da loja ou de outro artigo. Entram no site ao guardar."}
       </p>
       {erro && (
         <p role="alert" className="mt-2 font-semibold text-tijolo">

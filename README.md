@@ -35,10 +35,8 @@ Antes de dar trabalho por pronto, correr **`npm run lint`, `npm run build` e
 
 | Rota | O que é |
 |---|---|
-| `/` | homepage — herói, combinações, carta vegan, festas, contactos, fecho |
-| `/ementa` | as quatro cartas, 95 artigos, com painel de detalhe por artigo |
-| `/ementa/<artigo>` | uma página por artigo — fotografia, descrição, e, nos 70 encomendáveis, o botão de juntar com a quantidade mínima |
-| `/encomendas` | índice: cartões dos doze produtos, **70 artigos da carta por encomenda**, cesto, histórico e pedido |
+| `/` | homepage — um cartaz em capítulos, da porta aos reels (ver o `AGENTS.md`) |
+| `/encomendas` | índice: cartões dos doze produtos, **70 artigos «Do dia a dia» por encomenda**, cesto, histórico e pedido |
 | `/encomendas/<produto>` | uma página por produto — fotografia, o que leva, escalão, personalização e juntar ao pedido |
 | `/entrar` | entrar com o Google ou o Facebook — **só existe com chaves configuradas** |
 | `/conta` | quem entrou, e o que a conta faz (e não faz) — idem |
@@ -77,12 +75,11 @@ os três kits de bolo, o bolo por medida e as cinco boxes. É lá que se escolhe
 escalão, se escreve a mensagem do bolo e se junta ao pedido — a `/encomendas`
 ficou a ser o índice.
 
-**E os 95 artigos da carta também têm página**, em `/ementa/<id>`. ⚠️ Ficam do
-lado da ementa e não das encomendas, que é a separação que o `AGENTS.md` manda
-manter. O que as segura é dizerem o que o artigo é: os 70 que a casa faz por
-encomenda mostram o botão de juntar **com a quantidade mínima ao lado**; os
-outros 25 — bebidas, pratos, pausa — não têm botão nenhum e dizem que se pedem ao
-balcão.
+**A `/ementa` saiu a 12/11 (#123)**, e com ela as 95 páginas `/ementa/<id>`: o
+site fica com a página inicial e as encomendas. Os 70 artigos do dia a dia que a
+casa faz por encomenda vivem na `/encomendas`, em «Do dia a dia», cada um num
+cartão com o botão de juntar e a quantidade mínima no cabeçalho da categoria; os
+outros 25 — bebidas, pratos, pausa — não se encomendam e não aparecem lá.
 
 O catálogo unificado está em `src/lib/produtos.ts`. ⚠️ **É uma vista e não uma
 segunda fonte de verdade**: não há lá um único dado que não venha do

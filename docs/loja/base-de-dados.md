@@ -269,7 +269,7 @@ própria instrução que o confere (as mesmas nos dois sentidos, com `@>`, e o
 mesmo tamanho), sem ler primeiro e escrever depois. Mexe só nas `categorias`:
 as `cartas` e as `subcategorias` ficam como vieram do impresso. O
 `criarProduto` e o `editarProduto` recusam uma categoria que não esteja na
-ordem — ficava órfã, fora da `/ementa`.
+ordem — ficava órfã, fora da «Da carta» (e, até 12/11, da `/ementa`).
 
 ## Os pedidos
 

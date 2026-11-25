@@ -2,7 +2,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import type { Produto } from "@/lib/dados/tipos";
 import { formatarCent } from "@/lib/preco";
-import { caminhoDoProduto, descricaoDe, fotoDe, nomeDe, precoMinimoCent } from "@/lib/vista";
+import { caminhoDoProduto, fotoDe, nomeDe, precoMinimoCent, textoDeProcura } from "@/lib/vista";
 import type { Locale } from "@/i18n/routing";
 import { FotoProduto } from "./FotoProduto";
 
@@ -22,6 +22,13 @@ import { FotoProduto } from "./FotoProduto";
  * botão de juntar num cartão sem essas escolhas punha no cesto uma versão do
  * produto que ninguém configurou.
  *
+ * ## ⚠️ Do tamanho dos da carta, desde 25/11
+ *
+ * Decidido pelo Gonçalo: **todos os produtos das encomendas têm o mesmo tamanho
+ * e a mesma grelha** (`GRELHA_CARTOES`) — kits, bolos, boxes e os artigos da
+ * carta. O cartão perdeu a frase de resumo e a fotografia passou a 3/2: o que
+ * é cada kit lê-se na página dele, para onde o cartão leva.
+ *
  * ## ⚠️ Todos os cartões de uma linha têm a mesma altura (#83)
  *
  * Um nome de duas linhas ao lado de um de uma, ou um kit com frase ao lado de
@@ -31,9 +38,9 @@ import { FotoProduto } from "./FotoProduto";
  *
  * 1. **o cartão estica**: o `<li>` estica até à altura da linha (é o que a
  *    grelha faz de origem) e a ligação enche-o com `h-full`;
- * 2. **a fotografia tem proporção fixa**, 4/3 — ⚠️ e não quadrada: num cartão, a
+ * 2. **a fotografia tem proporção fixa**, 3/2 — ⚠️ e não quadrada: num cartão, a
  *    altura de uma imagem quadrada **é** a largura da coluna (armadilha 18);
- * 3. **o nome e a frase têm um máximo de linhas** (`line-clamp`), e o preço e o
+ * 3. **o nome tem um máximo de linhas** (`line-clamp`), e o preço e o
  *    «ver» encostam-se ao fundo com `mt-auto`. O texto cortado continua inteiro
  *    na página do produto, que é para onde o cartão leva, e inteiro para o
  *    leitor de ecrã, que lê o DOM e não o recorte.
@@ -54,52 +61,36 @@ export function CartaoProduto({
   const t = useTranslations("produto");
   const preco = precoMinimoCent(produto);
   const nome = nomeDe(produto, locale);
-  const resumo = descricaoDe(produto, locale);
 
   return (
-    <li className="group h-full">
+    <li className="group h-full" data-procura={textoDeProcura(produto)}>
       <Link
         href={caminhoDoProduto(produto.id)}
-        className="flex h-full flex-col rounded-2xl border border-tinta/15 bg-papel p-4 transition-colors hover:border-tijolo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tijolo"
+        className="flex h-full flex-col rounded-xl border border-tinta/15 bg-papel p-2.5 transition-colors hover:border-tijolo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tijolo"
       >
-        <FotoProduto foto={fotoDe(produto)} alt="" />
+        <FotoProduto foto={fotoDe(produto)} alt="" proporcao="3 / 2" discreta />
 
-        <div className="mt-4 flex items-start justify-between gap-3">
-          <h3 className="titulo-display titulo-gama line-clamp-2 min-w-0 group-hover:text-tijolo">
-            {nome}
-          </h3>
-          {produto.vegan && (
-            <span className="bloco-verde-texto shrink-0 rounded-full px-2 py-0.5 text-[0.68rem] font-bold uppercase tracking-wider">
-              {t("vegan")}
-            </span>
-          )}
-        </div>
-
-        {resumo && (
-          <p className="mt-2 line-clamp-3 text-sm text-tinta-suave">{resumo}</p>
+        <h3 className="mt-2.5 line-clamp-3 text-sm font-semibold leading-snug group-hover:text-tijolo">{nome}</h3>
+        {produto.vegan && (
+          <span className="bloco-verde-texto mt-1.5 self-start rounded-full px-1.5 py-0.5 text-[0.58rem] font-bold uppercase tracking-wider">
+            {t("vegan")}
+          </span>
         )}
 
-        {/* O preço e o «ver» num bloco só, encostado ao fundo: com o `mt-auto`
-            no preço e o «ver» solto por baixo, os dois iam juntos por acaso. */}
-        <div className="mt-auto pt-5">
-          <p className="titulo-display text-2xl tabular-nums text-tijolo">
+        {/* O preço e o «ver» num bloco só, encostado ao fundo: cartões da mesma
+            fila com o preço à mesma altura. */}
+        <div className="mt-auto pt-2.5">
+          <p className="text-sm tabular-nums">
             {preco === null ? (
-              <span className="text-base normal-case tracking-normal">
-                {t("sobOrcamento")}
-              </span>
+              t("sobOrcamento")
             ) : (
               <>
-                {produto.familia === "festa" && (
-                  <span className="mr-1.5 text-sm text-tinta-suave">
-                    {t("desde")}
-                  </span>
-                )}
+                {produto.familia === "festa" && <span className="mr-1 text-xs text-tinta-suave">{t("desde")}</span>}
                 {formatarCent(preco, locale)}
               </>
             )}
           </p>
-
-          <span className="mt-3 inline-block text-xs font-semibold uppercase tracking-widest text-tijolo underline underline-offset-4">
+          <span className="mt-1.5 inline-block text-xs font-semibold uppercase tracking-widest text-tijolo underline underline-offset-4">
             {t("ver")}
           </span>
         </div>

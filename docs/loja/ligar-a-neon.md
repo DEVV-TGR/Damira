@@ -37,9 +37,10 @@ Damira», com o projeto «Damira - Loja Online». A DevPlus entra como *Editor*,
 que não pode apagar o projeto — só os administradores, que são da casa.
 
 - [x] **Conta em nome da Damira**, com a DevPlus convidada.
-- [ ] **Plano Launch** — restauro até 7 dias; o gratuito, em que a conta está,
-      só volta 6 horas atrás (`robustez.md` › Backups). É a casa que paga:
-      pedir antes do lançamento.
+- [x] **Plano Launch** (25/11/2026) — a casa paga. O gratuito só voltava 6
+      horas atrás (`robustez.md` › Backups).
+- [ ] **Janela de restauro de 7 dias** — o Launch permite-a, mas a 25/11 ainda
+      estava nas 6 horas: alargá-la em Settings › Storage (`restauro.md`).
 - [x] **Postgres 18** (18.6). É a versão do PGlite em que tudo está testado;
       uma versão diferente pode comportar-se de forma diferente justamente onde
       os testes não olham.
@@ -176,9 +177,9 @@ com pedidos de teste e pedidos mesmo ao mesmo tempo:
 - [ ] **O tempo de uma página** com o site na Vercel a ler da Neon.
 - [ ] **A base de dados adormece** ao fim de 5 minutos sem consultas, com o
       painel aberto: o polling não a pode acordar (regra 6 do `AGENTS.md`).
-- [ ] **Restauro**, antes do lançamento: repor um ponto do passado num ramo,
-      confirmar que os dados lá estão, e escrever os passos em `restauro.md`
-      (`robustez.md` › Backups).
+- [x] **Restauro** (16/11): repor um ponto do passado num ramo, confirmar que
+      os dados lá estão, e escrever os passos em `restauro.md`. ⚠️ Falta
+      repeti-lo com pedidos lá dentro, no dia de teste na loja (#54).
 
 ## 7. O que tem de estar ligado a 14/10
 
