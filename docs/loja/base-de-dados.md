@@ -64,6 +64,114 @@ o código que os testes provam é o mesmo que corre no site.
 
 ## O catálogo
 
+### `categorias` — as da gerente (#124, migração `0008`)
+
+Decidido a 15/11: acabam as famílias e a gerente cria, renomeia e ordena as
+categorias — **todas**, kits e boxes incluídos (`painel-gerente.md` › Produtos).
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| `id` | `text` chave primária, `[a-z0-9-]` | vai nas âncoras e nunca muda, mesmo quando o nome muda |
+| `nome_pt`, `nome_en` | `text`, `text` nulo | sem nome em branco, até 60 carateres (o limite do `EsquemaOrdemCategorias`) |
+| `posicao` | `integer >= 0` | a ordem da loja |
+| `arquivada` | `boolean`, `false` por defeito | uma que já teve produtos não se apaga, arquiva-se |
+
+- **O nome é único entre as que estão em uso, sem distinguir maiúsculas**
+  (`categorias_nome_unico`, um índice parcial sobre `lower(nome_pt)`). Dois
+  «Doces» eram a armadilha 8 de volta: duas secções iguais na loja, e a gerente
+  sem saber em qual pôs o produto. Uma arquivada não ocupa o nome — a do Natal
+  deste ano não impede a do próximo.
+- **A `posicao` não é única, de propósito.** Reordenar troca posições, e uma
+  regra de unicidade recusava a troca a meio da instrução. Quem lê desempata
+  pelo `id`.
+- **Uma categoria com produtos não se apaga**: a chave estrangeira recusa-o,
+  arquivados incluídos (`produtos_categoria_id_categorias_id_fk`). Uma que nunca
+  teve produtos apaga-se.
+
+As 12 de partida saem do que cada produto é hoje (`src/db/categorias.ts`):
+
+| Categoria (`id`) | Nome | De onde vem |
+|---|---|---|
+| `festas` | Kit Festas | os 3 kits de festa |
+| `kits-bolo` | Bolo e mesa decorada | os 3 kits de bolo **e o bolo por medida**, que já vive nessa grelha |
+| `boxes` | Boxes para dias especiais | as 5 boxes |
+| `casa-pausa` | Para uma pausa | carta da casa |
+| `casa-salgados` | Salgados | carta da casa |
+| `casa-doces` | Doces | carta da casa |
+| `casa-bebidas` | Bebidas | carta da casa (os títulos das bebidas ficam na `subcategoria`) |
+| `fim-de-semana-pratos` | Pratos de fim de semana | almoço de fim de semana |
+| `vegan-salgados` | Salgados vegan | carta vegan |
+| `vegan-doces` | Doces vegan | carta vegan |
+| `vegan-bolos-inteiros` | Bolos inteiros vegan | carta vegan |
+| `chocolate-formatos` | Chocolate do Dubai | chocolate |
+
+Os `id` da carta são o `{carta}-{categoria}` de hoje, que já é a âncora das
+secções (`SeccaoEmenta`), e os das encomendas são as âncoras da `/encomendas`.
+A ordem de partida é a da `/encomendas`: as encomendas primeiro, depois a carta
+pela ordem das cartas e, dentro de cada uma, pela ordem que a gerente gravou
+(#87). Os nomes são os das páginas; a gerente muda-os.
+
+**Simples e composto** é a coluna `produtos.tipo`. Composto é o que se descreve
+pelo que leva: os 11 kits e boxes. O bolo por medida é simples — as massas e os
+recheios dele são escolhas, que a #88 passa a grupos de opções. **O que um
+composto leva continua na `composicao` das variantes**, porque muda com o
+tamanho (20 pessoas não levam o mesmo que 70); se passar a um grupo de opções
+«O que leva», decide-se na #88.
+
+#### A passagem, em três tempos
+
+⚠️ **Hoje quem manda continua a ser a `familia`, a `carta` e a `categoria`.**
+O esquema muda antes do código, e o site não pode parar a meio:
+
+1. **Este PR (`0008`).** As colunas novas nascem e enchem-se a partir das
+   antigas — na migração para os 107 produtos da Neon, e no
+   `src/db/categorias.ts` para a importação e para o painel (criar e editar um
+   produto escrevem as duas). Pôr um artigo numa carta e categoria que ninguém
+   usava cria a categoria no fim (`categoriaNova`). **As duas contas, SQL e
+   TypeScript, provam-se iguais** sobre o catálogo inteiro em
+   `src/db/migracao-categorias.test.ts`.
+2. **A fronteira (Gonçalo, #124).** Os tipos e as funções passam a ler
+   `categoria_id`, `tipo` e `categorias.posicao`; o painel ganha o «+», o
+   renomear e o ordenar. ⚠️ Até lá, ordenar no separador **Categorias** continua
+   a gravar a `casa.ordem_ementa` e **não** a `categorias.posicao`: se a
+   gerente reordenar antes, o PR da fronteira recalcula a posição com a mesma
+   conta da `0008`.
+3. **A limpeza.** Uma migração tira a `familia`, a `carta`, a `categoria`, o
+   `aparece_na_ementa` e a `ordem_ementa.categorias`, e sai o
+   `src/db/categorias.ts`. Só depois de nada as ler.
+
+#### A ordem do deploy — a base de dados antes do código
+
+Este ponto é a fonte única da ordem de migração e deploy; a checklist de
+`ligar-a-neon.md` remete para aqui. **Migrar primeiro não é sempre compatível
+com o código antigo:** é preciso verificar também as escritas, não só as
+leituras. Na `0008`, as colunas obrigatórias criam a janela descrita abaixo.
+
+⚠️ **O `next build` lê os produtos da base de dados** (as páginas estáticas), e
+desde a `0008` pede o `categoria_id` e o `tipo`. Um build contra uma base sem a
+`0008` falha com `column "categoria_id" does not exist`. Foi o que aconteceu ao
+preview do #134: a Preview aponta para o `desenvolvimento` (`ligar-a-neon.md`),
+que não estava migrado.
+
+- **Preview:** migrar o `desenvolvimento` (`npm run bd:migrar`) e refazer o
+  deploy. Os previews de outros PRs, feitos a partir do `main`, passam a correr
+  sobre um esquema mais novo do que o código deles: ler continua a funcionar,
+  criar um produto ou um pedido pode falhar. É o ramo de desenvolvimento.
+- **Produção:** integrar → `npm run bd:migrar` no `production` → refazer o
+  deploy. Se o deploy correr antes da migração, o build falha e o site no ar
+  fica como estava: não parte nada, refaz-se depois.
+- **Entre migrar e o deploy novo ficar no ar** (uns minutos), o código antigo
+  corre sobre o esquema novo: ler e editar produtos funcionam, mas **criar um
+  produto no painel falha**, porque a coluna é obrigatória e o código antigo
+  não a escreve. Não se cria nenhum produto durante a passagem — não vale a
+  pena um `DEFAULT` inventado para tapar esses minutos.
+
+A `0008` mantém o preenchimento e o `NOT NULL` na mesma migração, como revisto
+no #134. Dividir em expansão e contração exigiria uma segunda migração e um
+novo preenchimento dos produtos criados pelo código antigo entre as duas.
+**Esta passagem faz-se antes de a casa recriar o catálogo por categorias e
+nunca no dia do lançamento.**
+
 ### `produtos`
 
 | Coluna | Tipo | Do contrato |
@@ -71,7 +179,9 @@ o código que os testes provam é o mesmo que corre no site.
 | `id` | `text` chave primária | `id` (`nata`, `festa-premium`) |
 | `posicao` | `integer` | a ordem do catálogo; um produto novo vai para o fim |
 | `origem` | `text` `CHECK` (`ementa`, `encomendas`) | `origem` |
-| `familia` | `text` `CHECK` (`ementa`, `festa`, `bolo`, `box`, `medida`) | `familia` |
+| `familia` | `text` `CHECK` (`ementa`, `festa`, `bolo`, `box`, `medida`) | `familia` — sai na limpeza da #124 |
+| `categoria_id` | `text` → `categorias` | a categoria da gerente (#124); até a fronteira a ler, sai da família, da carta e da categoria |
+| `tipo` | `text` `CHECK` (`simples`, `composto`) | #124; idem |
 | `nome_pt`, `nome_en` | `text`, `text` nulo | `nome` |
 | `descricao_pt`, `descricao_en` | `text` nulo | `descricao` |
 | `carta`, `categoria`, `subcategoria` | `text` nulo | iguais |
