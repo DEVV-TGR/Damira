@@ -351,8 +351,15 @@ O estado fica entre `por-confirmar` e `confirmado`:
   casa».
 - **A tarefa das 48 h não lhe toca:** a casa já respondeu, e os lembretes são
   para a casa.
-- **Desistir é sem custos** (§4): o cliente liga, e a gerente regista
-  `a-aguardar-aceite → cancelado`, com `canceladoPor = cliente`.
+- **Desistir é sem custos** (§4): o cliente **recusa na própria página do link**
+  (decidido a 24/11, o T13 da Andreia), ou liga, e a gerente regista
+  `a-aguardar-aceite → cancelado`, com `canceladoPor = cliente`. A recusa pela
+  página pede uma segunda confirmação e liberta a vaga.
+- **A gerente responde no painel** (#126, passo 2): no detalhe de um pedido que
+  espera pela casa, confirma, ou fixa o preço das linhas sem preço e propõe outra
+  hora. Pode rever a proposta; a versão sobe e o link antigo deixa de aceitar. O
+  link (`/pedido/proposta/<referência>/<versão>-<assinatura>`) aparece no painel,
+  para o mandar à mão enquanto os emails não saem sozinhos.
 
 ⚠️ **A expiração por falta de aceite e o prazo são propostas** (n.º 2), não
 regras em vigor. Até serem aprovadas, nada passa um `a-aguardar-aceite` a
