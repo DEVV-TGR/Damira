@@ -431,7 +431,9 @@ e um reagendar para lá era recusado.
 25 de outubro a hora 01:00 repete-se. A loja não abre a essa hora, mas um
 instante não tem de pensar nisso.
 
-**O que ocupa:** `pendente`, `pago` e `entregue`. `expirado` e `cancelado` não.
+**O que ocupa:** `por-confirmar`, `a-aguardar-aceite`, `confirmado`, `pendente`,
+`pago` e `entregue`. Só `expirado` e `cancelado` libertam a vaga. O `entregue`
+continua a ocupar porque já gastou a capacidade daquela hora e pode ser desfeito.
 O `ocupacao(desde, ate)` do contrato é um `SELECT` nesta tabela, sem cache, e
 devolve `{ inicio, pedidos: ocupadas }`.
 
