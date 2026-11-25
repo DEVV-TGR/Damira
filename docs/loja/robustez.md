@@ -102,6 +102,45 @@ domínio dela. Se passar os 100 por dia, o plano pago é custo dela.
 pedido estar gravado; se falhar, fica registado e volta a tentar-se. Quem manda é
 o painel, não a caixa de correio.
 
+### As tentativas do emissor dos pedidos (#119)
+
+A fila só se lê por chamada explícita, após uma ação que já acordou a base.
+Reserva de **2 minutos** e espera crescente entre tentativas: **2, 4, 8 e 16
+minutos**, até **5 tentativas**. Rede, timeout de 10 segundos, 429 e 5xx podem
+repetir numa volta posterior; outros 4xx são definitivos. Falta de dados do
+modelo também é definitiva. Erros de configuração globais (chave, remetente inválido ou
+caixa de ensaio) deixam a fila intacta. Uma falha individual não impede o resto
+da volta. O resumo distingue enviados, falhados e saltados e nunca lança para
+o browser; marcar enviado falhado também não desfaz o pedido original.
+
+O intervalo de 600 ms evita rajadas dentro da mesma volta. Voltas simultâneas
+podem ainda encontrar 429: fica registado e espera pela tentativa seguinte.
+O limite de 10 envios e a paragem antes de iniciar outra linha após 45 s limitam
+a duração (um último timeout pode levar mais 10 s); ainda não há rota nem duração Vercel a
+configurar, porque os chamadores entram nos PRs seguintes.
+
+Os logs e `ultimo_erro` só recebem códigos controlados: `resend-503`,
+`resend-rede`, `dados-do-modelo`, etc. Nunca o corpo do Resend, a mensagem do
+Postgres nem objetos de erro. No log só referência, modelo e código HTTP ou
+Postgres (`erroDoPostgres`). Uma linha saltada tem o prefixo `saltado: ` e não
+se confunde com uma avaria. A leitura para o futuro ecrã dos falhados exige gerente.
+
+**Local e Preview (`VERCEL_ENV !== production`): `EMAILS_SO_PARA` é obrigatória.**
+Sem um endereço válido, o emissor nem consulta a base. Preenchida, redireciona
+**todos** os emails para essa caixa e acrescenta o destino original ao assunto.
+Também se pode manter preenchida em Production para ensaio autorizado. O Tomás
+configura a caixa na Vercel; este PR não cria variáveis nem envia emails reais.
+O script `scripts/enviar-fila-emails.ts` só executa com
+`--desenvolvimento --enviar --servidor-desenvolvimento=<hostname>`, recusa
+Production, exige `LOJA_EM_TESTE=1` e confere o servidor da ligação com o
+hostname do desenvolvimento confirmado pelo utilizador na Neon, antes de
+qualquer consulta. Não carrega `.env`.
+
+A idempotência do Resend dura 24 horas. Uma linha já tentada que chegue às 24 h
+desde a sua criação fica terminal para revisão manual (`idempotencia-expirada`),
+mesmo que não tenha esgotado as cinco tentativas. O critério conservador evita
+repetir um envio cuja resposta se perdeu fora da proteção do fornecedor.
+
 ## Erros
 
 - As acções do servidor devolvem um resultado (`{ ok: true, … }` ou
