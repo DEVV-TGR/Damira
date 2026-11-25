@@ -764,13 +764,17 @@ export type FontePainel = {
    * Muda o levantamento de um pedido `confirmado` ou `pago`. `levantamentoEm` em ISO; tem de ser
    * uma hora em que a loja abre e com vaga (`validarLevantamento` com o horário
    * da loja), e no futuro. A vaga antiga liberta-se na mesma transação.
+   * Provisório: ainda não regista o acordo nem emite os avisos ou o talão de
+   * alteração exigidos pelo contrato (`pedidos.md` › Mudar o levantamento).
    */
   reagendarPedido(id: string, levantamentoEm: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
   /**
    * `→ cancelado`, pela gerente: um pedido pago na loja `por-confirmar`,
    * `a-aguardar-aceite` ou `confirmado`, ou um `pago` do Stripe. Com o reembolso
    * escolhido: `0` é nenhum, e nunca mais do que o pago online ainda por
-   * devolver — pago na loja, só `0`. Liberta a vaga.
+   * devolver — pago na loja, só `0`. Liberta a vaga. Um `por-confirmar` com
+   * prazo terminado é recusado, mesmo antes da limpeza. Ainda regista sempre
+   * iniciativa da gerente; distinguir a do cliente depende do novo parâmetro.
    */
   cancelarPedido(id: string, reembolsoCent: number, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
   /**

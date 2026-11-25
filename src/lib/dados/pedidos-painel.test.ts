@@ -307,6 +307,45 @@ describe("as decisões da gerente", () => {
 
 
 describe("os pedidos pagos na loja", () => {
+  it("avisa quando o dia de um confirmado fecha à loja", async () => {
+    const f = await fonte([naLoja("a")]);
+    const casa = await f.configuracaoDaCasa();
+    expect((await f.guardarHorarios({ ...casa, diasFechados: [{ data: "2026-10-08", fecha: "loja" }] }, GERENTE)).ok).toBe(true);
+    expect(await f.precisaDeAtencao(GERENTE)).toEqual({
+      ok: true,
+      valor: [{ tipo: "dia-fechado", pedidoId: u("a"), referencia: "DAM-0710-AAAA", data: "2026-10-08" }],
+    });
+  });
+
+  it("mostra possíveis duplicados confirmados e permite tratar o aviso", async () => {
+    const f = await fonte([
+      naLoja("a"),
+      naLoja("b", { confirmadoEm: lisboa(6, 9, 9) }),
+    ]);
+    expect(await f.precisaDeAtencao(GERENTE)).toEqual({
+      ok: true,
+      valor: [{ tipo: "possivel-duplicado", pedidoIds: [u("a"), u("b")], referencias: ["DAM-0710-AAAA", "DAM-0710-BAAA"] }],
+    });
+    await f.tratarAviso(u("a"), "possivel-duplicado", GERENTE);
+    expect(await f.precisaDeAtencao(GERENTE)).toEqual({ ok: true, valor: [] });
+  });
+
+  it.each([0, -1])("não cancela um por confirmar no prazo ou depois dele (%i ms)", async (desvio) => {
+    const f = await fonte([naLoja("a", {
+      estado: "por-confirmar", confirmadoEm: null, expiraEm: new Date(AGORA.getTime() + desvio),
+    })]);
+    expect(await f.cancelarPedido(u("a"), 0, GERENTE)).toEqual({ ok: false, erro: "estado-mudou" });
+    const resultado = await f.pedidoDoPainel(u("a"), GERENTE);
+    expect(resultado.ok && resultado.valor.canceladoEm).toBeNull();
+  });
+
+  it("cancela um por confirmar até ao último milissegundo antes do prazo", async () => {
+    const f = await fonte([naLoja("a", {
+      estado: "por-confirmar", confirmadoEm: null, expiraEm: new Date(AGORA.getTime() + 1),
+    })]);
+    expect((await f.cancelarPedido(u("a"), 0, GERENTE)).ok).toBe(true);
+  });
+
   it("o balcão entrega um confirmado com um toque: paga-se na loja, nesse toque", async () => {
     /* `entregue` quer dizer «levantou e pagou» (`pedidos.md` › Os estados): não
        há «dinheiro em falta» a perguntar, porque nada se pagou antes. */

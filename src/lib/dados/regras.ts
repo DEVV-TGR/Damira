@@ -335,11 +335,13 @@ export const pedidoNaLoja = (
  * Os pedidos pagos na loja que a gerente pode cancelar: os que esperam pela casa
  * ou pelo cliente, e os confirmados por levantar (`pedidos.md` › Os estados). O
  * `pago` do Stripe também se cancela, com reembolso; o resto já acabou.
+ * O prazo já passado vale mesmo antes de a limpeza gravar a expiração.
  */
 export const CANCELAVEIS_NA_LOJA: readonly Pedido["estado"][] = ["por-confirmar", "a-aguardar-aceite", "confirmado"];
 
-export const podeCancelar = (pedido: Pick<Pedido, "estado" | "modoPagamento">): boolean =>
-  pedido.estado === "pago" || (pedido.modoPagamento === "na-loja" && CANCELAVEIS_NA_LOJA.includes(pedido.estado));
+export const podeCancelar = (pedido: Pick<Pedido, "estado" | "modoPagamento" | "expiraEm">, agora: Date): boolean =>
+  (pedido.estado === "pago" || (pedido.modoPagamento === "na-loja" && CANCELAVEIS_NA_LOJA.includes(pedido.estado))) &&
+  (pedido.estado !== "por-confirmar" || (pedido.expiraEm !== null && pedido.expiraEm.getTime() > agora.getTime()));
 
 /**
  * Quem a gerente reagenda: o `pago` e o `confirmado`. Mudar a hora de um que

@@ -7,11 +7,17 @@ só para isso** — um estado novo que aparece no painel antes de aparecer aqui 
 um estado que os pagamentos não sabem que existe.
 
 > ⚠️ **Contrato com implementação parcial, e não descrição integral do site**
-> (25/11/2026, #132). A entrada verdadeira do painel está ligada à base de dados.
+> (25/11/2026, #132 e #133). A entrada verdadeira do painel está ligada à base de dados.
 > A fonte já cria levantamentos `confirmado` ou `por-confirmar`, a pagar na loja,
 > e expira os pedidos sem resposta às 48 horas, nas leituras da ocupação e na
 > criação de pedidos. **A compra continua a acabar num email à casa**: ainda não
-> chama essa fonte. Faltam o painel dos confirmados (#133, #125), o aceite por
+> chama essa fonte. A fonte do painel já entrega, desfaz, cancela e muda a hora
+> dos confirmados, e mostra os avisos de dia fechado e possível duplicado. O
+> cancelamento ainda grava sempre iniciativa da gerente: falta o parâmetro do
+> contrato para distinguir a iniciativa do cliente. O reagendamento ainda só
+> grava a nova hora e `reagendadoEm`: faltam o registo do acordo, o aviso ao
+> cliente e o talão de alteração. Estas peças continuam necessárias antes do
+> uso real destes fluxos. Faltam os ecrãs do balcão para estes estados (#125), o aceite por
 > link, as entregas e os emails automáticos; a expiração sem visitas e os
 > lembretes também precisam de implementação. Os pontos marcados «(em aberto:
 > ver n.º X)» continuam por decidir — estão no fim, com a proposta e quem decide.

@@ -313,7 +313,7 @@ export function criarPainelJson(
     async cancelarPedido(id, reembolsoCent, { agora }) {
       const pedido = estado.pedidos.get(id);
       if (!pedido) return naoExiste;
-      if (!podeCancelar(pedido)) return { ok: false, erro: "estado-mudou" };
+      if (!podeCancelar(pedido, agora)) return { ok: false, erro: "estado-mudou" };
       if (!centValido(reembolsoCent, porDevolverCent(pedido), true)) {
         return { ok: false, erro: "dados-invalidos", campos: ["reembolsoCent"] };
       }

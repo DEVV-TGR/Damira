@@ -376,6 +376,12 @@ o contador bate sempre com a soma dos reembolsos `pendente` e `concluido`.
   `regras.ts` (`podeCancelar`, `REAGENDAVEIS`, `estadoAntesDeEntregue`), para as
   duas fontes decidirem igual. ⚠️ Confirmar, responder e aceitar ainda não
   existem na `FontePainel`: chegam com o contrato do balcão (#125).
+- **Cancelar não ultrapassa a expiração:** um `por-confirmar` só se cancela
+  com `expira_em > agora`, tanto na regra partilhada como no `WHERE`. Se o prazo
+  já passou, devolve `estado-mudou`; a limpeza grava a expiração e liberta a vaga.
+- **Os avisos de dia fechado e possível duplicado** leem os `confirmado` e os
+  `pago`. Nos confirmados, os dez minutos contam de `confirmado_em`; nos pagos,
+  de `pago_em`. O filtro da base de dados acompanha o cálculo partilhado.
 - **Os efeitos vão na mesma instrução**, em passos do mesmo `WITH`
   (`bd-painel-pedidos.ts`): a vaga, o reembolso e a versão. Sem isso, um pedido que
   já não está no estado de partida descontava a vaga na mesma, e o driver HTTP da

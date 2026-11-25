@@ -54,8 +54,9 @@ const CINCO_MINUTOS = 5 * 60_000;
 
 /* O `podeCancelar` do `regras.ts`, no `WHERE`: a leitura de antes responde com o
    motivo, mas quem decide é a condição da instrução. */
-const podeCancelar = sql`(estado = 'pago'
-  or (modo_pagamento = 'na-loja' and estado in ('por-confirmar', 'a-aguardar-aceite', 'confirmado')))`;
+const podeCancelar = (agora: Date) => sql`(estado = 'pago'
+  or (modo_pagamento = 'na-loja' and estado in ('por-confirmar', 'a-aguardar-aceite', 'confirmado')))
+  and (estado <> 'por-confirmar' or expira_em > ${instante(agora)})`;
 
 /* Superior a qualquer dia de Lisboa, mudança de hora incluída. A conta exata do
    «hoje» é do `avisosDosPedidos`; aqui só se evita ler o arquivo inteiro. */
@@ -233,7 +234,7 @@ export function criarPedidosDoPainelBd(db: BaseDeDados, leituras: LeiturasDoPain
         lerPedidos(
           db,
           or(
-            and(eq(pedidos.estado, "pago"), gte(pedidos.levantamentoEm, desde)),
+            and(inArray(pedidos.estado, ["pago", "confirmado"]), gte(pedidos.levantamentoEm, desde)),
             /* Uma falha de reembolso fica até ser tratada, com o levantamento já
                passado ou não (`pagamentos.md` › Em aberto, 7). */
             sql`${pedidos.id} in (
@@ -329,7 +330,7 @@ export function criarPedidosDoPainelBd(db: BaseDeDados, leituras: LeiturasDoPain
     async cancelarPedido(id, reembolsoCent, { agora }) {
       const pedido = await lerUm(id);
       if (!pedido) return naoExiste;
-      if (!podeCancelarPedido(pedido)) return { ok: false, erro: "estado-mudou" };
+      if (!podeCancelarPedido(pedido, agora)) return { ok: false, erro: "estado-mudou" };
       /* Pago na loja, nada se pagou online: o teto do reembolso é zero. */
       const recusar: ResultadoPainel<Pedido> = { ok: false, erro: "dados-invalidos", campos: ["reembolsoCent"] };
       if (!centValido(reembolsoCent, porDevolverCent(pedido), true)) return recusar;
@@ -338,7 +339,7 @@ export function criarPedidosDoPainelBd(db: BaseDeDados, leituras: LeiturasDoPain
         const mudou = await mudar(
           sql`estado = 'cancelado', cancelado_em = ${instante(agora)}, cancelado_por = 'gerente',
               reembolso_reservado_cent = reembolso_reservado_cent + ${reembolsoCent}::integer`,
-          podeCancelar,
+          podeCancelar(agora),
           id,
           [descontarVaga, ...(reembolsoCent > 0 ? [novoReembolso(reembolsoCent, agora)] : [])],
         );

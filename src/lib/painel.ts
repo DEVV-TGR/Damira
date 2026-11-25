@@ -244,7 +244,7 @@ const assinatura = (pedido: Pedido) =>
  * sozinho.
  *
  * - **Chegou tarde:** pago depois de expirar (`pedidos.md`).
- * - **Possível duplicado:** mesmo email, mesmos artigos, mesma vaga, pagos com
+ * - **Possível duplicado:** mesmo email, mesmos artigos, mesma vaga, confirmados ou pagos com
  *   menos de 10 minutos de diferença (`robustez.md`) — o cliente abriu dois
  *   separadores. Para o sistema são dois pedidos legítimos; decide a gerente.
  * - **Dia fechado:** marcado para um dia que entretanto fechou à loja
@@ -261,9 +261,10 @@ export function avisosDosPedidos(
   agora: Date,
 ): AvisoAtencao[] {
   const hoje = diaDeLisboa(agora);
+  const confirmadoOuPagoEm = (pedido: Pedido) => pedido.confirmadoEm ?? pedido.pagoEm;
   const vivos = pedidos
-    .filter((p) => p.estado === "pago" && diaDeLisboa(p.levantamentoEm) >= hoje)
-    .sort((a, b) => (a.pagoEm?.getTime() ?? 0) - (b.pagoEm?.getTime() ?? 0));
+    .filter((p) => (p.estado === "pago" || p.estado === "confirmado") && diaDeLisboa(p.levantamentoEm) >= hoje)
+    .sort((a, b) => (confirmadoOuPagoEm(a)?.getTime() ?? 0) - (confirmadoOuPagoEm(b)?.getTime() ?? 0));
   const avisos: AvisoAtencao[] = [];
 
   const tratado = (p: Pedido, tipo: Pedido["avisosTratados"][number]) => p.avisosTratados.includes(tipo);
@@ -287,8 +288,9 @@ export function avisosDosPedidos(
   for (let i = 0; i < vivos.length; i++) {
     for (let j = i + 1; j < vivos.length; j++) {
       const [a, b] = [vivos[i], vivos[j]];
-      const perto =
-        a.pagoEm !== null && b.pagoEm !== null && Math.abs(b.pagoEm.getTime() - a.pagoEm.getTime()) < DEZ_MINUTOS;
+      const instanteA = confirmadoOuPagoEm(a);
+      const instanteB = confirmadoOuPagoEm(b);
+      const perto = instanteA !== null && instanteB !== null && Math.abs(instanteB.getTime() - instanteA.getTime()) < DEZ_MINUTOS;
       if (
         perto &&
         !tratado(a, "possivel-duplicado") &&
