@@ -3,7 +3,7 @@
  *
  * Porque não se usa o PNG do site tal como está: é uma máscara de alfa a preto, e o site pinta-a
  * pelo CSS (`Marca.tsx`); um email não tem CSS que pinte uma imagem, por isso a cor vai já no
- * ficheiro — papel, para assentar na faixa a tijolo. E o PNG do site traz, à direita, um bocado
+ * ficheiro — papel sobre tijolo, já com o fundo da faixa. E o PNG do site traz, à direita, um bocado
  * solto de outra letra do impresso, que no site o recorte esconde e no email apareceria.
  *
  * Porque vai em base64 dentro do código, e não como ficheiro: o email leva-o como anexo embutido
@@ -20,6 +20,7 @@ import sharp from "sharp";
 const ORIGEM = "public/marca/logotipo.png";
 const DESTINO = "src/lib/emails/logotipo.ts";
 const PAPEL = { r: 0xfa, g: 0xfb, b: 0xfb };
+const TIJOLO = { r: 0x92, g: 0x3d, b: 0x38 };
 /** Largura a que aparece no email. A origem tem pouco mais de 200 px de letra: mais do que isto, desfoca. */
 const LARGURA_NO_EMAIL = 150;
 
@@ -40,10 +41,13 @@ async function gerar() {
   const recorte = await sharp(cortado).trim().png().toBuffer();
   const alfa = await sharp(recorte).extractChannel(3).toBuffer();
   const { width, height } = await sharp(recorte).metadata();
-  const png = await sharp({ create: { width: width!, height: height!, channels: 3, background: PAPEL } })
-    .joinChannel(alfa)
-    .png({ compressionLevel: 9 })
-    .toBuffer();
+  const papel = await sharp({ create: { width: width!, height: height!, channels: 3, background: PAPEL } })
+    .joinChannel(alfa).png().toBuffer();
+  // O fundo tijolo vai dentro da imagem, e não só na célula à volta: a app do Gmail em modo escuro
+  // inverte as cores do email mas não as das imagens, e um logótipo branco transparente podia
+  // acabar branco sobre branco. Com o fundo pintado, lê-se sempre. (Noutro pipeline: no mesmo, o
+  // sharp aplicava o `flatten` antes do `joinChannel`, e não pintava nada.)
+  const png = await sharp(papel).flatten({ background: TIJOLO }).png({ compressionLevel: 9 }).toBuffer();
 
   const altura = Math.round((LARGURA_NO_EMAIL * height!) / width!);
   writeFileSync(DESTINO, [

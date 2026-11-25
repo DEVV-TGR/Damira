@@ -13,6 +13,40 @@ const TINTA = "#1F1D1B";
 const SUAVE = "#6B6461";
 const PAPEL = "#FAFBFB";
 const FUNDO = "#F1EFEC";
+
+/*
+ * O modo escuro. O Mail do iPhone e do Mac e o Outlook respeitam o `prefers-color-scheme`: a esses
+ * damos uma versão escura desenhada, em vez de os deixar inverter as cores à sua maneira. O site não
+ * tem modo escuro, por isso estas cores são derivadas, não medidas: a tinta passa a fundo, o papel a
+ * texto, e o tijolo da data aclara, porque o tijolo sobre tinta dá 2,5:1 e não se lê.
+ * O Gmail (app) ignora isto e inverte tudo sozinho; aí, o que se protege é o logótipo, que traz o
+ * fundo tijolo dentro da imagem (`npm run marca:email`).
+ *
+ * As regras apanham as cores pelo próprio estilo inline (`[style*="color:#1F1D1B"]`), para não ter de
+ * pôr uma classe em cada elemento: as cores são constantes, escritas sempre da mesma maneira.
+ */
+const ESCURO = {
+  fora: "#141312",
+  cartao: TINTA,
+  caixa: "#2B2826",
+  fio: "#3A3633",
+  texto: PAPEL,
+  suave: "#B8B2AE",
+  data: "#E39A93",
+};
+const ESTILO_ESCURO = `@media (prefers-color-scheme: dark) {
+  [style*="background-color:${PAPEL}"] { background-color:${ESCURO.cartao} !important; }
+  [style*="background-color:${FUNDO}"] { background-color:${ESCURO.caixa} !important; }
+  .fundo, .fundo > tbody > tr > td.margem { background-color:${ESCURO.fora} !important; }
+  [style*="color:${TINTA}"] { color:${ESCURO.texto} !important; }
+  [style*="color:${SUAVE}"] { color:${ESCURO.suave} !important; }
+  .data { color:${ESCURO.data} !important; }
+  [style*="solid ${PAPEL}"] { border-color:${ESCURO.cartao} !important; }
+  [style*="solid ${FUNDO}"] { border-color:${ESCURO.fio} !important; }
+  [style*="background-color:${TIJOLO}"] { background-color:${TIJOLO} !important; color:${PAPEL} !important; }
+  .botao { color:${PAPEL} !important; }
+  [style*="background-color:${TINTA}"] { background-color:#000000 !important; color:${PAPEL} !important; }
+}`;
 // As letras da marca à frente, para quem as tiver instaladas; sem web fonts, que num email são um
 // pedido a um servidor alheio que denuncia a abertura. Quase todos acabam na Helvetica ou na Arial.
 const TITULOS = "'Bricolage Grotesque', 'Helvetica Neue', Helvetica, Arial, sans-serif";
@@ -237,11 +271,11 @@ export function escreverHtmlEmail({ corpo, campos, partesLinhas, blocos, dados, 
 
   return `<!doctype html>
 <html lang="${lingua === "pt" ? "pt-PT" : "en-GB"}">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><style>:root { color-scheme: light only; } @media (max-width: 620px) { .margem { padding:0 !important; } .cartao, .topo { border-radius:0 !important; } .topo { padding:26px 20px !important; } .conteudo { padding:28px 20px 8px !important; } .rodape { padding:20px 20px 28px !important; } .caixa { padding-left:16px !important; padding-right:16px !important; } .abertura { font-size:20px !important; line-height:28px !important; } .data { font-size:20px !important; line-height:28px !important; } }</style></head>
-<body style="margin:0;padding:0;background-color:${FUNDO};color:${TINTA};font-family:${CORPO};font-size:16px;line-height:26px;-webkit-text-size-adjust:100%;">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><style>:root { color-scheme: light dark; supported-color-schemes: light dark; } ${ESTILO_ESCURO} @media (max-width: 620px) { .margem { padding:0 !important; } .cartao, .topo { border-radius:0 !important; } .topo { padding:26px 20px !important; } .conteudo { padding:28px 20px 8px !important; } .rodape { padding:20px 20px 28px !important; } .caixa { padding-left:16px !important; padding-right:16px !important; } .abertura { font-size:20px !important; line-height:28px !important; } .data { font-size:20px !important; line-height:28px !important; } }</style></head>
+<body class="fundo" style="margin:0;padding:0;background-color:${FUNDO};color:${TINTA};font-family:${CORPO};font-size:16px;line-height:26px;-webkit-text-size-adjust:100%;">
 <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">${preheader}</div>
 ${tabela(`<tr><td class="margem" align="center" style="padding:40px 12px;"> <!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
 ${tabela(`${faixaTeste}${topo}${corpoCartao}${rodapeCartao}`, `max-width:600px;margin:0 auto;background-color:${PAPEL};border-radius:12px;text-align:left;`, ` class="cartao"`)}
-<!--[if mso]></td></tr></table><![endif]--></td></tr>`, `background-color:${FUNDO};`)}
+<!--[if mso]></td></tr></table><![endif]--></td></tr>`, `background-color:${FUNDO};`, ` class="fundo"`)}
 </body></html>`;
 }

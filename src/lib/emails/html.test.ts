@@ -16,8 +16,10 @@ describe.each(exemplosEmail())("HTML de $modelo · $locale · $variante", ({ mod
   it("usa a moldura comum, sem recursos externos nem marcadores pendentes", () => {
     expect(email.html).toMatch(/^<!doctype html>/);
     expect(email.html).toContain(`<html lang="${lingua === "pt" ? "pt-PT" : "en-GB"}">`);
-    expect(email.html).toContain('name="color-scheme" content="light"');
-    expect(email.html).toContain('name="supported-color-schemes" content="light"');
+    // Claro e escuro: os clientes que respeitam a preferência recebem a versão escura desenhada.
+    expect(email.html).toContain('name="color-scheme" content="light dark"');
+    expect(email.html).toContain('name="supported-color-schemes" content="light dark"');
+    expect(email.html).toContain("@media (prefers-color-scheme: dark)");
     expect(email.html).toContain('role="presentation"');
     // Só o logótipo no topo, sem o nome por baixo (pedido da Andreia a 24/11).
     expect(email.html).not.toContain("Confeitaria · Pão Quente");
@@ -30,7 +32,8 @@ describe.each(exemplosEmail())("HTML de $modelo · $locale · $variante", ({ mod
     expect(email.html).not.toMatch(CORES_PROIBIDAS);
     expect(email.html).not.toMatch(/opacity|rgba|@import|url\(/i);
     expect(Buffer.byteLength(email.html, "utf8")).toBeLessThan(60 * 1024);
-    const cores = email.html.match(/#[\da-f]{6}/gi) ?? [];
+    // Fora do <style>, só as cinco cores da marca; as do modo escuro vivem só no <style>.
+    const cores = email.html.replace(/<style>[\s\S]*?<\/style>/g, "").match(/#[\da-f]{6}/gi) ?? [];
     expect(cores.every((cor) => ["#923D38", "#1F1D1B", "#6B6461", "#FAFBFB", "#F1EFEC"].includes(cor))).toBe(true);
     for (const endereco of email.html.matchAll(/href="([^"]+)"/g)) {
       expect(endereco[1].startsWith("tel:") || endereco[1] === dados.linkAceitar).toBe(true);
@@ -205,4 +208,24 @@ it("o pré-cabeçalho da confirmação junta a abertura e o levantamento", () =>
   const { html } = escreverEmail("criado-confirmado-cliente", exemploEmail("criado-confirmado-cliente"), CASA_EXEMPLO, "pt");
   const preheader = /mso-hide:all;">([\s\S]*?)<\/div>/.exec(html)?.[1] ?? "";
   expect(preheader).toMatch(/^A sua encomenda está confirmada! Domingo, 6 de dezembro de 2026, às 10h30\.&#847;/);
+});
+
+it("no modo escuro, a data aclara e nenhum texto fica com a cor do fundo", () => {
+  const { html } = escreverEmail("criado-confirmado-cliente", exemploEmail("criado-confirmado-cliente"), CASA_EXEMPLO, "pt");
+  const escuro = /@media \(prefers-color-scheme: dark\) \{([\s\S]*?)\n\}/.exec(html)?.[1] ?? "";
+  // Tijolo sobre tinta dá 2,5:1: a data passa a um tijolo claro.
+  expect(escuro).toMatch(/\.data \{ color:#E39A93 !important; \}/);
+  // O texto a tinta passa a papel, e o cartão a papel passa a tinta.
+  expect(escuro).toContain('[style*="color:#1F1D1B"] { color:#FAFBFB !important; }');
+  expect(escuro).toContain('[style*="background-color:#FAFBFB"] { background-color:#1F1D1B !important; }');
+  // O topo e o botão ficam a tijolo com texto a papel.
+  expect(escuro).toContain('[style*="background-color:#923D38"] { background-color:#923D38 !important; color:#FAFBFB !important; }');
+  expect(html).toMatch(/<div class="data" style="[^"]*color:#923D38;/);
+});
+
+it("o logótipo traz o fundo tijolo na imagem, para a inversão do Gmail não o apagar", async () => {
+  const sharp = (await import("sharp")).default;
+  const imagem = sharp(Buffer.from(ANEXO_LOGOTIPO.content, "base64"));
+  const { hasAlpha } = await imagem.metadata();
+  expect(hasAlpha).toBe(false);
 });
