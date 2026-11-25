@@ -113,13 +113,18 @@ pela ordem das cartas e, dentro de cada uma, pela ordem que a gerente gravou
 
 **Simples e composto** é a coluna `produtos.tipo`. Composto é o que se descreve
 pelo que leva: os 11 kits e boxes. O bolo por medida é simples — as massas e os
-recheios dele são escolhas, que a #88 passa a variâncias. **O que um
-composto leva continua na `composicao` das variantes**, porque muda com o
-tamanho (20 pessoas não levam o mesmo que 70) — decidido na #88, a 25/11: fica
-como lista livre, e não passa a grupo de opções. As tabelas novas da #88
-(variâncias, opções, extras, as ligações aos produtos e a cópia na linha do
-pedido) vão num PR só de esquema (`painel-gerente.md` › Tamanhos, variâncias,
-opções e extras).
+recheios dele são escolhas, que a #88 passa a variâncias. Hoje, **o que um
+composto leva vive na `composicao` das variantes**, em texto.
+
+Com a #88 (decidido a 25/11, `painel-gerente.md` › Simples e compostos), **a
+variante passa a ser o grupo do composto** — já tem nome e preço, e os pedidos
+gravados já guardam o `variante_id` e o nome —, e o que leva deixa de ser
+texto: passa a uma lista de **produtos simples** com quantidade (opcional) e
+posição. ⚠️ Proponho-a como **tabela com chave estrangeira para `produtos`**, e
+não como `jsonb`, para o painel saber em que kits está cada produto antes de o
+arquivar. O simples fica com uma variante só, a `"unica"`. As tabelas novas da
+#88 (essa, variâncias, opções, extras, as ligações aos produtos e a cópia na
+linha do pedido) vão num PR só de esquema, revisto pelo Sobral.
 
 #### A passagem, em três tempos
 

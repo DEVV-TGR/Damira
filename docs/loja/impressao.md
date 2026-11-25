@@ -23,14 +23,20 @@ cliente e telefone, artigos (variante, escolhas, quantidade, notas), observaçõ
 total e `PAGO` ou `SINAL PAGO · FALTA 12,50 €`, NIF se o cliente o deu, e
 «documento sem valor fiscal».
 
-Com a personalização (#88, por implementar), cada artigo leva por baixo as
-variâncias, o que se tira e os extras, com o preço dos extras. O **`SEM`** vai a
-negrito — é a linha que a cozinha não pode falhar:
+Com a personalização (#88, por implementar), cada artigo leva por baixo o que
+se escolheu. Num simples, as variâncias, o que se tira e os extras, com o preço
+dos extras; o **`SEM`** vai a negrito — é a linha que a cozinha não pode falhar.
+Num composto, o grupo e tudo o que ele leva, com as variâncias dos produtos lá
+dentro (exemplos inventados):
 
 ```
 12 × Cachorro — salsicha alemã          27,60 €
      SEM fiambre
      + 1 fatia de queijo (+0,40 €)
+
+1 × Kit de festa — 20 pessoas          335,00 €
+     20 × Rissol · 20 × Croquete
+     1 × Bolo — chocolate
 ```
 
 **Pedidos para hoje:** um bloco **invertido** no topo (fundo preto, texto branco)
