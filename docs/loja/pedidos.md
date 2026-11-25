@@ -457,8 +457,9 @@ conta o seu mínimo — 12 de alheira e 12 de legumes (decidido a 05/10).
 Decidido a 25/11 (`painel-gerente.md` › Simples e compostos). O browser manda
 só ids e quantidades (regra 1), e o servidor calcula o **preço da unidade**:
 
-- **simples** = preço do produto + variâncias escolhidas + Σ (extra ×
-  quantidade). Tirar não desconta;
+- **simples** = preço do tamanho escolhido (ou o preço do produto, se não tiver
+  tamanhos) + variâncias escolhidas + Σ (extra × quantidade). Tirar não
+  desconta;
 - **composto** = preço do grupo escolhido. O que vem dentro não soma.
 
 Tudo × quantidade da linha (unidades ou quilos), em cêntimos. E recusa:
@@ -470,7 +471,7 @@ Tudo × quantidade da linha (unidades ou quilos), em cêntimos. E recusa:
   simples lá dentro.
 
 **Não valida mais nada**: o conteúdo é da gerente. Um preço sob orçamento
-(produto ou grupo) põe a linha sob orçamento, com o resto escrito ao lado. A
+(tamanho ou grupo) põe a linha sob orçamento, com o resto escrito ao lado. A
 linha guarda **uma cópia** do que foi escolhido — variâncias, opções, extras,
 e no composto o nome do grupo e os produtos que levava, com as quantidades —, e
 a regra de baixo vale para ela.

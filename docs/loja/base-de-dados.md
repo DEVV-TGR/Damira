@@ -122,7 +122,8 @@ gravados já guardam o `variante_id` e o nome —, e o que leva deixa de ser
 texto: passa a uma lista de **produtos simples** com quantidade (opcional) e
 posição. ⚠️ Proponho-a como **tabela com chave estrangeira para `produtos`**, e
 não como `jsonb`, para o painel saber em que kits está cada produto antes de o
-arquivar. O simples fica com uma variante só, a `"unica"`. As tabelas novas da
+arquivar. No simples, as variantes são os tamanhos (opcionais); sem tamanhos,
+fica com uma só, a `"unica"`, como hoje. As tabelas novas da
 #88 (essa, variâncias, opções, extras, as ligações aos produtos e a cópia na
 linha do pedido) vão num PR só de esquema, revisto pelo Sobral.
 

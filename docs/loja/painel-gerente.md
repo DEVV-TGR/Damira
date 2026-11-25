@@ -137,8 +137,8 @@ com preço ou sem ele. No código é o `pedeConfirmacao` (`tipos.ts`).
 Decidido a 25/11 (#88). ⚠️ **Por implementar**: até lá vale o que está em
 › Variantes e escolhas (hoje), mais abaixo.
 
-**O catálogo é da gerente.** Nós não decidimos que grupos, variâncias, opções
-ou extras existem, nem em que produtos: o painel dá-lhe as peças, livres, e
+**O catálogo é da gerente.** Nós não decidimos que tamanhos, grupos, variâncias,
+opções ou extras existem, nem em que produtos: o painel dá-lhe as peças, livres, e
 ela monta o que quiser. O sistema não conhece «queijo», «topper» ou «20
 pessoas», e não tem regras sobre o que faz sentido juntar a quê. Só valida o
 que não é conteúdo (`pedidos.md` › Personalização).
@@ -148,18 +148,24 @@ Há dois tipos de produto (`produtos.tipo`, #124), e marca-o ela:
 | | **Produto simples** | **Produto composto** |
 |---|---|---|
 | O que é | um produto só: um cachorro, um bolo ao quilo | é feito de produtos simples: um kit, uma box |
-| Preço | **por unidade ou por quilo, × a quantidade** — sem tamanhos | **o do grupo** que o cliente escolhe |
-| O cliente escolhe | variâncias, opções, extras, quantidade | **um grupo**, a quantidade, e as variâncias dos simples lá dentro |
-| Separadores da ficha | Preço · Variâncias · Opções · Extras | Grupos |
+| Preço | **um preço, ou um por tamanho** (se ela lhe der tamanhos), por unidade ou por quilo, **× a quantidade** | **o do grupo** que o cliente escolhe |
+| O cliente escolhe | o tamanho (se houver), variâncias, opções, extras, quantidade | **um grupo**, a quantidade, e as variâncias dos simples lá dentro |
+| Separadores da ficha | Preço e tamanhos · Variâncias · Opções · Extras | Grupos |
 
 **No simples:**
 
 | Peça | O que é | O cliente escolhe | Preço |
 |---|---|---|---|
+| **Tamanho** (opcional) | versões do produto com preço próprio: 390 g / 470 g; pequeno / grande; caixa de 6 / de 12 | **1**, e depois a quantidade | **o preço do tamanho** × a quantidade |
 | **Variância** | **trocar** uma coisa por outra, sem tirar nem pôr: Salsicha — alemã / americana; Sabor; Cor | **1 por variância** | 0 € ou `+X €` em cada escolha |
 | **Opção** | **tirar**: sem queijo, sem cebola | as que quiser | sem preço; tirar não desconta |
 | **Extra** | **pôr a mais**: + fatia de queijo, + ovo, topper | as que quiser, até ao máximo que ela define | `+X €` por unidade, ou 0 € |
 
+- **Os tamanhos põem-se ou não**: sem tamanhos, o produto tem um preço só; com
+  tamanhos, cada um tem o seu, e o produto deixa de ter um preço à parte. O
+  tamanho **é** o preço; a variância **soma** ao preço. O nome do tamanho é
+  dela («470 g», «Caixa de 12»), e o mínimo e o múltiplo continuam a ser do
+  produto.
 - **Extras e opções não se ligam a ingredientes.** Um extra é um nome, um
   preço e um máximo; se ela quiser um extra que o produto não leva, põe-no.
 - **Não há combinações proibidas.** «Sem queijo» e «+ queijo» na mesma linha
@@ -201,18 +207,19 @@ cliente **escolhe um grupo**; para dois, junta o produto duas vezes.
 - **Uma página por produto.** Todos passam a ter `/encomendas/<id>`; o cartão
   mantém o botão rápido nos que não têm nada obrigatório para escolher.
 
-**No código**, o grupo é a **`variante`** de hoje: já tem nome e preço, e os
-pedidos gravados já guardam o `varianteId` e o nome dela. Um simples fica com
-uma só, a `"unica"`. O que muda é o que a variante leva: a `composicao` em texto
-passa a uma lista de produtos simples com quantidade (`base-de-dados.md`).
+**No código**, o tamanho do simples e o grupo do composto são os dois a
+**`variante`** de hoje: já tem nome e preço, e os pedidos gravados já guardam o
+`varianteId` e o nome dela. Um simples sem tamanhos fica com uma só, a
+`"unica"` — como hoje. O que muda é o que a variante do composto leva: a
+`composicao` em texto passa a uma lista de produtos simples com quantidade
+(`base-de-dados.md`).
 
 **Os produtos de hoje ficam**, e convertem-se para testarmos:
 
 - as `escolhas` passam a uma variância a 0 € (o mesmo comportamento: escolhe-se
   uma);
-- um simples com várias variantes de preço (o Chocolate do Dubai, quatro pesos)
-  fica com o preço do mais barato e uma variância «Peso» com o acréscimo dos
-  outros. Se ela preferir quatro produtos, cria-os;
+- as variantes dos simples ficam como tamanhos (o Chocolate do Dubai, quatro
+  pesos, quatro preços), sem mudar nada;
 - os escalões dos kits passam a grupos, e o que levam (hoje em texto) passa à
   mão a produtos simples fora de venda — não há conversão automática que acerte
   em «1 unidade (800gr)»;
