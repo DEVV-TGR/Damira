@@ -285,6 +285,9 @@ ordem — ficava órfã, fora da `/ementa`.
 | `confirmado_em` | `timestamptz` nulo | `confirmadoEm` — quando ficou `confirmado`; fica depois de entregue ou cancelado (migração `0006`) |
 | `expira_em` | `timestamptz` nulo | `expiraEm` — o prazo da casa num `por-confirmar`, 48 h corridas; fica depois |
 | `aceite_em` | `timestamptz` nulo | `aceiteEm` — quando o cliente aceitou a resposta da casa |
+| `proposta_versao` | `integer` `>= 0`, por defeito `0` | `propostaVersao` — sobe a cada resposta com preço ou hora novos; `0` é nunca houve proposta (migração `0009`) |
+| `proposta_em` | `timestamptz` nulo | `propostaEm` — quando a casa fez a última proposta |
+| `levantamento_anterior_em` | `timestamptz` nulo | `levantamentoAnteriorEm` — a hora que o cliente pediu, quando a proposta a mudou |
 | `causa_expiracao` | `text` nulo `CHECK` (`sem-resposta-da-casa`, `sem-pagamento`) | `causaExpiracao` — só num `expirado`, e sempre nele |
 | `cliente_nome`, `cliente_email`, `cliente_telefone` | `text` | `cliente` — o telefone é obrigatório, em E.164 (`CHECK ^\+[1-9][0-9]{6,14}$`), como no `EsquemaCliente` |
 | `cliente_nif`, `conta_id` | `text` nulo | `cliente` |
@@ -329,7 +332,8 @@ seu modo — `pendente` e `pago` só com o Stripe; `por-confirmar`,
 `a-aguardar-aceite` e `confirmado` só fora dele — e um `confirmado` tem
 `confirmado_em`, tal como um `entregue` na loja, que só lá chega vindo de
 confirmado. Um `por-confirmar` tem `expira_em`, depois do `criado_em`; quem tem
-`aceite_em` tem `confirmado_em`; e um `expirado` diz porquê, com a causa do seu
+`aceite_em` tem `confirmado_em`; um `a-aguardar-aceite` tem uma proposta, com
+versão e data, e só uma proposta guarda a hora anterior (`pedidos_proposta`); e um `expirado` diz porquê, com a causa do seu
 modo — `sem-pagamento` com o Stripe, `sem-resposta-da-casa` só a quem tinha
 prazo. Um `entregue` tem `entregue_em`; um `cancelado`
 tem quando e por quem, e só ele; o `chegou_tarde` só existe com pagamento; os
@@ -337,6 +341,22 @@ tem quando e por quem, e só ele; o `chegou_tarde` só existe com pagamento; os
 `pago_online_cent <= total_cent`**: um montante que não bate ainda não tem regra
 (`pagamentos.md` › Em aberto, 8), e um `CHECK` que recusasse um pagamento
 recebido perdia um pedido pago.
+
+### A credencial do aceite — uma assinatura, e não um segredo guardado
+
+O link do email de proposta leva a referência, a versão e uma assinatura das
+duas (HMAC-SHA256 com uma chave do servidor, `PROPOSTA_SEGREDO`). A página do
+aceite refaz a assinatura e compara-a em tempo constante; só então lê o pedido,
+e aceita com `UPDATE … WHERE estado = 'a-aguardar-aceite' AND proposta_versao = $versão`.
+
+- **Sem segredo na base de dados:** quem tiver uma cópia dela não consegue
+  aceitar nada, porque não tem a chave.
+- **Uma resposta revista invalida o link anterior** (`pedidos.md` › Impactos): a
+  versão sobe, e a assinatura antiga já não corresponde a nenhum pedido à
+  espera.
+- **A referência pública não autoriza** o aceite: sem a assinatura, não há aceite.
+- **Mudar a chave invalida todos os links por aceitar.** É o que se faz se ela
+  vazar; os clientes que ainda não aceitaram recebem a proposta outra vez.
 
 ### Os pedidos de teste
 
@@ -371,6 +391,7 @@ de teste — o `LOJA_EM_TESTE` desse momento.
 | `quantidade` | `numeric` `> 0` | `quantidade` |
 | `preco_unitario_cent`, `total_cent` | `integer` nulo, `>= 0` | o preço **desse dia**; `null` os dois numa linha sem preço (migração `0007`) |
 | `notas` | `text` nulo | `notas` |
+| `preco_da_proposta` | `boolean`, por defeito `false` | o preço foi fixado pela casa numa proposta, e não visto ao pedir; só com preço (migração `0009`) |
 
 **Uma linha sem preço** — o bolo por medida — guarda o preço unitário e o total
 a `null` até a gerente os fixar ao responder (`pedidos.md` › O que o pedido

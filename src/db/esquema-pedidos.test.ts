@@ -99,6 +99,9 @@ const PRAZO = new Date(CRIADO.getTime() + 48 * 60 * 60 * 1000);
 /** Um pedido com um produto que necessita de confirmação: espera pela casa. */
 const POR_CONFIRMAR = { ...NA_LOJA, estado: "por-confirmar", confirmadoEm: null, expiraEm: PRAZO } as const;
 
+/** A primeira proposta da casa (`pedidos.md` › O aceite do cliente). */
+const PROPOSTA = { propostaVersao: 1, propostaEm: new Date(CRIADO.getTime() + 60 * 60 * 1000) } as const;
+
 const LINHA = {
   pedidoId: PENDENTE.id,
   posicao: 0,
@@ -210,10 +213,11 @@ describe("o que é válido entra", () => {
     });
     await db.insert(pedidos).values([
       { ...POR_CONFIRMAR, ...outro(1) },
-      /* A casa respondeu com um preço novo: o prazo dela fica guardado. */
-      { ...POR_CONFIRMAR, ...outro(2), estado: "a-aguardar-aceite" },
-      /* O cliente aceitou: confirma no mesmo instante. */
-      { ...POR_CONFIRMAR, ...outro(3), estado: "confirmado", aceiteEm: PAGO, confirmadoEm: PAGO },
+      /* A casa respondeu com um preço e uma hora novos: o prazo dela fica guardado, e a proposta
+         leva versão, data e a hora que o cliente tinha pedido. */
+      { ...POR_CONFIRMAR, ...outro(2), estado: "a-aguardar-aceite", ...PROPOSTA, levantamentoAnteriorEm: PENDENTE.levantamentoEm },
+      /* O cliente aceitou: confirma no mesmo instante, e a proposta que aceitou fica. */
+      { ...POR_CONFIRMAR, ...outro(3), estado: "confirmado", aceiteEm: PAGO, confirmadoEm: PAGO, ...PROPOSTA },
       { ...POR_CONFIRMAR, ...outro(4), estado: "expirado", causaExpiracao: "sem-resposta-da-casa" },
       /* Desistiu por telefone antes de a casa responder: nunca foi confirmado. */
       { ...POR_CONFIRMAR, ...outro(5), estado: "cancelado", canceladoEm: PAGO, canceladoPor: "cliente" },
@@ -335,6 +339,17 @@ describe("um pedido recusa", () => {
     expect(await tenta({ estado: "por-confirmar", expiraEm: PRAZO })).toBe("pedidos_estado_do_modo");
     expect(await tenta({ estado: "a-aguardar-aceite" })).toBe("pedidos_estado_do_modo");
     expect(await tenta({ expiraEm: PRAZO })).toBe("pedidos_expira_em");
+  });
+
+  it("à espera do aceite sem proposta, ou versão e data da proposta separadas", async () => {
+    const aguarda = { ...POR_CONFIRMAR, estado: "a-aguardar-aceite" } as const;
+    /* Sem versão, nenhum link a aceitava: ficava parado para sempre. */
+    expect(await tenta(aguarda)).toBe("pedidos_proposta");
+    expect(await tenta({ ...aguarda, propostaVersao: 1 })).toBe("pedidos_proposta");
+    expect(await tenta({ ...aguarda, propostaEm: PAGO })).toBe("pedidos_proposta");
+    expect(await tenta({ ...POR_CONFIRMAR, propostaVersao: -1, propostaEm: PAGO })).toBe("pedidos_proposta");
+    /* Só uma proposta muda a hora pedida. */
+    expect(await tenta({ ...POR_CONFIRMAR, levantamentoAnteriorEm: PENDENTE.levantamentoEm })).toBe("pedidos_proposta");
   });
 
   it("um aceite que não confirmou", async () => {
@@ -465,6 +480,12 @@ describe("uma linha recusa", () => {
 
   it("uma unidade que não existe", async () => {
     expect(await tenta({ unidade: "duzia" })).toBe("linhas_pedido_unidade");
+  });
+
+  it("um preço da proposta sem preço", async () => {
+    expect(await tenta({ precoDaProposta: true, precoUnitarioCent: null, totalCent: null })).toBe(
+      "linhas_pedido_preco_da_proposta",
+    );
   });
 
   it("duas linhas na mesma posição", async () => {
