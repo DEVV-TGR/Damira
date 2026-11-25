@@ -1,7 +1,7 @@
 import { TZDate } from "@date-fns/tz";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { casa, linhasPedido, pedidos, produtos, vagas } from "@/db/esquema";
+import { casa, emailsPorEnviar, linhasPedido, pedidos, produtos, vagas } from "@/db/esquema";
 import { loteEmTransacao } from "@/db/lote";
 import { catalogoDeTeste } from "@/db/teste";
 import { montarFonteBd, type OpcoesDaFonteBd } from "./bd";
@@ -10,6 +10,7 @@ import { comExemplo, fonteDoAmbiente } from "./exemplo";
 import { PRAZO_DA_RESPOSTA_MS, PRAZO_DO_PEDIDO_MS } from "./regras";
 import type { VagaOcupada } from "@/lib/horarios";
 import { FORMATO_REFERENCIA, type EntradaPedido } from "./tipos";
+import { DESTINO_PEDIDOS } from "@/lib/pedidos";
 
 /**
  * # Os pedidos da loja na base de dados (#29, #41)
@@ -112,6 +113,31 @@ const criado = async (resultado: Awaited<ReturnType<Awaited<ReturnType<typeof mo
 };
 
 describe("criar o pedido", () => {
+  it.each([false, true])("guarda os emails da criação no mesmo lote (por confirmar: %s)", async (porConfirmar) => {
+    const { fonte, db } = await montar();
+    if (porConfirmar) await pedeConfirmacao(db);
+    const dados = entrada();
+    const pedido = await criado(await fonte.criarPedido(dados, CONTEXTO));
+    await fonte.criarPedido(dados, CONTEXTO);
+    const emails = await db.select().from(emailsPorEnviar);
+    expect(emails).toHaveLength(2);
+    expect(emails).toEqual(expect.arrayContaining([
+      expect.objectContaining({ pedidoId: pedido.id, modelo: porConfirmar ? "criado-por-confirmar-cliente" : "criado-confirmado-cliente", destinatario: "teste@example.com", criadoEm: AGORA, enviadoEm: null, tentativas: 0 }),
+      expect.objectContaining({ pedidoId: pedido.id, modelo: "criado-loja", enviadoEm: null }),
+    ]));
+    expect(emails.find((e) => e.modelo === "criado-loja")?.destinatario).toBe(DESTINO_PEDIDOS);
+  });
+
+  it("se não pode guardar a notificação, não deixa um pedido nem meia reserva", async () => {
+    const { fonte, db } = await montar();
+    await db.execute(sql`create function recusar_email() returns trigger language plpgsql as $$ begin raise exception 'fila indisponível'; end $$`);
+    await db.execute(sql`create trigger recusar_email before insert on emails_por_enviar for each row execute function recusar_email()`);
+    await expect(fonte.criarPedido(entrada(), CONTEXTO)).rejects.toThrow();
+    expect(await db.select().from(pedidos)).toHaveLength(0);
+    expect(await db.select().from(linhasPedido)).toHaveLength(0);
+    expect(await db.select().from(vagas)).toHaveLength(0);
+    expect(await fonte.versaoPedidos()).toBe(0);
+  });
   it("cria o pedido confirmado, a pagar na loja, com o total do servidor, e guarda-o como a fonte dos JSON", async () => {
     const { fonte, db } = await montar();
     const pedido = await criado(await fonte.criarPedido(entrada(), CONTEXTO));

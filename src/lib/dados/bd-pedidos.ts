@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, eq, gte, inArray, lte, sql, type SQL } from "drizzle-orm";
 import type { BaseDeDados } from "@/db/catalogo";
-import { casa as tabelaCasa, linhasPedido, pedidos, reembolsos, vagas } from "@/db/esquema";
+import { casa as tabelaCasa, emailsPorEnviar, linhasPedido, pedidos, reembolsos, vagas } from "@/db/esquema";
 import { erroDoPostgres } from "@/db/erros";
 import type { ExecutarLote } from "@/db/lote";
 import { conferirPedido, gerarReferencia, pedidoNaLoja, PRAZO_DO_PEDIDO_MS, textoDeProcura } from "./regras";
@@ -333,6 +333,13 @@ export function criarPedidosBd(db: BaseDeDados, emLote: ExecutarLote, opcoes: Op
             tx.insert(linhasPedido).values(
               linhasDoPedido.map((linha, posicao) => ({ pedidoId: pedido.id, posicao, ...linha })),
             ),
+            /* Os nomes são os modelos da #119 (PR #137). Só se enfileira:
+               uma falha do Resend nunca pode desfazer um pedido. A repetição
+               da chave sai antes deste lote e não cria novas notificações. */
+            tx.insert(emailsPorEnviar).values([
+              { pedidoId: pedido.id, modelo: pedido.estado === "confirmado" ? "criado-confirmado-cliente" : "criado-por-confirmar-cliente", destinatario: pedido.cliente.email, criadoEm: agora },
+              { pedidoId: pedido.id, modelo: "criado-loja", destinatario: DESTINO_PEDIDOS, criadoEm: agora },
+            ]),
             /* A vaga: somar, com o limite de agora copiado para a linha. Se
                passar, o `CHECK` falha e ninguém fica com meia reserva. */
             tx
