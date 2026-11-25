@@ -283,12 +283,12 @@ ordem — ficava órfã, fora da `/ementa`.
 | `criado_em`, `levantamento_em` | `timestamptz` | iguais |
 | `pago_em`, `impresso_em`, `entregue_em`, `cancelado_em`, `reagendado_em` | `timestamptz` nulo | iguais |
 | `confirmado_em` | `timestamptz` nulo | `confirmadoEm` — quando ficou `confirmado`; fica depois de entregue ou cancelado (migração `0006`) |
-| `expira_em` | `timestamptz` nulo | `expiraEm` — o prazo da casa num `por-confirmar`, 48 h corridas; fica depois |
+| `expira_em` | `timestamptz` nulo | `expiraEm` — o prazo da casa num `por-confirmar`, 48 h corridas; num `a-aguardar-aceite`, as 24 h do cliente para aceitar, que a proposta grava por cima (`0010`); fica depois |
 | `aceite_em` | `timestamptz` nulo | `aceiteEm` — quando o cliente aceitou a resposta da casa |
 | `proposta_versao` | `integer` `>= 0`, por defeito `0` | `propostaVersao` — sobe a cada resposta com preço ou hora novos; `0` é nunca houve proposta (migração `0009`) |
 | `proposta_em` | `timestamptz` nulo | `propostaEm` — quando a casa fez a última proposta |
 | `levantamento_anterior_em` | `timestamptz` nulo | `levantamentoAnteriorEm` — a hora que o cliente pediu, quando a proposta a mudou |
-| `causa_expiracao` | `text` nulo `CHECK` (`sem-resposta-da-casa`, `sem-pagamento`) | `causaExpiracao` — só num `expirado`, e sempre nele |
+| `causa_expiracao` | `text` nulo `CHECK` (`sem-resposta-da-casa`, `sem-pagamento`, `sem-aceite-do-cliente`) | `causaExpiracao` — só num `expirado`, e sempre nele; a terceira desde a `0010` |
 | `cliente_nome`, `cliente_email`, `cliente_telefone` | `text` | `cliente` — o telefone é obrigatório, em E.164 (`CHECK ^\+[1-9][0-9]{6,14}$`), como no `EsquemaCliente` |
 | `cliente_nif`, `conta_id` | `text` nulo | `cliente` |
 | `observacoes` | `text` nulo | `observacoes` |
