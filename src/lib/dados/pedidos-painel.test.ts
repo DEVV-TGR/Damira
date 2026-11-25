@@ -481,6 +481,19 @@ describe("a resposta da casa e o aceite do cliente (pedidos.md › O aceite do c
     });
   });
 
+  it("rever a proposta de volta à hora pedida deixa de mudar a hora", async () => {
+    const f = await fonte([comBolo("a", { expiraEm: new Date("2099-01-01T00:00:00Z") })]);
+    await f.responderPedido(u("a"), { precos: [{ posicao: 1, precoUnitarioCent: 4500 }], levantamentoEm: lisboa(9, 11).toISOString() }, GERENTE);
+    const revista = await f.responderPedido(u("a"), { precos: [], levantamentoEm: lisboa(8, 15).toISOString() }, GERENTE);
+    expect(revista.ok && revista.valor).toMatchObject({ levantamentoEm: lisboa(8, 15), levantamentoAnteriorEm: null, propostaVersao: 2 });
+  });
+
+  it("recusa um preço absurdo como dado inválido, sem chegar a gravar", async () => {
+    const f = await fonte([comBolo("a")]);
+    const resposta = await f.responderPedido(u("a"), { precos: [{ posicao: 1, precoUnitarioCent: 1_000_001 }], levantamentoEm: null }, GERENTE);
+    expect(resposta).toMatchObject({ ok: false, erro: "dados-invalidos" });
+  });
+
   it("não responde a quem já passou o prazo", async () => {
     const f = await fonte([comBolo("a", { expiraEm: lisboa(7, 9) })]);
     expect(await f.responderPedido(u("a"), PRECO_DO_BOLO, GERENTE)).toEqual({ ok: false, erro: "estado-mudou" });

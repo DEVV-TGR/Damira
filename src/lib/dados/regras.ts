@@ -445,11 +445,21 @@ export function planearResposta(
       linhas,
       totalCent: linhas.reduce((soma, linha) => soma + (linha.totalCent ?? 0), 0),
       levantamentoEm: novaHora ? entrada.levantamentoEm! : pedido.levantamentoEm,
-      /* A hora que o cliente pediu: a primeira, mesmo que a proposta seja revista várias vezes. */
-      levantamentoAnteriorEm: novaHora ? (pedido.levantamentoAnteriorEm ?? pedido.levantamentoEm) : pedido.levantamentoAnteriorEm,
+      levantamentoAnteriorEm: horaAnterior(pedido, novaHora ? entrada.levantamentoEm! : null),
       fixadas: entrada.precos.map((p) => p.posicao),
     },
   };
+}
+
+/**
+ * A hora que o cliente pediu, guardada enquanto a proposta a muda: a primeira, mesmo que a proposta
+ * seja revista várias vezes. Se a revisão voltar à hora pedida, deixa de haver mudança de hora —
+ * senão a página dizia «10h30, em vez das 10h30».
+ */
+function horaAnterior(pedido: Pedido, nova: Date | null): Date | null {
+  if (nova === null) return pedido.levantamentoAnteriorEm;
+  const pedida = pedido.levantamentoAnteriorEm ?? pedido.levantamentoEm;
+  return nova.getTime() === pedida.getTime() ? null : pedida;
 }
 
 /** O pedido depois da resposta, como as duas fontes o gravam. */

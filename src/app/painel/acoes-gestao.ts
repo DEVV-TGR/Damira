@@ -118,7 +118,13 @@ export async function linkDaProposta(id: string) {
   const lido = await pedidoDoPainel(id, ctx);
   if (!lido.ok) return lido;
   if (lido.valor.estado !== "a-aguardar-aceite") return { ok: false as const, erro: "estado-mudou" as const };
-  return { ok: true as const, valor: `${URL_SITE}${caminhoDaProposta(lido.valor.referencia, lido.valor.propostaVersao)}` };
+  /* Sem a `PROPOSTA_SEGREDO` o link não se assina: o painel não mostra o link, em vez de rebentar. */
+  try {
+    return { ok: true as const, valor: `${URL_SITE}${caminhoDaProposta(lido.valor.referencia, lido.valor.propostaVersao)}` };
+  } catch {
+    console.error("[proposta] o link não se assinou: falta a PROPOSTA_SEGREDO?");
+    return { ok: false as const, erro: "dados-invalidos" as const };
+  }
 }
 
 /** As horas da loja num dia, para mudar o levantamento. Só para a gerente. */

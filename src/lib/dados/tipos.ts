@@ -547,7 +547,9 @@ export type ErroPainel =
  */
 export const EsquemaResposta = z.object({
   precos: z
-    .array(z.object({ posicao: z.number().int().nonnegative(), precoUnitarioCent: Cent }))
+    /* Um teto de 10 000 € por unidade: um zero a mais por engano, vezes a quantidade, passava do
+       `integer` do Postgres e rebentava ao gravar, em vez de ser recusado como dado inválido. */
+    .array(z.object({ posicao: z.number().int().nonnegative(), precoUnitarioCent: Cent.max(1_000_000) }))
     .max(50),
   /** ISO, ou `null` para manter a hora. */
   levantamentoEm: z.string().nullable(),

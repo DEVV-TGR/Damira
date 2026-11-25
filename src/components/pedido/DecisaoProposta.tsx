@@ -23,8 +23,9 @@ export function DecisaoProposta({ referencia, credencial, telefone }: { referenc
     setErro(false);
     comecar(async () => {
       const resultado = await (qual === "aceitar" ? aceitar : recusar)(referencia, credencial);
-      /* Um «estado-mudou» não é um erro para quem clica: a página mostra o estado verdadeiro. */
-      if (!resultado.ok && resultado.erro === "link-invalido") setErro(true);
+      /* Um «estado-mudou» não é um erro para quem clica: a página mostra o estado verdadeiro. Um
+         link inválido ou uma falha do servidor mostram o aviso, com o telefone. */
+      if (!resultado.ok && (resultado.erro === "link-invalido" || resultado.erro === "falhou")) setErro(true);
       router.refresh();
     });
   };

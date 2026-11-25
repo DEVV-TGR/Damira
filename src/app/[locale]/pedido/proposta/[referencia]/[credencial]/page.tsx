@@ -42,7 +42,13 @@ export default async function PaginaProposta({ params }: { params: Promise<Param
 
   /* A credencial primeiro: sem ela nem se lê o pedido, e um link inventado não descobre se a
      referência existe. */
-  const versao = versaoDoLink(referencia, credencial);
+  /* Sem a chave, nenhum link se confere: a página diz que o link não é válido, em vez de rebentar. */
+  let versao: number | null = null;
+  try {
+    versao = versaoDoLink(referencia, credencial);
+  } catch {
+    console.error("[proposta] o link não se conferiu: falta a PROPOSTA_SEGREDO?");
+  }
   const pedido = versao === null ? null : await pedidoPorReferencia(referencia);
   if (versao === null || !pedido || pedido.propostaVersao < versao) {
     return <Aviso titulo={t("invalido.titulo")} texto={t("invalido.texto", { telefone })} />;
