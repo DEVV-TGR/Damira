@@ -17,7 +17,7 @@ import {
   type Produto,
   type ResultadoPainel,
 } from "./tipos";
-import { comIds, emId, invalido, livre, naoExiste, paraProcura } from "./regras";
+import { comIds, emId, estadoAntesDeEntregue, invalido, livre, naoExiste, paraProcura, podeCancelar, REAGENDAVEIS } from "./regras";
 
 /**
  * # O painel sobre os JSON — em memória, como os pedidos
@@ -251,8 +251,11 @@ export function criarPainelJson(
          isso não é um erro: o que se queria aconteceu. Na base de dados é um
          `UPDATE … WHERE estado = 'pago'`, nunca ler e depois escrever. */
       if (pedido.estado === "entregue") return { ok: true, valor: pedido };
-      if (pedido.estado !== "pago") return { ok: false, erro: "estado-mudou" };
-      if (faltaPagarCent(pedido) > 0 && !faltaCobrada) return { ok: false, erro: "falta-cobrar" };
+      /* Pago na loja, o dinheiro entra no mesmo toque em que o pedido sai do
+         balcão: não há falta a perguntar (`pedidos.md` › Os estados). */
+      const naLoja = pedido.estado === "confirmado" && pedido.modoPagamento === "na-loja";
+      if (pedido.estado !== "pago" && !naLoja) return { ok: false, erro: "estado-mudou" };
+      if (!naLoja && faltaPagarCent(pedido) > 0 && !faltaCobrada) return { ok: false, erro: "falta-cobrar" };
       const entregue: Pedido = { ...pedido, estado: "entregue", entregueEm: agora };
       estado.pedidos.set(id, entregue);
       estado.versao++;
@@ -266,7 +269,7 @@ export function criarPainelJson(
       if (papel === "funcionario" && agora.getTime() - pedido.entregueEm.getTime() > CINCO_MINUTOS) {
         return { ok: false, erro: "fora-do-prazo" };
       }
-      const devolvido: Pedido = { ...pedido, estado: "pago", entregueEm: null };
+      const devolvido: Pedido = { ...pedido, estado: estadoAntesDeEntregue(pedido), entregueEm: null };
       estado.pedidos.set(id, devolvido);
       estado.versao++;
       return { ok: true, valor: devolvido };
@@ -291,7 +294,7 @@ export function criarPainelJson(
     async reagendarPedido(id, entrada, { agora }) {
       const pedido = estado.pedidos.get(id);
       if (!pedido) return naoExiste;
-      if (pedido.estado !== "pago") return { ok: false, erro: "estado-mudou" };
+      if (!REAGENDAVEIS.includes(pedido.estado)) return { ok: false, erro: "estado-mudou" };
       const novo = typeof entrada === "string" ? new Date(entrada) : null;
       if (!novo || Number.isNaN(novo.getTime())) return { ok: false, erro: "dados-invalidos", campos: ["levantamentoEm"] };
       /* Uma hora da loja, com vaga, no futuro: o motor do calendário, com o
@@ -310,7 +313,7 @@ export function criarPainelJson(
     async cancelarPedido(id, reembolsoCent, { agora }) {
       const pedido = estado.pedidos.get(id);
       if (!pedido) return naoExiste;
-      if (pedido.estado !== "pago") return { ok: false, erro: "estado-mudou" };
+      if (!podeCancelar(pedido, agora)) return { ok: false, erro: "estado-mudou" };
       if (!centValido(reembolsoCent, porDevolverCent(pedido), true)) {
         return { ok: false, erro: "dados-invalidos", campos: ["reembolsoCent"] };
       }

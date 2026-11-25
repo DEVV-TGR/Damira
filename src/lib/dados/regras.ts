@@ -329,6 +329,35 @@ export const pedidoNaLoja = (
   causaExpiracao: null,
 });
 
+// ——— O painel ———
+
+/**
+ * Os pedidos pagos na loja que a gerente pode cancelar: os que esperam pela casa
+ * ou pelo cliente, e os confirmados por levantar (`pedidos.md` › Os estados). O
+ * `pago` do Stripe também se cancela, com reembolso; o resto já acabou.
+ * O prazo já passado vale mesmo antes de a limpeza gravar a expiração.
+ */
+export const CANCELAVEIS_NA_LOJA: readonly Pedido["estado"][] = ["por-confirmar", "a-aguardar-aceite", "confirmado"];
+
+export const podeCancelar = (pedido: Pick<Pedido, "estado" | "modoPagamento" | "expiraEm">, agora: Date): boolean =>
+  (pedido.estado === "pago" || (pedido.modoPagamento === "na-loja" && CANCELAVEIS_NA_LOJA.includes(pedido.estado))) &&
+  (pedido.estado !== "por-confirmar" || (pedido.expiraEm !== null && pedido.expiraEm.getTime() > agora.getTime()));
+
+/**
+ * Quem a gerente reagenda: o `pago` e o `confirmado`. Mudar a hora de um que
+ * ainda espera pela casa é responder-lhe, e passa pelo aceite do cliente
+ * (`pedidos.md` › Confirmar).
+ */
+export const REAGENDAVEIS: readonly Pedido["estado"][] = ["pago", "confirmado"];
+
+/**
+ * Para onde volta um «entregue» desfeito: para o estado de onde veio — `pago`
+ * no Stripe, `confirmado` na loja. Os efeitos da primeira confirmação não se
+ * repetem (`pedidos.md` › Os estados).
+ */
+export const estadoAntesDeEntregue = (pedido: Pick<Pedido, "modoPagamento">): Pedido["estado"] =>
+  pedido.modoPagamento === "na-loja" ? "confirmado" : "pago";
+
 /**
  * O texto por onde o painel procura um pedido: o nome e a referência, sem
  * acentos e em minúsculas. Escreve-se uma vez, ao criar, e é o que deixa
