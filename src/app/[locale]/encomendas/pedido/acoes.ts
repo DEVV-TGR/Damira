@@ -12,6 +12,7 @@ import { emModoDeTeste } from "@/lib/modo-teste";
 import { itensDoServidor } from "@/lib/pedido-servidor";
 import { corpoDaCompra, DESTINO_PEDIDOS, esquemaCompra, quandoVoltaALoja, type TipoPedido } from "@/lib/pedidos";
 import { confirmarLevantamento } from "@/lib/vagas-servidor";
+import type { Pedido } from "@/lib/dados/tipos";
 
 /** O que fica no histórico do browser. O total é **o do servidor**. */
 export type Registo = {
@@ -26,13 +27,14 @@ export type Registo = {
 export type Resultado =
   | { estado: "inicial" }
   /**
-   * `estadoPedido`: em que ficou o pedido guardado — confirmado logo, ou à espera da casa. Chega
-   * quando a página gravar o pedido na base de dados (#126, passo 1); até lá não vem, e o ecrã diz
-   * só que o pedido foi enviado.
+   * `estadoPedido`: em que ficou o pedido guardado. Vem quando a página grava o pedido na base de
+   * dados (#126): `confirmado` logo, ou `por-confirmar` à espera da casa — e, se o envio repetiu um
+   * pedido já gravado (a resposta perdeu-se), o estado em que esse pedido estiver agora. Sem base de
+   * dados não vem, e o ecrã diz só que o pedido foi enviado.
    */
-  | { estado: "enviado"; registo?: Registo; estadoPedido?: "confirmado" | "por-confirmar" }
+  | { estado: "enviado"; registo?: Registo; estadoPedido?: Pedido["estado"] }
   | { estado: "sem-servico"; assunto: string; corpo: string; destino: string; registo: Registo }
-  | { estado: "erro"; campos: Record<string, string> };
+  | { estado: "erro"; campos: Record<string, string>; repetirEnvio?: boolean };
 
 const LISBOA = { in: tz("Europe/Lisbon") };
 const fonte = { configuracaoDaCasa, cotarCesto, ocupacao, produtoPorId };
@@ -41,7 +43,14 @@ const fonte = { configuracaoDaCasa, cotarCesto, ocupacao, produtoPorId };
  * # Enviar o pedido da página de compra
  *
  * O browser manda as **linhas** do cesto (ids e quantidades, nunca preços), a
- * hora escolhida no calendário e os dados da pessoa. Aqui:
+ * hora escolhida no calendário, os dados da pessoa e a chave do envio.
+ *
+ * **Com `DATABASE_URL`, o pedido fica gravado** (`registar.ts`): a fonte
+ * (`criarPedido`) refaz os preços, reserva a vaga, grava o pedido `confirmado`
+ * ou `por-confirmar`, a pagar na loja, e deixa os emails de criação na fila — e
+ * a mesma chave devolve sempre o mesmo pedido.
+ *
+ * **Sem base de dados, o pedido acaba num email à casa**, como antes:
  *
  * 1. refaz-se o cesto a partir do catálogo, com os preços do servidor;
  * 2. confirma-se a hora com o mesmo motor do calendário — e a data do pedido
@@ -49,9 +58,6 @@ const fonte = { configuracaoDaCasa, cotarCesto, ocupacao, produtoPorId };
  * 3. valida-se o resto; e
  * 4. escreve-se o email à casa com o modelo `criado-loja` (moldura, logótipo,
  *    assunto com o estado) e manda-se; sem hora de levantamento, vai o texto simples.
- *
- * ⚠️ **Até ao Stripe (#38) o pedido acaba aqui, num email.** Com o Stripe, este
- * passo passa a criar o pedido `pendente` e a sessão de pagamento.
  */
 export async function enviarCompra(_anterior: Resultado, dados: FormData): Promise<Resultado> {
   /* Os erros na língua de quem encomenda; o email em português, sempre — é para
@@ -63,6 +69,14 @@ export async function enviarCompra(_anterior: Resultado, dados: FormData): Promi
   /* A armadilha primeiro: para o robô, o pedido foi aceite. Dizer-lhe que foi
      apanhado é ensiná-lo a contornar. */
   if (String(dados.get("armadilha") ?? "").length > 0) return { estado: "enviado" };
+
+  /* Com persistência, a fonte encontra a chave antes de conferir pausa, preços
+     e vagas. Refazer essas conferências aqui recusava uma repetição cujo
+     primeiro envio já tinha ocupado a última vaga. Sem BD mantém-se o email. */
+  if (process.env.DATABASE_URL) {
+    const { registarCompra } = await import("./registar");
+    return registarCompra(dados);
+  }
 
   /* ⚠️ **A pausa do balcão trava os pedidos** (revisão do #66): é para quando a
      cozinha está cheia. A página já desliga o botão; aqui confirma-se, porque um

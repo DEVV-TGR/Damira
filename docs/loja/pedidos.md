@@ -11,9 +11,11 @@ um estado que os pagamentos não sabem que existe.
 > A fonte já cria levantamentos `confirmado` ou `por-confirmar`, a pagar na loja,
 > e expira os pedidos sem resposta às 48 horas, nas leituras da ocupação e na
 > criação de pedidos. Os dois emails de criação ficam na fila, no mesmo lote
-> que o pedido, as linhas e a vaga; o emissor ainda falta (#119).
-> **A compra continua a acabar num email à casa**: ainda não
-> chama essa fonte. A fonte do painel já entrega, desfaz, cancela e muda a hora
+> que o pedido, as linhas e a vaga; o emissor existe (#141), mas a compra ainda
+> não o chama (é o PR seguinte).
+> **Com `DATABASE_URL`, a compra já chama essa fonte** e devolve a referência e
+> o total gravados. Sem base de dados, mantém o percurso provisório por email.
+> A fonte do painel já entrega, desfaz, cancela e muda a hora
 > dos confirmados, e mostra os avisos de dia fechado e possível duplicado. O
 > cancelamento ainda grava sempre iniciativa da gerente: falta o parâmetro do
 > contrato para distinguir a iniciativa do cliente. O reagendamento ainda só

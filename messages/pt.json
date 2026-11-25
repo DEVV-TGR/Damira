@@ -275,7 +275,12 @@
         "telefone-curto": "Escreva um telefone — ligamos se for preciso acertar alguma coisa.",
         "nif-invalido": "O NIF tem nove algarismos.",
         "telefone-invalido": "Confira o número: não parece um telefone válido do país escolhido.",
-        "loja-em-pausa": "A loja está em pausa até {quando}: a cozinha está cheia. Pode encomendar a partir dessa hora."
+        "loja-em-pausa": "A loja está em pausa até {quando}: a cozinha está cheia. Pode encomendar a partir dessa hora.",
+        "dados-invalidos": "Confira os dados do pedido e tente outra vez.",
+        "pedido-indisponivel": "A loja não pode receber o pedido neste momento. Tente mais tarde.",
+        "abaixo-do-minimo-da-loja": "O pedido não atinge o valor mínimo da loja. Reveja o cesto.",
+        "demasiados-pedidos": "Já existem demasiados pedidos em curso com estes dados. Contacte a loja.",
+        "falha-registo": "Não foi possível confirmar o registo do pedido. Tente outra vez: não será criado um pedido duplicado."
       },
       "sucesso": {
         "titulo": "Pedido enviado.",
@@ -296,7 +301,16 @@
         "porConfirmar": {
           "titulo": "Recebemos a sua encomenda!",
           "texto": "A nossa equipa irá analisar o seu pedido. Receberá um email com uma resposta, habitualmente no prazo de 24 horas."
+        },
+        "existente": {
+          "titulo": "Este pedido já estava registado.",
+          "texto": "Não foi criado outro. Guarde a referência e contacte a loja para saber em que ponto está ou combinar alguma alteração."
         }
+      },
+      "recuperar": {
+        "titulo": "Verificar o envio anterior",
+        "texto": "Há um envio cuja resposta ainda não foi confirmada. Vamos verificar esse envio com os dados originais, para evitar um pedido duplicado. O cesto que entretanto alterou fica guardado.",
+        "botao": "Verificar envio anterior"
       }
     },
     "cesto": {
@@ -385,6 +399,7 @@
     "compra": {
       "titulo": "Finalizar o pedido",
       "intro": "Escolha quando levanta, deixe os seus dados e envie. Respondemos a confirmar.",
+      "introBd": "Escolha quando levanta, deixe os seus dados e envie. Paga na loja, ao levantar.",
       "quando": "Quando levanta",
       "dados": "Os seus dados",
       "resumo": "O seu pedido",
@@ -392,6 +407,7 @@
       "precoMudou": "O preço mudou: era {antes}, agora {agora}.",
       "sobOrcamento": "Sob orçamento — dizemos-lhe o valor.",
       "semPagamento": "Ainda não há pagamento online: depois de enviar, confirmamos consigo o valor e a hora.",
+      "semPagamentoBd": "Paga na loja, ao levantar. Se algum artigo precisar da confirmação da casa, o pedido fica à espera e dizemos-lhe.",
       "nif": "NIF (opcional)",
       "nifAjuda": "Só se quiser fatura com contribuinte.",
       "observacoes": "Observações (opcional)",
