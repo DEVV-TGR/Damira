@@ -6,11 +6,12 @@ import { listarProdutos, ordemDaEmenta } from "@/lib/dados";
 import type { OrdemEmenta, Produto } from "@/lib/dados/tipos";
 import { routing, type Locale } from "@/i18n/routing";
 import { metadataDaPagina } from "@/lib/metadata";
-import { SECCOES_ENCOMENDAS } from "@/lib/vista";
+import { GRELHA_CARTOES, porOrdemAlfabetica, SECCOES_ENCOMENDAS } from "@/lib/vista";
 import { IrParaCompra } from "@/components/encomendas/IrParaCompra";
 import { CartaoProduto } from "@/components/encomendas/CartaoProduto";
 import { EmentaEncomendavel } from "@/components/encomendas/EmentaEncomendavel";
 import { ListaHistorico } from "@/components/encomendas/ListaHistorico";
+import { PesquisaProdutos } from "@/components/encomendas/PesquisaProdutos";
 import { SeccoesMinimizaveis } from "@/components/encomendas/SeccoesMinimizaveis";
 import { TituloDaSeccao, TituloParaLeitores } from "@/components/encomendas/TituloDaSeccao";
 
@@ -40,13 +41,17 @@ export default async function PaginaEncomendas({
     listarProdutos({ origem: "ementa", aVendaOnline: true }),
     ordemDaEmenta(),
   ]);
-  const daFamilia = (familia: Produto["familia"]) =>
-    encomendas.filter((produto) => produto.familia === familia);
+  /* Tudo por ordem alfabética (decidido a 25/11), na língua de quem lê. */
+  const daFamilia = (...familias: Produto["familia"][]) =>
+    porOrdemAlfabetica(
+      encomendas.filter((produto) => familias.includes(produto.familia)),
+      locale as Locale,
+    );
 
   return (
     <Encomendas
       festas={daFamilia("festa")}
-      bolos={[...daFamilia("bolo"), ...daFamilia("medida")]}
+      bolos={daFamilia("bolo", "medida")}
       boxes={daFamilia("box")}
       daEmenta={daEmenta}
       ordem={ordem}
@@ -163,6 +168,10 @@ function Encomendas({
           chega pela primeira vez. */}
       <ListaHistorico locale={locale} comoSeccao />
 
+      {/* A pesquisa fica logo antes dos produtos e não no herói: o que ela
+          encontra aparece por baixo dela, e não três ecrãs abaixo. */}
+      <PesquisaProdutos />
+
       <Familia
         id="festas"
         titulo={t("festas.titulo")}
@@ -193,7 +202,7 @@ function Encomendas({
         locale={locale}
       />
 
-      {/* ── A carta, por encomenda ────────────────────────────────────── */}
+      {/* ── Da carta, por encomenda ──────────────────────────────────── */}
       <EmentaEncomendavel artigos={daEmenta} ordem={ordem} locale={locale} />
 
       {/* ── Como encomendar ──────────────────────────────────────────── */}
@@ -277,6 +286,7 @@ function Familia({
       id={id}
       aria-labelledby={`${id}-titulo`}
       className={`ancora-rente seccao seccao-minimizavel ${fundo === "claro" ? "bg-papel-fundo" : ""}`}
+      data-grupo-procura
     >
       <TituloParaLeitores id={`${id}-titulo`} nivel={2}>
         {titulo}
@@ -290,7 +300,7 @@ function Familia({
           {/* ⚠️ `items-stretch` é o de origem da grelha, e é ele que iguala os
               cartões de uma linha (#83): cada `<li>` estica até à mais alta e o
               cartão enche-a com `h-full`. Um `items-start` aqui desfazia-o. */}
-          <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className={`mt-12 ${GRELHA_CARTOES}`}>
             {produtos.map((produto) => (
               <CartaoProduto key={produto.id} produto={produto} locale={locale} />
             ))}

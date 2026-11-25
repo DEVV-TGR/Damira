@@ -68,7 +68,9 @@ export const URL_ESTUDIO = "https://devplus.pt";
  * uma página em falta assinalada por nós custa mais do que uma página que ainda
  * não foi prometida.
  */
-export const ROTAS_FIXAS = ["/", "/ementa", "/encomendas"] as const;
+/* ⚠️ A `/ementa` saiu a 12/11 (#123): o site fica com a página inicial e as
+   encomendas. Não volta para aqui sem a página voltar a existir. */
+export const ROTAS_FIXAS = ["/", "/encomendas"] as const;
 
 export type RotaFixa = (typeof ROTAS_FIXAS)[number];
 

@@ -48,7 +48,7 @@ export function FolhaDeRosto() {
             elementos de texto, e já lá estão o olho, o título e a linha de
             abertura. */}
         <p className="capa__atalhos">
-          <Link className="cap__accao cap__accao--claro" href="/ementa">
+          <Link className="cap__accao cap__accao--claro" href="/encomendas#da-ementa">
             {t("verEmenta")}
           </Link>
           <Link className="cap__accao cap__accao--contorno" href="/encomendas">

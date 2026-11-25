@@ -15,8 +15,10 @@ import dados from "./encomendas.json";
  * levava alguém a aparecer ao sábado à espera de levar um Kit Premium debaixo
  * do braço.
  *
- * A diferença aparece no site como duas páginas (`/ementa` e `/encomendas`) e
- * aqui como dois ficheiros.
+ * A diferença aparecia no site como duas páginas (`/ementa` e `/encomendas`) e
+ * aparece aqui como dois ficheiros. A `/ementa` saiu a 12/11 (#123), e o dia a
+ * dia que se encomenda vive na `/encomendas`, em «Da carta», com a
+ * quantidade mínima à frente.
  *
  * As fontes são `Kit Festas Damira (out2025).pdf` e
  * `Boxes Dias Especiais Damira.pdf`, em `referencias/`.

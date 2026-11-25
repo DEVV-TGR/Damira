@@ -1,20 +1,24 @@
 import { useTranslations } from "next-intl";
 import type { Locale } from "@/i18n/routing";
 import type { OrdemEmenta, Produto } from "@/lib/dados/tipos";
-import { cartasComArtigos, categoriasDaCarta, porCategoria, regraDe } from "@/lib/vista";
+import { cartasComArtigos, categoriasDaCarta, GRELHA_CARTOES, porCategoria, regraDe } from "@/lib/vista";
 import { CartaoArtigo } from "./CartaoArtigo";
 import { SetaMinimizar } from "./SetaMinimizar";
 import { TituloDaSeccao, TituloParaLeitores } from "./TituloDaSeccao";
 
 /**
- * # A carta, por encomenda
+ * # «Da carta», por encomenda
  *
- * ## ⚠️ Isto encosta ao aviso do AGENTS.md, e encosta com regras
+ * ⚠️ **Chama-se «Carta»** (decidido pelo Gonçalo a 25/11, a seguir aos
+ * comentários de 15/11 no Notion). A troca para «Dia a dia» decidida a 15/11
+ * foi desfeita: o nome que a casa usa é o do impresso.
  *
- * O aviso diz para **não juntar a encomenda à ementa**, porque um kit para
- * setenta pessoas ao lado de um croissant leva alguém a aparecer ao sábado à
- * espera de o levar debaixo do braço. Continua a valer, e as duas páginas
- * continuam separadas: isto vive em `/encomendas` e não em `/ementa`.
+ * ## ⚠️ O dia a dia e a encomenda vivem juntos, e o que os separa são regras
+ *
+ * Até 15/11 havia uma regra para **não juntar a encomenda à ementa**, porque um
+ * kit para setenta pessoas ao lado de um croissant levava alguém a aparecer ao
+ * sábado à espera de o levar debaixo do braço. A regra saiu, e a `/ementa` com
+ * ela (#123): o dia a dia que se encomenda vive aqui.
  *
  * O que evita o mal-entendido é a **quantidade mínima escrita no cabeçalho de
  * cada categoria**. Um artigo que só se pede à dúzia, com antecedência, nunca se
@@ -28,21 +32,17 @@ import { TituloDaSeccao, TituloParaLeitores } from "./TituloDaSeccao";
  * A grelha resolve as duas coisas.
  *
  * O que a impede de ocupar a página inteira é o cartão ser **deliberadamente
- * mais pequeno** do que o dos produtos de encomenda: fotografia quadrada, sem
- * resumo, e cinco colunas em ecrã largo contra três. São setenta contra doze.
- * Ver `CartaoArtigo`.
+ * pequeno**: fotografia 3/2, sem resumo, e seis colunas num monitor. Desde
+ * 25/11 os kits, bolos e boxes usam o mesmo tamanho e a mesma grelha
+ * (`GRELHA_CARTOES`). Ver `CartaoArtigo`.
  *
- * ⚠️ **A ordem é a mesma da página da ementa**, e quem vem de lá encontra as
- * coisas onde as deixou.
- *
- * Os artigos chegam já filtrados — os da ementa que estão à venda online — e já
+ * Os artigos chegam já filtrados — os do dia a dia que estão à venda online — e já
  * ordenados pelo `listarProdutos` (#87): dentro de cada categoria, por ordem
  * alfabética. ⚠️ **As cartas e as categorias saem da `ordem` da gerente, pelas
- * mesmas funções da `/ementa`** (`cartasComArtigos`, `categoriasDaCarta`), e não
- * da sequência em que os artigos chegaram. As duas davam o mesmo, mas só porque
- * o `listarProdutos` ordena hoje como ordena; com a mesma função nos dois sítios
- * é garantido. E uma categoria que não esteja na ordem fica de fora nas duas
- * páginas, e não só numa — a entrada já a recusa (`json-painel.ts`).
+ * funções da `vista.ts`** (`cartasComArtigos`, `categoriasDaCarta`), e não da
+ * sequência em que os artigos chegaram — que só dava o mesmo porque o
+ * `listarProdutos` ordena hoje como ordena. E uma categoria que não esteja na
+ * ordem fica de fora — a entrada já a recusa (`json-painel.ts`).
  */
 export function EmentaEncomendavel({
   artigos,
@@ -66,6 +66,7 @@ export function EmentaEncomendavel({
       id="da-ementa"
       aria-labelledby="da-ementa-titulo"
       className="ancora-rente seccao seccao-minimizavel"
+      data-grupo-procura
     >
       <TituloParaLeitores id="da-ementa-titulo" nivel={2}>
         {t("titulo")}
@@ -86,14 +87,14 @@ export function EmentaEncomendavel({
 
           <div className="mt-12 space-y-14">
             {cartasComArtigos(artigos, ordem).map((carta) => (
-              <div key={carta}>
+              <div key={carta} data-grupo-procura>
                 <h3 className="titulo-display titulo-gama text-tijolo">
                   {te(`cartas.${carta}.curto`)}
                 </h3>
 
                 <div className="mt-6 space-y-8">
                   {categoriasDaCarta(artigos, ordem, carta).map((categoria) => (
-                    <div key={categoria}>
+                    <div key={categoria} data-grupo-procura>
                       <TituloParaLeitores nivel={4}>
                         {te(`cartas.${carta}.curto`)}, {te(`categorias.${categoria}`)}
                       </TituloParaLeitores>
@@ -139,7 +140,7 @@ export function EmentaEncomendavel({
 
                         {/* Duas colunas no telemóvel e seis num monitor: o cartão
                             é estreito de propósito, e a secção tem setenta deles. */}
-                        <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                        <ul className={`mt-4 ${GRELHA_CARTOES}`}>
                           {porCategoria(artigos, carta, categoria).map((artigo) => (
                             <CartaoArtigo
                               key={artigo.id}

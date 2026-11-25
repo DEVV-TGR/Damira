@@ -864,7 +864,7 @@ body::after {
 /* ── Títulos fixos e secções que se minimizam ───────────────────────────── */
 
 /**
- * Na `/encomendas` e na `/ementa`, o título da secção — e o da categoria, por
+ * Na `/encomendas`, o título da secção — e o da categoria, por
  * baixo dele — fica colado ao topo enquanto se rola por ela (#85), para se saber
  * sempre onde se está. Na `/encomendas` esse título é também o `<summary>` que
  * abre e fecha a secção (#84): é o mesmo elemento, e é por isso que quem está a

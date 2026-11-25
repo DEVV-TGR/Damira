@@ -78,7 +78,8 @@ function dadosDaCasa(descricao: string) {
           sameAs: [marca.instagram, marca.tiktok, marca.facebook].filter(Boolean),
         }
       : {}),
-    hasMenu: `${URL_SITE}/ementa`,
+    /* ⚠️ Sem `hasMenu`: apontava para a `/ementa`, que saiu a 12/11 (#123).
+       Um `hasMenu` para um 404 é pior do que nenhum — o Google segue-o. */
   };
 }
 
