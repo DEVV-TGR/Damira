@@ -1,4 +1,4 @@
-import { asc, eq, inArray, type SQL } from "drizzle-orm";
+import { asc, eq, inArray, sql, type SQL } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import {
   EsquemaHorarios,
@@ -8,7 +8,8 @@ import {
   type OrdemEmenta,
   type Produto,
 } from "@/lib/dados/tipos";
-import { casa, produtos, variantes } from "./esquema";
+import { categoriaDoProduto, tipoDoProduto } from "./categorias";
+import { casa, categorias, produtos, variantes } from "./esquema";
 
 /**
  * # O catálogo e a casa, entre o contrato e as tabelas
@@ -43,6 +44,10 @@ export function colunasEditaveis(produto: Produto) {
   return {
     origem: produto.origem,
     familia: produto.familia,
+    /* Saem da família, da carta e da categoria até a fronteira as ler (#124):
+       mudar a categoria no editor muda também estas. */
+    categoriaId: categoriaDoProduto(produto).id,
+    tipo: tipoDoProduto(produto),
     nomePt: produto.nome.pt,
     nomeEn: produto.nome.en,
     descricaoPt: produto.descricao?.pt ?? null,
@@ -93,7 +98,25 @@ export function produtoParaLinhas(produto: Produto, posicao: number) {
       }) satisfies typeof variantes.$inferInsert,
   );
 
-  return { produto: linha, variantes: linhasVariantes };
+  /* A categoria vai junto: ao criar ou editar um produto numa categoria que
+     ainda não existe, quem grava cria-a primeiro (`categoriaNova`). */
+  return { produto: linha, variantes: linhasVariantes, categoria: categoriaDoProduto(produto) };
+}
+
+/**
+ * Cria a categoria de um produto, se ainda não existir, no fim da ordem. Vai no
+ * mesmo lote que grava o produto e **antes** dele, por causa da chave estrangeira.
+ *
+ * Só acontece se a gerente puser um artigo numa carta e categoria que ninguém
+ * usava («bolos inteiros» na carta da casa): sem isto, a gravação rebentava na
+ * chave estrangeira. Uma que já existe fica como está — com o nome e a posição
+ * que a gerente lhe deu.
+ */
+export function categoriaNova(db: BaseDeDados, categoria: ReturnType<typeof categoriaDoProduto>) {
+  return db
+    .insert(categorias)
+    .values({ ...categoria, posicao: sql`(select coalesce(max(${categorias.posicao}), -1) + 1 from ${categorias})` })
+    .onConflictDoNothing({ target: categorias.id });
 }
 
 /** As variantes já vêm pela ordem delas (`posicao`). */

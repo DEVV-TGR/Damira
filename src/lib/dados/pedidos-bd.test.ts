@@ -1,13 +1,13 @@
 import { TZDate } from "@date-fns/tz";
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { casa, pedidos, vagas } from "@/db/esquema";
+import { casa, linhasPedido, pedidos, produtos, vagas } from "@/db/esquema";
 import { loteEmTransacao } from "@/db/lote";
 import { catalogoDeTeste } from "@/db/teste";
 import { montarFonteBd, type OpcoesDaFonteBd } from "./bd";
 import { expirarPedido, type LeituraDoPedido } from "./bd-pedidos";
 import { comExemplo, fonteDoAmbiente } from "./exemplo";
-import { PRAZO_DO_PEDIDO_MS } from "./regras";
+import { PRAZO_DA_RESPOSTA_MS, PRAZO_DO_PEDIDO_MS } from "./regras";
 import type { VagaOcupada } from "@/lib/horarios";
 import { FORMATO_REFERENCIA, type EntradaPedido } from "./tipos";
 
@@ -18,7 +18,7 @@ import { FORMATO_REFERENCIA, type EntradaPedido } from "./tipos";
  * pedido) — a mesma segunda-feira, o mesmo kit, o mesmo total —, contra um
  * PGlite com o catálogo importado. E o que só a base de dados garante: a última
  * vaga com uma leitura desatualizada, os limites por IP e por email, a limpeza
- * aos 31 minutos e o `de_teste`.
+ * às 48 horas (e a dos pendentes do Stripe, aos 31 minutos) e o `de_teste`.
  *
  * Os produtos importados não têm tempos de produção (a casa ainda não os deu):
  * como no site, quem os dá é o modo de teste (`comExemplo`).
@@ -87,17 +87,43 @@ async function montar(
   return { fonte, db };
 }
 
+/* O produto passa a «Necessita de confirmação da loja», como a gerente o marca. */
+const pedeConfirmacao = (db: Awaited<ReturnType<typeof montar>>["db"], id = "festa-premium") =>
+  db.update(produtos).set({ pedeConfirmacao: true }).where(eq(produtos.id, id));
+
+/**
+ * Um pendente do Stripe, como os que ficaram de antes. ⚠️ O site já não os cria
+ * (o pagamento online dorme, `pedidos.md`), mas a limpeza dos 31 minutos
+ * continua a existir para eles: cria-se o pedido e passa-se a linha ao desenho
+ * do Stripe.
+ */
+async function pendenteDoStripe(montada: Awaited<ReturnType<typeof montar>>, alteracoes: Partial<EntradaPedido> = {}) {
+  const pedido = await criado(await montada.fonte.criarPedido(entrada(alteracoes), CONTEXTO));
+  await montada.db
+    .update(pedidos)
+    .set({ estado: "pendente", modoPagamento: "total", confirmadoEm: null })
+    .where(eq(pedidos.id, pedido.id));
+  return pedido;
+}
+
 const criado = async (resultado: Awaited<ReturnType<Awaited<ReturnType<typeof montar>>["fonte"]["criarPedido"]>>) => {
   if (!resultado.ok) throw new Error(`devia ter criado o pedido: ${resultado.erro}`);
   return resultado.pedido;
 };
 
 describe("criar o pedido", () => {
-  it("cria o pedido pendente com o total do servidor, e guarda-o como a fonte dos JSON", async () => {
+  it("cria o pedido confirmado, a pagar na loja, com o total do servidor, e guarda-o como a fonte dos JSON", async () => {
     const { fonte, db } = await montar();
     const pedido = await criado(await fonte.criarPedido(entrada(), CONTEXTO));
 
-    expect(pedido).toMatchObject({ estado: "pendente", totalCent: 33500, modoPagamento: "total", pagoOnlineCent: 0 });
+    expect(pedido).toMatchObject({
+      estado: "confirmado",
+      totalCent: 33500,
+      modoPagamento: "na-loja",
+      pagoOnlineCent: 0,
+      confirmadoEm: AGORA,
+      expiraEm: null,
+    });
     expect(pedido.referencia).toMatch(FORMATO_REFERENCIA);
     expect(pedido.referencia.startsWith("DAM-0510-")).toBe(true);
     expect(pedido.linhas[0]).toMatchObject({ nome: "Kit Premium", variante: "20 pessoas", precoUnitarioCent: 33500 });
@@ -155,11 +181,6 @@ describe("criar o pedido", () => {
         CONTEXTO,
       ),
     ).toEqual({ ok: false, erro: "dados-invalidos" });
-    const sobOrcamento = await fonte.criarPedido(
-      entrada({ linhas: [{ produtoId: "bolo-por-medida", varianteId: "unica", quantidade: 1 }] }),
-      CONTEXTO,
-    );
-    expect(sobOrcamento.ok === false && sobOrcamento.erro).toBe("sob-orcamento");
     const terca = new TZDate(2026, 9, 6, 7, 30, "Europe/Lisbon").toISOString();
     expect(await fonte.criarPedido(entrada({ levantamentoEm: terca }), CONTEXTO)).toEqual({
       ok: false,
@@ -172,6 +193,64 @@ describe("criar o pedido", () => {
     const { fonte } = await montar();
     await fonte.pausarLoja(new Date(AGORA.getTime() + 30 * 60_000), { papel: "funcionario", agora: AGORA });
     expect(await fonte.criarPedido(entrada(), CONTEXTO)).toEqual({ ok: false, erro: "loja-em-pausa" });
+  });
+
+  it("um produto que necessita de confirmação: nasce por confirmar, com 48 h para a casa responder", async () => {
+    const montada = await montar();
+    await pedeConfirmacao(montada.db);
+    const pedido = await criado(await montada.fonte.criarPedido(entrada(), CONTEXTO));
+    expect(pedido).toMatchObject({
+      estado: "por-confirmar",
+      modoPagamento: "na-loja",
+      totalCent: 33500,
+      confirmadoEm: null,
+      expiraEm: new Date(AGORA.getTime() + 48 * 3_600_000),
+    });
+    /* Ocupa a vaga, como um confirmado (`pedidos.md` › Confirmar). */
+    expect(await montada.fonte.ocupacao(QUARTA_7H30, QUARTA_7H30)).toEqual([{ inicio: QUARTA_7H30, pedidos: 1 }]);
+    expect(await montada.fonte.pedidoPorReferencia(pedido.referencia)).toEqual(pedido);
+  });
+
+  it("basta um produto para o pedido inteiro esperar", async () => {
+    const montada = await montar();
+    await pedeConfirmacao(montada.db, "box-aniversario");
+    const pedido = await criado(
+      await montada.fonte.criarPedido(
+        entrada({
+          linhas: [
+            { produtoId: "festa-premium", varianteId: "20", quantidade: 1 },
+            { produtoId: "box-aniversario", varianteId: "unica", quantidade: 1 },
+          ],
+        }),
+        CONTEXTO,
+      ),
+    );
+    expect(pedido.estado).toBe("por-confirmar");
+    expect(await montada.db.select().from(pedidos)).toHaveLength(1);
+  });
+
+  it("o bolo por medida grava a linha com o preço por saber, e o total só da parte conhecida", async () => {
+    const { fonte, db } = await montar();
+    const pedido = await criado(
+      await fonte.criarPedido(
+        entrada({
+          /* O bolo por medida leva cinco dias de cozinha: a quarta seguinte chega. */
+          levantamentoEm: new TZDate(2026, 9, 14, 7, 30, "Europe/Lisbon").toISOString(),
+          linhas: [
+            { produtoId: "bolo-por-medida", varianteId: "unica", quantidade: 1 },
+            { produtoId: "box-aniversario", varianteId: "unica", quantidade: 1 },
+          ],
+        }),
+        CONTEXTO,
+      ),
+    );
+    expect(pedido).toMatchObject({ estado: "por-confirmar", totalCent: 3500 });
+    const linhas = await db.select().from(linhasPedido);
+    expect(linhas.map((l) => [l.produtoId, l.precoUnitarioCent, l.totalCent])).toEqual([
+      ["bolo-por-medida", null, null],
+      ["box-aniversario", 3500, 3500],
+    ]);
+    expect(await fonte.pedidoPorReferencia(pedido.referencia)).toEqual(pedido);
   });
 
   it("sem o modo de teste, grava o pedido como verdadeiro", async () => {
@@ -203,7 +282,7 @@ describe("a última vaga decide-a a base de dados (regra 5)", () => {
 });
 
 describe("os limites de criar pedidos", () => {
-  it("três pendentes do mesmo email, e o quarto é recusado", async () => {
+  it("três em curso do mesmo email, e o quarto é recusado", async () => {
     const { fonte, db } = await montar({ limitePorVaga: null });
     for (let i = 0; i < 3; i++) {
       await criado(await fonte.criarPedido(entrada(), { ...CONTEXTO, ip: `203.0.113.${i + 10}` }));
@@ -215,7 +294,7 @@ describe("os limites de criar pedidos", () => {
     expect(await db.select().from(pedidos)).toHaveLength(3);
   });
 
-  it("cinco pendentes do mesmo IP, e o sexto é recusado — sem IP, não conta", async () => {
+  it("cinco em curso do mesmo IP, e o sexto é recusado — sem IP, não conta", async () => {
     const { fonte } = await montar({ limitePorVaga: null });
     const de = (i: number) => entrada({ cliente: { nome: "Outro", email: `c${i}@example.com`, telefone: "+351912345678" } });
     for (let i = 0; i < 5; i++) await criado(await fonte.criarPedido(de(i), CONTEXTO));
@@ -223,18 +302,82 @@ describe("os limites de criar pedidos", () => {
     await criado(await fonte.criarPedido(de(6), { ...CONTEXTO, ip: null }));
   });
 
-  it("um pendente que expirou deixa de contar", async () => {
-    const { fonte } = await montar({ limitePorVaga: null });
-    for (let i = 0; i < 3; i++) await criado(await fonte.criarPedido(entrada(), CONTEXTO));
-    const depois = new Date(AGORA.getTime() + PRAZO_DO_PEDIDO_MS + 1000);
-    await criado(await fonte.criarPedido(entrada(), { ...CONTEXTO, agora: depois }));
+  it("os por confirmar contam, e os que expiraram deixam de contar", async () => {
+    const montada = await montar({ limitePorVaga: null });
+    await pedeConfirmacao(montada.db);
+    for (let i = 0; i < 3; i++) await criado(await montada.fonte.criarPedido(entrada(), CONTEXTO));
+    expect(await montada.fonte.criarPedido(entrada(), CONTEXTO)).toEqual({ ok: false, erro: "demasiados-pedidos" });
+    const depois = new Date(AGORA.getTime() + PRAZO_DA_RESPOSTA_MS);
+    await criado(
+      await montada.fonte.criarPedido(entrada({ levantamentoEm: new TZDate(2026, 9, 9, 7, 30, "Europe/Lisbon").toISOString() }), {
+        ...CONTEXTO,
+        agora: depois,
+      }),
+    );
+  });
+
+  it("um entregue ou um cancelado deixa de contar", async () => {
+    const { fonte, db } = await montar({ limitePorVaga: null });
+    const feitos = [];
+    for (let i = 0; i < 3; i++) feitos.push(await criado(await fonte.criarPedido(entrada(), CONTEXTO)));
+    await db.update(pedidos).set({ estado: "entregue", entregueEm: AGORA }).where(eq(pedidos.id, feitos[0].id));
+    await criado(await fonte.criarPedido(entrada(), CONTEXTO));
   });
 });
 
-describe("a limpeza: o pedido expira aos 31 minutos, e nem um segundo antes", () => {
-  it("aos 30 min 59 s continua a ocupar; aos 31 min 1 s expira e liberta a vaga", async () => {
-    const { fonte, db } = await montar();
+describe("a limpeza: o por confirmar expira às 48 horas, e nem um segundo antes", () => {
+  it("às 47 h 59 min 59 s continua à espera; às 48 h certas expira, com a causa, e liberta a vaga", async () => {
+    const montada = await montar();
+    await pedeConfirmacao(montada.db);
+    const { fonte, db } = montada;
     const pedido = await criado(await fonte.criarPedido(entrada(), CONTEXTO));
+
+    relogio = new Date(AGORA.getTime() + PRAZO_DA_RESPOSTA_MS - 1000);
+    expect(await fonte.ocupacao(QUARTA_7H30, QUARTA_7H30)).toEqual([{ inicio: QUARTA_7H30, pedidos: 1 }]);
+    expect((await fonte.pedidoPorReferencia(pedido.referencia))?.estado).toBe("por-confirmar");
+
+    /* `agora >= expiraEm` já está expirado (`pedidos.md` › Expirar às 48 horas). */
+    relogio = new Date(AGORA.getTime() + PRAZO_DA_RESPOSTA_MS);
+    expect(await fonte.ocupacao(QUARTA_7H30, QUARTA_7H30)).toEqual([]);
+    expect(await fonte.pedidoPorReferencia(pedido.referencia)).toMatchObject({
+      estado: "expirado",
+      causaExpiracao: "sem-resposta-da-casa",
+    });
+    const [{ versao }] = await db.select({ versao: casa.versaoPedidos }).from(casa);
+    expect(versao).toBe(2);
+  });
+
+  it("um confirmado nunca expira, por mais tempo que passe", async () => {
+    const { fonte } = await montar();
+    const pedido = await criado(await fonte.criarPedido(entrada(), CONTEXTO));
+    relogio = new Date(AGORA.getTime() + 30 * 24 * 3_600_000);
+    await fonte.ocupacao(QUARTA_7H30, QUARTA_7H30);
+    expect((await fonte.pedidoPorReferencia(pedido.referencia))?.estado).toBe("confirmado");
+  });
+
+  it("criar um pedido também limpa: a vaga do que expirou fica livre", async () => {
+    /* A vaga lê-se direto da tabela: a `ocupacao` também limpa, e esconderia
+       uma limpeza que o `criarPedido` não fez. */
+    const montada = await montar();
+    await pedeConfirmacao(montada.db);
+    await criado(await montada.fonte.criarPedido(entrada(), CONTEXTO));
+    const depois = new Date(AGORA.getTime() + PRAZO_DA_RESPOSTA_MS);
+    await criado(
+      await montada.fonte.criarPedido(entrada({ levantamentoEm: new TZDate(2026, 9, 9, 7, 30, "Europe/Lisbon").toISOString() }), {
+        ...CONTEXTO,
+        agora: depois,
+      }),
+    );
+    const [vaga] = await montada.db.select().from(vagas).where(eq(vagas.inicio, QUARTA_7H30));
+    expect(vaga.ocupadas).toBe(0);
+  });
+});
+
+describe("a limpeza dos pendentes do Stripe: aos 31 minutos, e nem um segundo antes", () => {
+  it("aos 30 min 59 s continua a ocupar; aos 31 min 1 s expira e liberta a vaga", async () => {
+    const montada = await montar();
+    const { fonte, db } = montada;
+    const pedido = await pendenteDoStripe(montada);
 
     relogio = new Date(AGORA.getTime() + 30 * 60_000 + 59_000);
     expect(await fonte.ocupacao(QUARTA_7H30, QUARTA_7H30)).toEqual([{ inicio: QUARTA_7H30, pedidos: 1 }]);
@@ -248,8 +391,9 @@ describe("a limpeza: o pedido expira aos 31 minutos, e nem um segundo antes", ()
   });
 
   it("descontar duas vezes não desconta duas vezes", async () => {
-    const { fonte, db } = await montar();
-    await criado(await fonte.criarPedido(entrada(), CONTEXTO));
+    const montada = await montar();
+    const { fonte, db } = montada;
+    await pendenteDoStripe(montada);
     relogio = new Date(AGORA.getTime() + 40 * 60_000);
     await Promise.all([fonte.ocupacao(QUARTA_7H30, QUARTA_7H30), fonte.ocupacao(QUARTA_7H30, QUARTA_7H30)]);
     const [vaga] = await db.select().from(vagas);
@@ -260,8 +404,9 @@ describe("a limpeza: o pedido expira aos 31 minutos, e nem um segundo antes", ()
   });
 
   it("criar um pedido também limpa: a vaga do abandonado volta a estar livre", async () => {
-    const { fonte } = await montar({ limitePorVaga: 1 });
-    await criado(await fonte.criarPedido(entrada(), CONTEXTO));
+    const montada = await montar({ limitePorVaga: 1 });
+    const { fonte } = montada;
+    await pendenteDoStripe(montada);
     const depois = new Date(AGORA.getTime() + PRAZO_DO_PEDIDO_MS + 1000);
     await criado(await fonte.criarPedido(entrada(), { ...CONTEXTO, agora: depois }));
   });
@@ -273,7 +418,7 @@ describe("se a limpeza falhar, o site continua a vender", () => {
      descontasse os pedidos de teste e os deixasse pendentes. */
   async function comALimpezaAFalhar() {
     const montada = await montar();
-    await criado(await montada.fonte.criarPedido(entrada(), CONTEXTO));
+    await pendenteDoStripe(montada);
     await montada.db.update(vagas).set({ ocupadas: 0 }).where(eq(vagas.inicio, QUARTA_7H30));
     relogio = new Date(AGORA.getTime() + 40 * 60_000);
     return { ...montada, log: vi.spyOn(console, "error").mockImplementation(() => {}) };
@@ -305,9 +450,10 @@ describe("se a limpeza falhar, o site continua a vender", () => {
 
 describe("expirar um pedido pelo id", () => {
   it("expira esse e só esse, e liberta a vaga dele, antes de passar o prazo", async () => {
-    const { fonte, db } = await montar();
-    const este = await criado(await fonte.criarPedido(entrada(), CONTEXTO));
-    const outro = await criado(await fonte.criarPedido(entrada({ levantamentoEm: QUINTA_7H30.toISOString() }), CONTEXTO));
+    const montada = await montar();
+    const { fonte, db } = montada;
+    const este = await pendenteDoStripe(montada);
+    const outro = await pendenteDoStripe(montada, { levantamentoEm: QUINTA_7H30.toISOString() });
 
     await expirarPedido(db, este.id);
 
@@ -318,14 +464,15 @@ describe("expirar um pedido pelo id", () => {
   });
 
   it("duas vezes só desconta uma, e um pedido pago não se expira", async () => {
-    const { fonte, db } = await montar();
-    const este = await criado(await fonte.criarPedido(entrada(), CONTEXTO));
-    await criado(await fonte.criarPedido(entrada(), CONTEXTO));
+    const montada = await montar();
+    const { fonte, db } = montada;
+    const este = await pendenteDoStripe(montada);
+    await pendenteDoStripe(montada);
     await expirarPedido(db, este.id);
     await expirarPedido(db, este.id);
     expect(await fonte.ocupacao(QUARTA_7H30, QUARTA_7H30)).toEqual([{ inicio: QUARTA_7H30, pedidos: 1 }]);
 
-    const pago = await criado(await fonte.criarPedido(entrada(), CONTEXTO));
+    const pago = await pendenteDoStripe(montada);
     await db.update(pedidos).set({ estado: "pago", pagoEm: AGORA }).where(eq(pedidos.id, pago.id));
     await expirarPedido(db, pago.id);
     expect((await fonte.pedidoPorReferencia(pago.referencia))?.estado).toBe("pago");

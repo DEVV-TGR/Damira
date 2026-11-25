@@ -231,14 +231,16 @@ papel:
 Há ainda `marca.json` (nome e redes, fonte única do cabeçalho e do rodapé) e
 `redes.json` (os *reels*): auxiliares, não fazem parte desta divisão.
 
-⚠️ **Não juntar a encomenda à ementa.** Um kit para setenta pessoas ao lado de um
-croissant é o que leva alguém a aparecer ao sábado à espera de o levar debaixo do
-braço. A separação está no site como duas páginas e aqui como dois ficheiros.
+**A encomenda e o dia a dia vivem juntos.** Havia aqui uma regra para não
+juntar a encomenda à ementa; saiu com a `/ementa` (#123, decisão de 12/11). A
+carta chama-se agora **«Dia a dia»** — o que se pede ao balcão, um croissant,
+um pão com manteiga — e o que dela se encomenda vive na `/encomendas`, na secção
+**«Do dia a dia»**: 70 dos 95 artigos. Os dois ficheiros continuam separados
+(`ementa.json` e `encomendas.json`) até o catálogo passar a categorias (#124).
 
-**Isto continua a valer, com uma nuance que passou a existir em setembro de
-2026.** A `/encomendas` tem hoje uma secção — *Da carta, por encomenda* — com 70
-dos 95 artigos da ementa. O que evita o mal-entendido não é escondê-los: é a
-**quantidade mínima**, escrita no cabeçalho de cada categoria. Um artigo que só se
+O que evita alguém aparecer ao sábado à espera de levar um kit debaixo do braço
+não é separá-los: é a **quantidade mínima**, escrita no cabeçalho de cada
+categoria. Um artigo que só se
 pede à dúzia, ou ao quilo, nunca se confunde com um que se tira da vitrine — e
 quem quer um pastel continua a entrar na loja e a pedi-lo.
 
@@ -252,9 +254,11 @@ fora (`aVendaOnline: false`): não se encomenda um galão para sexta-feira.
 ### A ementa tem `carta` além de `categoria`
 
 Porque as categorias **repetem-se entre cartas**: há `doces` na carta da casa e
-`doces` na vegan, `salgados` nas duas. A âncora de uma secção é por isso
-`{carta}-{categoria}` e não só a categoria — duas âncoras iguais deixavam uma
-delas inalcançável, sem aviso nenhum.
+`doces` na vegan, `salgados` nas duas. Na `/ementa`, que saiu a 12/11, a âncora
+de uma secção era por isso `{carta}-{categoria}` e não só a categoria — duas
+âncoras iguais deixavam uma delas inalcançável, sem aviso nenhum. Na «Do dia a
+dia» é o título colado que leva a carta à frente («Vegan, Doces»). Revê-se com
+as categorias da gerente (#124).
 
 ### `unidade` decide se o preço está certo ou errado
 
@@ -330,8 +334,11 @@ npm run icons    # favicon + ícones, a partir de public/marca/ondas.png
 
 ⚠️ **São PNG rasterizados a 300 dpi, não vetores.** Chegam para cabeçalho,
 rodapé e ícones; não escalam para lá disso. Quando aparecer o vetor, trocar em
-`src/components/Marca.tsx` **e** correr `npm run icons`, ao mesmo tempo — são
-dois sítios e esquecer um deixa o site com duas marcas.
+`src/components/Marca.tsx`, correr `npm run icons` **e** `npm run marca:email`, ao
+mesmo tempo — são três sítios e esquecer um deixa o site com duas marcas. O
+terceiro é o logótipo dos emails (`src/lib/emails/logotipo.ts`): uma cópia a
+papel, já pintada, porque um email não tem CSS que pinte uma máscara, e que vai
+dentro do próprio email como anexo embutido (`cid:`).
 
 São máscaras de alfa e não imagens: guardam só a forma, e a cor vem do CSS. É o
 que permite o mesmo ficheiro servir o logótipo a tijolo sobre papel e a papel
@@ -398,18 +405,21 @@ montra vista da rua é anunciar uma coisa e entregar outra, e é a mesma regra q
 proíbe banco de imagens no resto do site. O `FotoProduto` guarda o espaço e diz
 que a fotografia está por chegar.
 
-**Os 95 artigos da carta também têm página**, em `/ementa/<id>`. ⚠️ Ficam
-debaixo de `/ementa` e não de `/encomendas`: é a mesma separação de sempre. O
-que as mantém do lado certo é dizerem o que o artigo é — os 70 encomendáveis
-mostram o botão de juntar **com a quantidade mínima ao lado do botão**, e os
-outros 25 não têm botão nenhum e dizem que se pedem ao balcão. Um galão com um
-botão de encomendar era prometer um serviço que a casa não tem.
+⚠️ **A `/ementa` saiu a 12/11 (#123)**, com as 95 páginas `/ementa/<id>` e o
+painel que levava lá. O site fica com a página inicial e as encomendas. Saíram
+também do `sitemap.xml`, das `ROTAS_FIXAS` e de todos os links — o cabeçalho, o
+rodapé, a folha de rosto e o capítulo do vegan, que agora levam a
+`/encomendas#da-ementa`. ⚠️ **Antes de pôr um link para `/ementa` em lado
+nenhum, a página tem de voltar a existir**: um link esquecido é um 404 no menu.
 
-⚠️ **O painel da `/ementa` continua a existir**, e faz bem: quem percorre
-noventa e cinco artigos não quer sair da lista a cada curiosidade. A página é
-para quem quer o **endereço** — partilhar, guardar, ou chegar por uma pesquisa. O
-painel leva lá por um botão; sem ele eram noventa e cinco páginas que ninguém
-visitava.
+**Os artigos do dia a dia não têm página.** O cartão (`CartaoArtigo`) é tudo:
+nome, preço e o botão compacto, **com a quantidade mínima no cabeçalho da
+categoria**. Um artigo com variantes (o chocolate do Dubai, quatro pesos) tem
+**um botão por variante** no próprio cartão — antes mandava para a página do
+artigo, onde estavam os quatro. O que não se encomenda (`aVendaOnline: false`:
+as bebidas, os pratos, a pausa) não chega à `/encomendas` e não ganha botão em
+lado nenhum: um galão com um botão de encomendar era prometer um serviço que a
+casa não tem.
 
 ⚠️ **O bolo por medida não vem do JSON.** Não é um produto de catálogo, é uma
 conversa: não tem preço e o que se escolhe são massas e recheios. Entra na lista
@@ -496,8 +506,11 @@ primeiras sete vieram do Santo Burga e continuam a valer — o motor é o mesmo.
    inteiro. Se voltar a haver scroll programático, manter a posição num
    acumulador em vírgula flutuante, à parte do DOM.
 8. **Uma categoria em duas cartas dá duas âncoras iguais.** É a armadilha nova
-   deste site, e é a razão de a âncora ser `{carta}-{categoria}`. Ver
-   `SeccaoEmenta.tsx`.
+   deste site, e foi a razão de a âncora da `/ementa` ser `{carta}-{categoria}`.
+   A página saiu (#123), e com ela o `SeccaoEmenta.tsx`; na «Do dia a dia» a
+   categoria não tem âncora, e o título colado leva o nome da carta à frente
+   («Vegan, Doces») pela mesma razão. Volta a morder no dia em que alguém der
+   um `id` a uma categoria, ou em que duas categorias puderem ter o mesmo nome.
 9. **`background: currentColor` resolve para a cor do *próprio* elemento.** Uma
    pastilha com `background: currentColor` e `color: transparent` fica
    transparente, não fica da cor herdada. Declarar as duas cores. Ver o fólio em
@@ -538,7 +551,8 @@ primeiras sete vieram do Santo Burga e continuam a valer — o motor é o mesmo.
     layout. Do mesmo golpe, o botão flutuante «encomendar» escondia-se com
     `caminho === "/encomendas"` e voltava a aparecer nas páginas de produto, por
     cima da barra. **E voltou a morder em outubro:** com a barra em todas as
-    páginas, na ementa o «Encomendas» ficava por baixo dela. A barra saiu, e os
+    páginas, na ementa (que entretanto saiu) o «Encomendas» ficava por baixo
+    dela. A barra saiu, e os
     dois botões passaram a ocupar o mesmo canto e a trocar-se — dois elementos
     fixos no mesmo sítio só não se tapam se um souber do outro.
 18. **Uma fotografia quadrada num cartão é a mais alta que há, não a mais

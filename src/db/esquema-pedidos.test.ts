@@ -28,7 +28,10 @@ import { baseDeTeste, recusado } from "./teste";
 const { db, cliente } = await baseDeTeste();
 
 afterAll(() => cliente.close());
-beforeEach(() => cliente.exec("begin"));
+/* Os produtos apontam para uma categoria (#124): as que estes usam nascem com cada transação. */
+const COMECAR = `begin;
+  insert into categorias (id, nome_pt, posicao) values ('casa-doces', 'Doces', 0), ('festas', 'Kit Festas', 1), ('kits-bolo', 'Bolo e mesa decorada', 2);`;
+beforeEach(() => cliente.exec(COMECAR));
 afterEach(() => cliente.exec("rollback"));
 
 /**
@@ -55,6 +58,8 @@ const NATA = {
   nomePt: "Pastel de nata",
   carta: "casa",
   categoria: "doces",
+  categoriaId: "casa-doces",
+  tipo: "simples",
   unidade: "un",
   quantidadeMinima: 6,
   multiplo: 6,
@@ -406,7 +411,7 @@ describe("o de_teste de um pedido", () => {
     await comPedido({ ...PENDENTE, deTeste: true });
     expect(await recusa(db.update(pedidos).set({ deTeste: false }))).toBe("pedidos_de_teste_imutavel");
 
-    await cliente.exec("rollback; begin");
+    await cliente.exec(`rollback; ${COMECAR}`);
     await comPedido();
     expect(await recusa(db.update(pedidos).set({ deTeste: true }))).toBe("pedidos_de_teste_imutavel");
   });

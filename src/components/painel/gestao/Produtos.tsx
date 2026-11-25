@@ -25,7 +25,7 @@ const VISTAS: { id: VistaProdutos; rotulo: string }[] = [
 
 const FAMILIAS: { id: Produto["familia"] | "todas"; rotulo: string }[] = [
   { id: "todas", rotulo: "Todas as famílias" },
-  { id: "ementa", rotulo: "Carta" },
+  { id: "ementa", rotulo: "Dia a dia" },
   { id: "festa", rotulo: "Kits de festa" },
   { id: "bolo", rotulo: "Kits de bolo" },
   { id: "box", rotulo: "Boxes" },

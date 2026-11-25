@@ -73,8 +73,8 @@ const CSP = [
  * gerente envia as fotos, diretamente do browser (`src/lib/fotos.ts`), e é lá que
  * vê as miniaturas. O resto do site continua sem falar com ninguém de fora: as
  * fotos dos produtos chegam-lhe pelo otimizador de imagens, que é a mesma origem.
- * ⚠️ Só depois de o `FotoProduto` passar a `next/image` (o PR do editor de
- * produtos): com um `<img>` direto ao Blob, esta CSP recusava a imagem.
+ * ⚠️ É por isso que o `FotoProduto` usa `next/image`: com um `<img>` direto ao
+ * Blob, a CSP da loja recusava a imagem.
  *
  * ⚠️ O `*` aceita qualquer loja do Blob, e não só a da casa. Quando a dela existir,
  * troca-se pelo endereço exato, aqui e no `remotePatterns`.

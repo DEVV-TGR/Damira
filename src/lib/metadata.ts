@@ -56,8 +56,8 @@ export function imagensDePartilha(alt: string) {
  * Monta as metadata de uma página a partir das mensagens, e trata sozinho da
  * parte que é sempre igual e sempre esquecida: o `metadataBase` (sem ele as
  * imagens de partilha saem com caminho relativo e nenhuma rede as resolve) e os
- * `alternates.languages`, que são o que diz ao Google que `/ementa` e
- * `/en/ementa` são a mesma página em duas línguas — e não conteúdo duplicado.
+ * `alternates.languages`, que são o que diz ao Google que `/encomendas` e
+ * `/en/encomendas` são a mesma página em duas línguas — e não conteúdo duplicado.
  *
  * `chave` aponta para `metadata.<chave>.{titulo,descricao}` nas mensagens.
  */

@@ -7,14 +7,14 @@ import { SetaMinimizar } from "./SetaMinimizar";
 import { TituloDaSeccao, TituloParaLeitores } from "./TituloDaSeccao";
 
 /**
- * # A carta, por encomenda
+ * # «Do dia a dia», por encomenda
  *
- * ## ⚠️ Isto encosta ao aviso do AGENTS.md, e encosta com regras
+ * ## ⚠️ O dia a dia e a encomenda vivem juntos, e o que os separa são regras
  *
- * O aviso diz para **não juntar a encomenda à ementa**, porque um kit para
- * setenta pessoas ao lado de um croissant leva alguém a aparecer ao sábado à
- * espera de o levar debaixo do braço. Continua a valer, e as duas páginas
- * continuam separadas: isto vive em `/encomendas` e não em `/ementa`.
+ * Até 15/11 havia uma regra para **não juntar a encomenda à ementa**, porque um
+ * kit para setenta pessoas ao lado de um croissant levava alguém a aparecer ao
+ * sábado à espera de o levar debaixo do braço. A regra saiu, e a `/ementa` com
+ * ela (#123): o dia a dia que se encomenda vive aqui.
  *
  * O que evita o mal-entendido é a **quantidade mínima escrita no cabeçalho de
  * cada categoria**. Um artigo que só se pede à dúzia, com antecedência, nunca se
@@ -32,17 +32,13 @@ import { TituloDaSeccao, TituloParaLeitores } from "./TituloDaSeccao";
  * resumo, e cinco colunas em ecrã largo contra três. São setenta contra doze.
  * Ver `CartaoArtigo`.
  *
- * ⚠️ **A ordem é a mesma da página da ementa**, e quem vem de lá encontra as
- * coisas onde as deixou.
- *
- * Os artigos chegam já filtrados — os da ementa que estão à venda online — e já
+ * Os artigos chegam já filtrados — os do dia a dia que estão à venda online — e já
  * ordenados pelo `listarProdutos` (#87): dentro de cada categoria, por ordem
  * alfabética. ⚠️ **As cartas e as categorias saem da `ordem` da gerente, pelas
- * mesmas funções da `/ementa`** (`cartasComArtigos`, `categoriasDaCarta`), e não
- * da sequência em que os artigos chegaram. As duas davam o mesmo, mas só porque
- * o `listarProdutos` ordena hoje como ordena; com a mesma função nos dois sítios
- * é garantido. E uma categoria que não esteja na ordem fica de fora nas duas
- * páginas, e não só numa — a entrada já a recusa (`json-painel.ts`).
+ * funções da `vista.ts`** (`cartasComArtigos`, `categoriasDaCarta`), e não da
+ * sequência em que os artigos chegaram — que só dava o mesmo porque o
+ * `listarProdutos` ordena hoje como ordena. E uma categoria que não esteja na
+ * ordem fica de fora — a entrada já a recusa (`json-painel.ts`).
  */
 export function EmentaEncomendavel({
   artigos,

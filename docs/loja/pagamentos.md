@@ -1,5 +1,21 @@
 # Pagamentos — Stripe
 
+⚠️ **A dormir desde 04/11/2026.** A casa decidiu que, para já, não há pagamento
+online: um levantamento paga-se na loja, ao levantar, e uma entrega paga-se por
+transferência, depois de o cliente aceitar o orçamento (`pedidos.md`). Nada
+deste ficheiro corre hoje, e a rota do webhook não tem pedidos para marcar. Fica
+escrito como estava — é o desenho para o dia em que o pagamento online voltar,
+e a casa disse «para já», não «nunca». Até lá, não se constrói mais nada aqui.
+
+⚠️ **A fonte dos pedidos já segue a política de pagamento na loja (#132).**
+O `criarPedido`, em `bd-pedidos.ts`, cria levantamentos `confirmado` ou
+`por-confirmar`, com `modoPagamento: na-loja`; já não cria `pendente` do Stripe.
+A limpeza mantém a expiração dos pendentes antigos do Stripe e passa também a
+expirar os pedidos sem resposta da casa às 48 horas. **A página de compra ainda
+acaba num email à casa**: ligá-la à fonte espera pelo painel dos confirmados
+(#133, #125). O aceite do cliente, as entregas, os emails automáticos e os
+lembretes continuam por implementar; o contrato completo não está todo ligado.
+
 Como o dinheiro entra e sai. O que acontece ao pedido quando é pago, expira ou é
 cancelado está em `pedidos.md`; aqui está a ligação ao Stripe.
 

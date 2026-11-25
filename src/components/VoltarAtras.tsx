@@ -10,8 +10,8 @@ import { routing } from "@/i18n/routing";
  *
  * ⚠️ **Nem o `document.referrer` nem o `history.length` respondem a isto
  * sozinhos.** O `referrer` é o da **carga** do documento, e o Next navega sem
- * recarregar: quem chega à ementa pelo Google e abre um artigo continua com o
- * Google como `referrer`, apesar de ter vindo da ementa. E o `history.length`
+ * recarregar: quem chega às encomendas pelo Google e abre um produto continua com o
+ * Google como `referrer`, apesar de ter vindo das encomendas. E o `history.length`
  * conta as páginas de outros sites no mesmo separador — quem chega de uma
  * pesquisa tem dois, e um `back()` levava-o de volta à pesquisa.
  *
@@ -25,9 +25,9 @@ import { routing } from "@/i18n/routing";
  *    for da mesma origem (uma carga completa vinda do site, ou um recarregar).
  *
  * ⚠️ **Trocar de língua também navega, e deixa a página anterior na outra
- * língua.** Abrir a `/ementa`, entrar num artigo e passar para inglês deixa no
- * histórico o mesmo artigo em português: o `back()` desfazia só a troca, e a
- * pessoa ficava no artigo em vez de voltar à lista. O histórico não diz o que
+ * língua.** Abrir a `/encomendas`, entrar num produto e passar para inglês deixa
+ * no histórico o mesmo produto em português: o `back()` desfazia só a troca, e a
+ * pessoa ficava no produto em vez de voltar à lista. O histórico não diz o que
  * está na entrada anterior, por isso, depois de uma troca, vai-se pela lista na
  * língua de agora — perde-se a posição na lista, mas nunca se cai no sítio
  * errado nem na língua que se acabou de recusar.
@@ -91,7 +91,7 @@ function haPaginaDoSiteAtras(): boolean {
  * faixa do modo de teste está por cima dele. Em baixo à esquerda não há nada
  * fixo nestas páginas, e fica à mão do polegar.
  */
-export function VoltarAtras({ para }: { para: "/encomendas" | "/ementa" }) {
+export function VoltarAtras({ para }: { para: "/encomendas" }) {
   const t = useTranslations("nav");
   const router = useRouter();
 

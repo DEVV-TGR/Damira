@@ -43,21 +43,25 @@ qualquer pedido, com «reembolsar parte» para os que seguem.
 | Campo | Notas |
 |---|---|
 | Nome, descrição, fotos | fotos tiradas no telemóvel, reduzidas no browser antes de subir |
-| Carta e categoria | como hoje no `ementa.json` |
+| Secção do dia a dia (a «carta») e categoria | como hoje no `ementa.json` |
 | Alergénios | lista, ou «sem alergénios» marcado expressamente |
 | Vegan, sem glúten | marcados pela gerente |
 | Unidade | à unidade ou ao quilo |
 | Quantidade mínima e múltiplo | ex.: mínimo 6, de 6 em 6 |
 | Tempo de produção | em `horas` ou `dias` (ver `horarios.md`) |
-| Aparece na ementa | sim / não |
 | À venda online | sim / não |
 | Limitar quantidade | interruptor; ligado pede **quantos** e **por dia / no total** |
 | Pede sinal | interruptor; ligado pede a percentagem (ver `pagamentos.md`) |
 | Necessita de confirmação da loja | sim / não — ver abaixo |
 
-**«Aparece na ementa» e «à venda online» são coisas diferentes.** A ementa tem 95
-artigos e nem todos se encomendam — não se encomenda um galão para sexta. Hoje
+**«À venda online» decide se o artigo chega à `/encomendas`.** O dia a dia tem
+95 artigos e nem todos se encomendam — não se encomenda um galão para sexta. Hoje
 essa regra está numa tabela em `encomendavel.ts`; passa a ser este campo.
+
+⚠️ **Saiu a caixa «Aparece na ementa»** com a `/ementa` (#123, 12/11): nenhuma
+página lia o valor, e uma caixa que não muda nada no site engana quem a marca.
+A coluna `aparece_na_ementa` continua na base de dados, e o valor que lá está
+guarda-se ao gravar; sai, ou ganha um uso, com as categorias da gerente (#124).
 
 **Limitar quantidade.** Desligado (por defeito), o artigo vende sem limite e só
 contam as regras de horários. Ligado: **por dia** é a capacidade da cozinha e
@@ -149,8 +153,8 @@ pedidos pagos a referir uma coisa que não existe.
 ### Ordem das categorias
 
 Pedido da casa a 12/10 (#87). No separador **Categorias**, a gerente escolhe a
-ordem em que as categorias aparecem — na ementa e na secção «Da carta, por
-encomenda» das encomendas. **Dentro de cada categoria, os produtos ficam por
+ordem em que as categorias aparecem na secção «Do dia a dia» das encomendas
+(até 12/11 também na `/ementa`, que saiu). **Dentro de cada categoria, os produtos ficam por
 ordem alfabética**, e isso não se escolhe: ninguém ordena noventa e cinco
 artigos à mão num telemóvel. Não há subcategorias para ordenar (os títulos das
 bebidas ficam na ordem do impresso), e as cartas também não se ordenam.
@@ -163,7 +167,7 @@ bebidas ficam na ordem do impresso), e as cartas também não se ordenam.
   as páginas, como um preço.
 - ⚠️ **Grava-se a lista inteira, e tem de ser uma permutação das categorias que
   existem.** Uma categoria que faltasse não ia para o fim — desaparecia da
-  ementa, porque a navegação sai desta lista. O servidor recusa listas com
+  «Do dia a dia», porque a secção sai desta lista. O servidor recusa listas com
   categorias a menos, a mais ou repetidas.
 - ⚠️ **Só a gerente**: o papel verifica-se no servidor (`papeis.ts`), como nos
   produtos.
@@ -174,28 +178,40 @@ bebidas ficam na ordem do impresso), e as cartas também não se ordenam.
   componentes nem na base de dados: as páginas recebem a lista já ordenada, e
   ninguém depende da colação do Postgres. Os produtos de encomenda (kits, boxes)
   não têm categoria e ficam pela ordem do catálogo.
-- **As duas páginas desenham as cartas e as categorias pela mesma função**
+- **As cartas e as categorias desenham-se por uma função**
   (`cartasComArtigos` e `categoriasDaCarta`, em `src/lib/vista.ts`), a partir da
-  ordem gravada: a ementa e a carta por encomenda nunca divergem.
+  ordem gravada, e não pela sequência em que os artigos chegam.
 - Por defeito, até a gerente mexer, é a ordem do impresso (`CATEGORIAS`, em
   `src/data/ementa.ts`).
 
 ### Fotos
 
-- Reduzidas **no browser** (WebP, ~1600 px), enviadas diretamente para o Vercel
-  Blob. Uma foto de telemóvel tem 3–8 MB e as funções da Vercel recusam pedidos
-  acima de ~4,5 MB: se a foto passar pelo nosso servidor, o envio falha.
+- **No editor** (`FotosProduto`): «Juntar foto» abre a câmara ou a galeria do
+  telemóvel; dá para escolher várias de uma vez. A primeira é a que o site
+  mostra, e «Pôr como principal» troca-a. «Tirar» tira-a da lista. Nada disto
+  fica no produto antes de gravar, e enquanto uma foto está a chegar o «Gravar»
+  espera.
+- Reduzidas **no browser** (`src/lib/reduzir-foto.ts`): 1600 px no lado maior,
+  em WebP — ou em JPEG no Safari, que não escreve WebP num canvas. Desenhar a
+  foto de novo deita fora o EXIF, e com ele o sítio onde foi tirada. Depois vão
+  diretamente para o Vercel Blob. Uma foto de telemóvel tem 3–8 MB e as funções
+  da Vercel recusam pedidos acima de ~4,5 MB: se a foto passar pelo nosso
+  servidor, o envio falha.
   O servidor só dá um token curto, em `/painel/fotos` (`src/lib/fotos.ts`), e só à
   gerente: WebP ou JPEG, até 8 MB, dez minutos. No componente, é o `enviarFoto`
   (`src/lib/fotos-envio.ts`), que devolve o endereço para gravar com o produto.
 - Trocar uma foto apaga a antiga do Blob, depois de gravar o produto. Se apagar
   falhar, fica uma foto esquecida no Blob e um erro no log, e o produto continua
-  gravado.
+  gravado. ⚠️ **Uma foto enviada e não gravada também fica esquecida** (cancelar o
+  editor, ou tirá-la antes de gravar): o browser não a pode apagar, e o servidor
+  só apaga as que o produto tinha. Custa uns cêntimos.
+- ⚠️ **Só a fotografia desse produto.** Nunca uma da loja, da montra ou de outro
+  artigo (`AGENTS.md` › As páginas de produto). Sem foto, o `FotoProduto` guarda
+  o espaço e diz que a fotografia está por chegar.
 - ⚠️ **A CSP só abre ao Blob em `/painel`** (`next.config.ts`). O resto do site
-  recebe as fotos pelo otimizador de imagens, que é a mesma origem — **quando o
-  `FotoProduto` passar a `next/image`**, o que o Gonçalo faz no PR do editor de
-  produtos. Até lá, uma foto do Blob apareceria partida na loja: os dois entram
-  juntos.
+  recebe as fotos pelo otimizador de imagens, que é a mesma origem: o
+  `FotoProduto` usa `next/image`, e nunca um `<img>` direto ao Blob. No painel, as
+  miniaturas do editor são `<img>` diretos, que a CSP do painel deixa.
 - As fotos que já existem em `public/` ficam onde estão: nenhuma é de um produto
   (`AGENTS.md` › As páginas de produto), por isso não há nada a migrar.
 

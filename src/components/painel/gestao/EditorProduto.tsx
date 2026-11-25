@@ -6,6 +6,7 @@ import { arquivar, gravarProduto } from "@/app/painel/acoes-gestao";
 import type { EntradaProduto, OrdemEmenta, Produto } from "@/lib/dados/tipos";
 import { ALERGENIOS_UE, entradaDoProduto, paraCent } from "@/lib/painel";
 import { BOTAO, BOTAO_PRINCIPAL, BOTAO_SECUNDARIO, MENSAGENS } from "../balcao/comum";
+import { FotosProduto } from "./FotosProduto";
 
 /**
  * # Um produto, como a gerente o edita (`painel-gerente.md` › O que cada produto tem)
@@ -27,7 +28,7 @@ import { BOTAO, BOTAO_PRINCIPAL, BOTAO_SECUNDARIO, MENSAGENS } from "../balcao/c
 const CAMPOS: Record<string, string> = {
   nome: "o nome",
   descricao: "a descrição",
-  carta: "a carta",
+  carta: "a secção do dia a dia",
   categoria: "a categoria",
   familia: "a família",
   variantes: "as variantes e os preços",
@@ -101,6 +102,7 @@ export function EditorProduto({
   const [erro, setErro] = useState<string | null>(null);
   const [aGravar, iniciar] = useTransition();
   const [confirmarArquivo, setConfirmarArquivo] = useState(false);
+  const [aEnviarFoto, setAEnviarFoto] = useState(false);
 
   /* Mexer num campo tira o erro: um aviso que fica depois de corrigido lê-se
      como se a correção não tivesse servido. */
@@ -203,7 +205,7 @@ export function EditorProduto({
         <div className="flex flex-wrap gap-4">
           {(
             [
-              ["ementa", "Na carta"],
+              ["ementa", "No dia a dia"],
               ["encomendas", "Nas encomendas"],
             ] as const
           ).map(([origem, rotulo]) => (
@@ -221,7 +223,7 @@ export function EditorProduto({
         {e.origem === "ementa" ? (
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
             <label className="text-sm font-semibold">
-              Carta
+              Secção
               <select value={e.carta ?? ""} onChange={(ev) => mudar({ carta: ev.target.value || null })} className={campo}>
                 <option value="">—</option>
                 {ordem.cartas.map((c) => (
@@ -260,12 +262,15 @@ export function EditorProduto({
           </label>
         )}
         <div className="mt-3 space-y-1">
-          <Caixa checked={e.apareceNaEmenta} onChange={(v) => mudar({ apareceNaEmenta: v })} titulo="Aparece na ementa" />
+          {/* ⚠️ **Saiu a caixa «Aparece na ementa».** A `/ementa` saiu a 12/11
+              (#123), e nenhuma página lia aquele valor: era uma caixa que não
+              mudava nada no site. A coluna continua na base de dados, e o valor
+              que lá está guarda-se ao gravar. */}
           <Caixa
             checked={e.aVendaOnline}
             onChange={(v) => mudar({ aVendaOnline: v })}
             titulo="À venda online"
-            explicacao="Diferente de aparecer na ementa: não se encomenda um galão para sexta."
+            explicacao="Aparece nas encomendas, com botão. Não se encomenda um galão para sexta."
           />
         </div>
       </fieldset>
@@ -571,19 +576,7 @@ export function EditorProduto({
         <legend className="titulo-display px-1 text-xl">Marcas e fotos</legend>
         <Caixa checked={e.vegan} onChange={(v) => mudar({ vegan: v })} titulo="Vegan" explicacao="Marcado pela casa. O site nunca o deduz." />
         <Caixa checked={e.semGluten} onChange={(v) => mudar({ semGluten: v })} titulo="Sem glúten" />
-        <div className="mt-3">
-          {e.fotos.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {e.fotos.map((foto) => (
-                // eslint-disable-next-line @next/next/no-img-element -- miniatura no painel, sem otimizador
-                <img key={foto} src={foto} alt="" className="size-20 rounded-xl object-cover" />
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-tinta-suave">Sem fotos.</p>
-          )}
-          <p className="mt-1 text-sm text-tinta-suave">Tirar fotos no telemóvel e pô-las aqui chega com o envio de fotos.</p>
-        </div>
+        <FotosProduto fotos={e.fotos} onMudar={(fotos) => mudar({ fotos })} onOcupado={setAEnviarFoto} />
       </fieldset>
 
       {erro && (
@@ -592,8 +585,8 @@ export function EditorProduto({
         </p>
       )}
       <div className="flex flex-wrap items-center gap-3">
-        <button type="submit" disabled={aGravar} className={`${BOTAO_PRINCIPAL} min-h-14 px-10`}>
-          {aGravar ? "A gravar…" : produto ? "Gravar" : "Criar produto"}
+        <button type="submit" disabled={aGravar || aEnviarFoto} className={`${BOTAO_PRINCIPAL} min-h-14 px-10`}>
+          {aGravar ? "A gravar…" : aEnviarFoto ? "A enviar a foto…" : produto ? "Gravar" : "Criar produto"}
         </button>
         <button type="button" onClick={() => onFechar()} className={BOTAO_SECUNDARIO}>
           Cancelar

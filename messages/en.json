@@ -7,81 +7,11 @@
   },
   "nav": {
     "inicio": "Home",
-    "ementa": "Menu",
     "encomendas": "Orders",
     "todasEncomendas": "See all orders",
     "voltarAtras": "Go back",
     "saltarParaConteudo": "Skip to content",
     "mudarIdioma": "Português"
-  },
-  "inicio": {
-    "heroTexto": "Open from seven to nine. Fresh bread and toast in the morning, burgers and suckling pig at lunch, and a counter full of cakes all day — half of it vegan.",
-    "verEmenta": "See the menu",
-    "verEncomendas": "Orders & parties",
-    "combinacoes": {
-      "olho": "Perfect pairings",
-      "titulo": "What the house recommends",
-      "texto": "Six pairs printed at the bottom of our menu. Not a best-seller list — just what goes well with what.",
-      "verTudo": "See the full menu",
-      "pares": [
-        {
-          "a": "Espresso",
-          "b": "Brigadeiro"
-        },
-        {
-          "a": "Affogato Latte",
-          "b": "American Cookie"
-        },
-        {
-          "a": "Iced Matcha Latte",
-          "b": "Filled Croissant"
-        },
-        {
-          "a": "Cappuccino",
-          "b": "Cake with Brigadeiro Sauce"
-        },
-        {
-          "a": "House Burger",
-          "b": "Príncipe Biscuit"
-        },
-        {
-          "a": "House Chicken Toastie",
-          "b": "Fresh Fruit Juice"
-        }
-      ]
-    },
-    "vegan": {
-      "titulo": "Half the counter is vegan",
-      "doces": "Pastries by the piece",
-      "salgados": "Savouries",
-      "bolos": "Whole cakes",
-      "opcoesBolo": "Custom cake options",
-      "verCarta": "See the vegan menu",
-      "proporcao": "{vegan} of our {total} menu items are vegan — not a shelf on the side, but half the house."
-    },
-    "festas": {
-      "olho": "Party Kits",
-      "titulo": "From twenty to seventy people",
-      "texto": "Three tiers, three sizes, one fixed price. Savoury and fried miniatures, mini pizzas, cheese boards, meat breads — and the sweet half, which is where we come from.",
-      "desde": "from {preco}",
-      "pessoas": "{n} people",
-      "verEncomendas": "See what each one includes"
-    },
-    "fotografia": {
-      "titulo": "Inside the house",
-      "texto": "The bread, the pastries, the chocolates, and the dish of the day. The photographs are the house's own — each one carries its mark.",
-      "credito": "Photographs by Confeitaria e Pão Quente Damira.",
-      "legendas": {
-        "pao": "Freshly baked village loaves on the counter.",
-        "tartes": "Strawberry tartlets being assembled on a tray.",
-        "bombons": "Gold-wrapped chocolates lined up on a platter.",
-        "almoco": "A plate of grilled fish with vegetables, from the lunch menu."
-      }
-    },
-    "fecho": {
-      "titulo": "Before you go",
-      "texto": "Over the counter every day, seven to nine. For a party, with a phone call first."
-    }
   },
   "cartaz": {
     "folio": "Chapters",
@@ -89,7 +19,7 @@
       "olho": "Bakery and pastry shop",
       "lede": "Open at seven every morning, every day. Hot bread at the counter, lunch at the table, and a case of pastries until nine at night.",
       "credito": "The line is not ours. It is painted on the shop window, beside the door.",
-      "verEmenta": "See the menu",
+      "verEmenta": "Everyday",
       "encomendar": "Order",
       "atalhos": "Shortcuts"
     },
@@ -154,26 +84,26 @@
     "raro": {
       "numeral": "II",
       "olho": "The rare thing",
-      "titulo": "More than half the menu is vegan",
+      "titulo": "More than half of what we make is vegan",
       "de": "of {total} items",
-      "texto": "Not one item marked with a leaf at the end of a list. A whole menu alongside the other one: savouries, pastries, and whole cakes sold by the kilo.",
-      "ligacao": "See the vegan menu"
+      "texto": "Not one item marked with a leaf at the end of a list. A whole counter alongside the other one: savouries, pastries, and whole cakes sold by the kilo.",
+      "ligacao": "Order from Everyday"
     },
     "provar": {
       "numeral": "VII",
-      "olho": "The menu",
-      "titulo": "Four menus, one price from each",
-      "texto": "{total} items in all. Here are the four menus and one real price from each, so you do not have to click anything just to know what it costs.",
+      "olho": "Everyday",
+      "titulo": "Four counters, one price from each",
+      "texto": "{total} items in all. Here are the four counters and one real price from each, so you do not have to click anything just to know what it costs.",
       "quantos": "{n} items",
       "quilo": "kilo",
       "semPreco": "on request",
-      "verEmenta": "See the full menu"
+      "verEmenta": "Order from Everyday"
     },
     "festa": {
       "numeral": "VIII",
       "olho": "Orders",
       "titulo": "From a dozen to a party of seventy",
-      "texto": "Party kits at a fixed price, made-to-order cakes, boxes for two — and seventy menu items you can take by the dozen or by the kilo.",
+      "texto": "Party kits at a fixed price, made-to-order cakes, boxes for two — and seventy everyday items you can take by the dozen or by the kilo.",
       "pessoas": "{n} people",
       "desde": "from {preco}",
       "verFamilia": "View",
@@ -191,8 +121,8 @@
           "detalhe": "{n} ready boxes, for a breakfast or a birthday."
         },
         "carta": {
-          "nome": "From the menu",
-          "detalhe": "{n} menu items to order, by the dozen or by the kilo."
+          "nome": "Everyday",
+          "detalhe": "{n} everyday items to order, by the dozen or by the kilo."
         }
       },
       "nota": "All of this needs notice. The quote is settled by phone or through the form.",
@@ -241,32 +171,20 @@
     }
   },
   "ementa": {
-    "titulo": "Menu",
-    "intro": "Four menus: the everyday counter, the weekend lunch, the vegan one, and the chocolate.",
-    "navegar": "Menus",
     "vegan": "Vegan",
     "porQuilo": " /kg",
-    "sabores": "Flavours",
     "cartas": {
       "casa": {
-        "curto": "The counter",
-        "titulo": "The house menu",
-        "texto": "What is on the counter every day, from seven to nine: light bites, hot savouries, pastries, and drinks."
+        "curto": "The counter"
       },
       "fim-de-semana": {
-        "curto": "Weekend",
-        "titulo": "Saturday and Sunday lunch",
-        "texto": "At weekends there are plates. Bairrada-style suckling pig, steak plate — and the burgers from the house menu keep coming out."
+        "curto": "Weekend"
       },
       "vegan": {
-        "curto": "Vegan",
-        "titulo": "The vegan menu",
-        "texto": "Pastries, savouries, and whole cakes, all vegan. A menu of its own, not a shelf of exceptions."
+        "curto": "Vegan"
       },
       "chocolate": {
-        "curto": "Chocolate",
-        "titulo": "Dubai Chocolate",
-        "texto": "Made here, in four sizes, from a pocket square to a half-kilo bar."
+        "curto": "Chocolate"
       }
     },
     "categorias": {
@@ -283,25 +201,7 @@
       "milkshakes": "Milkshakes",
       "quentes": "Hot drinks",
       "frias": "Cold drinks"
-    },
-    "notas": {
-      "batata": "The burgers, chicken toastie, and sandwiches marked on the menu come with potatoes.",
-      "sabores": "Ask at the counter which flavours we have today.",
-      "palhinhas": "Try your drink with our edible straws, for €1 more.",
-      "iva": "VAT included at the applicable rate.",
-      "alergenios": "Allergen information is available in the shop — just ask.",
-      "precos": "Prices from the 2025 and 2026 menus, to be confirmed."
-    },
-    "abrir": "See details",
-    "fechar": "Close",
-    "procurar": "Search the menu",
-    "procurarDica": "Type a name: croissant, toastie, vegan…",
-    "limpar": "Clear",
-    "aMostrar": "{n} of {total} items",
-    "semResultados": "Nothing by that name",
-    "semResultadosTexto": "Try another word, or clear the search to go back to the four menus.",
-    "quantosArtigos": "{n, plural, one {# item} other {# items}}",
-    "verPagina": "View this item's page"
+    }
   },
   "encomendas": {
     "olho": "To order",
@@ -346,7 +246,7 @@
         "bolo": "Custom cake",
         "box": "Box",
         "outro": "Something else",
-        "ementa": "From the menu"
+        "ementa": "Everyday"
       },
       "campos": {
         "tipo": "What would you like to order",
@@ -430,8 +330,8 @@
       }
     },
     "daEmenta": {
-      "titulo": "From the menu, to order",
-      "texto": "Seventy menu items the shop makes to order, for taking away in quantity: savouries and pastries by the dozen, vegan cakes by the kilo, and the chocolate in all four sizes.",
+      "titulo": "Everyday, to order",
+      "texto": "Seventy everyday items the shop makes to order, for taking away in quantity: savouries and pastries by the dozen, vegan cakes by the kilo, and the chocolate in all four sizes.",
       "aviso": "This is not the counter. Every line has a minimum quantity and needs notice — a single pastry is something you ask for in the shop, no booking needed. Cakes are sold by weight, and the final amount is settled at pickup.",
       "regraUn": "Minimum {minimo} units, in steps of {passo}",
       "regraKg": "Minimum {minimo} kg, sold by weight",
@@ -442,7 +342,7 @@
       "festas": "Parties",
       "kits-bolo": "Cakes",
       "boxes": "Boxes",
-      "da-ementa": "From the menu",
+      "da-ementa": "Everyday",
       "pedido": "Order"
     },
     "calendario": {
@@ -481,7 +381,7 @@
       "observacoesDica": "Allergies, the name to write on the cake, the ribbon colour…",
       "telefoneAjuda": "We only call if something needs sorting out.",
       "vazio": "Your order is empty.",
-      "vazioTexto": "Add whatever you like from the orders or the menu, then come back here.",
+      "vazioTexto": "Add whatever you like from the orders, then come back here.",
       "irEncomendas": "See the orders",
       "rever": "Review and order",
       "reverTexto": "You already have items in your order. Choose the collection time and your details in the next step.",
@@ -492,7 +392,7 @@
     "titulo": "A cake your way",
     "texto": "The sponge, the filling, the topping, what goes on top, and what goes around it. That is {classica} choices on the classic line and {vegan} on the vegan one.",
     "soVegan": "Vegan line only",
-    "semPrecos": "The price of a custom cake depends on weight, filling, and decoration — we quote it by phone, with your request in front of us. Catalogue cakes do have prices, on the menu.",
+    "semPrecos": "The price of a custom cake depends on weight, filling, and decoration — we quote it by phone, with your request in front of us. Catalogue cakes do have prices, in the orders.",
     "grupos": {
       "massas": "Sponges",
       "recheios": "Fillings",
@@ -505,11 +405,7 @@
     "imagemAlt": "The storefront of Confeitaria e Pão Quente Damira in Ermesinde, with the sign and the words “Histórias com sabor” painted on the glass.",
     "inicio": {
       "titulo": "Confeitaria e Pão Quente Damira — Ermesinde, since 1996",
-      "descricao": "Bakery, pastry shop, and kitchen in Ermesinde, Portugal. Fresh bread and a full counter every day, 7:30am to 8pm. A complete vegan menu, party kits, and cakes to order."
-    },
-    "ementa": {
-      "titulo": "Menu",
-      "descricao": "The Confeitaria e Pão Quente Damira menu: light bites and savouries over the counter, weekend lunch, a full vegan menu, and Dubai Chocolate."
+      "descricao": "Bakery, pastry shop, and kitchen in Ermesinde, Portugal. Fresh bread and a full counter every day, 7:30am to 8pm. Vegan pastries and savouries, party kits, and cakes to order."
     },
     "encomendas": {
       "titulo": "Orders & parties",
@@ -607,12 +503,7 @@
     "juntado": "Added to order",
     "avisoPreco": "This is the list price, not a bill. Delivery is not included and the final amount comes in our reply.",
     "descricaoGenerica": "{nome}, made to order at Confeitaria e Pão Quente Damira, in Ermesinde.",
-    "voltarEmenta": "← The whole menu",
     "porQuilo": " /kg",
-    "minimoUn": "Minimum {minimo} units, in steps of {passo}",
-    "minimoKg": "Minimum {minimo} kg, sold by weight",
-    "soAoBalcao": "This one is asked for at the counter, on the spot — it is not ordered in advance.",
-    "prazoDaCarta": "The minimum notice is still to be confirmed. Call us and we will tell you straight away if your date works.",
     "cadaCurto": "ea."
   },
   "modoTeste": {
