@@ -481,6 +481,30 @@ describe("a resposta da casa e o aceite do cliente (pedidos.md › O aceite do c
     });
   });
 
+  it("o prazo do cliente nunca passa da hora de levantamento", async () => {
+    /* Levanta amanhã às 9h00: menos de 24 horas depois da proposta. */
+    const f = await fonte([comBolo("a", { levantamentoEm: lisboa(8, 9) })]);
+    const proposta = await f.responderPedido(u("a"), PRECO_DO_BOLO, GERENTE);
+    expect(proposta.ok && proposta.valor.expiraEm).toEqual(lisboa(8, 9));
+  });
+
+  it("não envia uma proposta sem tempo nenhum para a aceitar", async () => {
+    /* O levantamento já passou (o prazo da casa ainda não): não há prazo que caiba. */
+    const f = await fonte([comBolo("a", { levantamentoEm: lisboa(7, 9) })]);
+    expect(await f.responderPedido(u("a"), PRECO_DO_BOLO, GERENTE)).toMatchObject({
+      ok: false,
+      erro: "dados-invalidos",
+      campos: ["levantamentoEm"],
+    });
+  });
+
+  it("uma proposta fora de prazo já não é ativa: não se cancela", async () => {
+    const f = await fonte([
+      comBolo("a", { estado: "a-aguardar-aceite", propostaVersao: 1, propostaEm: lisboa(6, 9), expiraEm: lisboa(7, 9) }),
+    ]);
+    expect(await f.cancelarPedido(u("a"), 0, GERENTE)).toEqual({ ok: false, erro: "estado-mudou" });
+  });
+
   it("rever a proposta de volta à hora pedida deixa de mudar a hora", async () => {
     /* Em 2099: mudar a hora lê a ocupação, que limpa os expirados com a hora real, e as 24 horas
        da proposta têm de estar no futuro de verdade. */

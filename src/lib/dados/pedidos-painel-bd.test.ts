@@ -381,7 +381,11 @@ describe("a resposta e o aceite deixam o email por enviar, na mesma instrução 
     const proposta = await fonte.responderPedido(u("a"), { precos: [{ posicao: 1, precoUnitarioCent: 4500 }], levantamentoEm: null }, GERENTE);
     const vaga = proposta.ok ? proposta.valor.levantamentoEm : new Date();
     const antes = await ocupadas(vaga);
-    await limparExpirados(db, new Date(AGORA.getTime() + 25 * 3_600_000));
+    const limpeza = new Date(AGORA.getTime() + 25 * 3_600_000);
+    await limparExpirados(db, limpeza);
+    /* Os emails nascem com o `agora` da limpeza, e não com o relógio da base de dados (regra 3). */
+    const criados = (await db.select().from(emailsPorEnviar)).filter((e) => e.modelo !== "resposta-cliente");
+    expect(criados.map((e) => e.criadoEm)).toEqual([limpeza, limpeza]);
     const [a, b2] = await Promise.all([fonte.pedidoDoPainel(u("a"), GERENTE), fonte.pedidoDoPainel(u("b"), GERENTE)]);
     expect(a.ok && a.valor).toMatchObject({ estado: "expirado", causaExpiracao: "sem-aceite-do-cliente" });
     expect(b2.ok && b2.valor).toMatchObject({ estado: "expirado", causaExpiracao: "sem-resposta-da-casa" });

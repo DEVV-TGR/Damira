@@ -343,7 +343,7 @@ export function criarPainelJson(
       if (!lido.success) return invalido(lido.error);
       const novo = lido.data.levantamentoEm === null ? null : new Date(lido.data.levantamentoEm);
       if (novo && Number.isNaN(novo.getTime())) return { ok: false, erro: "dados-invalidos", campos: ["levantamentoEm"] };
-      const planeado = planearResposta(pedido, { precos: lido.data.precos, levantamentoEm: novo }, papel);
+      const planeado = planearResposta(pedido, { precos: lido.data.precos, levantamentoEm: novo }, papel, agora);
       if (!planeado.ok) return planeado;
       const { plano } = planeado;
       if (plano.levantamentoEm.getTime() !== pedido.levantamentoEm.getTime()) {

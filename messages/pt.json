@@ -682,6 +682,10 @@
     "expirada": {
       "titulo": "Esta proposta expirou.",
       "texto": "Não recebemos a sua resposta dentro do prazo, por isso a encomenda não foi confirmada e não há nada a pagar. Se ainda pretender avançar, faça um novo pedido no site ou contacte-nos através do {telefone}."
+    },
+    "falha": {
+      "titulo": "Não foi possível abrir a proposta.",
+      "texto": "O erro é nosso, não seu. Tente mais tarde, ou contacte-nos através do {telefone}."
     }
   }
 }

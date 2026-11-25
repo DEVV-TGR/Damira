@@ -352,7 +352,10 @@ export const CANCELAVEIS_NA_LOJA: readonly Pedido["estado"][] = ["por-confirmar"
 
 export const podeCancelar = (pedido: Pick<Pedido, "estado" | "modoPagamento" | "expiraEm">, agora: Date): boolean =>
   (pedido.estado === "pago" || (pedido.modoPagamento === "na-loja" && CANCELAVEIS_NA_LOJA.includes(pedido.estado))) &&
-  (pedido.estado !== "por-confirmar" || (pedido.expiraEm !== null && pedido.expiraEm.getTime() > agora.getTime()));
+  /* Os dois que esperam têm prazo — a casa (48 h) e o cliente (24 h) —, e passado ele já expiraram,
+     mesmo antes de a limpeza o gravar: não aparecem como ativos nem se cancelam. */
+  ((pedido.estado !== "por-confirmar" && pedido.estado !== "a-aguardar-aceite") ||
+    (pedido.expiraEm !== null && pedido.expiraEm.getTime() > agora.getTime()));
 
 /**
  * Quem a gerente reagenda: o `pago` e o `confirmado`. Mudar a hora de um que
@@ -410,6 +413,8 @@ export type PlanoResposta = {
   levantamentoAnteriorEm: Date | null;
   /** As posições cujo preço a casa fixou agora. */
   fixadas: number[];
+  /** Até quando o cliente pode aceitar a proposta; `null` no «sim» da casa. */
+  expiraEm: Date | null;
 };
 
 /**
@@ -426,6 +431,7 @@ export function planearResposta(
   pedido: Pedido,
   entrada: { precos: { posicao: number; precoUnitarioCent: number }[]; levantamentoEm: Date | null },
   papel: "funcionario" | "gerente",
+  agora: Date,
 ): { ok: true; plano: PlanoResposta } | { ok: false; erro: "dados-invalidos" | "sem-permissao"; campos?: string[] } {
   const posicoes = entrada.precos.map((p) => p.posicao);
   if (new Set(posicoes).size !== posicoes.length) return { ok: false, erro: "dados-invalidos", campos: ["precos"] };
@@ -454,15 +460,26 @@ export function planearResposta(
   if (!propoe && pedido.estado !== "por-confirmar") return { ok: false, erro: "dados-invalidos", campos: ["precos"] };
   if (propoe && papel !== "gerente") return { ok: false, erro: "sem-permissao" };
 
+  const levantamentoEm = novaHora ? entrada.levantamentoEm! : pedido.levantamentoEm;
+  /* As 24 horas do cliente, mas nunca depois do levantamento: aceitar às 9h30 um pedido das 10h00
+     confirmava-o quando a cozinha já não o faz, e às 12h00 confirmava-o para uma hora passada. Uma
+     proposta sem tempo nenhum para aceitar não se envia. (A margem antes da produção é o n.º 1 do
+     «Em aberto», da Andreia.) */
+  const expiraEm = propoe ? new Date(Math.min(agora.getTime() + PRAZO_DO_ACEITE_MS, levantamentoEm.getTime())) : null;
+  if (expiraEm && expiraEm.getTime() <= agora.getTime()) {
+    return { ok: false, erro: "dados-invalidos", campos: ["levantamentoEm"] };
+  }
+
   return {
     ok: true,
     plano: {
       tipo: propoe ? "propor" : "confirmar",
       linhas,
       totalCent: linhas.reduce((soma, linha) => soma + (linha.totalCent ?? 0), 0),
-      levantamentoEm: novaHora ? entrada.levantamentoEm! : pedido.levantamentoEm,
+      levantamentoEm,
       levantamentoAnteriorEm: horaAnterior(pedido, novaHora ? entrada.levantamentoEm! : null),
       fixadas: entrada.precos.map((p) => p.posicao),
+      expiraEm,
     },
   };
 }
@@ -491,6 +508,6 @@ export const pedidoRespondido = (pedido: Pedido, plano: PlanoResposta, agora: Da
         levantamentoAnteriorEm: plano.levantamentoAnteriorEm,
         propostaVersao: pedido.propostaVersao + 1,
         propostaEm: agora,
-        /* As 24 horas do cliente substituem as 48 da casa: ela já respondeu. */
-        expiraEm: new Date(agora.getTime() + PRAZO_DO_ACEITE_MS),
+        /* O prazo do cliente substitui as 48 h da casa: ela já respondeu. */
+        expiraEm: plano.expiraEm,
       };

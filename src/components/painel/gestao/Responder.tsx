@@ -53,6 +53,10 @@ export function Responder({ pedido, onFeito }: { pedido: Pedido; onFeito?: (pedi
   }, [dia, mudarHora]);
 
   const aguarda = pedido.estado === "a-aguardar-aceite";
+  /* O prazo do cliente passou, mesmo que a limpeza ainda não o tenha gravado: o cliente já vê
+     «Esta proposta expirou», e o painel diz o mesmo em vez de «à espera do cliente». */
+  const [abertoEm] = useState(() => Date.now());
+  const expirou = aguarda && pedido.expiraEm !== null && pedido.expiraEm.getTime() <= abertoEm;
   useEffect(() => {
     /* Fora da espera o link não aparece: o `aguarda && link` do fim já o esconde. */
     if (!aguarda) return;
@@ -105,6 +109,18 @@ export function Responder({ pedido, onFeito }: { pedido: Pedido; onFeito?: (pedi
       : aguarda
         ? "Mude o preço ou a hora para rever"
         : "Confirmar o pedido";
+
+  if (expirou) {
+    return (
+      <div className="rounded-2xl border border-tinta/15 bg-papel-fundo p-5">
+        <h3 className="titulo-display text-xl">A proposta expirou</h3>
+        <p className="mt-1 text-sm text-tinta-suave">
+          O cliente não respondeu até {diaPorExtenso(pedido.expiraEm!)}, {horaDeLisboa(pedido.expiraEm!)}. O pedido não segue, a vaga
+          fica livre, e o cliente recebe o email a dizê-lo.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl border border-tinta/15 bg-papel-fundo p-5">

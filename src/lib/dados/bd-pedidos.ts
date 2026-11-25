@@ -89,7 +89,7 @@ const TENTATIVAS_DE_REFERENCIA = 5;
  * linha, volta a avaliar a condição e já não a encontra. Os `UPDATE` dentro do
  * `WITH` correm sempre, mesmo sem ninguém os ler.
  */
-function expirar(db: BaseDeDados, condicao: SQL) {
+function expirar(db: BaseDeDados, condicao: SQL, agora: Date) {
   return db.execute(sql`
     with expirados as (
       update pedidos set
@@ -105,7 +105,7 @@ function expirar(db: BaseDeDados, condicao: SQL) {
       insert into emails_por_enviar (pedido_id, modelo, destinatario, criado_em)
       select id,
         case causa_expiracao when 'sem-aceite-do-cliente' then 'proposta-expirada-cliente' else 'expirado-cliente' end,
-        cliente_email, now()
+        cliente_email, ${agora.toISOString()}::timestamptz
       from expirados where causa_expiracao <> 'sem-pagamento'
       returning 1
     ),
@@ -146,6 +146,7 @@ export function limparExpirados(db: BaseDeDados, agora: Date) {
     db,
     sql`(estado = 'pendente' and criado_em < ${limite}::timestamptz)
       or (estado in ('por-confirmar', 'a-aguardar-aceite') and expira_em <= ${agora.toISOString()}::timestamptz)`,
+    agora,
   );
 }
 
@@ -153,8 +154,8 @@ export function limparExpirados(db: BaseDeDados, agora: Date) {
  * Expira este pedido já, se ainda estiver pendente; em qualquer outro estado,
  * nada. É o «voltar atrás» do checkout do Stripe (#38), e dorme com ele.
  */
-export function expirarPedido(db: BaseDeDados, id: string) {
-  return expirar(db, sql`estado = 'pendente' and id = ${id}::uuid`);
+export function expirarPedido(db: BaseDeDados, id: string, agora = new Date()) {
+  return expirar(db, sql`estado = 'pendente' and id = ${id}::uuid`, agora);
 }
 
 /**

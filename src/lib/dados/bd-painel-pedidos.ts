@@ -11,7 +11,6 @@ import {
   naoExiste,
   paraProcura,
   planearResposta,
-  PRAZO_DO_ACEITE_MS,
   podeCancelar as podeCancelarPedido,
   podeResponder,
   REAGENDAVEIS,
@@ -67,7 +66,7 @@ const CINCO_MINUTOS = 5 * 60_000;
    motivo, mas quem decide é a condição da instrução. */
 const podeCancelar = (agora: Date) => sql`(estado = 'pago'
   or (modo_pagamento = 'na-loja' and estado in ('por-confirmar', 'a-aguardar-aceite', 'confirmado')))
-  and (estado <> 'por-confirmar' or expira_em > ${instante(agora)})`;
+  and (estado not in ('por-confirmar', 'a-aguardar-aceite') or expira_em > ${instante(agora)})`;
 
 /* Superior a qualquer dia de Lisboa, mudança de hora incluída. A conta exata do
    «hoje» é do `avisosDosPedidos`; aqui só se evita ler o arquivo inteiro. */
@@ -383,7 +382,7 @@ export function criarPedidosDoPainelBd(db: BaseDeDados, leituras: LeiturasDoPain
       const recusarHora: ResultadoPainel<Pedido> = { ok: false, erro: "dados-invalidos", campos: ["levantamentoEm"] };
       const novo = lido.data.levantamentoEm === null ? null : new Date(lido.data.levantamentoEm);
       if (novo && Number.isNaN(novo.getTime())) return recusarHora;
-      const planeado = planearResposta(pedido, { precos: lido.data.precos, levantamentoEm: novo }, papel);
+      const planeado = planearResposta(pedido, { precos: lido.data.precos, levantamentoEm: novo }, papel, agora);
       if (!planeado.ok) return planeado;
       const { plano } = planeado;
       const mudaHora = plano.levantamentoEm.getTime() !== pedido.levantamentoEm.getTime();
@@ -443,7 +442,7 @@ export function criarPedidosDoPainelBd(db: BaseDeDados, leituras: LeiturasDoPain
               levantamento_anterior_em = ${plano.levantamentoAnteriorEm ? instante(plano.levantamentoAnteriorEm) : sql`null`},
               proposta_versao = proposta_versao + 1,
               proposta_em = ${instante(agora)},
-              expira_em = ${instante(new Date(agora.getTime() + PRAZO_DO_ACEITE_MS))}`,
+              expira_em = ${instante(plano.expiraEm!)}`,
           condicao,
           id,
           efeitos,
