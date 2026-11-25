@@ -2,7 +2,7 @@
 export const MODELOS_EMAIL = [
   "criado-confirmado-cliente", "criado-por-confirmar-cliente", "criado-loja", "confirmado-cliente",
   "resposta-cliente", "aceite-cliente", "aceite-loja", "reagendado-cliente", "reagendado-loja",
-  "lembrete-loja", "expirado-cliente", "cancelado-cliente",
+  "lembrete-loja", "expirado-cliente", "cancelado-cliente", "recusado-cliente", "cancelado-sem-pagamento-cliente",
 ] as const;
 
 export type ModeloEmail = (typeof MODELOS_EMAIL)[number];

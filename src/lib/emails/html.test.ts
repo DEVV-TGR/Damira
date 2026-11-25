@@ -19,7 +19,8 @@ describe.each(exemplosEmail())("HTML de $modelo · $locale · $variante", ({ mod
     expect(email.html).toContain('name="color-scheme" content="light"');
     expect(email.html).toContain('name="supported-color-schemes" content="light"');
     expect(email.html).toContain('role="presentation"');
-    expect(email.html).toContain("Confeitaria · Pão Quente");
+    // Só o logótipo no topo, sem o nome por baixo (pedido da Andreia a 24/11).
+    expect(email.html).not.toContain("Confeitaria · Pão Quente");
     // Uma só imagem, o logótipo, embutida no próprio email e com texto alternativo para quando a bloqueiam.
     expect(email.html.match(/<img\b/g)).toHaveLength(1);
     expect(email.html).toMatch(/<img src="cid:logotipo-damira" width="\d+" height="\d+" alt="Damira"/);
@@ -120,7 +121,7 @@ it("limita a abertura grande à primeira linha do criado-loja", () => {
   expect(aberturas[0][1]).toContain("font-weight:bold");
   // A referência vai a negrito dentro da frase; tirando as etiquetas, o texto é o mesmo.
   expect(aberturas[0][2].replace(/<[^>]+>/g, "")).toBe(texto.split("\n")[0]);
-  expect(html).toMatch(/<p style="[^"]*font-size:16px[^"]*">Entrou pelo site:/);
+  expect(html).toMatch(/<p style="[^"]*font-size:16px[^"]*"><strong style="font-weight:bold;">Entrou pelo site:<\/strong>/);
 });
 
 it("destaca a negrito as linhas de aviso, incluindo o prazo e a faixa de teste", () => {
@@ -141,7 +142,7 @@ it("apresenta as etiquetas do criado-loja com o conteúdo normal por baixo", () 
     expect(html).toMatch(new RegExp(`<div class="etiqueta" style="[^"]*text-transform:uppercase;[^"]*">${etiqueta}</div>`));
   }
   // O que vem por baixo da etiqueta é texto normal, e não outra abertura.
-  expect(html).toMatch(/>CLIENTE<\/div><p style="[^"]*font-size:16px;[^"]*">Nome: /);
+  expect(html).toMatch(/>CLIENTE<\/div><p style="[^"]*font-size:16px;[^"]*"><strong style="font-weight:bold;">Nome:<\/strong> /);
 });
 
 it("reserva 65 % para os nomes e mantém os valores à direita na caixa do pedido", () => {
@@ -160,12 +161,12 @@ it("parte o total em rótulo e valor, com o indicativo por baixo", () => {
   const total = /<tr class="linha-total">([\s\S]*?)<\/tr>/.exec(html)?.[1] ?? "";
   expect(total).toMatch(/>Total<\/td>/);
   expect(total).toMatch(/>49,60\s€<\/div>/);
-  expect(total).toContain("(indicativo)");
+  expect(total).toContain("(Valor indicativo)");
 });
 
 it.each([
-  ["pt", "Ver e aceitar a proposta", "Para ver e aceitar:"],
-  ["en", "View and accept the proposal", "To view and accept:"],
+  ["pt", "Consultar e aceitar proposta", "Consultar e aceitar proposta:"],
+  ["en", "View and accept the proposal", "View and accept the proposal:"],
 ] as const)("usa a ação explícita no botão da resposta em %s", (locale, rotulo, introducao) => {
   const dados = exemploEmail("resposta-cliente");
   const { html, texto } = escreverEmail("resposta-cliente", dados, CASA_EXEMPLO, locale);
@@ -190,19 +191,18 @@ it.each(exemplosEmail())("a faixa de teste de $modelo · $locale lê-se: papel s
   expect(faixa?.[1].replace(/<[^>]+>/g, "")).toBe(BLOCOS[modelo.endsWith("-loja") ? "pt" : locale].teste);
 });
 
-it.each(exemplosEmail().filter(({ modelo }) => !modelo.endsWith("-loja")))(
-  "o assunto de $modelo · $locale diz o que aconteceu antes da referência",
-  ({ modelo, locale, variante }) => {
-    const dados = exemploEmail(modelo, variante);
-    const { assunto } = escreverEmail(modelo, dados, CASA_EXEMPLO, locale);
-    // A notificação corta o assunto: a referência vai no fim, para os primeiros carateres serem o estado.
-    expect(assunto.startsWith("Pedido DAM") || assunto.startsWith("Order DAM")).toBe(false);
-    expect(assunto.endsWith(`· ${dados.referencia}`)).toBe(true);
-  },
-);
+it("põe a negrito os rótulos do texto, e não os dados", () => {
+  const dados = exemploEmail("criado-confirmado-cliente");
+  dados.cliente.nome = "Ana: a cliente";
+  const { html } = escreverEmail("criado-confirmado-cliente", dados, CASA_EXEMPLO, "pt");
+  for (const rotulo of ["Pagamento:", "Levantamento:", "Na loja:", "Referência da encomenda:", "Produtos vendidos ao quilo:"]) {
+    expect(html).toContain(`<strong style="font-weight:bold;">${rotulo}</strong>`);
+  }
+  expect(html).not.toContain("<strong style=\"font-weight:bold;\">Ana:</strong>");
+});
 
 it("o pré-cabeçalho da confirmação junta a abertura e o levantamento", () => {
   const { html } = escreverEmail("criado-confirmado-cliente", exemploEmail("criado-confirmado-cliente"), CASA_EXEMPLO, "pt");
   const preheader = /mso-hide:all;">([\s\S]*?)<\/div>/.exec(html)?.[1] ?? "";
-  expect(preheader).toMatch(/^O seu pedido está confirmado\. Levantamento: domingo, 6 de dezembro de 2026, às 10:30\.&#847;/);
+  expect(preheader).toMatch(/^A sua encomenda está confirmada! Domingo, 6 de dezembro de 2026, às 10h30\.&#847;/);
 });

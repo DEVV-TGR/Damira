@@ -1,23 +1,29 @@
 // O texto vive à parte para cada correção da cliente ser uma linha de diff.
+// Os textos do cliente são os da Andreia (24/11/2026, «Diagrama e template Damira»), que reescreveu
+// os emails e o fluxo; o inglês segue-os. Os da loja não foram revistos por ela e ficam como estavam.
 import type { ModeloEmail } from "./tipos";
 
+/**
+ * O nome que aparece como remetente, pedido pela Andreia a 24/11 («Confeitaria Damira», sem «e Pão
+ * Quente»). Quem envia (a fila, e o envio de teste) usa-o no `from`.
+ */
+export const NOME_REMETENTE = "Confeitaria Damira";
+
 // Os marcadores separam a redação da formatação e das condições do pedido.
-// Nos assuntos do cliente, o que aconteceu e a data vêm à frente e a referência no fim: a notificação
-// do telemóvel corta o assunto ao fim de uns 40 carateres, e «Pedido DAM-0212-K7Q2…» gastava-os
-// todos sem dizer nada. Nos da loja, a referência fica à frente: é por ela que a equipa procura.
 export type TextoModelo = { assunto: string; corpo: string; corpoGerente?: string };
 
 export const TEXTOS_PT = {
   "criado-confirmado-cliente": {
-    assunto: "Pedido confirmado — {dataAssunto} · {referencia}",
+    assunto: "O seu pedido {referencia} está confirmado 🎂",
     corpo: `{saudacao}
 
-O seu pedido está confirmado.
+A sua encomenda está confirmada!
 
-Levantamento: {levantamento}
+DATA DE LEVANTAMENTO
+{levantamento}
 Na loja: {morada}
 
-O que pediu:
+PRODUTOS ENCOMENDADOS
 {linhas}
 
 {total}
@@ -28,28 +34,26 @@ O que pediu:
 {rodape}`,
   },
   "criado-por-confirmar-cliente": {
-    assunto: "Pedido recebido, a aguardar a resposta da loja · {referencia}",
+    assunto: "O seu pedido {referencia} está em análise 🎂",
     corpo: `{saudacao}
 
-Recebemos o seu pedido. Ainda não está confirmado: tem um artigo que precisa da resposta da loja.
+Recebemos a sua encomenda!
 
-Levantamento pretendido: {levantamento}
+A nossa equipa irá analisar o seu pedido. Receberá um email com uma resposta, habitualmente no prazo de 24 horas.
 
-O que pediu:
+DATA DE LEVANTAMENTO
+{levantamento}
+Na loja: {morada}
+
+PRODUTOS ENCOMENDADOS
 {linhas}
 
-Não há nada a pagar agora.
+{total}
+Pagamento: Depois de confirmado o pedido, o pagamento é efetuado na loja, no momento do levantamento. Não é necessário qualquer pagamento antecipado.{blocoIndicativo}
 
-Costumamos responder nas primeiras 24 horas. Se não lhe respondermos até {expira}, o pedido expira e não segue — e não há nada a pagar.
+Importante: A sua encomenda aguarda confirmação da nossa equipa.
 
-Quando respondermos, recebe outro email: a confirmação, ou, se a nossa resposta trouxer um preço ou uma hora que ainda não viu, uma proposta para aceitar.
-
-Referência do pedido: {referencia}.
-
-Para desistir ou alterar, ligue-nos para o {telefoneCasa}. Enquanto o pedido espera pela nossa resposta, desistir não tem custos.
-
-{nomeCasa}
-{morada}`,
+{rodapePendente}`,
   },
   "criado-loja": {
     assunto: "Pedido {referencia} — {estadoAssunto} · {nomeCompleto}{levantamentoAssunto}",
@@ -77,15 +81,16 @@ PAGAMENTO
 {fimLoja}`,
   },
   "confirmado-cliente": {
-    assunto: "Pedido confirmado — {dataAssunto} · {referencia}",
+    assunto: "O seu pedido {referencia} está confirmado 🎂",
     corpo: `{saudacao}
 
-A loja confirmou o seu pedido.
+Boas notícias! A nossa equipa analisou o seu pedido e a sua encomenda está confirmada.
 
-Levantamento: {levantamento}
+DATA DE LEVANTAMENTO
+{levantamento}
 Na loja: {morada}
 
-O que pediu:
+PRODUTOS ENCOMENDADOS
 {linhas}
 
 {total}
@@ -96,42 +101,45 @@ O que pediu:
 {rodape}`,
   },
   "resposta-cliente": {
-    assunto: "A nossa resposta ao seu pedido, para aceitar · {referencia}",
+    assunto: "Temos uma proposta para o seu pedido {referencia} 🎂",
     corpo: `{saudacao}
 
-Respondemos ao seu pedido. Para o fazermos, precisamos que aceite o que mudou:
+Já temos uma resposta para o seu pedido! Consulte abaixo os detalhes da nossa proposta e confirme se pretende avançar com a encomenda.
 
+PROPOSTA
 {mudancas}
 
-O pedido fica assim:
+RESUMO DO PEDIDO
 {linhas}
 
 {total}
-{pagar}{blocoIndicativo}
-Levantamento: {levantamento}
 
-Para ver e aceitar:
-{linkAceitar}
-
-Abrir a página não aceita nada: o pedido só fica confirmado quando carregar em «Aceitar».
-
-Se preferir não avançar, ligue-nos para o {telefoneCasa}. Desistir não tem custos.
-
-Referência do pedido: {referencia}.
-
-{nomeCasa}
-{morada}`,
-  },
-  "aceite-cliente": {
-    assunto: "Pedido confirmado — {dataAssunto} · {referencia}",
-    corpo: `{saudacao}
-
-Obrigado por aceitar. O seu pedido está confirmado.
-
-Levantamento: {levantamento}
+DATA DE LEVANTAMENTO
+{levantamento}
 Na loja: {morada}
 
-O que pediu:
+Pagamento: Depois de aceite a proposta, o pagamento é efetuado na loja, no momento do levantamento. Não é necessário qualquer pagamento antecipado.{blocoIndicativo}
+
+Consultar e aceitar proposta:
+{linkAceitar}
+
+Importante: A sua encomenda só ficará confirmada após a aceitação da proposta.
+
+Caso prefira não avançar com a encomenda, poderá recusar a proposta sem qualquer custo.
+
+{rodapePendente}`,
+  },
+  "aceite-cliente": {
+    assunto: "O seu pedido {referencia} está confirmado 🎂",
+    corpo: `{saudacao}
+
+Agradecemos a sua confirmação! A sua encomenda está confirmada e vamos tratar de tudo para que esteja pronta na data combinada.
+
+DATA DE LEVANTAMENTO
+{levantamento}
+Na loja: {morada}
+
+PRODUTOS ENCOMENDADOS
 {linhas}
 
 {total}
@@ -164,15 +172,19 @@ PAGAMENTO
 {pagamentoLoja}{blocoIndicativo}`,
   },
   "reagendado-cliente": {
-    assunto: "Nova hora de levantamento: {dataAssunto} · {referencia}",
+    assunto: "O seu pedido {referencia} tem uma nova data de levantamento 🎂",
     corpo: `{saudacao}
 
-Como combinámos consigo, a hora de levantamento do seu pedido mudou:
+Conforme combinado, atualizámos os dados de levantamento da sua encomenda.
 
-  Antes: {anterior}
-  Agora: {levantamento}
+LEVANTAMENTO INICIALMENTE PREVISTO
+{anterior}
 
-O resto do pedido não muda.
+NOVO LEVANTAMENTO
+{levantamento}
+Na loja: {morada}
+
+As restantes informações da sua encomenda mantêm-se inalteradas.
 
 {pagar}
 
@@ -218,83 +230,130 @@ O QUE LEVA
 Responde-se no painel, em «Por confirmar».`,
   },
   "expirado-cliente": {
-    assunto: "Não conseguimos responder a tempo ao seu pedido · {referencia}",
+    assunto: "Uma atualização sobre o seu pedido {referencia}",
     corpo: `{saudacao}
 
-Pedimos desculpa: não respondemos a tempo ao seu pedido, e ele expirou.
+Lamentamos não ter conseguido dar resposta ao seu pedido dentro do prazo previsto.
 
-O pedido não vai ser feito, e não há nada a pagar.
+Por esse motivo, não foi possível confirmar a sua encomenda, pelo que não será necessário efetuar qualquer pagamento.
 
-Se ainda quiser, pode fazer um pedido novo no site, ou ligar-nos para o {telefoneCasa}.
+Se ainda pretender avançar com a encomenda, teremos todo o gosto em ajudar. Poderá submeter um novo pedido através do nosso site ou contactar-nos através do {telefoneCasa}.
 
-Referência do pedido: {referencia}.
+Pedimos desculpa pelo inconveniente e agradecemos a sua compreensão.
 
-{nomeCasa}
-{morada}`,
+Referência da encomenda: {referencia}
+
+Esperamos poder ajudar numa próxima oportunidade.
+{nomeRemetente}`,
   },
   "cancelado-cliente": {
-    assunto: "Pedido cancelado · {referencia}",
+    assunto: "O seu pedido {referencia} foi cancelado",
     corpo: `{saudacao}
 
-Como nos pediu, cancelámos o seu pedido. Não há nada a pagar.
+Conforme solicitado, a sua encomenda foi cancelada. Não será necessário efetuar qualquer pagamento.
 
-Referência do pedido: {referencia}.
+Referência da encomenda: {referencia}
 
-Até breve,
-{nomeCasa}
-{morada}`,
+Esperamos voltar a recebê-lo em breve!
+{nomeRemetente}`,
     corpoGerente: `{saudacao}
 
-Lamentamos, mas não vamos conseguir fazer o seu pedido, e cancelámo-lo. Não há nada a pagar.
+Lamentamos informar que, excecionalmente, não nos será possível preparar a sua encomenda, pelo que tivemos de proceder ao seu cancelamento.
 
-Se quiser falar connosco sobre uma alternativa, ligue-nos para o {telefoneCasa}.
+Não será necessário efetuar qualquer pagamento.
 
-Referência do pedido: {referencia}.
+Caso pretenda encontrar uma alternativa, a nossa equipa está disponível para ajudar através do {telefoneCasa}.
 
-{nomeCasa}
-{morada}`,
+Pedimos desculpa pelo inconveniente e agradecemos a sua compreensão.
+
+Referência da encomenda: {referencia}
+
+Esperamos poder recebê-lo numa próxima oportunidade.
+{nomeRemetente}`,
+  },
+  // A casa recusa um pedido que ainda esperava a resposta dela (`por-confirmar` → `cancelado`). Tem
+  // texto próprio porque o pedido nunca chegou a estar confirmado: o T16 da Andreia.
+  "recusado-cliente": {
+    assunto: "Uma atualização sobre o seu pedido {referencia}",
+    corpo: `{saudacao}
+
+Após analisarmos o seu pedido, lamentamos não conseguir dar resposta à sua encomenda nas condições solicitadas.
+
+Caso pretenda encontrar uma alternativa, teremos todo o gosto em ajudar. Poderá contactar a nossa equipa através do {telefoneCasa}.
+
+Agradecemos a sua preferência e compreensão.
+
+Referência da encomenda: {referencia}
+
+Esperamos poder ajudar numa próxima oportunidade.
+{nomeRemetente}`,
+  },
+  // Uma entrega cancelada porque a transferência não chegou no prazo (`pedidos.md` › A transferência):
+  // o T15 da Andreia. Só se usa com as entregas ligadas.
+  "cancelado-sem-pagamento-cliente": {
+    assunto: "O seu pedido {referencia} foi cancelado",
+    corpo: `{saudacao}
+
+Não conseguimos confirmar a receção do pagamento da sua encomenda dentro do prazo indicado, pelo que o pedido foi cancelado.
+
+Caso já tenha efetuado a transferência bancária ou pretenda retomar a encomenda, entre em contacto connosco através do {telefoneCasa}.
+
+Referência da encomenda: {referencia}
+
+Agradecemos a sua compreensão.
+{nomeRemetente}`,
   },
 } satisfies Record<ModeloEmail, TextoModelo>;
 
 export const BLOCOS = {
   pt: {
     saudacao: "Olá, {primeiroNome},",
-    botaoAceitar: "Ver e aceitar a proposta",
-    pagar: "Paga na loja, ao levantar. Não há nada a pagar antes.",
-    fila: `No dia, dirija-se ao balcão e entre na fila de atendimento, como os restantes clientes: a fila é uma só, por ordem de chegada, com ou sem encomenda. A hora indicada é a hora a que o seu pedido está pronto.`,
-    indicativo: `Os artigos ao quilo são pesados na loja, e o valor final calcula-se com o peso efetivo. Por isso o total acima é indicativo.`,
-    rodape: `Referência do pedido: {referencia} — diga-a ao balcão.
+    botaoAceitar: "Consultar e aceitar proposta",
+    pagar: "Pagamento: O pagamento é efetuado na loja, no momento do levantamento. Não é necessário qualquer pagamento antecipado.",
+    fila: `Levantamento: A sua encomenda estará pronta à hora indicada. Para garantir um atendimento organizado e justo para todos, o levantamento de encomendas segue a fila de atendimento habitual, por ordem de chegada.`,
+    indicativo: `Produtos vendidos ao quilo: O valor apresentado é estimado. O total final será calculado com base no peso real dos produtos.`,
+    rodape: `Referência da encomenda: {referencia} — para facilitar o levantamento, basta indicar esta referência à nossa equipa.
 
-Para alterar ou cancelar, ligue-nos para o {telefoneCasa}. Não é possível fazê-lo pelo site.
+Para alterar ou cancelar a sua encomenda, entre em contacto connosco através do {telefoneCasa}.
 
-Até breve,
-{nomeCasa}
-{morada}`,
-    semPreco: "preço a fixar pela casa",
+{assinatura}`,
+    rodapePendente: `Referência da encomenda: {referencia} — guarde esta referência caso necessite de contactar a nossa equipa.
+
+Para qualquer questão, entre em contacto connosco através do {telefoneCasa}.
+
+{assinatura}`,
+    assinatura: "Até breve! 😊\n{nomeRemetente}",
+    semPreco: "Sob orçamento",
     total: "Total: {valor}{indicativo}",
-    totalConhecido: "Conhecido até agora: {valor}{indicativo}",
-    sufixoIndicativo: " (indicativo)",
-    mudancaHora: "  Levantamento: passa de {antes} para {depois}",
+    totalConhecido: "Total: A confirmar",
+    sufixoIndicativo: " (Valor indicativo)",
+    mudancaHora: "Nova hora de levantamento: {depois} (em vez das {antes})",
+    mudancaData: "Nova data de levantamento: {depois} (em vez de {antes})",
     teste: "⚠️ MODO DE TESTE — este email é um teste, não corresponde a um pedido real.",
   },
   en: {
     saudacao: "Hello {primeiroNome},",
     botaoAceitar: "View and accept the proposal",
-    pagar: "Please pay in the shop at pick-up. There is nothing to pay in advance.",
-    fila: `On the day, please go to the counter and join the queue with the other customers: there is one queue, in order of arrival, whether or not you have placed an order. The time given is when your order will be ready.`,
-    indicativo: `Items sold by weight are weighed in the shop, and the final amount is calculated using the actual weight. The total above is therefore indicative.`,
-    rodape: `Order reference: {referencia} — please quote it at the counter.
+    pagar: "Payment: Payment is made in the shop when you collect your order. No advance payment is required.",
+    fila: `Collection: Your order will be ready at the time shown. To keep service organised and fair for everyone, order collection follows the shop’s usual queue, in order of arrival.`,
+    indicativo: `Products sold by weight: The amount shown is an estimate. The final total will be calculated based on the actual weight of the products.`,
+    rodape: `Order reference: {referencia} — to make collection easier, simply give this reference to our team.
 
-To change or cancel your order, please call us on {telefoneCasa}. This cannot be done on the website.
+To change or cancel your order, please contact us on {telefoneCasa}.
 
-See you soon,
-{nomeCasa}
-{morada}`,
-    semPreco: "price to be set by the shop",
+{assinatura}`,
+    rodapePendente: `Order reference: {referencia} — please keep this reference in case you need to contact our team.
+
+If you have any questions, please contact us on {telefoneCasa}.
+
+{assinatura}`,
+    assinatura: "See you soon! 😊\n{nomeRemetente}",
+    semPreco: "To be quoted",
     total: "Total: {valor}{indicativo}",
-    totalConhecido: "Known amount so far: {valor}{indicativo}",
-    sufixoIndicativo: " (indicative)",
-    mudancaHora: "  Pick-up: changes from {antes} to {depois}",
+    totalConhecido: "Total: To be confirmed",
+    sufixoIndicativo: " (estimated amount)",
+    mudancaHora: "New pick-up time: {depois} (instead of {antes})",
+    mudancaData: "New pick-up date: {depois} (instead of {antes})",
     teste: "⚠️ TEST MODE — this email is a test and does not correspond to a real order.",
   },
 } as const;
@@ -317,15 +376,16 @@ export type ModeloCliente = Exclude<ModeloEmail, `${string}-loja`>;
 
 export const TEXTOS_EN = {
   "criado-confirmado-cliente": {
-    assunto: "Order confirmed — {dataAssunto} · {referencia}",
+    assunto: "Your order {referencia} is confirmed 🎂",
     corpo: `{saudacao}
 
-Your order is confirmed.
+Your order is confirmed!
 
-Pick-up: {levantamento}
+PICK-UP DATE
+{levantamento}
 At the shop: {morada}
 
-Your order:
+PRODUCTS ORDERED
 {linhas}
 
 {total}
@@ -336,39 +396,38 @@ Your order:
 {rodape}`,
   },
   "criado-por-confirmar-cliente": {
-    assunto: "Order received, awaiting the shop’s response · {referencia}",
+    assunto: "Your order {referencia} is under review 🎂",
     corpo: `{saudacao}
 
-We have received your order. It is not yet confirmed: it includes an item that requires a response from the shop.
+We have received your order!
 
-Requested pick-up: {levantamento}
+Our team will review your order. You will receive an email with a response, usually within 24 hours.
 
-Your order:
-{linhas}
-
-There is nothing to pay now.
-
-We usually respond within the first 24 hours. If we have not replied by {expira}, the order will expire and will not go ahead — and there will be nothing to pay.
-
-When we reply, you will receive another email: either confirmation or, if our response includes a price or time you have not yet seen, a proposal to accept.
-
-Order reference: {referencia}.
-
-To withdraw or make changes, please call us on {telefoneCasa}. While the order is awaiting our response, there is no charge for withdrawing.
-
-{nomeCasa}
-{morada}`,
-  },
-  "confirmado-cliente": {
-    assunto: "Order confirmed — {dataAssunto} · {referencia}",
-    corpo: `{saudacao}
-
-The shop has confirmed your order.
-
-Pick-up: {levantamento}
+PICK-UP DATE
+{levantamento}
 At the shop: {morada}
 
-Your order:
+PRODUCTS ORDERED
+{linhas}
+
+{total}
+Payment: Once the order is confirmed, payment is made in the shop when you collect your order. No advance payment is required.{blocoIndicativo}
+
+Important: Your order is awaiting confirmation from our team.
+
+{rodapePendente}`,
+  },
+  "confirmado-cliente": {
+    assunto: "Your order {referencia} is confirmed 🎂",
+    corpo: `{saudacao}
+
+Good news! Our team has reviewed your order and it is confirmed.
+
+PICK-UP DATE
+{levantamento}
+At the shop: {morada}
+
+PRODUCTS ORDERED
 {linhas}
 
 {total}
@@ -379,42 +438,45 @@ Your order:
 {rodape}`,
   },
   "resposta-cliente": {
-    assunto: "Our response to your order, for you to accept · {referencia}",
+    assunto: "We have a proposal for your order {referencia} 🎂",
     corpo: `{saudacao}
 
-We have responded to your order. To fulfil it, we need you to accept the changes:
+We have a response to your order! Please see the details of our proposal below and let us know whether you would like to go ahead.
 
+PROPOSAL
 {mudancas}
 
-Your order will be:
+ORDER SUMMARY
 {linhas}
 
 {total}
-{pagar}{blocoIndicativo}
-Pick-up: {levantamento}
 
-To view and accept:
-{linkAceitar}
-
-Opening the page does not accept anything: the order is only confirmed when you click ‘Accept’.
-
-If you would prefer not to proceed, please call us on {telefoneCasa}. There is no charge for withdrawing.
-
-Order reference: {referencia}.
-
-{nomeCasa}
-{morada}`,
-  },
-  "aceite-cliente": {
-    assunto: "Order confirmed — {dataAssunto} · {referencia}",
-    corpo: `{saudacao}
-
-Thank you for accepting. Your order is confirmed.
-
-Pick-up: {levantamento}
+PICK-UP DATE
+{levantamento}
 At the shop: {morada}
 
-Your order:
+Payment: Once you accept the proposal, payment is made in the shop when you collect your order. No advance payment is required.{blocoIndicativo}
+
+View and accept the proposal:
+{linkAceitar}
+
+Important: Your order will only be confirmed once you accept the proposal.
+
+If you would prefer not to go ahead, you can decline the proposal at no cost.
+
+{rodapePendente}`,
+  },
+  "aceite-cliente": {
+    assunto: "Your order {referencia} is confirmed 🎂",
+    corpo: `{saudacao}
+
+Thank you for confirming! Your order is confirmed and we will take care of everything so it is ready on the agreed date.
+
+PICK-UP DATE
+{levantamento}
+At the shop: {morada}
+
+PRODUCTS ORDERED
 {linhas}
 
 {total}
@@ -425,15 +487,19 @@ Your order:
 {rodape}`,
   },
   "reagendado-cliente": {
-    assunto: "New pick-up time: {dataAssunto} · {referencia}",
+    assunto: "Your order {referencia} has a new pick-up date 🎂",
     corpo: `{saudacao}
 
-As agreed with you, your order’s pick-up time has changed:
+As agreed, we have updated the pick-up details of your order.
 
-  Before: {anterior}
-  Now: {levantamento}
+ORIGINAL PICK-UP
+{anterior}
 
-The rest of your order remains unchanged.
+NEW PICK-UP
+{levantamento}
+At the shop: {morada}
+
+All other details of your order remain unchanged.
 
 {pagar}
 
@@ -442,40 +508,73 @@ The rest of your order remains unchanged.
 {rodape}`,
   },
   "expirado-cliente": {
-    assunto: "We were unable to respond to your order in time · {referencia}",
+    assunto: "An update on your order {referencia}",
     corpo: `{saudacao}
 
-We are sorry: we did not respond to your order in time, and it has expired.
+We are sorry that we were unable to respond to your order within the expected time.
 
-The order will not be prepared, and there is nothing to pay.
+As a result, we could not confirm your order, so no payment is required.
 
-If you would still like to order, you can place a new order on the website, or call us on {telefoneCasa}.
+If you would still like to go ahead, we will be happy to help. You can place a new order on our website or contact us on {telefoneCasa}.
 
-Order reference: {referencia}.
+We apologise for the inconvenience and thank you for your understanding.
 
-{nomeCasa}
-{morada}`,
+Order reference: {referencia}
+
+We hope to help you another time.
+{nomeRemetente}`,
   },
   "cancelado-cliente": {
-    assunto: "Order cancelled · {referencia}",
+    assunto: "Your order {referencia} has been cancelled",
     corpo: `{saudacao}
 
-As you requested, we have cancelled your order. There is nothing to pay.
+As requested, your order has been cancelled. No payment is required.
 
-Order reference: {referencia}.
+Order reference: {referencia}
 
-See you soon,
-{nomeCasa}
-{morada}`,
+We hope to see you again soon!
+{nomeRemetente}`,
     corpoGerente: `{saudacao}
 
-We are sorry, but we will not be able to fulfil your order and have cancelled it. There is nothing to pay.
+We regret to inform you that, exceptionally, we will not be able to prepare your order, so we have had to cancel it.
 
-If you would like to discuss an alternative, please call us on {telefoneCasa}.
+No payment is required.
 
-Order reference: {referencia}.
+If you would like to find an alternative, our team is available to help on {telefoneCasa}.
 
-{nomeCasa}
-{morada}`,
+We apologise for the inconvenience and thank you for your understanding.
+
+Order reference: {referencia}
+
+We hope to see you another time.
+{nomeRemetente}`,
+  },
+  "recusado-cliente": {
+    assunto: "An update on your order {referencia}",
+    corpo: `{saudacao}
+
+Having reviewed your order, we are sorry that we are unable to fulfil it on the terms requested.
+
+If you would like to find an alternative, we will be happy to help. You can contact our team on {telefoneCasa}.
+
+Thank you for choosing us and for your understanding.
+
+Order reference: {referencia}
+
+We hope to help you another time.
+{nomeRemetente}`,
+  },
+  "cancelado-sem-pagamento-cliente": {
+    assunto: "Your order {referencia} has been cancelled",
+    corpo: `{saudacao}
+
+We were unable to confirm receipt of payment for your order within the deadline, so the order has been cancelled.
+
+If you have already made the bank transfer or would like to resume your order, please contact us on {telefoneCasa}.
+
+Order reference: {referencia}
+
+Thank you for your understanding.
+{nomeRemetente}`,
   },
 } satisfies Record<ModeloCliente, TextoModelo>;

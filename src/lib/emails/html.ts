@@ -75,18 +75,29 @@ export function escreverHtmlEmail({ corpo, campos, partesLinhas, blocos, dados, 
     referencia: `<strong style="color:${TINTA};white-space:nowrap;">${escaparHtml(dados.referencia)}</strong>`,
     saudacao: () => preencher(blocos.saudacao),
     rodape: () => preencher(blocos.rodape),
+    rodapePendente: () => preencher(blocos.rodapePendente),
+    assinatura: () => preencher(blocos.assinatura),
+    pagar: () => preencher(blocos.pagar),
+    fila: () => preencher(blocos.fila),
     indicativo: () => `<span style="font-size:14px;font-weight:normal;color:${SUAVE};">${escaparHtml(ler("indicativo"))}</span>`,
     total: () => preencher(dados.faltamPrecos ? blocos.totalConhecido : blocos.total),
     pagamentoLoja: () => preencher(dados.faltamPrecos ? TEXTOS_LOJA.pagamentoIncompleto : TEXTOS_LOJA.pagamento),
   };
   function preencher(modelo: string): string {
     // Uma só passagem impede que chavetas vindas dos dados sejam interpretadas como novos marcadores.
-    return escaparHtml(modelo).replace(/\{(\w+)\}/g, (_, chave: string) => {
+    return escaparHtml(modelo).split("\n").map(rotulo).join("\n").replace(/\{(\w+)\}/g, (_, chave: string) => {
       const campo = camposHtml[chave];
       return campo === undefined ? escaparHtml(ler(chave)) : typeof campo === "function" ? campo() : campo;
     // O aviso herda a cor de onde está: na faixa de teste o fundo é tinta, e tinta sobre tinta não se lê.
     }).split("\n").map((linha) => linha.trimStart().startsWith("⚠️")
       ? `<strong class="aviso" style="font-weight:bold;">${linha}</strong>` : linha).join("<br>");
+  }
+  // «Pagamento:», «Importante:», «Referência da encomenda:»: o rótulo no início de uma linha do texto
+  // vai a negrito, como a Andreia os escreveu. Só no texto do modelo, antes de entrarem os dados, e só
+  // rótulos curtos (até cinco palavras), para não apanhar uma frase que por acaso tenha dois pontos.
+  function rotulo(linha: string): string {
+    return linha.replace(/^(\p{Lu}[^:{}<>]{0,40}?):(?=\s)/u, (inteiro, texto: string) =>
+      texto.split(/\s+/).length <= 5 && /\p{Ll}/u.test(texto) ? `<strong style="font-weight:bold;">${inteiro}</strong>` : inteiro);
   }
   // «CLIENTE», «OBSERVAÇÕES»: uma linha sem minúsculas é o título da secção, não texto corrido.
   const eEtiqueta = (linha: string) => (linha.match(/\p{L}/gu)?.length ?? 0) >= 2 && !/\p{Ll}/u.test(linha);
@@ -140,7 +151,7 @@ export function escreverHtmlEmail({ corpo, campos, partesLinhas, blocos, dados, 
       rodapeTabela = partes.length === 2
         // O rótulo desce 2 px para assentar na mesma linha de base do valor, que é maior.
         ? `<tr class="linha-total"><td class="caixa" style="padding:18px 24px 20px;border-top:2px solid ${TIJOLO};font-weight:bold;vertical-align:top;">${preencher(partes[0].replace(/:\s*$/, ""))}</td>`
-          + `<td align="right" class="caixa" style="padding:16px 24px 20px;border-top:2px solid ${TIJOLO};text-align:right;vertical-align:top;"><div style="font-family:${TITULOS};font-size:20px;line-height:28px;font-weight:bold;white-space:nowrap;">${escaparHtml(ler("valor"))}</div>${ressalva ? `<div style="font-size:13px;line-height:20px;color:${SUAVE};">${ressalva}</div>` : ""}</td></tr>`
+          + `<td align="right" class="caixa" style="padding:16px 24px 20px;border-top:2px solid ${TIJOLO};text-align:right;vertical-align:top;"><div style="font-family:${TITULOS};font-size:20px;line-height:28px;font-weight:bold;white-space:nowrap;">${escaparHtml(ler("valor"))}</div>${ressalva ? `<div style="font-size:13px;line-height:20px;color:${SUAVE};white-space:nowrap;">${ressalva}</div>` : ""}</td></tr>`
         : `<tr><td colspan="2" class="caixa" style="padding:16px 24px 20px;border-top:2px solid ${TIJOLO};">${(() => {
           const [primeira, ...resto] = preencher(total).split("<br>");
           return eEtiqueta(primeira) && resto.length
@@ -182,7 +193,7 @@ export function escreverHtmlEmail({ corpo, campos, partesLinhas, blocos, dados, 
   const preheader = escaparHtml(resumo) + "&#847;&zwnj;&nbsp;".repeat(60);
   let rodape = "";
   const conteudo = paragrafos.map((original, indice) => {
-    if (original.includes("{rodape}")) {
+    if (/\{rodape\w*\}/.test(original)) {
       rodape = preencher(original);
       return "";
     }
@@ -215,9 +226,10 @@ export function escreverHtmlEmail({ corpo, campos, partesLinhas, blocos, dados, 
     ? `<tr><td align="center" style="padding:10px 24px;background-color:${TINTA};font-size:13px;line-height:20px;color:${PAPEL};border-radius:12px 12px 0 0;">${preencher(blocos.teste)}</td></tr>`
     : "";
   // Com a imagem bloqueada, o texto alternativo aparece no lugar dela: daí o estilo no próprio <img>.
-  const topo = `<tr><td class="topo" align="center" bgcolor="${TIJOLO}" style="padding:36px 24px 30px;background-color:${TIJOLO};${dados.modoDeTeste ? "" : "border-radius:12px 12px 0 0;"}">`
+  const topo = `<tr><td class="topo" align="center" bgcolor="${TIJOLO}" style="padding:32px 24px;background-color:${TIJOLO};${dados.modoDeTeste ? "" : "border-radius:12px 12px 0 0;"}">`
     + `<img src="cid:${LOGOTIPO_EMAIL.cid}" width="${LOGOTIPO_EMAIL.largura}" height="${LOGOTIPO_EMAIL.altura}" alt="Damira" style="display:block;margin:0 auto;border:0;outline:none;text-decoration:none;font-family:${TITULOS};font-size:30px;line-height:35px;font-weight:bold;color:${PAPEL};">`
-    + `<div style="margin-top:14px;font-family:${CORPO};font-size:11px;line-height:16px;font-weight:bold;letter-spacing:2.5px;text-transform:uppercase;color:${PAPEL};">Confeitaria · Pão Quente</div></td></tr>`;
+    // Só o logótipo, sem o nome por baixo: pedido da Andreia a 24/11.
+    + "</td></tr>";
   const corpoCartao = `<tr><td class="conteudo" style="padding:36px 40px 12px;overflow-wrap:break-word;">${conteudo}</td></tr>`;
   const rodapeCartao = rodape
     ? `<tr><td class="rodape" style="padding:24px 40px 32px;border-top:1px solid ${FUNDO};font-size:14px;line-height:22px;color:${SUAVE};">${rodape}</td></tr>`
@@ -225,7 +237,7 @@ export function escreverHtmlEmail({ corpo, campos, partesLinhas, blocos, dados, 
 
   return `<!doctype html>
 <html lang="${lingua === "pt" ? "pt-PT" : "en-GB"}">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><style>:root { color-scheme: light only; } @media (max-width: 620px) { .margem { padding:0 !important; } .cartao, .topo { border-radius:0 !important; } .topo { padding:28px 20px 24px !important; } .conteudo { padding:28px 20px 8px !important; } .rodape { padding:20px 20px 28px !important; } .caixa { padding-left:16px !important; padding-right:16px !important; } .abertura { font-size:20px !important; line-height:28px !important; } .data { font-size:20px !important; line-height:28px !important; } }</style></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><style>:root { color-scheme: light only; } @media (max-width: 620px) { .margem { padding:0 !important; } .cartao, .topo { border-radius:0 !important; } .topo { padding:26px 20px !important; } .conteudo { padding:28px 20px 8px !important; } .rodape { padding:20px 20px 28px !important; } .caixa { padding-left:16px !important; padding-right:16px !important; } .abertura { font-size:20px !important; line-height:28px !important; } .data { font-size:20px !important; line-height:28px !important; } }</style></head>
 <body style="margin:0;padding:0;background-color:${FUNDO};color:${TINTA};font-family:${CORPO};font-size:16px;line-height:26px;-webkit-text-size-adjust:100%;">
 <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">${preheader}</div>
 ${tabela(`<tr><td class="margem" align="center" style="padding:40px 12px;"> <!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->

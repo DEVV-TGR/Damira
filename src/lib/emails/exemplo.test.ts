@@ -3,10 +3,10 @@ import { lerArgumentosTeste } from "./argumentos-teste";
 import { CASA_EXEMPLO, exemploEmail, exemplosEmail } from "./exemplo";
 import { escreverEmail } from "./modelos";
 
-it("lista 23 exemplos distintos, com a loja apenas em português", () => {
+it("lista 27 exemplos distintos, com a loja apenas em português", () => {
   const exemplos = exemplosEmail();
-  expect(exemplos).toHaveLength(23);
-  expect(new Set(exemplos.map(({ modelo, locale, variante }) => `${modelo}/${locale}/${variante}`)).size).toBe(23);
+  expect(exemplos).toHaveLength(27);
+  expect(new Set(exemplos.map(({ modelo, locale, variante }) => `${modelo}/${locale}/${variante}`)).size).toBe(27);
   expect(exemplos.filter(({ modelo }) => modelo.endsWith("-loja")).every(({ locale }) => locale === "pt")).toBe(true);
 });
 

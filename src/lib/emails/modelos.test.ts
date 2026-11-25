@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { formatarCent } from "@/lib/preco";
 import { telefoneArrumado } from "@/lib/telefone";
 import type { Locale } from "@/i18n/routing";
-import { CASA_EXEMPLO, exemploEmail } from "./exemplo";
+import { CASA_EXEMPLO, exemploEmail, exemplosEmail } from "./exemplo";
 import { escreverEmail } from "./modelos";
 import { MODELOS_EMAIL, type ModeloEmail } from "./tipos";
 
@@ -18,7 +18,7 @@ describe.each(MODELOS_EMAIL)("%s", (modelo) => {
     expect(assunto).toContain(dados.referencia);
     expect(texto).toContain(dados.referencia);
     expect(texto.length).toBeGreaterThan(150);
-    const fila = locale === "en" && !modelo.endsWith("-loja") ? "there is one queue" : "a fila é uma só";
+    const fila = locale === "en" && !modelo.endsWith("-loja") ? "the shop’s usual queue" : "fila de atendimento habitual";
     expect(texto.includes(fila)).toBe(CONFIRMAM.includes(modelo));
     expect(texto.includes(dados.linkAceitar)).toBe(modelo === "resposta-cliente");
     expect(`${assunto}\n${texto}`).not.toMatch(/\b(pago|paid)\b/i);
@@ -56,26 +56,27 @@ it.each(["criado-confirmado-cliente", "confirmado-cliente", "aceite-cliente", "r
   dados.linhas[0].aoQuilo = true;
   for (const locale of LINGUAS) {
     const texto = escreverEmail(modelo, dados, CASA_EXEMPLO, locale).texto;
-    expect(texto).toContain(locale === "pt" || modelo.endsWith("-loja") ? "indicativo" : "indicative");
-    expect(texto).toContain(locale === "pt" || modelo.endsWith("-loja") ? "Os artigos ao quilo" : "Items sold by weight");
+    expect(texto).toContain(locale === "pt" || modelo.endsWith("-loja") ? "(Valor indicativo)" : "(estimated amount)");
+    expect(texto).toContain(locale === "pt" || modelo.endsWith("-loja") ? "Produtos vendidos ao quilo:" : "Products sold by weight:");
   }
 });
 
 it.each(LINGUAS)("uma linha sem preço não se transforma em zero em %s", (locale) => {
   const dados = exemploEmail("criado-por-confirmar-cliente");
   const { texto } = escreverEmail("criado-por-confirmar-cliente", dados, CASA_EXEMPLO, locale);
-  expect(texto).toContain(locale === "pt" ? "preço a fixar pela casa" : "price to be set by the shop");
+  expect(texto).toContain(locale === "pt" ? "Bolo por medida — Sob orçamento" : "Bolo por medida — To be quoted");
+  expect(texto).toContain(locale === "pt" ? "Total: A confirmar" : "Total: To be confirmed");
   expect(texto).not.toMatch(/0,00\s*€|€0\.00/);
 });
 
 it("usa Lisboa nas duas margens da mudança para a hora de inverno", () => {
   expect(process.env.TZ).toBe("Pacific/Kiritimati");
-  const dados = exemploEmail("criado-por-confirmar-cliente");
+  const dados = exemploEmail("criado-loja");
   dados.expiraEm = new Date("2026-10-26T09:00:00Z");
   dados.levantamentoEm = new Date("2026-10-24T09:00:00Z");
-  const { texto } = escreverEmail("criado-por-confirmar-cliente", dados, CASA_EXEMPLO, "pt");
-  expect(texto).toContain("26 de outubro de 2026, às 09:00");
-  expect(texto).toContain("24 de outubro de 2026, às 10:00");
+  const { texto } = escreverEmail("criado-loja", dados, CASA_EXEMPLO, "pt");
+  expect(texto).toContain("26 de outubro de 2026, às 09h00");
+  expect(texto).toContain("24 de outubro de 2026, às 10h00");
   expect(escreverEmail("criado-por-confirmar-cliente", dados, CASA_EXEMPLO, "en").texto)
     .toContain("Saturday 24 October 2026 at 10:00");
 });
@@ -85,23 +86,23 @@ it.each(LINGUAS)("mostra apenas as alterações no bloco da resposta em %s", (lo
   const bloco = () => escreverEmail("resposta-cliente", dados, CASA_EXEMPLO, locale).texto.split("\n\n")[2];
   expect(bloco()).toContain("Bolo por medida:");
   expect(bloco()).not.toContain("Pastel de nata");
-  expect(bloco()).toContain("10:30");
-  expect(bloco()).toContain("12:00");
+  expect(bloco()).toMatch(/10[:h]30/);
+  expect(bloco()).toMatch(/12[:h]00/);
   dados.levantamentoAnteriorEm = undefined;
-  expect(bloco()).not.toContain("10:30");
+  expect(bloco()).not.toMatch(/10[:h]30/);
   dados.levantamentoAnteriorEm = new Date("2026-12-06T10:30:00Z");
   dados.linhas.forEach((linha) => { linha.fixadoAgora = false; });
   expect(bloco()).not.toContain("Bolo por medida:");
-  expect(bloco()).toContain("12:00");
+  expect(bloco()).toMatch(/12[:h]00/);
 });
 
 it.each(LINGUAS)("distingue quem cancelou em %s", (locale) => {
   const dados = exemploEmail("cancelado-cliente");
   expect(escreverEmail("cancelado-cliente", dados, CASA_EXEMPLO, locale).texto)
-    .toContain(locale === "pt" ? "Como nos pediu" : "As you requested");
+    .toContain(locale === "pt" ? "Conforme solicitado" : "As requested");
   dados.canceladoPor = "gerente";
   const { texto } = escreverEmail("cancelado-cliente", dados, CASA_EXEMPLO, locale);
-  expect(texto).toContain(locale === "pt" ? "Lamentamos" : "We are sorry");
+  expect(texto).toContain(locale === "pt" ? "Lamentamos informar" : "We regret");
   expect(texto).toContain("+351 229 730 939");
   expect(texto).not.toMatch(/\b(pago|paid)\b/i);
 });
@@ -132,7 +133,7 @@ it("distingue os dois estados do pedido novo para a loja", () => {
 });
 
 it.each([
-  ["resposta-cliente", "linkAceitar"], ["criado-por-confirmar-cliente", "expiraEm"],
+  ["resposta-cliente", "linkAceitar"], ["lembrete-loja", "expiraEm"],
   ["aceite-loja", "aceiteEm"], ["reagendado-loja", "reagendadoEm"],
   ["reagendado-cliente", "levantamentoAnteriorEm"], ["cancelado-cliente", "canceladoPor"],
 ] as const)("rejeita %s sem %s", (modelo, campo) => {
@@ -147,203 +148,12 @@ it("rejeita dinheiro decimal sem o arredondar", () => {
   expect(() => escreverEmail("criado-confirmado-cliente", dados, CASA_EXEMPLO, "pt")).toThrow("cêntimos inteiros");
 });
 
-it("reproduz exatamente o PT do primeiro rascunho", () => {
-  const { texto } = escreverEmail("criado-confirmado-cliente", exemploEmail("criado-confirmado-cliente"), CASA_EXEMPLO, "pt");
-  expect(texto).toBe(`Olá, Maria,
-
-O seu pedido está confirmado.
-
-Levantamento: domingo, 6 de dezembro de 2026, às 10:30
-Na loja: Rua Dom António Castro Meireles 155, Ermesinde
-
-O que pediu:
-  12 × Pastel de nata — ${formatarCent(1560, "pt")}
-  2 kg × Bolo de chocolate vegan (${formatarCent(1700, "pt")}/kg) — ${formatarCent(3400, "pt")}
-
-Total: ${formatarCent(4960, "pt")} (indicativo)
-Paga na loja, ao levantar. Não há nada a pagar antes.
-
-Os artigos ao quilo são pesados na loja, e o valor final calcula-se com o peso efetivo. Por isso o total acima é indicativo.
-
-No dia, dirija-se ao balcão e entre na fila de atendimento, como os restantes clientes: a fila é uma só, por ordem de chegada, com ou sem encomenda. A hora indicada é a hora a que o seu pedido está pronto.
-
-Referência do pedido: DAM-0212-K7Q2 — diga-a ao balcão.
-
-Para alterar ou cancelar, ligue-nos para o +351 229 730 939. Não é possível fazê-lo pelo site.
-
-Até breve,
-Confeitaria e Pão Quente Damira
-Rua Dom António Castro Meireles 155, Ermesinde`);
-});
-
-it("preserva o rascunho criado-por-confirmar-cliente", () => {
-  const dados = exemploEmail("criado-por-confirmar-cliente");
-  expect(escreverEmail("criado-por-confirmar-cliente", dados, CASA_EXEMPLO, "pt").texto).toBe(`Olá, Maria,
-
-Recebemos o seu pedido. Ainda não está confirmado: tem um artigo que precisa da resposta da loja.
-
-Levantamento pretendido: domingo, 6 de dezembro de 2026, às 10:30
-
-O que pediu:
-  12 × Pastel de nata — ${formatarCent(1560, "pt")}
-  1 × Bolo por medida — preço a fixar pela casa
-
-Não há nada a pagar agora.
-
-Costumamos responder nas primeiras 24 horas. Se não lhe respondermos até sexta-feira, 4 de dezembro de 2026, às 18:12, o pedido expira e não segue — e não há nada a pagar.
-
-Quando respondermos, recebe outro email: a confirmação, ou, se a nossa resposta trouxer um preço ou uma hora que ainda não viu, uma proposta para aceitar.
-
-Referência do pedido: DAM-0212-K7Q2.
-
-Para desistir ou alterar, ligue-nos para o +351 229 730 939. Enquanto o pedido espera pela nossa resposta, desistir não tem custos.
-
-Confeitaria e Pão Quente Damira
-Rua Dom António Castro Meireles 155, Ermesinde`);
-});
-
-it("preserva o rascunho criado-loja", () => {
-  const dados = exemploEmail("criado-loja");
-  expect(escreverEmail("criado-loja", dados, CASA_EXEMPLO, "pt").texto).toBe(`PEDIDO DAM-0212-K7Q2 — POR CONFIRMAR
-Entrou pelo site: quarta-feira, 2 de dezembro de 2026, às 18:12 (hora de Lisboa)
-⚠️ Responder até sexta-feira, 4 de dezembro de 2026, às 18:12. Depois disso o pedido expira, e o cliente é avisado de que a loja não respondeu a tempo.
-
-LEVANTAMENTO NA LOJA
-domingo, 6 de dezembro de 2026, às 10:30 (hora de Lisboa) — pretendida
-
-CLIENTE
-Nome:      Maria Exemplo
-Email:     maria@exemplo.pt
-Telefone:  +351 912 000 000
-NIF:       — (não indicado)
-
-O QUE LEVA
-  12 × Pastel de nata — ${formatarCent(130, "pt")} — ${formatarCent(1560, "pt")}
-  1 × Bolo por medida — SEM PREÇO, a fixar pela gerente
-
-OBSERVAÇÕES
-— (não indicado)
-
-PAGAMENTO
-Na loja, ao levantar. Conhecido até agora: ${formatarCent(1560, "pt")} (sem preço: Bolo por medida).
-
-Responde-se no painel, em «Por confirmar».`);
-});
-
-it("preserva o rascunho resposta-cliente", () => {
-  const dados = exemploEmail("resposta-cliente");
-  expect(escreverEmail("resposta-cliente", dados, CASA_EXEMPLO, "pt").texto).toBe(`Olá, Maria,
-
-Respondemos ao seu pedido. Para o fazermos, precisamos que aceite o que mudou:
-
-  Bolo por medida: ${formatarCent(4500, "pt")}
-  Levantamento: passa de domingo, 6 de dezembro, às 10:30 para domingo, 6 de dezembro, às 12:00
-
-O pedido fica assim:
-  12 × Pastel de nata — ${formatarCent(1560, "pt")}
-  1 × Bolo por medida — ${formatarCent(4500, "pt")}
-
-Total: ${formatarCent(6060, "pt")}
-Paga na loja, ao levantar. Não há nada a pagar antes.
-Levantamento: domingo, 6 de dezembro de 2026, às 12:00
-
-Para ver e aceitar:
-https://damira.pt/pedido/aceitar/exemplo
-
-Abrir a página não aceita nada: o pedido só fica confirmado quando carregar em «Aceitar».
-
-Se preferir não avançar, ligue-nos para o +351 229 730 939. Desistir não tem custos.
-
-Referência do pedido: DAM-0212-K7Q2.
-
-Confeitaria e Pão Quente Damira
-Rua Dom António Castro Meireles 155, Ermesinde`);
-});
-
-it("preserva o rascunho aceite-loja", () => {
-  const dados = exemploEmail("aceite-loja");
-  expect(escreverEmail("aceite-loja", dados, CASA_EXEMPLO, "pt").texto).toBe(`PEDIDO DAM-0212-K7Q2 — ACEITE PELO CLIENTE
-Aceite: quinta-feira, 3 de dezembro de 2026, às 09:40 (hora de Lisboa)
-
-O cliente aceitou a resposta da loja. O pedido está confirmado, e o talão sai no balcão.
-
-LEVANTAMENTO NA LOJA
-domingo, 6 de dezembro de 2026, às 12:00 (hora de Lisboa)
-
-CLIENTE
-Nome:      Maria Exemplo
-Email:     maria@exemplo.pt
-Telefone:  +351 912 000 000
-NIF:       — (não indicado)
-
-O QUE LEVA
-  12 × Pastel de nata — ${formatarCent(130, "pt")} — ${formatarCent(1560, "pt")}
-  1 × Bolo por medida — ${formatarCent(4500, "pt")}
-
-PAGAMENTO
-Na loja, ao levantar: ${formatarCent(6060, "pt")}`);
-});
-
-it("preserva o rascunho lembrete-loja", () => {
-  const dados = exemploEmail("lembrete-loja");
-  expect(escreverEmail("lembrete-loja", dados, CASA_EXEMPLO, "pt").texto).toBe(`PEDIDO DAM-0212-K7Q2 — AINDA POR CONFIRMAR
-Entrou: quarta-feira, 2 de dezembro de 2026, às 18:12
-Expira: sexta-feira, 4 de dezembro de 2026, às 18:12 (hora de Lisboa)
-
-Ninguém respondeu ainda a este pedido. Se continuar sem resposta até à hora acima, expira, e o cliente é avisado de que a loja não respondeu a tempo.
-
-Levantamento pretendido: domingo, 6 de dezembro de 2026, às 10:30
-Cliente: Maria Exemplo · +351 912 000 000
-
-O QUE LEVA
-  12 × Pastel de nata — ${formatarCent(1560, "pt")}
-  1 × Bolo por medida — SEM PREÇO, a fixar pela gerente
-
-Responde-se no painel, em «Por confirmar».`);
-});
-
-it("preserva o rascunho expirado-cliente", () => {
-  const dados = exemploEmail("expirado-cliente");
-  expect(escreverEmail("expirado-cliente", dados, CASA_EXEMPLO, "pt").texto).toBe(`Olá, Maria,
-
-Pedimos desculpa: não respondemos a tempo ao seu pedido, e ele expirou.
-
-O pedido não vai ser feito, e não há nada a pagar.
-
-Se ainda quiser, pode fazer um pedido novo no site, ou ligar-nos para o +351 229 730 939.
-
-Referência do pedido: DAM-0212-K7Q2.
-
-Confeitaria e Pão Quente Damira
-Rua Dom António Castro Meireles 155, Ermesinde`);
-});
-
-it("preserva o rascunho cancelado-cliente", () => {
-  const dados = exemploEmail("cancelado-cliente");
-  expect(escreverEmail("cancelado-cliente", dados, CASA_EXEMPLO, "pt").texto).toBe(`Olá, Maria,
-
-Como nos pediu, cancelámos o seu pedido. Não há nada a pagar.
-
-Referência do pedido: DAM-0212-K7Q2.
-
-Até breve,
-Confeitaria e Pão Quente Damira
-Rua Dom António Castro Meireles 155, Ermesinde`);
-});
-
-it("preserva o rascunho cancelado-cliente da gerente", () => {
-  const dados = exemploEmail("cancelado-cliente");
-  dados.canceladoPor = "gerente";
-  expect(escreverEmail("cancelado-cliente", dados, CASA_EXEMPLO, "pt").texto).toBe(`Olá, Maria,
-
-Lamentamos, mas não vamos conseguir fazer o seu pedido, e cancelámo-lo. Não há nada a pagar.
-
-Se quiser falar connosco sobre uma alternativa, ligue-nos para o +351 229 730 939.
-
-Referência do pedido: DAM-0212-K7Q2.
-
-Confeitaria e Pão Quente Damira
-Rua Dom António Castro Meireles 155, Ermesinde`);
+// Os textos inteiros ficam em ficheiros, um por exemplo: cada correção da Andreia aparece no diff
+// como texto corrido, e uma mudança sem querer num modelo rebenta aqui. Atualizar com `npx vitest -u`
+// só depois de ler o diff dos ficheiros.
+it.each(exemplosEmail())("fixa o texto de $modelo · $locale · $variante", async ({ modelo, locale, variante }) => {
+  const { assunto, texto } = escreverEmail(modelo, exemploEmail(modelo, variante), CASA_EXEMPLO, locale);
+  await expect(`${assunto}\n\n${texto}\n`).toMatchFileSnapshot(`./__textos__/${modelo}-${locale}${variante ? `-${variante}` : ""}.txt`);
 });
 
 it.each(LINGUAS)("formata quilos decimais na língua do email em %s", (locale) => {
@@ -361,7 +171,7 @@ it("preserva o telefone da casa e usa o formatador no do cliente", () => {
   expect(texto).toContain(`Telefone:  ${telefoneArrumado(dados.cliente.telefone)}`);
   const casa = { ...CASA_EXEMPLO, telefone: "+351 229 730 939 (chamada para a rede fixa nacional)" };
   expect(escreverEmail("criado-confirmado-cliente", exemploEmail("criado-confirmado-cliente"), casa, "pt").texto)
-    .toContain(`ligue-nos para o ${casa.telefone}.`);
+    .toContain(`entre em contacto connosco através do ${casa.telefone}.`);
 });
 
 it("preserva nomes próprios no pagamento com uma ou várias linhas sem preço", () => {
@@ -377,28 +187,26 @@ it("regista um reagendamento num sábado sem preposição contraída", () => {
   const dados = exemploEmail("reagendado-loja");
   dados.reagendadoEm = new Date("2026-12-05T11:05:00Z");
   const { texto } = escreverEmail("reagendado-loja", dados, CASA_EXEMPLO, "pt");
-  expect(texto).toContain("Combinado com o cliente. Registado pela gerente: sábado, 5 de dezembro de 2026, às 11:05.");
+  expect(texto).toContain("Combinado com o cliente. Registado pela gerente: sábado, 5 de dezembro de 2026, às 11h05.");
   expect(texto).not.toContain("na sábado");
 });
 
 it.each(LINGUAS)("escreve a mudança de hora numa linha sem alinhamento em %s", (locale) => {
   const dados = exemploEmail("resposta-cliente");
-  const { texto } = escreverEmail("resposta-cliente", dados, CASA_EXEMPLO, locale);
-  const linha = texto.split("\n").find((linha) => linha.startsWith(locale === "pt" ? "  Levantamento:" : "  Pick-up:"));
-  expect(linha).toBe(locale === "pt"
-    ? "  Levantamento: passa de domingo, 6 de dezembro, às 10:30 para domingo, 6 de dezembro, às 12:00"
-    : "  Pick-up: changes from Sunday 6 December at 10:30 to Sunday 6 December at 12:00");
+  const linhas = () => escreverEmail("resposta-cliente", dados, CASA_EXEMPLO, locale).texto.split("\n");
+  // No mesmo dia, só a hora; noutro dia, a data inteira.
+  expect(linhas()).toContain(locale === "pt"
+    ? "Nova hora de levantamento: 12h00 (em vez das 10h30)"
+    : "New pick-up time: 12:00 (instead of 10:30)");
+  dados.levantamentoEm = new Date("2026-12-07T12:00:00Z");
+  expect(linhas()).toContain(locale === "pt"
+    ? "Nova data de levantamento: Segunda-feira, 7 de dezembro, às 12h00 (em vez de domingo, 6 de dezembro, às 10h30)"
+    : "New pick-up date: Monday 7 December at 12:00 (instead of Sunday 6 December at 10:30)");
 });
 
 it.each(LINGUAS)("mantém os parágrafos inteiros com dados longos em %s", (locale) => {
-  const dados = exemploEmail("criado-por-confirmar-cliente");
-  const { texto } = escreverEmail("criado-por-confirmar-cliente", dados, CASA_EXEMPLO, locale);
-  const prazo = texto.split("\n\n").find((paragrafo) => paragrafo.startsWith(locale === "pt" ? "Costumamos responder" : "We usually respond"));
-  expect(prazo).toBe(locale === "pt"
-    ? "Costumamos responder nas primeiras 24 horas. Se não lhe respondermos até sexta-feira, 4 de dezembro de 2026, às 18:12, o pedido expira e não segue — e não há nada a pagar."
-    : "We usually respond within the first 24 hours. If we have not replied by Friday 4 December 2026 at 18:12, the order will expire and will not go ahead — and there will be nothing to pay.");
   const confirmado = escreverEmail("criado-confirmado-cliente", exemploEmail("criado-confirmado-cliente"), CASA_EXEMPLO, locale).texto;
-  for (const inicio of locale === "pt" ? ["No dia,", "Os artigos", "Para alterar"] : ["On the day,", "Items sold", "To change"]) {
+  for (const inicio of locale === "pt" ? ["Levantamento:", "Produtos vendidos", "Para alterar"] : ["Collection:", "Products sold", "To change"]) {
     const paragrafo = confirmado.split("\n\n").find((parte) => parte.startsWith(inicio));
     expect(paragrafo).toBeDefined();
     expect(paragrafo).not.toContain("\n");
@@ -455,7 +263,7 @@ it.each(["cliente", "gerente"] as const)("gera a variante de cancelamento por %s
   for (const locale of LINGUAS) {
     const { texto } = escreverEmail("cancelado-cliente", dados, CASA_EXEMPLO, locale);
     expect(texto).toContain(variante === "cliente"
-      ? locale === "pt" ? "Como nos pediu" : "As you requested"
-      : locale === "pt" ? "Lamentamos" : "We are sorry");
+      ? locale === "pt" ? "Conforme solicitado" : "As requested"
+      : locale === "pt" ? "Lamentamos informar" : "We regret");
   }
 });

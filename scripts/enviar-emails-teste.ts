@@ -11,6 +11,7 @@ import { lerArgumentosTeste, validarEmailTeste } from "../src/lib/emails/argumen
 import { CASA_EXEMPLO, exemploEmail, exemplosEmail } from "../src/lib/emails/exemplo";
 import { ANEXO_LOGOTIPO } from "../src/lib/emails/html";
 import { escreverEmail } from "../src/lib/emails/modelos";
+import { NOME_REMETENTE } from "../src/lib/emails/textos";
 
 async function executar() {
   const opcoes = lerArgumentosTeste(process.argv.slice(2));
@@ -21,7 +22,7 @@ async function executar() {
     if (faltam.length) throw new Error(`Falta configurar: ${faltam.join(", ")}.`);
   }
   if (enderecoRemetente) validarEmailTeste(enderecoRemetente);
-  const remetente = `${CASA_EXEMPLO.nome} <${enderecoRemetente || "EMAIL_REMETENTE por configurar"}>`;
+  const remetente = `${NOME_REMETENTE} <${enderecoRemetente || "EMAIL_REMETENTE por configurar"}>`;
   const exemplos = exemplosEmail().filter(({ modelo, locale }) =>
     (!opcoes.modelo || modelo === opcoes.modelo) && (!opcoes.lingua || locale === opcoes.lingua));
   if (!exemplos.length) throw new Error("Não há exemplos para essa combinação de modelo e língua.");

@@ -11,7 +11,7 @@ import type { Locale } from "@/i18n/routing";
 import { FUSO } from "@/lib/horarios";
 import { formatarCent } from "@/lib/preco";
 import { telefoneArrumado } from "@/lib/telefone";
-import { BLOCOS, TEXTOS_EN, TEXTOS_LOJA, TEXTOS_PT, type ModeloCliente, type TextoModelo } from "./textos";
+import { BLOCOS, NOME_REMETENTE, TEXTOS_EN, TEXTOS_LOJA, TEXTOS_PT, type ModeloCliente, type TextoModelo } from "./textos";
 import { escreverHtmlEmail } from "./html";
 import type { DadosCasa, DadosEmailPedido, ModeloEmail } from "./tipos";
 
@@ -34,10 +34,15 @@ export function escreverEmail(
   const blocos = BLOCOS[lingua];
   const textos: TextoModelo = lingua === "pt" ? TEXTOS_PT[modelo] : TEXTOS_EN[modelo as ModeloCliente];
   const opcoes = { in: tz(FUSO), locale: lingua === "pt" ? pt : enGB };
+  // «10h30», como a Andreia escreve e como se diz em Portugal; o inglês fica com «10:30».
   const data = (instante: Date) => format(instante,
-    lingua === "pt" ? "EEEE, d 'de' MMMM 'de' yyyy, 'às' HH:mm" : "EEEE d MMMM yyyy 'at' HH:mm", opcoes);
+    lingua === "pt" ? "EEEE, d 'de' MMMM 'de' yyyy, 'às' HH'h'mm" : "EEEE d MMMM yyyy 'at' HH:mm", opcoes);
   const dataSemAno = (instante: Date) => format(instante,
-    lingua === "pt" ? "EEEE, d 'de' MMMM, 'às' HH:mm" : "EEEE d MMMM 'at' HH:mm", opcoes);
+    lingua === "pt" ? "EEEE, d 'de' MMMM, 'às' HH'h'mm" : "EEEE d MMMM 'at' HH:mm", opcoes);
+  const hora = (instante: Date) => format(instante, lingua === "pt" ? "HH'h'mm" : "HH:mm", opcoes);
+  const mesmoDia = (a: Date, b: Date) => format(a, "yyyy-MM-dd", opcoes) === format(b, "yyyy-MM-dd", opcoes);
+  // A data do levantamento abre a linha debaixo do título («DATA DE LEVANTAMENTO»): começa por maiúscula.
+  const maiuscula = (texto: string) => texto.charAt(0).toLocaleUpperCase(lingua === "pt" ? "pt-PT" : "en-GB") + texto.slice(1);
   const dataCurta = (instante: Date) => format(instante, "EEE d/M HH:mm", opcoes).replace(".", "");
   const dinheiro = (cent: number) => {
     if (!Number.isSafeInteger(cent) || cent < 0) throw new Error("O dinheiro do email tem de chegar em cêntimos inteiros não negativos.");
@@ -63,7 +68,7 @@ export function escreverEmail(
     return { nome: inicio, valor: total };
   });
   const linhas = (paraLoja: boolean, comUnitario: boolean) => partesLinhas(paraLoja, comUnitario)
-    .map((linha) => `  ${linha.nome} — ${linha.valor}`).join("\n");
+    .map((linha) => `${linha.nome} — ${linha.valor}`).join("\n");
   const temAoQuilo = dados.linhas.some((linha) => linha.aoQuilo);
   const indicativo = temAoQuilo ? blocos.sufixoIndicativo : "";
   const campos: Record<string, string | (() => string)> = {
@@ -76,12 +81,12 @@ export function escreverEmail(
     nomeCasa: casa.nome,
     morada: [casa.morada, casa.localidade].filter(Boolean).join(", "),
     telefoneCasa: casa.telefone,
-    levantamento: data(dados.levantamentoEm),
+    levantamento: maiuscula(data(dados.levantamentoEm)),
     dataAssunto: format(dados.levantamentoEm,
       lingua === "pt" ? "EEEE, d 'de' MMMM, HH:mm" : "EEEE d MMMM, HH:mm", opcoes),
     dataCurta: dataCurta(dados.levantamentoEm),
     criado: data(dados.criadoEm),
-    anterior: () => data(obrigatorio(dados.levantamentoAnteriorEm, "levantamentoAnteriorEm")),
+    anterior: () => maiuscula(data(obrigatorio(dados.levantamentoAnteriorEm, "levantamentoAnteriorEm"))),
     expira: () => data(obrigatorio(dados.expiraEm, "expiraEm")),
     expiraCurta: () => dataCurta(obrigatorio(dados.expiraEm, "expiraEm")),
     aceite: () => data(obrigatorio(dados.aceiteEm, "aceiteEm")),
@@ -106,14 +111,19 @@ export function escreverEmail(
     pagar: blocos.pagar,
     fila: blocos.fila,
     rodape: () => preencher(blocos.rodape),
+    rodapePendente: () => preencher(blocos.rodapePendente),
+    assinatura: () => preencher(blocos.assinatura),
+    nomeRemetente: NOME_REMETENTE,
     blocoIndicativo: temAoQuilo ? `\n\n${blocos.indicativo}` : "",
     total: () => preencher(dados.faltamPrecos ? blocos.totalConhecido : blocos.total),
     mudancas: () => {
       const precos = dados.linhas.filter((linha) => linha.fixadoAgora).map((linha) =>
-        `  ${nomeLinha(linha)}: ${linha.totalCent === null ? blocos.semPreco : dinheiro(linha.totalCent)}`);
-      if (dados.levantamentoAnteriorEm) precos.push(preencher(blocos.mudancaHora, {
-        antes: dataSemAno(dados.levantamentoAnteriorEm), depois: dataSemAno(dados.levantamentoEm),
-      }));
+        `${nomeLinha(linha)}: ${linha.totalCent === null ? blocos.semPreco : dinheiro(linha.totalCent)}`);
+      const antes = dados.levantamentoAnteriorEm;
+      // No mesmo dia basta a hora («12h00 (em vez das 10h30)»); noutro dia, a data inteira.
+      if (antes) precos.push(mesmoDia(antes, dados.levantamentoEm)
+        ? preencher(blocos.mudancaHora, { antes: hora(antes), depois: hora(dados.levantamentoEm) })
+        : preencher(blocos.mudancaData, { antes: dataSemAno(antes), depois: maiuscula(dataSemAno(dados.levantamentoEm)) }));
       return precos.join("\n");
     },
   };
