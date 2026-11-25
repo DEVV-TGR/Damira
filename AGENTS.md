@@ -55,6 +55,7 @@ dela** — e o `pedidos.md`, que é o contrato de que todos dependem.
 | Talão e impressora | `impressao.md` |
 | Bolos personalizados | `bolos-personalizados.md` |
 | Concorrência, limites, erros, cache, logs, backups | `robustez.md` |
+| **Restaurar a base de dados, passo a passo** | `restauro.md` |
 | Base de dados: tabelas, contadores, migração | `base-de-dados.md` |
 | **Ligar a Neon: o que falta fazer e confirmar com a conta** | `ligar-a-neon.md` |
 

@@ -193,12 +193,14 @@ calmo de um tablet desligado.
 da Neon só permite voltar 6 horas atrás.** A base de dados de produção fica no
 plano **Launch** (pago pelo uso, sem mínimo): restauro até 7 dias. Com a regra do
 topo a deixá-la dormir, o custo cabe nos 3–10 €/mês previstos. A conta Neon fica
-em nome da Damira.
+em nome da Damira. Está no Launch desde 25/11/2026; ⚠️ a janela de restauro não
+alarga sozinha com o plano e tem de se pôr nos 7 dias à mão (`restauro.md`).
 
 ⚠️ **Um backup que nunca foi reposto não é um backup.** Antes do lançamento,
 restaura-se a base de dados para um ponto no passado num ramo da Neon, confirma-se
 que os pedidos estão lá, e escrevem-se os passos em `docs/loja/restauro.md`.
-Quem estiver de serviço num sábado segue esse papel, não a memória.
+Quem estiver de serviço num sábado segue esse papel, não a memória. Ensaiado a
+16/11/2026 com o catálogo; repete-se com pedidos no dia de teste na loja (#54).
 
 As fotos (Vercel Blob) não têm histórico: uma foto trocada desaparece. É
 aceitável — a casa tem as originais.
