@@ -11,6 +11,7 @@ import {
   type BaseDeDados,
   type DadosDaCasa,
 } from "@/db/catalogo";
+import { OPCOES_BOLO } from "@/data/bolos-personalizados";
 import { casa as tabelaCasa, produtos, variantes } from "@/db/esquema";
 import { violouChave } from "@/db/erros";
 import type { ExecutarLote } from "@/db/lote";
@@ -70,6 +71,9 @@ export type FonteBd = Pick<
   | "guardarDefinicoes"
   | "pausarLoja"
   | "guardarOrdemCategorias"
+  // Os bolos personalizados.
+  | "opcoesDoBolo"
+  | "guardarOpcoesDoBolo"
 >;
 
 /**
@@ -170,7 +174,7 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
       const ids = [...new Set(lido.data.map((linha) => linha.produtoId))];
       const doCesto = await lerProdutos(db, inArray(produtos.id, ids));
       const porId = new Map(doCesto.map((produto) => [produto.id, produto]));
-      return { ok: true, cotacao: cotarLinhas(lido.data, (id) => porId.get(id)) };
+      return { ok: true, cotacao: cotarLinhas(lido.data, (id) => porId.get(id), OPCOES_BOLO) };
     },
 
     // ——— O painel: os produtos ———
@@ -293,6 +297,17 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
         return { ok: false, erro: "dados-invalidos", campos: ["pausaAte"] };
       }
       return { ok: true, valor: (await mudarCasa({ pausaAte: ate })).definicoes };
+    },
+
+    /* ⚠️ **Até ao PR de esquema, as opções do bolo leem-se dos JSON** (o PDF da
+       casa), e gravar responde `indisponivel`: não há tabela onde as pôr, e
+       fingir que gravou era a gerente a perder o que mudou no deploy seguinte. */
+    async opcoesDoBolo() {
+      return OPCOES_BOLO;
+    },
+
+    async guardarOpcoesDoBolo() {
+      return { ok: false, erro: "indisponivel" };
     },
 
     async guardarOrdemCategorias(entrada) {

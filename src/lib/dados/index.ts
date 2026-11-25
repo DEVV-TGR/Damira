@@ -61,6 +61,9 @@ export const criarPedido: FonteDeDados["criarPedido"] = (entrada, contexto) =>
 export const pedidoPorReferencia: FonteDeDados["pedidoPorReferencia"] = (referencia) =>
   fonte.pedidoPorReferencia(referencia);
 
+/** As opções do bolo personalizado (`bolos-personalizados.md`), desligadas incluídas. */
+export const opcoesDoBolo: FonteDeDados["opcoesDoBolo"] = () => fonte.opcoesDoBolo();
+
 // ——— O painel ———
 
 /*
@@ -90,6 +93,8 @@ export const guardarDefinicoes = painel.guardarDefinicoes;
 export const pausarLoja = painel.pausarLoja;
 /** A ordem das categorias da ementa (#87). Só a gerente. Lê-se pelo `ordemDaEmenta`. */
 export const guardarOrdemCategorias = painel.guardarOrdemCategorias;
+/** As opções do bolo personalizado. Só a gerente. Lê-se pelo `opcoesDoBolo`. */
+export const guardarOpcoesDoBolo = painel.guardarOpcoesDoBolo;
 export const listarPedidos = painel.listarPedidos;
 export const pedidoDoPainel = painel.pedidoDoPainel;
 /** `pago → entregue`, condicional. Com dinheiro em falta, só com `faltaCobrada`. */

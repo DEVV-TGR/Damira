@@ -5,6 +5,7 @@ import {
   EsquemaEntradaProduto,
   EsquemaFiltroPedidos,
   EsquemaHorarios,
+  EsquemaOpcoesBolo,
   EsquemaOrdemCategorias,
   EsquemaProduto,
   AVISOS_TRATAVEIS,
@@ -12,6 +13,7 @@ import {
   type ConfiguracaoDaCasa,
   type DefinicoesLoja,
   type FontePainel,
+  type OpcoesBolo,
   type OrdemEmenta,
   type Pedido,
   type Produto,
@@ -47,6 +49,8 @@ export type EstadoJson = {
   porReferencia: Map<string, string>;
   /** Sobe a cada pedido criado ou alterado (`versaoPedidos`). */
   versao: number;
+  /** As opções do bolo personalizado, como a gerente as deixou. */
+  opcoesBolo: OpcoesBolo;
 };
 
 /* «Márcia», «marcia» e «MARCIA» são a mesma pessoa ao telefone. */
@@ -177,6 +181,15 @@ export function criarPainelJson(
       if (!lido.success) return invalido(lido.error);
       estado.definicoes = { ...estado.definicoes, ...lido.data };
       return { ok: true, valor: estado.definicoes };
+    },
+
+    async guardarOpcoesDoBolo(entrada) {
+      const lido = EsquemaOpcoesBolo.safeParse(entrada);
+      if (!lido.success) return invalido(lido.error);
+      /* Um objeto novo: quem leu as opções antes (um configurador aberto) fica
+         com as que leu, e o servidor confere o bolo contra as de agora. */
+      estado.opcoesBolo = lido.data;
+      return { ok: true, valor: estado.opcoesBolo };
     },
 
     async guardarOrdemCategorias(entrada) {

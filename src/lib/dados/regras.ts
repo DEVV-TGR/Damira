@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import type { z } from "zod";
 import { FUSO, validarLevantamento, type ArtigoDoCesto, type VagaOcupada } from "@/lib/horarios";
 import { esgotadoHoje } from "@/lib/painel";
+import { validarBolo } from "@/lib/bolo-personalizado";
 import type {
   ConfiguracaoDaCasa,
   Cotacao,
@@ -11,6 +12,7 @@ import type {
   EsquemaEntradaProduto,
   LinhaCesto,
   LinhaCotada,
+  OpcoesBolo,
   Pedido,
   Produto,
   ResultadoCriarPedido,
@@ -41,8 +43,12 @@ const noMultiplo = (quantidade: number, minimo: number, multiplo: number) => {
  * arquivado ou tirado de venda tem de vir na mesma: é aqui que se recusa.
  */
 export function cotarLinhas(
-  linhas: readonly (Pick<LinhaCesto, "produtoId" | "varianteId" | "quantidade"> & { escolhas?: readonly string[] })[],
+  linhas: readonly (Pick<LinhaCesto, "produtoId" | "varianteId" | "quantidade" | "bolo"> & {
+    escolhas?: readonly string[];
+  })[],
   produtoDe: (id: string) => Produto | undefined,
+  /** As opções do bolo personalizado. Sem elas, um bolo personalizado é recusado. */
+  opcoesBolo?: OpcoesBolo,
 ): Cotacao {
   const cotadas = linhas.map((linha): LinhaCotada => {
     const base = { produtoId: linha.produtoId, varianteId: linha.varianteId, quantidade: linha.quantidade };
@@ -66,6 +72,13 @@ export function cotarLinhas(
         ? escolhas.length === 0
         : escolhas.length === 1 && produto.escolhas.includes(escolhas[0]);
     if (!escolhaCerta) return falha("escolha-invalida");
+    /* O bolo personalizado (o «bolo por medida») vem sempre montado, e conferido
+       contra as opções da casa; nenhum outro produto traz bolo. */
+    if (produto.familia === "medida") {
+      if (!linha.bolo || !opcoesBolo || validarBolo(opcoesBolo, linha.bolo) !== null) return falha("bolo-invalido");
+    } else if (linha.bolo) {
+      return falha("bolo-invalido");
+    }
     if (linha.quantidade < produto.quantidadeMinima - EPSILON) return falha("abaixo-do-minimo");
     if (!noMultiplo(linha.quantidade, produto.quantidadeMinima, produto.multiplo)) {
       return falha("fora-do-multiplo");
@@ -220,6 +233,8 @@ export async function conferirPedido(
     configuracao: ConfiguracaoDaCasa;
     produtoDe: (id: string) => Produto | undefined;
     ocupacaoDaVaga: (vaga: Date) => VagaOcupada[] | Promise<VagaOcupada[]>;
+    /** Sem elas, um bolo personalizado é recusado (a base de dados, até ao esquema). */
+    opcoesBolo?: OpcoesBolo;
   },
 ): Promise<PedidoConferido | Extract<ResultadoCriarPedido, { ok: false }>> {
   const { definicoes, configuracao, produtoDe, ocupacaoDaVaga } = fontes;
@@ -227,7 +242,7 @@ export async function conferirPedido(
     return { ok: false, erro: "loja-em-pausa" };
   }
 
-  const cotacao = cotarLinhas(dados.linhas, produtoDe);
+  const cotacao = cotarLinhas(dados.linhas, produtoDe, fontes.opcoesBolo);
   if (!cotacao.valida) return { ok: false, erro: "artigo-invalido", linhas: cotacao.linhas };
   /* ⚠️ Com uma linha por orçar, a parte conhecida não diz quanto o pedido vai
      custar — o bolo por medida sozinho dava zero. O mínimo só se confere quando

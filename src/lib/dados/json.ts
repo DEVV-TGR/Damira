@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { OPCOES_BOLO } from "@/data/bolos-personalizados";
 import { casa, DIAS_DA_SEMANA } from "@/data/casa";
 import { CARTAS, CATEGORIAS, ementa, SUBCATEGORIAS, type Artigo } from "@/data/ementa";
 import type { Box, KitBolo, Linha } from "@/data/encomendas";
@@ -19,6 +20,7 @@ import {
   type FonteDeDados,
   type FonteLoja,
   type GrupoComposicao,
+  type OpcoesBolo,
   type OrdemEmenta,
   type Pedido,
   type Produto,
@@ -289,6 +291,8 @@ export type OpcoesFonteJson = {
   configuracao?: ConfiguracaoDaCasa;
   definicoes?: DefinicoesLoja;
   ordem?: OrdemEmenta;
+  /** As opções do bolo personalizado. Por defeito, as do PDF da casa. */
+  opcoesBolo?: OpcoesBolo;
   /**
    * Pedidos que contam para a ocupação sem estarem no `Map` — os de exemplo do
    * modo de teste (`exemplo.ts`). Somam-se aos verdadeiros **dentro da fonte**,
@@ -327,6 +331,7 @@ export function criarFonteJsonComEstado(opcoes: OpcoesFonteJson = {}): { fonte: 
     pedidos: new Map((opcoes.pedidos ?? []).map((pedido) => [pedido.id, pedido])),
     porReferencia: new Map((opcoes.pedidos ?? []).map((pedido) => [pedido.referencia, pedido.id])),
     versao: 0,
+    opcoesBolo: opcoes.opcoesBolo ?? OPCOES_BOLO,
   };
   const { porId, pedidos, porReferencia } = estado;
 
@@ -338,7 +343,7 @@ export function criarFonteJsonComEstado(opcoes: OpcoesFonteJson = {}): { fonte: 
 
   /* A regra é a de `regras.ts`, a mesma que a fonte da base de dados usa. */
   const cotar = (linhas: ReturnType<typeof EsquemaLinhaCesto.parse>[]): Cotacao =>
-    cotarLinhas(linhas, (id) => porId.get(id));
+    cotarLinhas(linhas, (id) => porId.get(id), estado.opcoesBolo);
 
   const ocupacaoEntre = (desde: Date, ate: Date): VagaOcupada[] => {
     const contagem = new Map<number, number>();
@@ -396,6 +401,10 @@ export function criarFonteJsonComEstado(opcoes: OpcoesFonteJson = {}): { fonte: 
       return ocupacaoEntre(desde, ate);
     },
 
+    async opcoesDoBolo() {
+      return estado.opcoesBolo;
+    },
+
     async cotarCesto(entrada) {
       const lido = EsquemaLinhaCesto.array().max(50).safeParse(entrada);
       if (!lido.success) return { ok: false, erro: "dados-invalidos" };
@@ -417,6 +426,7 @@ export function criarFonteJsonComEstado(opcoes: OpcoesFonteJson = {}): { fonte: 
       const conferido = await conferirPedido(dados, agora, {
         definicoes,
         configuracao,
+        opcoesBolo: estado.opcoesBolo,
         produtoDe: (id) => porId.get(id),
         ocupacaoDaVaga: (vaga) => ocupacaoEntre(vaga, vaga),
       });

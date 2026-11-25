@@ -51,6 +51,10 @@ export function protegerPainel(fonte: FontePainel): FontePainel {
     guardarOrdemCategorias: exigirPapel(SO_GERENTE, (entrada: unknown, ctx) =>
       fonte.guardarOrdemCategorias(entrada, ctx),
     ),
+    /* As opções do bolo personalizado mudam o que o site vende: da gerente. */
+    guardarOpcoesDoBolo: exigirPapel(SO_GERENTE, (entrada: unknown, ctx) =>
+      fonte.guardarOpcoesDoBolo(entrada, ctx),
+    ),
     /* Os pedidos têm nomes e telefones: mesmo as leituras pedem um papel válido. */
     listarPedidos: exigirPapel(EQUIPA, (filtro: unknown, ctx) => fonte.listarPedidos(filtro, ctx)),
     pedidoDoPainel: exigirPapel(EQUIPA, (id: string, ctx) => fonte.pedidoDoPainel(id, ctx)),

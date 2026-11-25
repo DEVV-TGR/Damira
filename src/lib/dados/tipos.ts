@@ -154,6 +154,103 @@ export type FiltroProdutos = {
   incluirArquivados?: boolean;
 };
 
+// ——— Os bolos personalizados (`bolos-personalizados.md`) ———
+
+/** Os ids das opções vão no cesto e no pedido: curtos, e nunca mudam. */
+const IdOpcao = z.string().regex(/^[a-z0-9-]{1,80}$/);
+
+/**
+ * Uma opção do configurador: uma massa, um recheio, uma cobertura… ⚠️ O nome é
+ * só em português: é a casa que o escreve no painel, e não há quem o traduza.
+ * Desligada, sai do site mas fica nos pedidos antigos (como um produto arquivado).
+ */
+const EsquemaOpcaoBolo = z.object({
+  id: IdOpcao,
+  nome: z.string().trim().min(1).max(80),
+  ativa: z.boolean(),
+});
+
+/**
+ * Uma opção que depende da cobertura: **a lista positiva** (`bolos-personalizados.md`
+ * › Combinações) — as coberturas com que a casa a faz. Uma cobertura nova não
+ * fica permitida por esquecimento: entra desmarcada em todas.
+ */
+const EsquemaOpcaoComCoberturas = EsquemaOpcaoBolo.extend({ coberturas: z.array(IdOpcao).max(50) });
+
+export const EsquemaOpcoesBolo = z
+  .object({
+    /**
+     * Opcionais. ⚠️ `precoCent` é só o «a partir de» que o cliente vê: a linha do
+     * bolo entra no pedido **sem preço**, e o preço final é sempre da gerente.
+     */
+    tamanhos: z.array(EsquemaOpcaoBolo.extend({ precoCent: Cent.nullable() })).max(30),
+    massas: z.array(EsquemaOpcaoComCoberturas).max(200),
+    coberturas: z.array(EsquemaOpcaoBolo).min(1).max(50),
+    recheios: z.array(EsquemaOpcaoComCoberturas).max(200),
+    aVolta: z.array(EsquemaOpcaoComCoberturas).max(200),
+    toppings: z.array(EsquemaOpcaoComCoberturas).max(200),
+    fotos: z.object({
+      /** Até quantas fotos de referência. 0 desliga o campo. */
+      referenciaMaximo: z.number().int().min(0).max(3),
+      /**
+       * O topping que abre a foto para imprimir («Foto em folha de hóstia»).
+       * `null`: não se imprime foto em bolo nenhum.
+       */
+      toppingQueImprime: IdOpcao.nullable(),
+    }),
+  })
+  .superRefine((opcoes, ctx) => {
+    /* Ids únicos dentro de cada lista: o pedido guarda o id, e dois iguais eram
+       duas opções que o servidor não sabe distinguir. */
+    for (const lista of ["tamanhos", "massas", "coberturas", "recheios", "aVolta", "toppings"] as const) {
+      const ids = opcoes[lista].map((o) => o.id);
+      if (new Set(ids).size !== ids.length) ctx.addIssue({ code: "custom", path: [lista], message: "ids-repetidos" });
+    }
+    const coberturas = new Set(opcoes.coberturas.map((c) => c.id));
+    for (const lista of ["massas", "recheios", "aVolta", "toppings"] as const) {
+      opcoes[lista].forEach((opcao, i) => {
+        if (opcao.coberturas.some((c) => !coberturas.has(c))) {
+          ctx.addIssue({ code: "custom", path: [lista, i, "coberturas"], message: "cobertura-desconhecida" });
+        }
+      });
+    }
+    const imprime = opcoes.fotos.toppingQueImprime;
+    if (imprime !== null && !opcoes.toppings.some((t) => t.id === imprime)) {
+      ctx.addIssue({ code: "custom", path: ["fotos", "toppingQueImprime"], message: "topping-desconhecido" });
+    }
+  });
+
+export type OpcoesBolo = z.infer<typeof EsquemaOpcoesBolo>;
+export type OpcaoBolo = OpcoesBolo["coberturas"][number];
+export type OpcaoComCoberturas = OpcoesBolo["massas"][number];
+
+/**
+ * Uma foto do bolo, como o envio a devolve: o caminho no Blob (ou na pasta do
+ * modo de teste). Só a forma: quem a escreve é o servidor (`/api/bolos/fotos`).
+ */
+export const FORMATO_FOTO_BOLO = /^bolos\/[a-f0-9-]{36}\.(webp|jpg)$/;
+
+/**
+ * O que o cliente montou. ⚠️ **Ids, nunca nomes nem preços** (regra 1): o
+ * servidor confere tudo contra as opções da casa (`validarBolo`).
+ */
+export const EsquemaEscolhaBolo = z
+  .object({
+    tamanhoId: IdOpcao.nullable(),
+    massaId: IdOpcao,
+    coberturaId: IdOpcao,
+    recheioId: IdOpcao,
+    aVoltaId: IdOpcao,
+    toppingId: IdOpcao,
+    fotosReferencia: z.array(z.string().regex(FORMATO_FOTO_BOLO)).max(3),
+    fotoImprimir: z.string().regex(FORMATO_FOTO_BOLO).nullable(),
+    /** A confirmação de que pode usar a foto (texto da advogada, #52). */
+    autorizaFoto: z.boolean(),
+  })
+  .strict();
+
+export type EscolhaBolo = z.infer<typeof EsquemaEscolhaBolo>;
+
 // ——— O que o browser manda ———
 
 /**
@@ -169,6 +266,8 @@ export const EsquemaLinhaCesto = z
     quantidade: z.number().positive().max(10_000),
     escolhas: z.array(z.string().max(100)).max(20).default([]),
     notas: z.string().trim().max(500).nullable().default(null),
+    /** Só no bolo personalizado, e nele sempre (`bolo-invalido`). */
+    bolo: EsquemaEscolhaBolo.optional(),
   })
   .strict();
 
@@ -244,7 +343,8 @@ export type ErroLinha =
   | "fora-de-venda"
   | "abaixo-do-minimo"
   | "fora-do-multiplo"
-  | "escolha-invalida";
+  | "escolha-invalida"
+  | "bolo-invalido";
 
 export type LinhaCotada = {
   produtoId: string;
@@ -349,6 +449,13 @@ export const EsquemaLinhaPedido = z.object({
   precoUnitarioCent: Cent.nullable(),
   totalCent: Cent.nullable(),
   notas: z.string().nullable(),
+  /**
+   * As fotos do bolo personalizado, **em dois campos e não numa lista**
+   * (`bolos-personalizados.md` › As duas fotos): a de imprimir nunca se confunde
+   * com uma de referência. ⚠️ Opcional até a coluna existir na base de dados
+   * (PR de esquema): por agora só a fonte dos JSON as guarda.
+   */
+  fotos: z.object({ referencia: z.array(z.string()), imprimir: z.string().nullable() }).optional(),
 });
 
 /** Um reembolso pedido ao Stripe. O estado vem do webhook, não da resposta (`pagamentos.md`). */
@@ -512,6 +619,8 @@ export type ContextoPainel = { papel: Papel; agora: Date };
  * - `falta-cobrar`: entregar um pedido com dinheiro em falta sem confirmar que
  *   se cobrou (`painel-balcao.md` › Entregar).
  * - `fora-do-prazo`: o balcão a desfazer um «entregue» depois dos 5 minutos.
+ * - `indisponivel`: a fonte ainda não sabe gravar isto (a base de dados antes
+ *   do PR de esquema que lhe dá a tabela).
  */
 export type ErroPainel =
   | "sem-permissao"
@@ -519,7 +628,8 @@ export type ErroPainel =
   | "nao-existe"
   | "estado-mudou"
   | "falta-cobrar"
-  | "fora-do-prazo";
+  | "fora-do-prazo"
+  | "indisponivel";
 
 /** As escritas devolvem um resultado e nunca rebentam para o browser (`robustez.md`). */
 export type ResultadoPainel<T> =
@@ -732,6 +842,12 @@ export type FontePainel = {
    * `ordemDaEmenta`, como sempre.
    */
   guardarOrdemCategorias(entrada: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<OrdemEmenta>>;
+  /**
+   * As opções do bolo personalizado, todas de uma vez (`painel-gerente.md` ›
+   * Bolos personalizados). Só a gerente. ⚠️ Na base de dados responde
+   * `indisponivel` até a tabela existir (PR de esquema).
+   */
+  guardarOpcoesDoBolo(entrada: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<OpcoesBolo>>;
 
   // Pedidos
 
@@ -820,6 +936,11 @@ export type FonteLoja = {
   /** ⚠️ **Nunca em cache** (`robustez.md`): uma vaga em cache vende-se duas vezes. */
   ocupacao(desde: Date, ate: Date): Promise<VagaOcupada[]>;
   cotarCesto(linhas: unknown): Promise<ResultadoCotacao>;
+  /**
+   * As opções do bolo personalizado, desligadas incluídas: o configurador mostra
+   * só as ligadas, e o servidor recusa as outras (`validarBolo`).
+   */
+  opcoesDoBolo(): Promise<OpcoesBolo>;
   criarPedido(entrada: unknown, contexto: ContextoPedido): Promise<ResultadoCriarPedido>;
   pedidoPorReferencia(referencia: string): Promise<Pedido | null>;
 };
