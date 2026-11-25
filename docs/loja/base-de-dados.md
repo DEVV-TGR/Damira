@@ -466,6 +466,21 @@ o contador bate sempre com a soma dos reembolsos `pendente` e `concluido`.
   entregam uma vez.
 - **Os 5 minutos do balcão** para desfazer um «entregue» vão na mesma condição
   (`… AND entregue_em >= agora − 5 min`), com o `agora` do contexto.
+- **Os pedidos pagos na loja** (`modo_pagamento = 'na-loja'`) seguem as mesmas
+  ações do painel, com o estado de partida deles: entrega-se um `confirmado`
+  com um toque, sem «dinheiro em falta» a perguntar (paga-se nesse toque);
+  desfazer o «entregue» volta a `confirmado`, e não a `pago`; a gerente cancela
+  um `por-confirmar`, um `a-aguardar-aceite` ou um `confirmado`, sem reembolso,
+  e a vaga liberta-se; e reagenda um `confirmado`. As listas de estados vivem no
+  `regras.ts` (`podeCancelar`, `REAGENDAVEIS`, `estadoAntesDeEntregue`), para as
+  duas fontes decidirem igual. ⚠️ Confirmar, responder e aceitar ainda não
+  existem na `FontePainel`: chegam com o contrato do balcão (#125).
+- **Cancelar não ultrapassa a expiração:** um `por-confirmar` só se cancela
+  com `expira_em > agora`, tanto na regra partilhada como no `WHERE`. Se o prazo
+  já passou, devolve `estado-mudou`; a limpeza grava a expiração e liberta a vaga.
+- **Os avisos de dia fechado e possível duplicado** leem os `confirmado` e os
+  `pago`. Nos confirmados, os dez minutos contam de `confirmado_em`; nos pagos,
+  de `pago_em`. O filtro da base de dados acompanha o cálculo partilhado.
 - **Os efeitos vão na mesma instrução**, em passos do mesmo `WITH`
   (`bd-painel-pedidos.ts`): a vaga, o reembolso e a versão. Sem isso, um pedido que
   já não está no estado de partida descontava a vaga na mesma, e o driver HTTP da
@@ -521,7 +536,9 @@ e um reagendar para lá era recusado.
 25 de outubro a hora 01:00 repete-se. A loja não abre a essa hora, mas um
 instante não tem de pensar nisso.
 
-**O que ocupa:** `pendente`, `pago` e `entregue`. `expirado` e `cancelado` não.
+**O que ocupa:** `por-confirmar`, `a-aguardar-aceite`, `confirmado`, `pendente`,
+`pago` e `entregue`. Só `expirado` e `cancelado` libertam a vaga. O `entregue`
+continua a ocupar porque já gastou a capacidade daquela hora e pode ser desfeito.
 O `ocupacao(desde, ate)` do contrato é um `SELECT` nesta tabela, sem cache, e
 devolve `{ inicio, pedidos: ocupadas }`.
 
@@ -531,9 +548,19 @@ estava.
 
 ## Expirar sem tarefa agendada
 
-Um `pendente` com mais de 31 minutos passa a `expirado` e liberta a vaga. ⚠️ Nunca
-antes: os 31 minutos são o prazo da sessão do Stripe, e até lá o cliente ainda
-pode pagar (`pedidos.md`). Quem o faz, por ordem:
+Dois prazos libertam a vaga sozinhos:
+
+- **um `por-confirmar` a que a casa não respondeu até `expira_em`** (48 horas
+  corridas depois de nascer) passa a `expirado`, com a causa
+  `sem-resposta-da-casa`. `agora >= expira_em` já conta como expirado
+  (`pedidos.md` › Expirar às 48 horas);
+- **um `pendente` do Stripe com mais de 31 minutos** passa a `expirado`, com a
+  causa `sem-pagamento`. O pagamento online dorme e nenhum pedido nasce
+  `pendente`, mas a limpeza continua para os que tenham ficado de antes. ⚠️
+  Nunca antes: os 31 minutos são o prazo da sessão do Stripe, e até lá o
+  cliente ainda pode pagar.
+
+Quem o faz, por ordem:
 
 1. o regresso do cliente que voltou atrás no checkout, e o webhook
    `checkout.session.expired` (`pagamentos.md`, do Gonçalo);
@@ -541,8 +568,12 @@ pode pagar (`pedidos.md`). Quem o faz, por ordem:
    só quando há um cliente no site, ou seja, com a base de dados já acordada.
 
 Não há tarefa agendada a acordar a base de dados para isto (regra 6). A limpeza
-(`limparExpirados`, em `bd-pedidos.ts`) é uma instrução só: muda os pendentes antigos para `expirado`, com a causa `sem-pagamento`, e desconta-os dos
-contadores. A lógica completa é da #41. O pedido expirado pelo id, no ponto 1,
+(`limparExpirados`, em `bd-pedidos.ts`) é uma instrução só: muda os dois para
+`expirado`, com a causa que o estado de partida dá, e desconta-os dos
+contadores. ⚠️ O email ao cliente de «a casa não respondeu a tempo» ainda não
+se grava nesta instrução: entra com a fila dos emails (#119). E os lembretes à
+casa antes das 48 horas também não correm aqui: precisam de um mecanismo que não
+dependa de uma visita ao site (`pedidos.md` › Em aberto, 11). A lógica completa é da #41. O pedido expirado pelo id, no ponto 1,
 usa a mesma instrução (`expirarPedido`).
 
 ⚠️ **Se a limpeza falhar, o calendário e o `criarPedido` continuam.** O erro fica
