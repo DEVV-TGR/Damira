@@ -1,4 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "regions": ["lhr1"]
+  "regions": ["lhr1"],
+  "buildCommand": "npx tsx scripts/ensaio-fila-preview.ts --verificar && npm run build && npx tsx scripts/ensaio-fila-preview.ts --executar"
 }
