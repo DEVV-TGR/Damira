@@ -10,14 +10,18 @@
  * As que escrevemos levam `nossa: true`, para a advogada saber o que rever.
  *
  * ⚠️ **Os prazos da secção 6 são promessas que o código tem de cumprir**: a
- * tarefa diária que apaga as fotografias e as observações aos 30 dias e anonimiza
- * os pedidos aos 12 meses. Se ela não existir, a política está errada.
+ * limpeza que apaga as fotografias e as observações aos 30 dias e anonimiza
+ * os pedidos aos 12 meses ainda tem de ser implementada e verificada antes de
+ * publicar a política. A Andreia aceitou assegurar a limpeza da caixa de
+ * correio, que pretende automatizar, mas pediu revisão dos prazos à advogada.
+ * O NIPC e o e-mail foram confirmados a 16/11/2026. Os pendentes estão em
+ * `docs/loja/textos-legais.md`: estas respostas não são uma aprovação jurídica.
  */
 
 import type { Seccao } from "./tipos";
 
 /** A data que a secção 13 promete mostrar. Muda-se com cada alteração ao texto. */
-export const ATUALIZADA_EM = "2026-11-16";
+export const ATUALIZADA_EM = "2026-11-18";
 
 export const EMAIL_PRIVACIDADE = "encomendas@damira.pt";
 
@@ -26,7 +30,7 @@ export const POLITICA: Seccao[] = [
     id: "responsavel",
     titulo: "1. Responsável pelo tratamento",
     blocos: [
-      "A Confeitaria e Pão Quente Damira Lda., com morada na R. Dom António Castro Meireles 155, 4445-397 Ermesinde, é responsável pelo tratamento dos dados pessoais recolhidos através do site damira.pt.",
+      "A Confeitaria e Pão Quente Damira Lda., NIPC 503600725, com morada na R. Dom António Castro Meireles 155, 4445-397 Ermesinde, é responsável pelo tratamento dos dados pessoais recolhidos através do site damira.pt.",
       `Para questões relacionadas com a proteção dos seus dados pessoais ou para exercer os seus direitos, contacte-nos através de ${EMAIL_PRIVACIDADE}.`,
     ],
   },
@@ -173,9 +177,9 @@ export const POLITICA: Seccao[] = [
         titulo: "Como os prazos se cumprem",
         nossa: true,
         blocos: [
-          "Uma tarefa automática corre uma vez por dia e, sem intervenção de ninguém, apaga as fotografias e as observações (onde ficam as alergias e intolerâncias) 30 dias após o levantamento, a entrega ou o cancelamento, e apaga de cada encomenda o nome, o telefone, o e-mail, o NIF, a morada e o endereço IP 12 meses após o levantamento, a entrega ou o cancelamento. Fica apenas o que não identifica ninguém (os produtos, as quantidades e as datas), para as contas da loja.",
+          "No site, as fotografias são apagadas até 30 dias após o levantamento ou entrega; nos pedidos recusados ou cancelados, são apagadas após o encerramento do pedido. As observações, onde ficam as alergias e intolerâncias, são apagadas até 30 dias após o levantamento, a entrega ou o cancelamento. O nome, o telefone, o e-mail, o NIF, a morada e o endereço IP de cada encomenda são apagados até 12 meses após o levantamento, a entrega ou o cancelamento. A encomenda conserva apenas os elementos que não identificam o cliente, para as contas da loja, sem prejuízo dos dados necessários a reclamações, litígios ou obrigações legais, nos termos desta secção.",
           "As cópias de segurança da base de dados guardam o estado dos últimos 7 dias, e por isso um dado apagado desaparece também delas ao fim de 7 dias. As fotografias não têm cópias de segurança.",
-          "As encomendas chegam também à caixa de correio da loja, por e-mail, para a equipa as ver. Essas mensagens seguem os mesmos prazos.",
+          "As encomendas chegam também à caixa de correio da loja, por e-mail, para a equipa as ver. A Damira assegura que as mensagens, anexos e restantes cópias operacionais com esses dados seguem os mesmos prazos de conservação e eliminação.",
         ],
       },
     ],

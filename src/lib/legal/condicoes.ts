@@ -14,12 +14,16 @@
  * cliente se vincular (DL 24/2014, DL 7/2004, Lei 144/2015) e que a política
  * da casa não dizia: quem vende, os preços, a livre resolução, os alergénios e
  * as reclamações. A advogada revê-as.
+ *
+ * O NIPC, o IVA incluído e o e-mail operacional foram confirmados pela
+ * Andreia no Notion a 16/11/2026. O CICAP continua sujeito à confirmação da
+ * advogada. O estado da revisão está em `docs/loja/textos-legais.md`.
  */
 
 import type { Seccao } from "./tipos";
 
 /** Muda-se com cada alteração ao texto. */
-export const ATUALIZADAS_EM = "2026-11-16";
+export const ATUALIZADAS_EM = "2026-11-18";
 
 export const EMAIL_ENCOMENDAS = "encomendas@damira.pt";
 
@@ -29,7 +33,7 @@ export const CONDICOES: Seccao[] = [
     titulo: "Quem vende",
     nossa: true,
     blocos: [
-      "Confeitaria e Pão Quente Damira Lda., R. Dom António Castro Meireles 155, 4445-397 Ermesinde.",
+      "Confeitaria e Pão Quente Damira Lda., NIPC 503600725, R. Dom António Castro Meireles 155, 4445-397 Ermesinde.",
       `Telefone 22 973 0939 (chamada para a rede fixa nacional). E-mail ${EMAIL_ENCOMENDAS}.`,
       "Estas condições aplicam-se às encomendas feitas no site damira.pt. Ao enviar uma encomenda, declara que as leu e aceita.",
     ],
@@ -106,7 +110,7 @@ export const CONDICOES: Seccao[] = [
     titulo: "Preços",
     nossa: true,
     blocos: [
-      "Os preços apresentados no site estão em euros e incluem IVA à taxa legal em vigor. Os produtos sob orçamento, como os bolos personalizados, não têm preço no site: o valor é comunicado pela Damira antes de a encomenda ficar confirmada.",
+      "Os preços apresentados no site estão em euros e incluem IVA à taxa legal em vigor. Nos produtos sob orçamento, como os bolos personalizados, pode ser apresentado um preço base por tamanho. O valor final é comunicado pela Damira e depende da aceitação do cliente antes de a encomenda ficar confirmada.",
       "A fatura é emitida na loja, no momento do pagamento. Se quiser fatura com número de contribuinte, indique-o na encomenda.",
     ],
   },
