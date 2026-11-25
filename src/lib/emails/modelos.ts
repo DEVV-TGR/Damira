@@ -23,7 +23,7 @@ export function escreverEmail(
 ): { assunto: string; texto: string; html: string } {
   const exigePrecos = [
     "criado-confirmado-cliente", "confirmado-cliente", "aceite-cliente", "aceite-loja",
-    "reagendado-cliente", "reagendado-loja",
+    "reagendado-cliente", "reagendado-loja", "alterado-cliente",
   ].includes(modelo) || (modelo === "criado-loja" && dados.estado === "confirmado");
   // Uma confirmação com montantes incompletos anuncia ao cliente um pedido que ainda não pode seguir.
   if (exigePrecos && (dados.faltamPrecos || dados.linhas.some((linha) => linha.totalCent === null))) {

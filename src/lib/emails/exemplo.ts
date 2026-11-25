@@ -84,6 +84,9 @@ export function exemploEmail(
     case "cancelado-cliente":
       dados.canceladoPor = variante === "gerente" ? "gerente" : "cliente";
       break;
+    case "alterado-cliente":
+      Object.assign(dados, confirmado);
+      break;
   }
   return dados;
 }

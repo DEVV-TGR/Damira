@@ -6,7 +6,7 @@ import { CASA_EXEMPLO, exemploEmail, exemplosEmail } from "./exemplo";
 import { escreverEmail } from "./modelos";
 import { MODELOS_EMAIL, type ModeloEmail } from "./tipos";
 
-const CONFIRMAM: ModeloEmail[] = ["criado-confirmado-cliente", "confirmado-cliente", "aceite-cliente", "reagendado-cliente"];
+const CONFIRMAM: ModeloEmail[] = ["criado-confirmado-cliente", "confirmado-cliente", "aceite-cliente", "reagendado-cliente", "alterado-cliente"];
 const LINGUAS: Locale[] = ["pt", "en"];
 
 describe.each(MODELOS_EMAIL)("%s", (modelo) => {

@@ -303,6 +303,59 @@ Referência da encomenda: {referencia}
 Agradecemos a sua compreensão.
 {nomeRemetente}`,
   },
+  // O cliente recusou a proposta pela página do link (o T13 da Andreia).
+  "proposta-recusada-cliente": {
+    assunto: "Uma atualização sobre o seu pedido {referencia}",
+    corpo: `{saudacao}
+
+Recebemos a sua resposta e encerrámos o pedido.
+
+Esperamos ter uma nova oportunidade de preparar algo especial para si!
+
+Referência da encomenda: {referencia}
+
+{assinatura}`,
+  },
+  // A proposta passou as 24 horas sem resposta do cliente (o T14 da Andreia, decidido a 25/11).
+  "proposta-expirada-cliente": {
+    assunto: "A proposta do seu pedido {referencia} expirou",
+    corpo: `{saudacao}
+
+Não recebemos a sua resposta dentro do prazo previsto para a aceitação da nossa proposta.
+
+Por esse motivo, a sua encomenda não foi confirmada e não será necessário efetuar qualquer pagamento.
+
+Caso ainda pretenda avançar com a encomenda, poderá submeter um novo pedido através do nosso site ou contactar-nos através do {telefoneCasa}.
+
+Referência da encomenda: {referencia}
+
+{assinatura}`,
+  },
+  // A casa mudou os produtos de um pedido confirmado, depois de o combinar com o cliente (o T17).
+  "alterado-cliente": {
+    assunto: "O seu pedido {referencia} foi atualizado 🎂",
+    corpo: `{saudacao}
+
+Conforme combinado, atualizámos os produtos da sua encomenda. Consulte abaixo o resumo atualizado.
+
+DATA DE LEVANTAMENTO
+{levantamento}
+Na loja: {morada}
+
+PRODUTOS ENCOMENDADOS
+{linhas}
+
+{total}
+{pagar}{blocoIndicativo}
+
+{fila}
+
+Referência da encomenda: {referencia} — para facilitar o levantamento, basta indicar esta referência à nossa equipa.
+
+Para qualquer questão, entre em contacto connosco através do {telefoneCasa}.
+
+{assinatura}`,
+  },
 } satisfies Record<ModeloEmail, TextoModelo>;
 
 export const BLOCOS = {
@@ -576,5 +629,55 @@ Order reference: {referencia}
 
 Thank you for your understanding.
 {nomeRemetente}`,
+  },
+  "proposta-recusada-cliente": {
+    assunto: "An update on your order {referencia}",
+    corpo: `{saudacao}
+
+We have received your answer and closed the order.
+
+We hope to have another chance to prepare something special for you!
+
+Order reference: {referencia}
+
+{assinatura}`,
+  },
+  "proposta-expirada-cliente": {
+    assunto: "The proposal for your order {referencia} has expired",
+    corpo: `{saudacao}
+
+We did not receive your answer within the time allowed to accept our proposal.
+
+As a result, your order has not been confirmed, and no payment is required.
+
+If you would still like to go ahead, you can place a new order on our website or contact us on {telefoneCasa}.
+
+Order reference: {referencia}
+
+{assinatura}`,
+  },
+  "alterado-cliente": {
+    assunto: "Your order {referencia} has been updated 🎂",
+    corpo: `{saudacao}
+
+As agreed, we have updated the products in your order. Please see the updated summary below.
+
+PICK-UP DATE
+{levantamento}
+At the shop: {morada}
+
+PRODUCTS ORDERED
+{linhas}
+
+{total}
+{pagar}{blocoIndicativo}
+
+{fila}
+
+Order reference: {referencia} — to make collection easier, simply give this reference to our team.
+
+If you have any questions, please contact us on {telefoneCasa}.
+
+{assinatura}`,
   },
 } satisfies Record<ModeloCliente, TextoModelo>;
