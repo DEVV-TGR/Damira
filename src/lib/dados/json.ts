@@ -1,3 +1,4 @@
+import { criarEmailsJson } from "./json-emails";
 import { randomUUID } from "node:crypto";
 import { casa, DIAS_DA_SEMANA } from "@/data/casa";
 import { CARTAS, CATEGORIAS, ementa, SUBCATEGORIAS, type Artigo } from "@/data/ementa";
@@ -439,5 +440,5 @@ export function criarFonteJsonComEstado(opcoes: OpcoesFonteJson = {}): { fonte: 
     },
   };
 
-  return { fonte: { ...loja, ...criarPainelJson(estado, ocupacaoEntre) }, estado };
+  return { fonte: { ...loja, ...criarPainelJson(estado, ocupacaoEntre), ...criarEmailsJson(() => [...estado.pedidos.values()]) }, estado };
 }

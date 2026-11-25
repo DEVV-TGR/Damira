@@ -801,7 +801,7 @@ export type FontePainel = {
  * O que vem do browser entra como `unknown` e valida-se lá dentro: é o único
  * sítio em que se pode confiar que a validação acontece.
  */
-export type FonteDeDados = FonteLoja & FontePainel;
+export type FonteDeDados = FonteLoja & FontePainel & FonteEmails;
 
 export type FonteLoja = {
   /**
@@ -822,4 +822,27 @@ export type FonteLoja = {
   cotarCesto(linhas: unknown): Promise<ResultadoCotacao>;
   criarPedido(entrada: unknown, contexto: ContextoPedido): Promise<ResultadoCriarPedido>;
   pedidoPorReferencia(referencia: string): Promise<Pedido | null>;
+};
+
+/** A fila interna do servidor. O destinatário é o fixado na transação original. */
+export type LinhaEmail = {
+  id: string;
+  pedidoId: string;
+  modelo: string;
+  destinatario: string;
+  criadoEm: Date;
+  tentativas: number;
+  ultimaTentativaEm: Date | null;
+  ultimoErro: string | null;
+  enviadoEm: Date | null;
+};
+
+export type FonteEmails = {
+  emailsPendentes(opcoes: { agora: Date; limite: number }): Promise<LinhaEmail[]>;
+  reservarEmail(id: string, agora: Date): Promise<LinhaEmail | null>;
+  /** A tentativa devolvida pela reserva identifica o dono; um processo antigo não termina a nova. */
+  marcarEmailEnviado(reserva: LinhaEmail, agora: Date): Promise<void>;
+  registarFalhaEmail(reserva: LinhaEmail, codigo: string, definitiva: boolean): Promise<void>;
+  pedidoDoEmail(pedidoId: string): Promise<Pedido | null>;
+  emailsFalhados(limite: number): Promise<(LinhaEmail & { saltado: boolean })[]>;
 };
