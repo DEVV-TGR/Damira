@@ -64,8 +64,8 @@ só se vê quando o cliente vem buscar o bolo.
   - o cliente vê um **preço base por tamanho**, como «a partir de», que a gerente
     define no painel. É só para mostrar: a linha do bolo entra no pedido **sem
     preço final**. Os extras (o topper, a impressão da foto, uma cobertura mais
-    cara) são opções de um grupo (#88, `painel-gerente.md` › Tamanhos e grupos
-    de opções), com preço ou a 0 €;
+    cara) são extras (#88, `painel-gerente.md` › Tamanhos, variâncias, opções
+    e extras), com preço ou a 0 €;
   - **o bolo vai no mesmo cesto que o resto**, e o pedido inteiro fica
     **por confirmar** (`pedidos.md` › Confirmar). O cesto, a página do pedido, o
     email de «recebemos» e o painel mostram o total dos produtos de preço fixo,

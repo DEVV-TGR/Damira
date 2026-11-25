@@ -113,10 +113,13 @@ pela ordem das cartas e, dentro de cada uma, pela ordem que a gerente gravou
 
 **Simples e composto** é a coluna `produtos.tipo`. Composto é o que se descreve
 pelo que leva: os 11 kits e boxes. O bolo por medida é simples — as massas e os
-recheios dele são escolhas, que a #88 passa a grupos de opções. **O que um
+recheios dele são escolhas, que a #88 passa a variâncias. **O que um
 composto leva continua na `composicao` das variantes**, porque muda com o
-tamanho (20 pessoas não levam o mesmo que 70); se passar a um grupo de opções
-«O que leva», decide-se na #88.
+tamanho (20 pessoas não levam o mesmo que 70) — decidido na #88, a 25/11: fica
+como lista livre, e não passa a grupo de opções. As tabelas novas da #88
+(variâncias, opções, extras, as ligações aos produtos e a cópia na linha do
+pedido) vão num PR só de esquema (`painel-gerente.md` › Tamanhos, variâncias,
+opções e extras).
 
 #### A passagem, em três tempos
 

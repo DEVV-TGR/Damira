@@ -23,6 +23,16 @@ cliente e telefone, artigos (variante, escolhas, quantidade, notas), observaçõ
 total e `PAGO` ou `SINAL PAGO · FALTA 12,50 €`, NIF se o cliente o deu, e
 «documento sem valor fiscal».
 
+Com a personalização (#88, por implementar), cada artigo leva por baixo as
+variâncias, o que se tira e os extras, com o preço dos extras. O **`SEM`** vai a
+negrito — é a linha que a cozinha não pode falhar:
+
+```
+12 × Cachorro — salsicha alemã          27,60 €
+     SEM fiambre
+     + 1 fatia de queijo (+0,40 €)
+```
+
 **Pedidos para hoje:** um bloco **invertido** no topo (fundo preto, texto branco)
 — `HOJE · QUINTA 14:30`. O talão inteiro a preto foi pedido na reunião; o
 Sobral testa as duas versões na impressora verdadeira (um fundo todo preto

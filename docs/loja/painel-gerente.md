@@ -26,7 +26,9 @@ O catálogo é lista à esquerda e ficha à direita a partir de 1024 px; abaixo,
 ficha toma o lugar da lista. A ficha tem separadores — Geral, Tamanhos e
 preços, Opções, Encomenda, Alergénios, Fotografias — e o guardar num rodapé
 fixo. Na interface, «tamanho» é a `variante` e «opção» é a `escolha`: o modelo
-não mudou (os tamanhos e grupos de opções do #88 pedem contrato novo). Com
+não mudou (os tamanhos e grupos de opções do #88 pedem contrato novo). ⚠️ Com a
+#88, «Opções» parte-se em **Variâncias**, **Opções** e **Extras**, e «opção» passa
+a querer dizer *tirar* (ver › Tamanhos, variâncias, opções e extras). Com
 alterações por guardar, trocar de produto ou de menu pergunta primeiro, e o
 painel não recarrega sozinho.
 
@@ -129,7 +131,59 @@ com preço ou sem ele. No código é o `pedeConfirmacao` (`tipos.ts`).
   a migração `0005` liga-a de partida nos produtos que lá estão sem preço
   (`base-de-dados.md`).
 
-### Variantes e escolhas
+### Tamanhos, variâncias, opções e extras
+
+Decidido a 25/11 (#88). ⚠️ **Por implementar**: até lá vale o que está em
+› Variantes e escolhas (hoje), mais abaixo.
+
+**O catálogo é da gerente.** Nós não decidimos que extras, opções, variâncias ou
+tamanhos existem, nem em que produtos: o painel dá-lhe as peças, livres, e ela
+monta o que quiser. O sistema não conhece «queijo» nem «topper», e não tem
+regras sobre o que faz sentido juntar a quê. Só valida o que não é conteúdo
+(`pedidos.md` › Personalização).
+
+Em **qualquer produto**, simples ou composto, quantas quiser de cada — ou
+nenhuma:
+
+| Peça | O que é | O cliente escolhe | Preço |
+|---|---|---|---|
+| **Tamanho** (a `variante`) | versões com preço próprio: 470 g / 390 g; 20 / 40 pessoas | exatamente **1** | cada um o seu, ou sob orçamento |
+| **Variância** | **trocar** uma coisa por outra, sem tirar nem pôr: Salsicha — alemã / americana; Sabor; Cor | **1 por grupo** | 0 € ou `+X €` em cada escolha |
+| **Opção** | **tirar**: sem queijo, sem cebola | as que quiser | sem preço; tirar não desconta |
+| **Extra** | **pôr a mais**: + fatia de queijo, + ovo, topper | as que quiser, até ao máximo que ela define | `+X €` por unidade, ou 0 € |
+| **O que leva** | a lista do que vem dentro, por tamanho (`composicao`) | não se escolhe | — |
+
+- **Simples ou composto** (`produtos.tipo`, #124) marca-o ela. A única
+  diferença é o separador «O que leva», que só aparece no composto.
+- **Extras e opções não se ligam a ingredientes.** Um extra é um nome, um
+  preço e um máximo; se ela quiser um extra que o produto não leva, põe-no.
+- **Não há combinações proibidas.** «Sem queijo» e «+ queijo» na mesma linha
+  passam: é ela e a cozinha que sabem se é erro.
+- **Reaproveitar:** em cada peça, além de «Criar», «Usar de outro produto» —
+  **ligar** (partilhado: mudar o preço num muda em todos, e o painel diz em
+  quantos está) ou **copiar** (independente). Variâncias e extras ligam-se;
+  opções são de cada produto.
+- Cada escolha **desliga-se** sem se apagar («esgotou o morango»), e a ordem
+  arrasta-se — é a que o cliente vê.
+- ⚠️ **Livre é livre para errar**: um extra a 40 € em vez de 0,40 € cobra
+  40 €. A ficha mostra ao lado o cartão e a página como o cliente os vê, com o
+  total de uma unidade.
+
+**Uma página por produto.** Todos passam a ter `/encomendas/<id>`, com as peças
+que tiverem; o cartão mantém o botão rápido nos que não têm nada obrigatório
+para escolher.
+
+**Os produtos de hoje ficam.** As `escolhas` passam sozinhas a um grupo de
+variância a 0 € (o mesmo comportamento: escolhe-se uma). Para testarmos,
+alguns produtos ganham personalizações de exemplo **só na fonte JSON com
+`LOJA_EM_TESTE` e na base de desenvolvimento** — nunca na de produção, onde a
+gerente as via como dela. **Quando ela se sentar para montar o catálogo**,
+apagam-se os produtos e ela cria-os um a um. ⚠️ Só se apagam **enquanto
+nenhum pedido verdadeiro apontar para eles** (`linhas_pedido.produto_id` tem
+chave estrangeira; regra 9); depois do primeiro, arquivam-se. É um script
+nosso, com cópia de segurança antes (`restauro.md`), não um botão.
+
+### Variantes e escolhas (hoje)
 
 Duas coisas diferentes, e a diferença é o preço:
 
@@ -139,7 +193,8 @@ Duas coisas diferentes, e a diferença é o preço:
 
 Um bolo pode ter as duas: variantes de tamanho e uma escolha de sabor. Isto evita
 a explosão de combinações («Chocolate · 1 kg», «Chocolate · 2 kg», «Morango ·
-1 kg»…) que ninguém consegue manter num telemóvel.
+1 kg»…) que ninguém consegue manter num telemóvel. Com a #88, as escolhas passam
+a variâncias (acima), e a regra fica: um tamanho por produto, as trocas à parte.
 
 ### Regras que mudam em relação ao site atual
 
