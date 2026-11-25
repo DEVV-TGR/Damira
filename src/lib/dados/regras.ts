@@ -372,3 +372,97 @@ export const textoDeProcura = (nome: string, referencia: string): string => para
 
 /** Sem acentos e em minúsculas: a mesma conta no que se guarda e no que se procura. */
 export const paraProcura = (texto: string): string => texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+
+// ——— A resposta da casa e o aceite do cliente ———
+
+/**
+ * Quem pode receber a resposta da casa: o que ainda espera por ela, e o que espera o aceite (uma
+ * proposta revista). Um `por-confirmar` com o prazo passado já não se responde, mesmo antes de a
+ * limpeza gravar a expiração (`pedidos.md` › Expirar às 48 horas).
+ */
+export const podeResponder = (pedido: Pick<Pedido, "estado" | "modoPagamento" | "expiraEm">, agora: Date): boolean =>
+  pedido.modoPagamento === "na-loja" &&
+  (pedido.estado === "a-aguardar-aceite" ||
+    (pedido.estado === "por-confirmar" && pedido.expiraEm !== null && pedido.expiraEm.getTime() > agora.getTime()));
+
+/** O plano da resposta: o que muda no pedido, já validado, igual para as duas fontes. */
+export type PlanoResposta = {
+  tipo: "confirmar" | "propor";
+  linhas: Pedido["linhas"];
+  totalCent: number;
+  levantamentoEm: Date;
+  levantamentoAnteriorEm: Date | null;
+  /** As posições cujo preço a casa fixou agora. */
+  fixadas: number[];
+};
+
+/**
+ * Decide o que a resposta faz, sem tocar em nada: confirma (sem nada novo), propõe (preço ou hora
+ * novos) ou recusa a entrada. A hora nova valida-a quem chama, com a ocupação das vagas.
+ *
+ * - Só se fixa o preço de uma linha sem preço, ou de uma já fixada numa proposta: o preço que o
+ *   cliente viu ao pedir não muda por aqui.
+ * - Depois de responder, nenhuma linha fica sem preço: um pedido confirmado, ou uma proposta,
+ *   com um «a fixar» não diz ao cliente quanto vai pagar.
+ * - Propor é da gerente; o balcão só dá o «sim» (`pedidos.md` › O aceite do cliente).
+ */
+export function planearResposta(
+  pedido: Pedido,
+  entrada: { precos: { posicao: number; precoUnitarioCent: number }[]; levantamentoEm: Date | null },
+  papel: "funcionario" | "gerente",
+): { ok: true; plano: PlanoResposta } | { ok: false; erro: "dados-invalidos" | "sem-permissao"; campos?: string[] } {
+  const posicoes = entrada.precos.map((p) => p.posicao);
+  if (new Set(posicoes).size !== posicoes.length) return { ok: false, erro: "dados-invalidos", campos: ["precos"] };
+
+  const linhas = pedido.linhas.map((linha) => ({ ...linha }));
+  for (const { posicao, precoUnitarioCent } of entrada.precos) {
+    const linha = linhas[posicao];
+    if (!linha || (linha.precoUnitarioCent !== null && !linha.precoDaProposta)) {
+      return { ok: false, erro: "dados-invalidos", campos: ["precos"] };
+    }
+    /* Ao quilo pede-se meio quilo: o total arredonda ao cêntimo, e o dinheiro fica inteiro. */
+    linhas[posicao] = {
+      ...linha,
+      precoUnitarioCent,
+      totalCent: Math.round(precoUnitarioCent * linha.quantidade),
+      precoDaProposta: true,
+    };
+  }
+  if (linhas.some((linha) => linha.totalCent === null)) return { ok: false, erro: "dados-invalidos", campos: ["precos"] };
+
+  const novaHora =
+    entrada.levantamentoEm !== null && entrada.levantamentoEm.getTime() !== pedido.levantamentoEm.getTime();
+  const propoe = entrada.precos.length > 0 || novaHora;
+  /* Um «sim» só confirma o que ainda esperava pela casa; responder outra vez a uma proposta sem
+     mudar nada não é uma resposta. */
+  if (!propoe && pedido.estado !== "por-confirmar") return { ok: false, erro: "dados-invalidos", campos: ["precos"] };
+  if (propoe && papel !== "gerente") return { ok: false, erro: "sem-permissao" };
+
+  return {
+    ok: true,
+    plano: {
+      tipo: propoe ? "propor" : "confirmar",
+      linhas,
+      totalCent: linhas.reduce((soma, linha) => soma + (linha.totalCent ?? 0), 0),
+      levantamentoEm: novaHora ? entrada.levantamentoEm! : pedido.levantamentoEm,
+      /* A hora que o cliente pediu: a primeira, mesmo que a proposta seja revista várias vezes. */
+      levantamentoAnteriorEm: novaHora ? (pedido.levantamentoAnteriorEm ?? pedido.levantamentoEm) : pedido.levantamentoAnteriorEm,
+      fixadas: entrada.precos.map((p) => p.posicao),
+    },
+  };
+}
+
+/** O pedido depois da resposta, como as duas fontes o gravam. */
+export const pedidoRespondido = (pedido: Pedido, plano: PlanoResposta, agora: Date): Pedido =>
+  plano.tipo === "confirmar"
+    ? { ...pedido, estado: "confirmado", confirmadoEm: agora }
+    : {
+        ...pedido,
+        estado: "a-aguardar-aceite",
+        linhas: plano.linhas,
+        totalCent: plano.totalCent,
+        levantamentoEm: plano.levantamentoEm,
+        levantamentoAnteriorEm: plano.levantamentoAnteriorEm,
+        propostaVersao: pedido.propostaVersao + 1,
+        propostaEm: agora,
+      };

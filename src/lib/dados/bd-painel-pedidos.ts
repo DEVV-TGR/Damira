@@ -6,10 +6,19 @@ import { pedidos } from "@/db/esquema";
 import { validarLevantamento, type VagaOcupada } from "@/lib/horarios";
 import { avisosDosPedidos, porDevolverCent } from "@/lib/painel";
 import { lerPedidos } from "./bd-pedidos";
-import { invalido, naoExiste, paraProcura, podeCancelar as podeCancelarPedido, REAGENDAVEIS } from "./regras";
+import {
+  invalido,
+  naoExiste,
+  paraProcura,
+  planearResposta,
+  podeCancelar as podeCancelarPedido,
+  podeResponder,
+  REAGENDAVEIS,
+} from "./regras";
 import {
   AVISOS_TRATAVEIS,
   EsquemaFiltroPedidos,
+  EsquemaResposta,
   type ConfiguracaoDaCasa,
   type ContextoPainel,
   type FontePainel,
@@ -48,6 +57,7 @@ export type FontePedidosDoPainelBd = Pick<
   | "reagendarPedido"
   | "cancelarPedido"
   | "reembolsarPedido"
+  | "responderPedido"
 >;
 
 const CINCO_MINUTOS = 5 * 60_000;
@@ -102,7 +112,7 @@ export function criarPedidosDoPainelBd(db: BaseDeDados, leituras: LeiturasDoPain
       with mudado as (
         update pedidos set ${mudanca}
         where id = ${id}::uuid and ${condicao}
-        returning id, levantamento_em
+        returning id, levantamento_em, cliente_email
       ),
       ${passos}
       versao as (
@@ -137,6 +147,34 @@ export function criarPedidosDoPainelBd(db: BaseDeDados, leituras: LeiturasDoPain
       insert into reembolsos (id, pedido_id, valor_cent, estado, pedido_em)
       select ${randomUUID()}, mudado.id, ${valorCent}::integer, 'pendente', ${instante(agora)}
       from mudado
+      returning 1
+    )`;
+
+  /* Muda a vaga de uma hora para outra, no mesmo `WITH` (`reagendarPedido`, `responderPedido`).
+     ⚠️ Quem decide a última vaga é o `CHECK`, e não a validação de antes. */
+  const moverVaga = (anterior: Date, novo: Date, limite: number | null) => [
+    sql`
+      a_antiga as (
+        update vagas set ocupadas = vagas.ocupadas - 1
+        where vagas.inicio = ${instante(anterior)} and exists (select 1 from mudado)
+        returning 1
+      )`,
+    sql`
+      a_nova as (
+        insert into vagas (inicio, ocupadas, limite)
+        select ${instante(novo)}, 1, ${limite}::integer from mudado
+        on conflict (inicio) do update
+          set ocupadas = vagas.ocupadas + 1, limite = excluded.limite
+        returning 1
+      )`,
+  ];
+
+  /* O email que a mudança deixa por enviar, na mesma instrução: um email nunca sai de uma mudança
+     que não ficou gravada (`base-de-dados.md` › Os emails por enviar). Quem envia é a fila (#119). */
+  const emailAoCliente = (modelo: string, agora: Date) => sql`
+    email_por_enviar as (
+      insert into emails_por_enviar (pedido_id, modelo, destinatario, criado_em)
+      select mudado.id, ${modelo}, mudado.cliente_email, ${instante(agora)} from mudado
       returning 1
     )`;
 
@@ -303,23 +341,7 @@ export function criarPedidosDoPainelBd(db: BaseDeDados, leituras: LeiturasDoPain
            instrução são recusadas pelo Postgres. */
         const mudou = mesmaHora
           ? await mudar(mudanca, condicao, id)
-          : await mudar(mudanca, condicao, id, [
-              sql`
-                a_antiga as (
-                  update vagas set ocupadas = vagas.ocupadas - 1
-                  where vagas.inicio = ${instante(anterior)} and exists (select 1 from mudado)
-                  returning 1
-                )`,
-              /* Quem decide a última vaga é o `CHECK`, e não a validação de cima. */
-              sql`
-                a_nova as (
-                  insert into vagas (inicio, ocupadas, limite)
-                  select ${instante(novo)}, 1, ${casa.limitePorVaga}::integer from mudado
-                  on conflict (inicio) do update
-                    set ocupadas = vagas.ocupadas + 1, limite = excluded.limite
-                  returning 1
-                )`,
-            ]);
+          : await mudar(mudanca, condicao, id, moverVaga(anterior, novo, casa.limitePorVaga));
         return mudou ? depoisDeMudar(id) : { ok: false, erro: "estado-mudou" };
       } catch (erro) {
         if (erroDoPostgres(erro).constraint === "vagas_no_limite") return recusar;
@@ -346,6 +368,87 @@ export function criarPedidosDoPainelBd(db: BaseDeDados, leituras: LeiturasDoPain
         return mudou ? depoisDeMudar(id) : { ok: false, erro: "estado-mudou" };
       } catch (erro) {
         if (passouDoPago(erro)) return recusar;
+        throw erro;
+      }
+    },
+
+    async responderPedido(id, entrada, ctx) {
+      const { agora, papel } = ctx;
+      const pedido = await lerUm(id);
+      if (!pedido) return naoExiste;
+      if (!podeResponder(pedido, agora)) return { ok: false, erro: "estado-mudou" };
+      const lido = EsquemaResposta.safeParse(entrada);
+      if (!lido.success) return invalido(lido.error);
+      const recusarHora: ResultadoPainel<Pedido> = { ok: false, erro: "dados-invalidos", campos: ["levantamentoEm"] };
+      const novo = lido.data.levantamentoEm === null ? null : new Date(lido.data.levantamentoEm);
+      if (novo && Number.isNaN(novo.getTime())) return recusarHora;
+      const planeado = planearResposta(pedido, { precos: lido.data.precos, levantamentoEm: novo }, papel);
+      if (!planeado.ok) return planeado;
+      const { plano } = planeado;
+      const mudaHora = plano.levantamentoEm.getTime() !== pedido.levantamentoEm.getTime();
+
+      const casa = await leituras.configuracao(ctx);
+      if (mudaHora) {
+        /* A hora nova, como no reagendar: da loja, com vaga, no futuro. */
+        const ocupadas = await leituras.ocupacao(plano.levantamentoEm, plano.levantamentoEm);
+        const validacao = validarLevantamento([], plano.levantamentoEm, agora, { ...casa, cozinha: casa.loja }, ocupadas);
+        if (!validacao.ok) return recusarHora;
+      }
+
+      /* ⚠️ Condicional ao pedido estar como foi lido — estado, versão e hora —, e ainda à espera:
+         outro aparelho que tenha respondido primeiro não pode ver a resposta duas vezes. */
+      const condicao = sql`modo_pagamento = 'na-loja'
+        and estado = ${pedido.estado}
+        and proposta_versao = ${pedido.propostaVersao}::integer
+        and levantamento_em = ${instante(pedido.levantamentoEm)}
+        and (estado = 'a-aguardar-aceite' or (estado = 'por-confirmar' and expira_em > ${instante(agora)}))`;
+
+      try {
+        if (plano.tipo === "confirmar") {
+          const mudou = await mudar(
+            sql`estado = 'confirmado', confirmado_em = ${instante(agora)}`,
+            condicao,
+            id,
+            [emailAoCliente("confirmado-cliente", agora)],
+          );
+          return mudou ? depoisDeMudar(id) : { ok: false, erro: "estado-mudou" };
+        }
+
+        const fixadas = plano.fixadas.map((posicao) => {
+          const linha = plano.linhas[posicao];
+          return sql`(${posicao}::integer, ${linha.precoUnitarioCent}::integer, ${linha.totalCent}::integer)`;
+        });
+        const efeitos = [
+          ...(fixadas.length > 0
+            ? [
+                sql`
+                  linhas_fixadas as (
+                    update linhas_pedido
+                    set preco_unitario_cent = v.preco, total_cent = v.total, preco_da_proposta = true
+                    from (values ${sql.join(fixadas, sql`, `)}) as v(posicao, preco, total)
+                    where linhas_pedido.pedido_id = ${id}::uuid and linhas_pedido.posicao = v.posicao
+                      and exists (select 1 from mudado)
+                    returning 1
+                  )`,
+              ]
+            : []),
+          ...(mudaHora ? moverVaga(pedido.levantamentoEm, plano.levantamentoEm, casa.limitePorVaga) : []),
+          emailAoCliente("resposta-cliente", agora),
+        ];
+        const mudou = await mudar(
+          sql`estado = 'a-aguardar-aceite',
+              total_cent = ${plano.totalCent}::integer,
+              levantamento_em = ${instante(plano.levantamentoEm)},
+              levantamento_anterior_em = ${plano.levantamentoAnteriorEm ? instante(plano.levantamentoAnteriorEm) : sql`null`},
+              proposta_versao = proposta_versao + 1,
+              proposta_em = ${instante(agora)}`,
+          condicao,
+          id,
+          efeitos,
+        );
+        return mudou ? depoisDeMudar(id) : { ok: false, erro: "estado-mudou" };
+      } catch (erro) {
+        if (erroDoPostgres(erro).constraint === "vagas_no_limite") return recusarHora;
         throw erro;
       }
     },

@@ -13,7 +13,9 @@ import {
   type FonteLoja,
   type Pedido,
   type ResultadoCriarPedido,
+  type ResultadoProposta,
 } from "./tipos";
+import { DESTINO_PEDIDOS } from "@/lib/pedidos";
 
 /**
  * # Os pedidos na base de dados (#29, #41)
@@ -48,7 +50,10 @@ export type OpcoesDosPedidos = {
   relogio?: () => Date;
 };
 
-export type FontePedidosBd = Pick<FonteDeDados, "ocupacao" | "criarPedido" | "pedidoPorReferencia" | "versaoPedidos">;
+export type FontePedidosBd = Pick<
+  FonteDeDados,
+  "ocupacao" | "criarPedido" | "pedidoPorReferencia" | "versaoPedidos" | "aceitarProposta" | "recusarProposta"
+>;
 
 /* Os limites de criar pedidos (`robustez.md` › Limites): pedidos em curso ao
    mesmo tempo, por IP e por email. Sem pagamento adiantado, quem não aparece
@@ -242,6 +247,7 @@ export async function lerPedidos(
 
 /** Os pedidos da loja sobre a base de dados. */
 export function criarPedidosBd(db: BaseDeDados, emLote: ExecutarLote, opcoes: OpcoesDosPedidos): FontePedidosBd {
+  const decidirProposta = decidirPropostaBd(db);
   const relogio = opcoes.relogio ?? (() => new Date());
 
   const pedidoPorChave = async (chave: string): Promise<Pedido | null> =>
@@ -345,10 +351,80 @@ export function criarPedidosBd(db: BaseDeDados, emLote: ExecutarLote, opcoes: Op
       return (await lerPedidos(db, eq(pedidos.referencia, referencia)))[0] ?? null;
     },
 
+    async aceitarProposta(referencia, versao, agora) {
+      const momento = sql`${agora.toISOString()}::timestamptz`;
+      return decidirProposta(
+        referencia,
+        versao,
+        sql`estado = 'confirmado', aceite_em = ${momento}, confirmado_em = ${momento}`,
+        /* O cliente e a loja: o aceite é a primeira ordem para a cozinha (`pedidos.md`). */
+        sql`select id, 'aceite-cliente', cliente_email, ${momento} from mudado
+            union all select id, 'aceite-loja', ${DESTINO_PEDIDOS}, ${momento} from mudado`,
+      );
+    },
+
+    async recusarProposta(referencia, versao, agora) {
+      const momento = sql`${agora.toISOString()}::timestamptz`;
+      return decidirProposta(
+        referencia,
+        versao,
+        sql`estado = 'cancelado', cancelado_em = ${momento}, cancelado_por = 'cliente'`,
+        sql`select id, 'cancelado-cliente', cliente_email, ${momento} from mudado`,
+        /* Recusar liberta a vaga, como cancelar. */
+        sql`
+          descontada as (
+            update vagas set ocupadas = vagas.ocupadas - 1
+            from mudado where vagas.inicio = mudado.levantamento_em
+            returning 1
+          ),`,
+      );
+    },
+
     async versaoPedidos() {
       const [linha] = await db.select({ versao: tabelaCasa.versaoPedidos }).from(tabelaCasa).where(eq(tabelaCasa.id, 1));
       return linha?.versao ?? 0;
     },
+  };
+}
+
+/**
+ * O aceite e a recusa: ⚠️ **uma instrução só**, condicional à versão que o link assina e a ainda
+ * esperar o aceite. Muda o pedido, deixa os emails por enviar e sobe a versão do painel; zero linhas
+ * é «já não estava assim», e lê-se o pedido para a página dizer em que ficou.
+ */
+function decidirPropostaBd(db: BaseDeDados) {
+  return async (
+    referencia: string,
+    versao: number,
+    mudanca: SQL,
+    emails: SQL,
+    efeitos: SQL = sql``,
+  ): Promise<ResultadoProposta> => {
+    if (!Number.isSafeInteger(versao) || versao < 1) return { ok: false, erro: "nao-existe" };
+    const resultado = await db.execute(sql`
+      with mudado as (
+        update pedidos set ${mudanca}
+        where referencia = ${referencia} and modo_pagamento = 'na-loja'
+          and estado = 'a-aguardar-aceite' and proposta_versao = ${versao}::integer
+        returning id, cliente_email, levantamento_em
+      ),
+      ${efeitos}
+      emails as (
+        insert into emails_por_enviar (pedido_id, modelo, destinatario, criado_em)
+        ${emails}
+        returning 1
+      ),
+      versao as (
+        update casa set versao_pedidos = versao_pedidos + 1
+        where id = 1 and exists (select 1 from mudado)
+        returning 1
+      )
+      select id from mudado
+    `);
+    const mudou = (resultado as unknown as { rows: unknown[] }).rows.length > 0;
+    const pedido = (await lerPedidos(db, eq(pedidos.referencia, referencia)))[0] ?? null;
+    if (!pedido) return { ok: false, erro: "nao-existe" };
+    return mudou ? { ok: true, pedido } : { ok: false, erro: "estado-mudou", pedido };
   };
 }
 

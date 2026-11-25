@@ -1,7 +1,7 @@
 import { TZDate } from "@date-fns/tz";
 import { eq, sql } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
-import { casa, pedidos, reembolsos, vagas } from "@/db/esquema";
+import { casa, emailsPorEnviar, pedidos, reembolsos, vagas } from "@/db/esquema";
 import { porDevolverCent } from "@/lib/painel";
 import { criarPedidosDoPainelBd } from "./bd-painel-pedidos";
 import { baseComPedidos, idDeTeste as u, type CasaDeTeste } from "./fontes-de-teste";
@@ -336,5 +336,59 @@ describe("um id que não é um uuid vem de um browser a inventar", () => {
     const { fonte } = await montar([]);
     expect(await fonte.marcarEntregue(u("zz"), false, GERENTE)).toEqual({ ok: false, erro: "nao-existe" });
     expect(await fonte.desfazerEntregue(u("zz"), GERENTE)).toEqual({ ok: false, erro: "nao-existe" });
+  });
+});
+
+describe("a resposta e o aceite deixam o email por enviar, na mesma instrução (#119)", () => {
+  const porConfirmar = (nome: string) => {
+    const base = pedido(nome);
+    return {
+      ...base,
+      estado: "por-confirmar" as const,
+      modoPagamento: "na-loja" as const,
+      pagoOnlineCent: 0,
+      pagoEm: null,
+      confirmadoEm: null,
+      expiraEm: new Date("2099-01-01T00:00:00Z"),
+      linhas: [base.linhas[0], { ...base.linhas[0], nome: "Bolo por medida", precoUnitarioCent: null, totalCent: null }],
+    };
+  };
+  const modelos = async (db: Awaited<ReturnType<typeof montar>>["db"]) =>
+    (await db.select().from(emailsPorEnviar)).map((e) => `${e.modelo} → ${e.destinatario}`).sort();
+
+  it("propor, aceitar: o email da proposta ao cliente, e os dois do aceite", async () => {
+    const { db, fonte, versao } = await montar([porConfirmar("a")]);
+    const antes = await versao();
+    const proposta = await fonte.responderPedido(u("a"), { precos: [{ posicao: 1, precoUnitarioCent: 4500 }], levantamentoEm: null }, GERENTE);
+    expect(proposta.ok).toBe(true);
+    expect(await modelos(db)).toEqual(["resposta-cliente → teste@example.com"]);
+    expect(await versao()).toBe(antes + 1);
+
+    const referencia = proposta.ok ? proposta.valor.referencia : "";
+    expect((await fonte.aceitarProposta(referencia, 1, lisboa(7, 11))).ok).toBe(true);
+    const depois = await modelos(db);
+    expect(depois).toContain("aceite-cliente → teste@example.com");
+    expect(depois.filter((m) => m.startsWith("aceite-loja → "))).toHaveLength(1);
+    /* Um segundo aceite não muda nada, e não manda outra vez. */
+    await fonte.aceitarProposta(referencia, 1, lisboa(7, 12));
+    expect(await modelos(db)).toHaveLength(3);
+  });
+
+  it("recusar liberta a vaga e avisa o cliente", async () => {
+    const { db, fonte, ocupadas } = await montar([porConfirmar("a")]);
+    const proposta = await fonte.responderPedido(u("a"), { precos: [{ posicao: 1, precoUnitarioCent: 4500 }], levantamentoEm: null }, GERENTE);
+    const referencia = proposta.ok ? proposta.valor.referencia : "";
+    const vaga = proposta.ok ? proposta.valor.levantamentoEm : new Date();
+    expect(await ocupadas(vaga)).toBe(1);
+    expect((await fonte.recusarProposta(referencia, 1, lisboa(7, 11))).ok).toBe(true);
+    expect(await ocupadas(vaga)).toBe(0);
+    expect(await modelos(db)).toContain("cancelado-cliente → teste@example.com");
+  });
+
+  it("o «sim» do balcão deixa a confirmação ao cliente", async () => {
+    const base = porConfirmar("a");
+    const { db, fonte } = await montar([{ ...base, linhas: [base.linhas[0]] }]);
+    expect((await fonte.responderPedido(u("a"), { precos: [], levantamentoEm: null }, BALCAO)).ok).toBe(true);
+    expect(await modelos(db)).toEqual(["confirmado-cliente → teste@example.com"]);
   });
 });

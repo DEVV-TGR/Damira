@@ -7,6 +7,7 @@ import {
   EsquemaHorarios,
   EsquemaOrdemCategorias,
   EsquemaProduto,
+  EsquemaResposta,
   AVISOS_TRATAVEIS,
   type AvisoTratavel,
   type ConfiguracaoDaCasa,
@@ -17,7 +18,20 @@ import {
   type Produto,
   type ResultadoPainel,
 } from "./tipos";
-import { comIds, emId, estadoAntesDeEntregue, invalido, livre, naoExiste, paraProcura, podeCancelar, REAGENDAVEIS } from "./regras";
+import {
+  comIds,
+  emId,
+  estadoAntesDeEntregue,
+  invalido,
+  livre,
+  naoExiste,
+  paraProcura,
+  pedidoRespondido,
+  planearResposta,
+  podeCancelar,
+  podeResponder,
+  REAGENDAVEIS,
+} from "./regras";
 
 /**
  * # O painel sobre os JSON — em memória, como os pedidos
@@ -319,6 +333,27 @@ export function criarPainelJson(
       }
       const cancelado: Pedido = { ...pedido, estado: "cancelado", canceladoEm: agora, canceladoPor: "gerente" };
       return gravarPedido(comReembolso(cancelado, reembolsoCent, agora));
+    },
+
+    async responderPedido(id, entrada, { agora, papel }) {
+      const pedido = estado.pedidos.get(id);
+      if (!pedido) return naoExiste;
+      if (!podeResponder(pedido, agora)) return { ok: false, erro: "estado-mudou" };
+      const lido = EsquemaResposta.safeParse(entrada);
+      if (!lido.success) return invalido(lido.error);
+      const novo = lido.data.levantamentoEm === null ? null : new Date(lido.data.levantamentoEm);
+      if (novo && Number.isNaN(novo.getTime())) return { ok: false, erro: "dados-invalidos", campos: ["levantamentoEm"] };
+      const planeado = planearResposta(pedido, { precos: lido.data.precos, levantamentoEm: novo }, papel);
+      if (!planeado.ok) return planeado;
+      const { plano } = planeado;
+      if (plano.levantamentoEm.getTime() !== pedido.levantamentoEm.getTime()) {
+        /* A hora nova, como no reagendar: da loja, com vaga, no futuro. */
+        const casa = estado.configuracao;
+        const ocupadas = ocupacaoEntre(plano.levantamentoEm, plano.levantamentoEm);
+        const validacao = validarLevantamento([], plano.levantamentoEm, agora, { ...casa, cozinha: casa.loja }, ocupadas);
+        if (!validacao.ok) return { ok: false, erro: "dados-invalidos", campos: ["levantamentoEm"] };
+      }
+      return gravarPedido(pedidoRespondido(pedido, plano, agora));
     },
 
     async reembolsarPedido(id, valorCent, { agora }) {

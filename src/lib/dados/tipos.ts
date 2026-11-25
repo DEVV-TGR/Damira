@@ -534,6 +534,36 @@ export type ErroPainel =
   | "falta-cobrar"
   | "fora-do-prazo";
 
+/**
+ * A resposta da casa a um pedido que espera por ela (`pedidos.md` › Confirmar e › O aceite do
+ * cliente). Sem preços novos nem hora nova, é o «sim» — `confirmado`, e pode dá-lo o balcão. Com um
+ * preço para uma linha sem preço, ou com outra hora, é uma **proposta** — `a-aguardar-aceite`, só da
+ * gerente, porque fixa dinheiro. Responder outra vez a um `a-aguardar-aceite` revê a proposta, e o
+ * link anterior deixa de aceitar.
+ *
+ * Os preços são **unitários**, em cêntimos, por posição da linha; o total de cada linha e do pedido
+ * calcula-os o servidor. Só se fixam linhas sem preço, ou já fixadas numa proposta anterior: o
+ * preço que o cliente viu ao pedir não se muda por aqui.
+ */
+export const EsquemaResposta = z.object({
+  precos: z
+    .array(z.object({ posicao: z.number().int().nonnegative(), precoUnitarioCent: Cent }))
+    .max(50),
+  /** ISO, ou `null` para manter a hora. */
+  levantamentoEm: z.string().nullable(),
+});
+export type EntradaResposta = z.infer<typeof EsquemaResposta>;
+
+/**
+ * O resultado do aceite ou da recusa pelo link do email. Um link de um pedido que já não espera o
+ * aceite (aceite, cancelado, revisto) devolve `estado-mudou` **com o pedido**, para a página mostrar
+ * em que ficou, sem mudar nada (`pedidos.md` › O orçamento e o aceite).
+ */
+export type ResultadoProposta =
+  | { ok: true; pedido: Pedido }
+  | { ok: false; erro: "nao-existe" }
+  | { ok: false; erro: "estado-mudou"; pedido: Pedido };
+
 /** As escritas devolvem um resultado e nunca rebentam para o browser (`robustez.md`). */
 export type ResultadoPainel<T> =
   | { ok: true; valor: T }
@@ -791,6 +821,15 @@ export type FontePainel = {
    */
   cancelarPedido(id: string, reembolsoCent: number, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
   /**
+   * A resposta da casa (`EsquemaResposta`): confirma um `por-confirmar`, ou faz uma proposta com
+   * preços ou hora novos e passa-o a `a-aguardar-aceite` — ou revê a proposta de um que já espera
+   * o aceite. **Condicional** ao pedido estar como foi lido (estado, versão e hora): dois aparelhos
+   * a responder ao mesmo tempo respondem uma vez. Grava, na mesma instrução, o email ao cliente
+   * (`emails_por_enviar`). Confirmar é da equipa; propor é só da gerente, e quem o verifica é a
+   * fonte, porque depende do que se envia.
+   */
+  responderPedido(id: string, entrada: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
+  /**
    * Um reembolso sem cancelar (um artigo que faltou), num pedido **pago,
    * entregue ou cancelado** — cancelado sem reembolso e devolvido mais tarde.
    */
@@ -835,4 +874,17 @@ export type FonteLoja = {
   cotarCesto(linhas: unknown): Promise<ResultadoCotacao>;
   criarPedido(entrada: unknown, contexto: ContextoPedido): Promise<ResultadoCriarPedido>;
   pedidoPorReferencia(referencia: string): Promise<Pedido | null>;
+  /**
+   * O cliente aceita a proposta pelo link do email: `a-aguardar-aceite → confirmado`, **só na versão
+   * que o link assina** — uma proposta revista já não se aceita pelo link antigo. Grava `aceiteEm` e
+   * `confirmadoEm`, e os emails ao cliente e à loja, numa instrução só. ⚠️ A credencial do link
+   * verifica-a quem chama (`src/lib/proposta.ts`), antes de chegar aqui: a referência sozinha não
+   * autoriza nada.
+   */
+  aceitarProposta(referencia: string, versao: number, agora: Date): Promise<ResultadoProposta>;
+  /**
+   * O cliente recusa a proposta pelo link: `a-aguardar-aceite → cancelado`, com `canceladoPor =
+   * cliente`, sem custos (`pedidos.md` § 4). Liberta a vaga. As mesmas condições do aceite.
+   */
+  recusarProposta(referencia: string, versao: number, agora: Date): Promise<ResultadoProposta>;
 };
