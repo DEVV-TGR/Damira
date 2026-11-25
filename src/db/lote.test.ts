@@ -12,12 +12,16 @@ import { baseDeTeste } from "./teste";
 
 const { db, cliente } = await baseDeTeste();
 afterAll(() => cliente.close());
+/* O produto aponta para uma categoria (#124). */
+await cliente.exec("insert into categorias (id, nome_pt, posicao) values ('kits-bolo', 'Bolo e mesa decorada', 0)");
 
 const PRODUTO = {
   id: "bolo-de-teste",
   posicao: 0,
   origem: "encomendas",
   familia: "bolo",
+  categoriaId: "kits-bolo",
+  tipo: "simples",
   nomePt: "Bolo de teste",
   unidade: "un",
   quantidadeMinima: 1,

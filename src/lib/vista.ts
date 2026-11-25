@@ -9,7 +9,7 @@ import type { TipoPedido } from "@/lib/pedidos";
  * a `@/lib/dados` e respondem a perguntas de apresentação. Ficam fora da
  * fronteira (`divisao.md`: «as funções auxiliares que não tocam em dados ficam
  * em `src/lib/`»), e por isso podem ser importadas em componentes de cliente
- * sem levar o catálogo para o browser — que é o que o `caminhoDoArtigo` fazia
+ * sem levar o catálogo para o browser — que é o que os caminhos faziam
  * quando vivia no `produtos.ts`.
  */
 
@@ -72,14 +72,6 @@ export const caminhoDoProduto = (id: string): string => `/encomendas/${id}`;
  * `MenuEncomendas`).
  */
 export const SECCOES_ENCOMENDAS = ["festas", "kits-bolo", "boxes", "da-ementa", "pedido"] as const;
-
-/**
- * ⚠️ **A página de um artigo fica debaixo de `/ementa`, e não de
- * `/encomendas`**, mesmo quando o artigo se encomenda: é a separação de sempre
- * (ver o `AGENTS.md`). O que a página diz é que se pode encomendar; o endereço
- * diz que é da carta.
- */
-export const caminhoDoArtigo = (id: string): string => `/ementa/${id}`;
 
 // ——— A ementa, por carta e categoria ———
 

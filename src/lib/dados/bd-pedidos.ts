@@ -4,8 +4,9 @@ import type { BaseDeDados } from "@/db/catalogo";
 import { casa as tabelaCasa, linhasPedido, pedidos, reembolsos, vagas } from "@/db/esquema";
 import { erroDoPostgres } from "@/db/erros";
 import type { ExecutarLote } from "@/db/lote";
-import { conferirPedido, gerarReferencia, pedidoPorPagar, PRAZO_DO_PEDIDO_MS, textoDeProcura } from "./regras";
+import { conferirPedido, gerarReferencia, pedidoNaLoja, PRAZO_DO_PEDIDO_MS, textoDeProcura } from "./regras";
 import {
+  ESTADOS_EM_CURSO,
   EsquemaEntradaPedido,
   EsquemaPedido,
   type FonteDeDados,
@@ -49,30 +50,42 @@ export type OpcoesDosPedidos = {
 
 export type FontePedidosBd = Pick<FonteDeDados, "ocupacao" | "criarPedido" | "pedidoPorReferencia" | "versaoPedidos">;
 
-/* Os limites de criar pedidos (`robustez.md` › Limites): pendentes ao mesmo
-   tempo, por IP e por email. */
-const PENDENTES_POR_IP = 5;
-const PENDENTES_POR_EMAIL = 3;
+/* Os limites de criar pedidos (`robustez.md` › Limites): pedidos em curso ao
+   mesmo tempo, por IP e por email. Sem pagamento adiantado, quem não aparece
+   não paga nada (`pedidos.md` › Dinheiro): por isso contam os que esperam pela
+   casa e os confirmados por levantar, e não só os pendentes do Stripe. */
+const EM_CURSO_POR_IP = 5;
+const EM_CURSO_POR_EMAIL = 3;
+
+/* Os estados em curso, escritos no SQL como os índices parciais da `0006` os
+   têm: é o que deixa o Postgres usá-los na contagem. */
+const EM_CURSO = sql.raw(ESTADOS_EM_CURSO.map((estado) => `'${estado}'`).join(", "));
 
 /* Quantas referências se tentam antes de desistir. Com 32⁴ por dia, colidir
    duas vezes seguidas já é sinal de outra coisa. */
 const TENTATIVAS_DE_REFERENCIA = 5;
 
 /**
- * Os pendentes que a condição escolhe passam a `expirado`, numa instrução só:
+ * Os pedidos que a condição escolhe passam a `expirado`, numa instrução só:
  * muda os pedidos, desconta as vagas deles e sobe a versão do painel, se houve
  * algum. É um sítio só para o desconto: a limpeza por idade e o pedido expirado
  * pelo id, no «voltar atrás» do #38, descontam da mesma maneira.
  *
+ * ⚠️ **A condição tem de escolher só `pendente` ou `por-confirmar`**: são os
+ * dois estados que expiram, e a causa sai do estado — o pendente do Stripe
+ * expira `sem-pagamento`, o que esperava pela casa `sem-resposta-da-casa`.
+ *
  * Duas ao mesmo tempo não descontam duas vezes: a segunda espera pelo *lock* da
- * linha, volta a avaliar o `estado = 'pendente'` e já não a encontra. Os `UPDATE`
- * dentro do `WITH` correm sempre, mesmo sem ninguém os ler.
+ * linha, volta a avaliar a condição e já não a encontra. Os `UPDATE` dentro do
+ * `WITH` correm sempre, mesmo sem ninguém os ler.
  */
-function expirarPendentes(db: BaseDeDados, condicao: SQL) {
+function expirar(db: BaseDeDados, condicao: SQL) {
   return db.execute(sql`
     with expirados as (
-      update pedidos set estado = 'expirado'
-      where estado = 'pendente' and ${condicao}
+      update pedidos set
+        estado = 'expirado',
+        causa_expiracao = case estado when 'pendente' then 'sem-pagamento' else 'sem-resposta-da-casa' end
+      where estado in ('pendente', 'por-confirmar') and (${condicao})
       returning levantamento_em
     ),
     por_vaga as (
@@ -89,24 +102,36 @@ function expirarPendentes(db: BaseDeDados, condicao: SQL) {
 }
 
 /**
- * # A limpeza: os pendentes que já não se podem pagar passam a `expirado`
+ * # A limpeza: o que já passou do prazo passa a `expirado`
  *
  * **Sem tarefa agendada** (regra 6: a base de dados dorme) — corre antes de ler a
  * ocupação e dentro do `criarPedido`, quando já há um cliente no site
- * (`base-de-dados.md` › Expirar sem tarefa agendada).
+ * (`base-de-dados.md` › Expirar sem tarefa agendada). Dois prazos:
  *
- * ⚠️ **Nunca antes do prazo**: o pedido expira quando o Stripe já não aceita o
- * pagamento, e não um minuto antes (`pedidos.md`). Por isso é «mais velho do que
- * o prazo», estritamente.
+ * - **o `por-confirmar` a que a casa não respondeu**, a partir de `expira_em`
+ *   (`agora >= expiraEm` já está expirado: `pedidos.md` › Expirar às 48 horas);
+ * - **o `pendente` do Stripe**, que dorme com ele mas pode ter ficado de antes:
+ *   ⚠️ nunca antes do prazo — expira quando o Stripe já não aceita o pagamento, e
+ *   não um minuto antes. Por isso é «mais velho do que o prazo», estritamente.
+ *
+ * ⚠️ O email ao cliente de «a casa não respondeu a tempo» ainda não se grava
+ * aqui: chega com a fila dos emails (#119), na mesma instrução.
  */
 export function limparExpirados(db: BaseDeDados, agora: Date) {
   const limite = new Date(agora.getTime() - PRAZO_DO_PEDIDO_MS).toISOString();
-  return expirarPendentes(db, sql`criado_em < ${limite}::timestamptz`);
+  return expirar(
+    db,
+    sql`(estado = 'pendente' and criado_em < ${limite}::timestamptz)
+      or (estado = 'por-confirmar' and expira_em <= ${agora.toISOString()}::timestamptz)`,
+  );
 }
 
-/** Expira este pedido já, se ainda estiver pendente; em qualquer outro estado, nada. */
+/**
+ * Expira este pedido já, se ainda estiver pendente; em qualquer outro estado,
+ * nada. É o «voltar atrás» do checkout do Stripe (#38), e dorme com ele.
+ */
 export function expirarPedido(db: BaseDeDados, id: string) {
-  return expirarPendentes(db, sql`id = ${id}::uuid`);
+  return expirar(db, sql`estado = 'pendente' and id = ${id}::uuid`);
 }
 
 /**
@@ -203,6 +228,10 @@ export async function lerPedidos(
       canceladoEm: p.canceladoEm,
       canceladoPor: p.canceladoPor,
       reagendadoEm: p.reagendadoEm,
+      confirmadoEm: p.confirmadoEm,
+      expiraEm: p.expiraEm,
+      aceiteEm: p.aceiteEm,
+      causaExpiracao: p.causaExpiracao,
     });
   });
 }
@@ -259,7 +288,7 @@ export function criarPedidosBd(db: BaseDeDados, emLote: ExecutarLote, opcoes: Op
       const { levantamentoEm, linhas: linhasDoPedido } = conferido;
 
       for (let tentativa = 0; tentativa < TENTATIVAS_DE_REFERENCIA; tentativa++) {
-        const pedido = pedidoPorPagar(dados, conferido, {
+        const pedido = pedidoNaLoja(dados, conferido, {
           id: randomUUID(),
           referencia: gerarReferencia(agora),
           agora,
@@ -320,8 +349,8 @@ export function criarPedidosBd(db: BaseDeDados, emLote: ExecutarLote, opcoes: Op
 }
 
 /**
- * O `INSERT` do pedido, que **só insere dentro dos limites**: menos de 5
- * pendentes do mesmo IP e menos de 3 do mesmo email (`robustez.md` › Limites),
+ * O `INSERT` do pedido, que **só insere dentro dos limites**: menos de 5 em
+ * curso do mesmo IP e menos de 3 do mesmo email (`robustez.md` › Limites),
  * contados pelos índices parciais na própria instrução. Fora deles não insere
  * nada, e a instrução seguinte do lote — as linhas — falha por isso.
  */
@@ -335,19 +364,21 @@ function inserirSeDentroDosLimites(
     insert into pedidos (
       id, referencia, estado, criado_em, levantamento_em,
       cliente_nome, cliente_email, cliente_telefone, cliente_nif, conta_id,
-      observacoes, total_cent, modo_pagamento, chave_idempotencia, ip, procura, de_teste
+      observacoes, total_cent, modo_pagamento, chave_idempotencia, ip, procura, de_teste,
+      confirmado_em, expira_em
     )
     select
-      ${pedido.id}::uuid, ${pedido.referencia}, 'pendente',
+      ${pedido.id}::uuid, ${pedido.referencia}, ${pedido.estado},
       ${pedido.criadoEm.toISOString()}::timestamptz, ${pedido.levantamentoEm.toISOString()}::timestamptz,
       ${cliente.nome}, ${cliente.email}, ${cliente.telefone}, ${cliente.nif}::text, ${cliente.contaId}::text,
       ${pedido.observacoes}::text, ${pedido.totalCent}::integer, ${pedido.modoPagamento},
-      ${chave}::uuid, ${ip}::text, ${textoDeProcura(cliente.nome, pedido.referencia)}, ${deTeste}::boolean
+      ${chave}::uuid, ${ip}::text, ${textoDeProcura(cliente.nome, pedido.referencia)}, ${deTeste}::boolean,
+      ${pedido.confirmadoEm?.toISOString() ?? null}::timestamptz, ${pedido.expiraEm?.toISOString() ?? null}::timestamptz
     where (
       ${ip}::text is null
-      or (select count(*) from pedidos where estado = 'pendente' and ip = ${ip}::text) < ${PENDENTES_POR_IP}
+      or (select count(*) from pedidos where estado in (${EM_CURSO}) and ip = ${ip}::text) < ${EM_CURSO_POR_IP}
     )
-    and (select count(*) from pedidos where estado = 'pendente' and cliente_email = ${cliente.email})
-      < ${PENDENTES_POR_EMAIL}
+    and (select count(*) from pedidos where estado in (${EM_CURSO}) and cliente_email = ${cliente.email})
+      < ${EM_CURSO_POR_EMAIL}
   `);
 }

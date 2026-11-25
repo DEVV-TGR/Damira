@@ -156,6 +156,10 @@ export function fonteDeExemplo(
       reembolsos: [],
       avisosTratados: [],
       reagendadoEm: null,
+      confirmadoEm: null,
+      expiraEm: null,
+      aceiteEm: null,
+      causaExpiracao: null,
     };
     estado.pedidos.set(pedido.id, pedido);
     estado.porReferencia.set(pedido.referencia, pedido.id);
@@ -296,7 +300,10 @@ const paraEmail = (nome: string) =>
 /* A linha como o pedido a guarda: a fotografia do momento, com o preço do
    catálogo (`pedidos.md`). Um pedido de exemplo nunca cobra o que o site não
    cobraria. */
-const linhaDoPedido = (produto: Produto, quantidade?: number): Pedido["linhas"][number] => {
+const linhaDoPedido = (
+  produto: Produto,
+  quantidade?: number,
+): Pedido["linhas"][number] & { precoUnitarioCent: number; totalCent: number } => {
   const variante = produto.variantes[0];
   const qtd = quantidade ?? produto.quantidadeMinima;
   const preco = variante.precoCent!;
@@ -474,6 +481,10 @@ export function pedidosDoPainelDeExemplo(
       reembolsos: [],
       avisosTratados: [],
       reagendadoEm: null,
+      confirmadoEm: null,
+      expiraEm: null,
+      aceiteEm: null,
+      causaExpiracao: null,
     });
   });
   return pedidos;

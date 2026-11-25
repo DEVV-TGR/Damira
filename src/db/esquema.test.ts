@@ -19,7 +19,10 @@ import { baseDeTeste, recusado } from "./teste";
 const { db, cliente } = await baseDeTeste();
 
 afterAll(() => cliente.close());
-beforeEach(() => cliente.exec("begin"));
+/* Os produtos apontam para uma categoria (#124): as que estes usam nascem com cada transação. */
+const COMECAR = `begin;
+  insert into categorias (id, nome_pt, posicao) values ('casa-doces', 'Doces', 0), ('festas', 'Kit Festas', 1), ('kits-bolo', 'Bolo e mesa decorada', 2);`;
+beforeEach(() => cliente.exec(COMECAR));
 afterEach(() => cliente.exec("rollback"));
 
 // ——— O que se grava ———
@@ -33,6 +36,8 @@ const NATA = {
   nomeEn: "Custard tart",
   carta: "casa",
   categoria: "doces",
+  categoriaId: "casa-doces",
+  tipo: "simples",
   unidade: "un",
   quantidadeMinima: 6,
   multiplo: 6,
@@ -45,6 +50,8 @@ const KIT = {
   posicao: 2,
   origem: "encomendas",
   familia: "festa",
+  categoriaId: "festas",
+  tipo: "composto",
   nomePt: "Kit Premium",
   unidade: "un",
   quantidadeMinima: 1,

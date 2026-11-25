@@ -28,7 +28,7 @@ import { FotosProduto } from "./FotosProduto";
 const CAMPOS: Record<string, string> = {
   nome: "o nome",
   descricao: "a descrição",
-  carta: "a carta",
+  carta: "a secção do dia a dia",
   categoria: "a categoria",
   familia: "a família",
   variantes: "as variantes e os preços",
@@ -205,7 +205,7 @@ export function EditorProduto({
         <div className="flex flex-wrap gap-4">
           {(
             [
-              ["ementa", "Na carta"],
+              ["ementa", "No dia a dia"],
               ["encomendas", "Nas encomendas"],
             ] as const
           ).map(([origem, rotulo]) => (
@@ -223,7 +223,7 @@ export function EditorProduto({
         {e.origem === "ementa" ? (
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
             <label className="text-sm font-semibold">
-              Carta
+              Secção
               <select value={e.carta ?? ""} onChange={(ev) => mudar({ carta: ev.target.value || null })} className={campo}>
                 <option value="">—</option>
                 {ordem.cartas.map((c) => (
@@ -262,12 +262,15 @@ export function EditorProduto({
           </label>
         )}
         <div className="mt-3 space-y-1">
-          <Caixa checked={e.apareceNaEmenta} onChange={(v) => mudar({ apareceNaEmenta: v })} titulo="Aparece na ementa" />
+          {/* ⚠️ **Saiu a caixa «Aparece na ementa».** A `/ementa` saiu a 12/11
+              (#123), e nenhuma página lia aquele valor: era uma caixa que não
+              mudava nada no site. A coluna continua na base de dados, e o valor
+              que lá está guarda-se ao gravar. */}
           <Caixa
             checked={e.aVendaOnline}
             onChange={(v) => mudar({ aVendaOnline: v })}
             titulo="À venda online"
-            explicacao="Diferente de aparecer na ementa: não se encomenda um galão para sexta."
+            explicacao="Aparece nas encomendas, com botão. Não se encomenda um galão para sexta."
           />
         </div>
       </fieldset>

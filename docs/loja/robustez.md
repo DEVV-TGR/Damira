@@ -71,12 +71,15 @@ memória não servem: na Vercel cada pedido pode cair numa instância diferente.
 |---|---|
 | PIN do balcão | 5 erros → 15 min bloqueado (`painel.md`) |
 | Código da gerente | envios por hora e tentativas por código (`painel.md`) |
-| Criar pedido | 5 pendentes por IP e 3 por email ao mesmo tempo |
+| Criar pedido | 5 em curso por IP e 3 por email ao mesmo tempo (`por-confirmar`, `a-aguardar-aceite`, `confirmado` e o `pendente` do Stripe) |
 | Fotos dos bolos personalizados | por pedido e por IP |
 
-⚠️ **Porquê limitar a criação de pedidos.** Um pedido pendente reserva vaga e
-quantidades durante 31 minutos. Sem limite, um robô — ou alguém com má intenção
-— esvaziava o calendário da loja sem pagar um cêntimo. O campo-armadilha que já
+⚠️ **Porquê limitar a criação de pedidos.** Sem pagamento adiantado, um pedido
+reserva a vaga até ser entregue, cancelado ou expirar — um `por-confirmar`
+durante até 48 horas, e um `confirmado` até ao levantamento. Sem limite, um robô
+— ou alguém com má intenção — esvaziava o calendário da loja sem pagar um
+cêntimo. Por isso o limite conta todos os pedidos em curso, e não só os que
+esperam por um pagamento (`pedidos.md` › Dinheiro). O campo-armadilha que já
 existe em `pedidos.ts` continua.
 
 ## Serviços externos e os seus limites
@@ -158,7 +161,7 @@ calmo de um tablet desligado.
 
 ## Cache
 
-- **Em cache:** as páginas públicas (ementa, produtos), revalidadas quando a
+- **Em cache:** as páginas públicas (a inicial, as encomendas e os produtos), revalidadas quando a
   gerente grava (`painel-gerente.md`); o número de versão do painel.
 - ⚠️ **Nunca em cache:** vagas, quantidades, o estado de um pedido, o checkout e
   tudo o que está em `/painel`. Uma vaga em cache é uma vaga vendida duas vezes,

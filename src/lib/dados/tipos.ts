@@ -275,7 +275,55 @@ export type ResultadoCotacao =
 
 // ——— O pedido (pedidos.md) ———
 
-export const ESTADOS_PEDIDO = ["pendente", "pago", "entregue", "expirado", "cancelado"] as const;
+/**
+ * Os estados do contrato (`pedidos.md` › Os estados). Com o pagamento na loja,
+ * um levantamento sem nada a confirmar nasce `confirmado`; o resto nasce
+ * `por-confirmar`, e passa a `a-aguardar-aceite` quando a casa responde com
+ * preço ou hora que o cliente ainda não viu. O `pendente` e o `pago` são do
+ * pagamento online: **dormem** (nenhum pedido lá entra enquanto ele estiver
+ * desligado), mas ficam, para o desenho não se perder.
+ */
+export const ESTADOS_PEDIDO = [
+  "por-confirmar",
+  "a-aguardar-aceite",
+  "confirmado",
+  "pendente",
+  "pago",
+  "entregue",
+  "expirado",
+  "cancelado",
+] as const;
+
+/**
+ * Porque é que um pedido expirou (`pedidos.md` › Os estados): `expirado` e
+ * `cancelado` não se confundem, e dentro do expirado a causa também conta. A
+ * `sem-aceite-do-cliente` é proposta (`pedidos.md` › Em aberto, 2) e só entra
+ * quando for decidida.
+ */
+export const CAUSAS_EXPIRACAO = ["sem-resposta-da-casa", "sem-pagamento"] as const;
+
+/**
+ * Como se paga (`pedidos.md` › Dinheiro): `na-loja` é o levantamento pago ao
+ * balcão, no toque do `entregue`. O `total` e o `sinal` são do Stripe, e dormem
+ * com ele. A `transferencia` das entregas entra quando a entrega for decidida
+ * (`pedidos.md` › Em aberto, 8).
+ */
+export const MODOS_PAGAMENTO = ["na-loja", "total", "sinal"] as const;
+
+/**
+ * Os pedidos ainda em curso, que contam nos limites de criar pedidos
+ * (`robustez.md` › Limites): o `pendente` do Stripe e, com o pagamento na loja,
+ * os que esperam pela casa ou pelo cliente e os `confirmado` por levantar.
+ */
+export const ESTADOS_EM_CURSO = [
+  "por-confirmar",
+  "a-aguardar-aceite",
+  "confirmado",
+  "pendente",
+] as const satisfies readonly (typeof ESTADOS_PEDIDO)[number][];
+
+/** Os modos do Stripe: só neles há `pendente`, `pago` e `pagoEm`. */
+export const MODOS_ONLINE = ["total", "sinal"] as const satisfies readonly (typeof MODOS_PAGAMENTO)[number][];
 
 /** A referência de balcão: `DAM-DDMM-XXXX`, sem letras que se confundem ao telefone. */
 export const FORMATO_REFERENCIA = /^DAM-[0-9]{4}-[A-HJ-NP-Z2-9]{4}$/;
@@ -293,8 +341,13 @@ export const EsquemaLinhaPedido = z.object({
   escolhas: z.array(z.string()),
   unidade: z.enum(["un", "kg"]),
   quantidade: z.number().positive(),
-  precoUnitarioCent: Cent,
-  totalCent: Cent,
+  /**
+   * `null` numa linha sem preço (o bolo por medida), até a gerente o fixar ao
+   * responder. Nunca se soma como zero: o total do pedido é só a parte conhecida
+   * (`pedidos.md` › Dinheiro). Os dois sabem-se juntos ou nenhum.
+   */
+  precoUnitarioCent: Cent.nullable(),
+  totalCent: Cent.nullable(),
   notas: z.string().nullable(),
 });
 
@@ -319,7 +372,7 @@ export const EsquemaPedido = z.object({
   linhas: z.array(EsquemaLinhaPedido).min(1),
   observacoes: z.string().nullable(),
   totalCent: Cent,
-  modoPagamento: z.enum(["total", "sinal"]),
+  modoPagamento: z.enum(MODOS_PAGAMENTO),
   pagoOnlineCent: Cent,
   /** Só reembolsos `concluido`. O que falta pagar na loja calcula-se, não se guarda. */
   reembolsadoCent: Cent,
@@ -328,7 +381,25 @@ export const EsquemaPedido = z.object({
   /** O que a gerente já decidiu: o facto fica, o aviso sai (`pedidos.md` › Avisos tratados). */
   avisosTratados: z.array(z.enum(AVISOS_TRATAVEIS)),
   chegouTarde: z.boolean(),
+  /** Só do Stripe. Um pedido pago na loja nunca o tem: paga-se no toque do `entregue`. */
   pagoEm: z.date().nullable(),
+  /**
+   * Quando ficou `confirmado` — ao nascer, se não tinha nada a confirmar. Fica
+   * depois de entregue ou cancelado: o tempo de serviço mede-se daqui ao
+   * `entregueEm` (`pedidos.md`).
+   */
+  confirmadoEm: z.date().nullable(),
+  /**
+   * Até quando a casa tem para responder a um `por-confirmar`: `criadoEm + 48 h`
+   * corridas (`pedidos.md` › Expirar às 48 horas). `null` num pedido que nasceu
+   * confirmado. Fica depois de ele mudar de estado.
+   */
+  expiraEm: z.date().nullable(),
+  /** Quando o cliente aceitou a resposta da casa (`pedidos.md` › O aceite do cliente). */
+  aceiteEm: z.date().nullable(),
+  /** Só num `expirado`, e sempre nele. */
+  causaExpiracao: z.enum(CAUSAS_EXPIRACAO).nullable(),
+  /** A primeira impressão que a impressora confirmou. Reimprimir não o muda. */
   impressoEm: z.date().nullable(),
   entregueEm: z.date().nullable(),
   canceladoEm: z.date().nullable(),
@@ -351,14 +422,17 @@ export type AvisoTratavel = (typeof AVISOS_TRATAVEIS)[number];
  *   não aprender nada.
  * - `indisponivel`: a vaga não existe para este cesto — ou o calendário ainda
  *   não pode ser calculado, porque falta a cozinha ou um tempo de produção.
- * - `demasiados-pedidos`: o limite por IP e por email. **Conta-o a base de
- *   dados**; a implementação provisória não o conta.
+ * - `demasiados-pedidos`: o limite de pedidos em curso por IP e por email.
+ *   **Conta-o a base de dados**; a implementação provisória não o conta.
+ *
+ * Não há erro para um artigo sem preço: desde o pagamento na loja, o pedido
+ * nasce `por-confirmar` e a gerente fixa o preço ao responder (`pedidos.md` ›
+ * Confirmar). O `sob-orcamento` que o recusava saiu.
  */
 export type ErroCriarPedido =
   | "dados-invalidos"
   | "recusado"
   | "artigo-invalido"
-  | "sob-orcamento"
   | "loja-em-pausa"
   | "abaixo-do-minimo-da-loja"
   | "indisponivel"
@@ -664,14 +738,18 @@ export type FontePainel = {
   listarPedidos(filtro: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<PaginaPedidos>>;
   pedidoDoPainel(id: string, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
   /**
-   * `pago → entregue`, **condicional**: dois toques ao mesmo tempo (ou em dois
+   * `confirmado → entregue` num pedido pago na loja, ou `pago → entregue` no do
+   * Stripe, **condicional**: dois toques ao mesmo tempo (ou em dois
    * dispositivos) entregam uma vez, e o segundo recebe o pedido já entregue.
-   * Com dinheiro em falta, só com `faltaCobrada: true` — o painel pergunta
-   * «Recebeu os 12,50 € em falta?» antes, e o servidor não confia que perguntou.
+   * Pago na loja, o dinheiro entra nesse toque e o `faltaCobrada` não conta. No
+   * do Stripe, com dinheiro em falta, só com `faltaCobrada: true` — o painel
+   * pergunta «Recebeu os 12,50 € em falta?» antes, e o servidor não confia que
+   * perguntou.
    */
   marcarEntregue(id: string, faltaCobrada: boolean, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
   /**
-   * `entregue → pago`. ⚠️ **A única regra de papel que a fonte verifica ela
+   * `entregue → confirmado` (pago na loja) ou `entregue → pago` (Stripe): volta
+   * ao estado de onde veio. ⚠️ **A única regra de papel que a fonte verifica ela
    * própria**, porque depende do pedido: o balcão só nos 5 minutos a seguir ao
    * `entregueEm`; a gerente a qualquer momento (`pedidos.md`).
    */
@@ -683,14 +761,20 @@ export type FontePainel = {
   /** Dá um aviso por tratado. O facto (`chegouTarde`, o dia fechado) fica. */
   tratarAviso(id: string, tipo: AvisoTratavel, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
   /**
-   * Muda o levantamento de um pedido `pago`. `levantamentoEm` em ISO; tem de ser
+   * Muda o levantamento de um pedido `confirmado` ou `pago`. `levantamentoEm` em ISO; tem de ser
    * uma hora em que a loja abre e com vaga (`validarLevantamento` com o horário
    * da loja), e no futuro. A vaga antiga liberta-se na mesma transação.
+   * Provisório: ainda não regista o acordo nem emite os avisos ou o talão de
+   * alteração exigidos pelo contrato (`pedidos.md` › Mudar o levantamento).
    */
   reagendarPedido(id: string, levantamentoEm: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
   /**
-   * `pago → cancelado`, pela gerente, com o reembolso escolhido: `0` é nenhum, e
-   * nunca mais do que o pago online ainda por devolver. Liberta a vaga.
+   * `→ cancelado`, pela gerente: um pedido pago na loja `por-confirmar`,
+   * `a-aguardar-aceite` ou `confirmado`, ou um `pago` do Stripe. Com o reembolso
+   * escolhido: `0` é nenhum, e nunca mais do que o pago online ainda por
+   * devolver — pago na loja, só `0`. Liberta a vaga. Um `por-confirmar` com
+   * prazo terminado é recusado, mesmo antes da limpeza. Ainda regista sempre
+   * iniciativa da gerente; distinguir a do cliente depende do novo parâmetro.
    */
   cancelarPedido(id: string, reembolsoCent: number, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
   /**

@@ -164,6 +164,14 @@ export const comIds = (variantes: EntradaLida["variantes"]): Produto["variantes"
  */
 export const PRAZO_DO_PEDIDO_MS = 31 * 60_000;
 
+/**
+ * **O prazo da casa para responder a um `por-confirmar`: 48 horas corridas**,
+ * contadas de quando nasceu (`pedidos.md` › Expirar às 48 horas, §1 da
+ * política). Corridas quer dizer instantes e não hora de parede: soma-se ao
+ * instante, e numa mudança de hora o cliente lê uma hora a mais ou a menos.
+ */
+export const PRAZO_DA_RESPOSTA_MS = 48 * 3_600_000;
+
 const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 /**
@@ -185,7 +193,14 @@ export type PedidoConferido = {
   ok: true;
   levantamentoEm: Date;
   linhas: Pedido["linhas"];
+  /** Só a parte conhecida: uma linha sem preço nunca se soma como zero. */
   totalCent: number;
+  /**
+   * Se o pedido espera pela casa: basta **um** produto que necessite de
+   * confirmação, ou uma linha sem preço, para o pedido inteiro esperar
+   * (`pedidos.md` › Confirmar).
+   */
+  porConfirmar: boolean;
 };
 
 /**
@@ -214,8 +229,11 @@ export async function conferirPedido(
 
   const cotacao = cotarLinhas(dados.linhas, produtoDe);
   if (!cotacao.valida) return { ok: false, erro: "artigo-invalido", linhas: cotacao.linhas };
-  if (cotacao.semPreco > 0) return { ok: false, erro: "sob-orcamento", linhas: cotacao.linhas };
-  if (definicoes.valorMinimoCent !== null && cotacao.totalCent < definicoes.valorMinimoCent) {
+  /* ⚠️ Com uma linha por orçar, a parte conhecida não diz quanto o pedido vai
+     custar — o bolo por medida sozinho dava zero. O mínimo só se confere quando
+     se sabem todos os preços; com uma linha por orçar, decide a gerente, ao
+     responder. */
+  if (definicoes.valorMinimoCent !== null && cotacao.semPreco === 0 && cotacao.totalCent < definicoes.valorMinimoCent) {
     return { ok: false, erro: "abaixo-do-minimo-da-loja" };
   }
 
@@ -243,6 +261,9 @@ export async function conferirPedido(
     ok: true,
     levantamentoEm,
     totalCent: cotacao.totalCent,
+    /* O servidor trata uma linha sem preço como «necessita de confirmação»,
+       diga a caixa o que disser (`pedidos.md` › Confirmar). */
+    porConfirmar: cotacao.semPreco > 0 || produtos.some((p) => p.pedeConfirmacao),
     linhas: dados.linhas.map((linha, i) => {
       const produto = produtos[i];
       const variante = produto.variantes.find((v) => v.id === linha.varianteId)!;
@@ -257,32 +278,40 @@ export async function conferirPedido(
         escolhas: linha.escolhas,
         unidade: produto.unidade,
         quantidade: linha.quantidade,
-        precoUnitarioCent: cotada.precoUnitarioCent!,
-        totalCent: cotada.totalCent!,
+        /* `null` numa linha sem preço, até a gerente o fixar. */
+        precoUnitarioCent: cotada.precoUnitarioCent,
+        totalCent: cotada.totalCent,
         notas: linha.notas,
       };
     }),
   };
 }
 
-/** O pedido no momento em que nasce: pendente, e com tudo o que vem depois a vazio. */
-export const pedidoPorPagar = (
+/**
+ * O pedido no momento em que nasce, **a pagar na loja** (`pedidos.md` › Os
+ * estados): `confirmado` se não há nada a confirmar, com o `confirmadoEm` de
+ * agora; senão `por-confirmar`, com 48 horas para a casa responder. Tudo o que
+ * vem depois fica a vazio.
+ *
+ * ⚠️ Só levantamentos: a entrega, que nasce sempre `por-confirmar` e paga por
+ * transferência, espera pelas regras da casa (`pedidos.md` › Em aberto, 8). E o
+ * `pendente` do Stripe dorme com ele: nenhum pedido lá nasce.
+ */
+export const pedidoNaLoja = (
   dados: DadosDoPedido,
   conferido: PedidoConferido,
   { id, referencia, agora, contaId }: { id: string; referencia: string; agora: Date; contaId: string | null },
 ): Pedido => ({
   id,
   referencia,
-  estado: "pendente",
+  estado: conferido.porConfirmar ? "por-confirmar" : "confirmado",
   criadoEm: agora,
   levantamentoEm: conferido.levantamentoEm,
   cliente: { ...dados.cliente, contaId },
   linhas: conferido.linhas,
   observacoes: dados.observacoes,
   totalCent: conferido.totalCent,
-  /* O sinal é por produto e o modo de pagamento é por pedido; o cesto misto está
-     em aberto (`pagamentos.md` › Em aberto, 6). Até lá, paga-se tudo. */
-  modoPagamento: "total",
+  modoPagamento: "na-loja",
   pagoOnlineCent: 0,
   reembolsadoCent: 0,
   chegouTarde: false,
@@ -294,7 +323,40 @@ export const pedidoPorPagar = (
   reembolsos: [],
   avisosTratados: [],
   reagendadoEm: null,
+  confirmadoEm: conferido.porConfirmar ? null : agora,
+  expiraEm: conferido.porConfirmar ? new Date(agora.getTime() + PRAZO_DA_RESPOSTA_MS) : null,
+  aceiteEm: null,
+  causaExpiracao: null,
 });
+
+// ——— O painel ———
+
+/**
+ * Os pedidos pagos na loja que a gerente pode cancelar: os que esperam pela casa
+ * ou pelo cliente, e os confirmados por levantar (`pedidos.md` › Os estados). O
+ * `pago` do Stripe também se cancela, com reembolso; o resto já acabou.
+ * O prazo já passado vale mesmo antes de a limpeza gravar a expiração.
+ */
+export const CANCELAVEIS_NA_LOJA: readonly Pedido["estado"][] = ["por-confirmar", "a-aguardar-aceite", "confirmado"];
+
+export const podeCancelar = (pedido: Pick<Pedido, "estado" | "modoPagamento" | "expiraEm">, agora: Date): boolean =>
+  (pedido.estado === "pago" || (pedido.modoPagamento === "na-loja" && CANCELAVEIS_NA_LOJA.includes(pedido.estado))) &&
+  (pedido.estado !== "por-confirmar" || (pedido.expiraEm !== null && pedido.expiraEm.getTime() > agora.getTime()));
+
+/**
+ * Quem a gerente reagenda: o `pago` e o `confirmado`. Mudar a hora de um que
+ * ainda espera pela casa é responder-lhe, e passa pelo aceite do cliente
+ * (`pedidos.md` › Confirmar).
+ */
+export const REAGENDAVEIS: readonly Pedido["estado"][] = ["pago", "confirmado"];
+
+/**
+ * Para onde volta um «entregue» desfeito: para o estado de onde veio — `pago`
+ * no Stripe, `confirmado` na loja. Os efeitos da primeira confirmação não se
+ * repetem (`pedidos.md` › Os estados).
+ */
+export const estadoAntesDeEntregue = (pedido: Pick<Pedido, "modoPagamento">): Pedido["estado"] =>
+  pedido.modoPagamento === "na-loja" ? "confirmado" : "pago";
 
 /**
  * O texto por onde o painel procura um pedido: o nome e a referência, sem

@@ -64,6 +64,114 @@ o código que os testes provam é o mesmo que corre no site.
 
 ## O catálogo
 
+### `categorias` — as da gerente (#124, migração `0008`)
+
+Decidido a 15/11: acabam as famílias e a gerente cria, renomeia e ordena as
+categorias — **todas**, kits e boxes incluídos (`painel-gerente.md` › Produtos).
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| `id` | `text` chave primária, `[a-z0-9-]` | vai nas âncoras e nunca muda, mesmo quando o nome muda |
+| `nome_pt`, `nome_en` | `text`, `text` nulo | sem nome em branco, até 60 carateres (o limite do `EsquemaOrdemCategorias`) |
+| `posicao` | `integer >= 0` | a ordem da loja |
+| `arquivada` | `boolean`, `false` por defeito | uma que já teve produtos não se apaga, arquiva-se |
+
+- **O nome é único entre as que estão em uso, sem distinguir maiúsculas**
+  (`categorias_nome_unico`, um índice parcial sobre `lower(nome_pt)`). Dois
+  «Doces» eram a armadilha 8 de volta: duas secções iguais na loja, e a gerente
+  sem saber em qual pôs o produto. Uma arquivada não ocupa o nome — a do Natal
+  deste ano não impede a do próximo.
+- **A `posicao` não é única, de propósito.** Reordenar troca posições, e uma
+  regra de unicidade recusava a troca a meio da instrução. Quem lê desempata
+  pelo `id`.
+- **Uma categoria com produtos não se apaga**: a chave estrangeira recusa-o,
+  arquivados incluídos (`produtos_categoria_id_categorias_id_fk`). Uma que nunca
+  teve produtos apaga-se.
+
+As 12 de partida saem do que cada produto é hoje (`src/db/categorias.ts`):
+
+| Categoria (`id`) | Nome | De onde vem |
+|---|---|---|
+| `festas` | Kit Festas | os 3 kits de festa |
+| `kits-bolo` | Bolo e mesa decorada | os 3 kits de bolo **e o bolo por medida**, que já vive nessa grelha |
+| `boxes` | Boxes para dias especiais | as 5 boxes |
+| `casa-pausa` | Para uma pausa | carta da casa |
+| `casa-salgados` | Salgados | carta da casa |
+| `casa-doces` | Doces | carta da casa |
+| `casa-bebidas` | Bebidas | carta da casa (os títulos das bebidas ficam na `subcategoria`) |
+| `fim-de-semana-pratos` | Pratos de fim de semana | almoço de fim de semana |
+| `vegan-salgados` | Salgados vegan | carta vegan |
+| `vegan-doces` | Doces vegan | carta vegan |
+| `vegan-bolos-inteiros` | Bolos inteiros vegan | carta vegan |
+| `chocolate-formatos` | Chocolate do Dubai | chocolate |
+
+Os `id` da carta são o `{carta}-{categoria}` de hoje, que já é a âncora das
+secções (`SeccaoEmenta`), e os das encomendas são as âncoras da `/encomendas`.
+A ordem de partida é a da `/encomendas`: as encomendas primeiro, depois a carta
+pela ordem das cartas e, dentro de cada uma, pela ordem que a gerente gravou
+(#87). Os nomes são os das páginas; a gerente muda-os.
+
+**Simples e composto** é a coluna `produtos.tipo`. Composto é o que se descreve
+pelo que leva: os 11 kits e boxes. O bolo por medida é simples — as massas e os
+recheios dele são escolhas, que a #88 passa a grupos de opções. **O que um
+composto leva continua na `composicao` das variantes**, porque muda com o
+tamanho (20 pessoas não levam o mesmo que 70); se passar a um grupo de opções
+«O que leva», decide-se na #88.
+
+#### A passagem, em três tempos
+
+⚠️ **Hoje quem manda continua a ser a `familia`, a `carta` e a `categoria`.**
+O esquema muda antes do código, e o site não pode parar a meio:
+
+1. **Este PR (`0008`).** As colunas novas nascem e enchem-se a partir das
+   antigas — na migração para os 107 produtos da Neon, e no
+   `src/db/categorias.ts` para a importação e para o painel (criar e editar um
+   produto escrevem as duas). Pôr um artigo numa carta e categoria que ninguém
+   usava cria a categoria no fim (`categoriaNova`). **As duas contas, SQL e
+   TypeScript, provam-se iguais** sobre o catálogo inteiro em
+   `src/db/migracao-categorias.test.ts`.
+2. **A fronteira (Gonçalo, #124).** Os tipos e as funções passam a ler
+   `categoria_id`, `tipo` e `categorias.posicao`; o painel ganha o «+», o
+   renomear e o ordenar. ⚠️ Até lá, ordenar no separador **Categorias** continua
+   a gravar a `casa.ordem_ementa` e **não** a `categorias.posicao`: se a
+   gerente reordenar antes, o PR da fronteira recalcula a posição com a mesma
+   conta da `0008`.
+3. **A limpeza.** Uma migração tira a `familia`, a `carta`, a `categoria`, o
+   `aparece_na_ementa` e a `ordem_ementa.categorias`, e sai o
+   `src/db/categorias.ts`. Só depois de nada as ler.
+
+#### A ordem do deploy — a base de dados antes do código
+
+Este ponto é a fonte única da ordem de migração e deploy; a checklist de
+`ligar-a-neon.md` remete para aqui. **Migrar primeiro não é sempre compatível
+com o código antigo:** é preciso verificar também as escritas, não só as
+leituras. Na `0008`, as colunas obrigatórias criam a janela descrita abaixo.
+
+⚠️ **O `next build` lê os produtos da base de dados** (as páginas estáticas), e
+desde a `0008` pede o `categoria_id` e o `tipo`. Um build contra uma base sem a
+`0008` falha com `column "categoria_id" does not exist`. Foi o que aconteceu ao
+preview do #134: a Preview aponta para o `desenvolvimento` (`ligar-a-neon.md`),
+que não estava migrado.
+
+- **Preview:** migrar o `desenvolvimento` (`npm run bd:migrar`) e refazer o
+  deploy. Os previews de outros PRs, feitos a partir do `main`, passam a correr
+  sobre um esquema mais novo do que o código deles: ler continua a funcionar,
+  criar um produto ou um pedido pode falhar. É o ramo de desenvolvimento.
+- **Produção:** integrar → `npm run bd:migrar` no `production` → refazer o
+  deploy. Se o deploy correr antes da migração, o build falha e o site no ar
+  fica como estava: não parte nada, refaz-se depois.
+- **Entre migrar e o deploy novo ficar no ar** (uns minutos), o código antigo
+  corre sobre o esquema novo: ler e editar produtos funcionam, mas **criar um
+  produto no painel falha**, porque a coluna é obrigatória e o código antigo
+  não a escreve. Não se cria nenhum produto durante a passagem — não vale a
+  pena um `DEFAULT` inventado para tapar esses minutos.
+
+A `0008` mantém o preenchimento e o `NOT NULL` na mesma migração, como revisto
+no #134. Dividir em expansão e contração exigiria uma segunda migração e um
+novo preenchimento dos produtos criados pelo código antigo entre as duas.
+**Esta passagem faz-se antes de a casa recriar o catálogo por categorias e
+nunca no dia do lançamento.**
+
 ### `produtos`
 
 | Coluna | Tipo | Do contrato |
@@ -71,7 +179,9 @@ o código que os testes provam é o mesmo que corre no site.
 | `id` | `text` chave primária | `id` (`nata`, `festa-premium`) |
 | `posicao` | `integer` | a ordem do catálogo; um produto novo vai para o fim |
 | `origem` | `text` `CHECK` (`ementa`, `encomendas`) | `origem` |
-| `familia` | `text` `CHECK` (`ementa`, `festa`, `bolo`, `box`, `medida`) | `familia` |
+| `familia` | `text` `CHECK` (`ementa`, `festa`, `bolo`, `box`, `medida`) | `familia` — sai na limpeza da #124 |
+| `categoria_id` | `text` → `categorias` | a categoria da gerente (#124); até a fronteira a ler, sai da família, da carta e da categoria |
+| `tipo` | `text` `CHECK` (`simples`, `composto`) | #124; idem |
 | `nome_pt`, `nome_en` | `text`, `text` nulo | `nome` |
 | `descricao_pt`, `descricao_en` | `text` nulo | `descricao` |
 | `carta`, `categoria`, `subcategoria` | `text` nulo | iguais |
@@ -159,7 +269,7 @@ própria instrução que o confere (as mesmas nos dois sentidos, com `@>`, e o
 mesmo tamanho), sem ler primeiro e escrever depois. Mexe só nas `categorias`:
 as `cartas` e as `subcategorias` ficam como vieram do impresso. O
 `criarProduto` e o `editarProduto` recusam uma categoria que não esteja na
-ordem — ficava órfã, fora da `/ementa`.
+ordem — ficava órfã, fora da «Do dia a dia» (e, até 12/11, da `/ementa`).
 
 ## Os pedidos
 
@@ -169,14 +279,18 @@ ordem — ficava órfã, fora da `/ementa`.
 |---|---|---|
 | `id` | `uuid` chave primária | `id` (o `json.ts` já gera um UUID) |
 | `referencia` | `text` único | `DAM-DDMM-XXXX` |
-| `estado` | `text` `CHECK` dos 5 estados | `estado` |
+| `estado` | `text` `CHECK` dos 8 estados (`ESTADOS_PEDIDO`) | `estado` |
 | `criado_em`, `levantamento_em` | `timestamptz` | iguais |
 | `pago_em`, `impresso_em`, `entregue_em`, `cancelado_em`, `reagendado_em` | `timestamptz` nulo | iguais |
+| `confirmado_em` | `timestamptz` nulo | `confirmadoEm` — quando ficou `confirmado`; fica depois de entregue ou cancelado (migração `0006`) |
+| `expira_em` | `timestamptz` nulo | `expiraEm` — o prazo da casa num `por-confirmar`, 48 h corridas; fica depois |
+| `aceite_em` | `timestamptz` nulo | `aceiteEm` — quando o cliente aceitou a resposta da casa |
+| `causa_expiracao` | `text` nulo `CHECK` (`sem-resposta-da-casa`, `sem-pagamento`) | `causaExpiracao` — só num `expirado`, e sempre nele |
 | `cliente_nome`, `cliente_email`, `cliente_telefone` | `text` | `cliente` — o telefone é obrigatório, em E.164 (`CHECK ^\+[1-9][0-9]{6,14}$`), como no `EsquemaCliente` |
 | `cliente_nif`, `conta_id` | `text` nulo | `cliente` |
 | `observacoes` | `text` nulo | `observacoes` |
 | `total_cent`, `pago_online_cent` | `integer` `>= 0` | iguais |
-| `modo_pagamento` | `text` `CHECK` (`total`, `sinal`) | `modoPagamento` |
+| `modo_pagamento` | `text` `CHECK` (`na-loja`, `total`, `sinal`) | `modoPagamento` — o `total` e o `sinal` são do Stripe, e dormem |
 | `chegou_tarde` | `boolean` | `chegouTarde` |
 | `cancelado_por` | `text` nulo `CHECK` (`cliente`, `gerente`) | `canceladoPor` |
 | `avisos_tratados` | `text[]`, `CHECK` contra os 4 do contrato | `avisosTratados` |
@@ -206,9 +320,18 @@ Márcia» escrevendo `marcia`, sem depender de uma extensão do Postgres que o
 PGlite e a Neon podiam ter de forma diferente.
 
 **O que tem de ser verdade em qualquer estado vive em `CHECK`**, e as transições
-não (essas são os `UPDATE … WHERE estado = …`, abaixo). Ter `pago_em` é o mesmo
-que estar `pago`, `entregue` ou `cancelado` — só se cancela um pedido pago, e
-nada volta de pago para trás; um `entregue` tem `entregue_em`; um `cancelado`
+não (essas são os `UPDATE … WHERE estado = …`, abaixo). **Com o Stripe**, ter
+`pago_em` é o mesmo que estar `pago`, `entregue` ou `cancelado` — só se cancela
+um pedido pago, e nada volta de pago para trás. **Na loja** nunca há `pago_em`
+nem `pago_online_cent`: paga-se no toque do `entregue`, e o instante desse toque
+é o `entregue_em` (`pedidos.md` › Impactos na base de dados). Cada estado é do
+seu modo — `pendente` e `pago` só com o Stripe; `por-confirmar`,
+`a-aguardar-aceite` e `confirmado` só fora dele — e um `confirmado` tem
+`confirmado_em`, tal como um `entregue` na loja, que só lá chega vindo de
+confirmado. Um `por-confirmar` tem `expira_em`, depois do `criado_em`; quem tem
+`aceite_em` tem `confirmado_em`; e um `expirado` diz porquê, com a causa do seu
+modo — `sem-pagamento` com o Stripe, `sem-resposta-da-casa` só a quem tinha
+prazo. Um `entregue` tem `entregue_em`; um `cancelado`
 tem quando e por quem, e só ele; o `chegou_tarde` só existe com pagamento; os
 `avisos_tratados` são os quatro do contrato. ⚠️ **Fica de fora
 `pago_online_cent <= total_cent`**: um montante que não bate ainda não tem regra
@@ -246,8 +369,16 @@ de teste — o `LOJA_EM_TESTE` desse momento.
 | `escolhas` | `text[]` | **cópia** |
 | `unidade` | `text` | **cópia** |
 | `quantidade` | `numeric` `> 0` | `quantidade` |
-| `preco_unitario_cent`, `total_cent` | `integer` `>= 0` | o preço **desse dia** |
+| `preco_unitario_cent`, `total_cent` | `integer` nulo, `>= 0` | o preço **desse dia**; `null` os dois numa linha sem preço (migração `0007`) |
 | `notas` | `text` nulo | `notas` |
+
+**Uma linha sem preço** — o bolo por medida — guarda o preço unitário e o total
+a `null` até a gerente os fixar ao responder (`pedidos.md` › O que o pedido
+guarda). O `CHECK` `linhas_pedido_precos` obriga a saberem-se os dois juntos ou
+nenhum. ⚠️ **Que um pedido `confirmado` não tenha linhas sem preço não o garante
+a base de dados**: é uma regra entre duas tabelas, e um `CHECK` só vê a linha.
+Garante-o o código, que só cria `confirmado` com todos os preços e só confirma
+depois de a gerente os fixar.
 
 Chave primária `(pedido_id, posicao)`. A ligação a `produtos` é segura porque
 nenhum produto se apaga; e ⚠️ **nunca se lê o nome nem o preço através dela** —
@@ -346,6 +477,21 @@ o contador bate sempre com a soma dos reembolsos `pendente` e `concluido`.
   entregam uma vez.
 - **Os 5 minutos do balcão** para desfazer um «entregue» vão na mesma condição
   (`… AND entregue_em >= agora − 5 min`), com o `agora` do contexto.
+- **Os pedidos pagos na loja** (`modo_pagamento = 'na-loja'`) seguem as mesmas
+  ações do painel, com o estado de partida deles: entrega-se um `confirmado`
+  com um toque, sem «dinheiro em falta» a perguntar (paga-se nesse toque);
+  desfazer o «entregue» volta a `confirmado`, e não a `pago`; a gerente cancela
+  um `por-confirmar`, um `a-aguardar-aceite` ou um `confirmado`, sem reembolso,
+  e a vaga liberta-se; e reagenda um `confirmado`. As listas de estados vivem no
+  `regras.ts` (`podeCancelar`, `REAGENDAVEIS`, `estadoAntesDeEntregue`), para as
+  duas fontes decidirem igual. ⚠️ Confirmar, responder e aceitar ainda não
+  existem na `FontePainel`: chegam com o contrato do balcão (#125).
+- **Cancelar não ultrapassa a expiração:** um `por-confirmar` só se cancela
+  com `expira_em > agora`, tanto na regra partilhada como no `WHERE`. Se o prazo
+  já passou, devolve `estado-mudou`; a limpeza grava a expiração e liberta a vaga.
+- **Os avisos de dia fechado e possível duplicado** leem os `confirmado` e os
+  `pago`. Nos confirmados, os dez minutos contam de `confirmado_em`; nos pagos,
+  de `pago_em`. O filtro da base de dados acompanha o cálculo partilhado.
 - **Os efeitos vão na mesma instrução**, em passos do mesmo `WITH`
   (`bd-painel-pedidos.ts`): a vaga, o reembolso e a versão. Sem isso, um pedido que
   já não está no estado de partida descontava a vaga na mesma, e o driver HTTP da
@@ -401,7 +547,9 @@ e um reagendar para lá era recusado.
 25 de outubro a hora 01:00 repete-se. A loja não abre a essa hora, mas um
 instante não tem de pensar nisso.
 
-**O que ocupa:** `pendente`, `pago` e `entregue`. `expirado` e `cancelado` não.
+**O que ocupa:** `por-confirmar`, `a-aguardar-aceite`, `confirmado`, `pendente`,
+`pago` e `entregue`. Só `expirado` e `cancelado` libertam a vaga. O `entregue`
+continua a ocupar porque já gastou a capacidade daquela hora e pode ser desfeito.
 O `ocupacao(desde, ate)` do contrato é um `SELECT` nesta tabela, sem cache, e
 devolve `{ inicio, pedidos: ocupadas }`.
 
@@ -411,9 +559,19 @@ estava.
 
 ## Expirar sem tarefa agendada
 
-Um `pendente` com mais de 31 minutos passa a `expirado` e liberta a vaga. ⚠️ Nunca
-antes: os 31 minutos são o prazo da sessão do Stripe, e até lá o cliente ainda
-pode pagar (`pedidos.md`). Quem o faz, por ordem:
+Dois prazos libertam a vaga sozinhos:
+
+- **um `por-confirmar` a que a casa não respondeu até `expira_em`** (48 horas
+  corridas depois de nascer) passa a `expirado`, com a causa
+  `sem-resposta-da-casa`. `agora >= expira_em` já conta como expirado
+  (`pedidos.md` › Expirar às 48 horas);
+- **um `pendente` do Stripe com mais de 31 minutos** passa a `expirado`, com a
+  causa `sem-pagamento`. O pagamento online dorme e nenhum pedido nasce
+  `pendente`, mas a limpeza continua para os que tenham ficado de antes. ⚠️
+  Nunca antes: os 31 minutos são o prazo da sessão do Stripe, e até lá o
+  cliente ainda pode pagar.
+
+Quem o faz, por ordem:
 
 1. o regresso do cliente que voltou atrás no checkout, e o webhook
    `checkout.session.expired` (`pagamentos.md`, do Gonçalo);
@@ -421,8 +579,12 @@ pode pagar (`pedidos.md`). Quem o faz, por ordem:
    só quando há um cliente no site, ou seja, com a base de dados já acordada.
 
 Não há tarefa agendada a acordar a base de dados para isto (regra 6). A limpeza
-(`limparExpirados`, em `bd-pedidos.ts`) é uma instrução só: muda os pendentes antigos para `expirado` e desconta-os dos
-contadores. A lógica completa é da #41. O pedido expirado pelo id, no ponto 1,
+(`limparExpirados`, em `bd-pedidos.ts`) é uma instrução só: muda os dois para
+`expirado`, com a causa que o estado de partida dá, e desconta-os dos
+contadores. ⚠️ O email ao cliente de «a casa não respondeu a tempo» ainda não
+se grava nesta instrução: entra com a fila dos emails (#119). E os lembretes à
+casa antes das 48 horas também não correm aqui: precisam de um mecanismo que não
+dependa de uma visita ao site (`pedidos.md` › Em aberto, 11). A lógica completa é da #41. O pedido expirado pelo id, no ponto 1,
 usa a mesma instrução (`expirarPedido`).
 
 ⚠️ **Se a limpeza falhar, o calendário e o `criarPedido` continuam.** O erro fica
@@ -431,9 +593,12 @@ não se vende nada duas vezes e só se liberta mais tarde.
 
 ## Limites de pedidos
 
-- **Criar pedido**: 5 pendentes por IP e 3 por email ao mesmo tempo. Conta-se
-  na própria instrução que insere o pedido, com índices parciais
-  (`WHERE estado = 'pendente'`) em `ip` e em `cliente_email`. O `INSERT … SELECT … WHERE`
+- **Criar pedido**: 5 pedidos em curso por IP e 3 por email ao mesmo tempo.
+  Conta-se na própria instrução que insere o pedido, com índices parciais
+  (`WHERE estado in (…)`, o `ESTADOS_EM_CURSO`: os que esperam pela casa ou
+  pelo cliente, os `confirmado` e o `pendente` do Stripe) em `ip` e em
+  `cliente_email`. ⚠️ Os índices já os têm desde a `0006`; a contagem do
+  `criarPedido` passa a contá-los no PR da fonte. O `INSERT … SELECT … WHERE`
   não insere nada fora dos limites, e a instrução seguinte do lote — as linhas —
   falha na chave estrangeira por não haver pedido: o lote cai inteiro, e essa
   falha é o `demasiados-pedidos`. Sem IP, só conta o email.
@@ -507,7 +672,7 @@ Os de `robustez.md` › Consultas, e mais nenhum:
 - `pedidos(estado, levantamento_em)` — as listas do balcão
 - `pedidos(criado_em, id)` — o arquivo e os pedidos da gerente, por cursor
 - `pedidos(cliente_email)` — o histórico e os possíveis duplicados
-- `pedidos(ip)` e `pedidos(cliente_email)` parciais, só `pendente` — os limites
+- `pedidos(ip)` e `pedidos(cliente_email)` parciais, só os em curso (`ESTADOS_EM_CURSO`) — os limites
 - `linhas_pedido(pedido_id)` — é o princípio da chave primária, não precisa de outro
 - `reembolsos(pedido_id)` — a soma do `reembolsadoCent` e a lista do painel
 - `emails_por_enviar(criado_em)` parcial, só os por enviar

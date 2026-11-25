@@ -1,0 +1,45 @@
+# O mesmo que o README pede antes de dar trabalho por pronto — `npm run lint`,
+# `npm run build` e `npm test` —, agora a correr em cada PR e em cada push para o
+# `main`, e não só na máquina de quem abre o PR.
+#
+# ⚠️ Sem segredos e sem variáveis de ambiente, de propósito. Sem `DATABASE_URL`
+# o site lê os JSON, e os testes da volta «bd» correm num PGlite (um Postgres
+# dentro do Node, `src/db/teste.ts`): nenhum teste fala com a Neon, o Stripe ou o
+# Resend. Se um dia um teste precisar de um segredo, não é aqui que se lhe dá —
+# é sinal de que deixou de ser um teste unitário.
+name: CI
+
+on:
+  # Todos os PRs, seja qual for a base: os PRs empilhados (o #109 sobre o #108)
+  # também passam por aqui.
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Um push novo no mesmo PR cancela a volta anterior, que já não interessa.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    name: lint, build e test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # A versão do `.nvmrc` (22), a mesma do `engines` do package.json e a que
+      # bate com o lock no npm 10 (#95).
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm test
