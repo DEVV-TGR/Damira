@@ -36,6 +36,15 @@ export type DadosEmailPedido = {
   canceladoPor?: "cliente" | "gerente";
   observacoes: string | null;
   modoDeTeste: boolean;
+  /**
+   * O pedido **ainda não fica guardado**: existe só neste email à casa, como hoje
+   * (até a página de compra gravar o pedido, #126). Os modelos da loja foram
+   * escritos para quando ele estiver no painel — «responde-se no painel», «o
+   * talão sai no balcão», o prazo de 48 horas — e nenhuma dessas frases é
+   * verdade sem isso. Com esta marca, o email diz o que a casa tem de fazer hoje.
+   * Sai quando o pedido passar a ser gravado.
+   */
+  soPorEmail?: boolean;
 };
 
 export type DadosCasa = {

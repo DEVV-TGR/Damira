@@ -1,4 +1,5 @@
 import { casa } from "@/data/casa";
+import { ANEXO_LOGOTIPO } from "@/lib/emails/html";
 import { DESTINO_PEDIDOS, REMETENTE_PEDIDOS } from "@/lib/pedidos";
 
 /**
@@ -18,6 +19,13 @@ export async function enviarEmailDePedido(email: {
   referencia: string;
   assunto: string;
   corpo: string;
+  /**
+   * A versão com a moldura da Damira (`src/lib/emails/`). Com ela vai também o
+   * logótipo, como anexo embutido: o HTML aponta para ele por `cid:`, e sem o
+   * anexo o topo mostrava só o texto alternativo. O `corpo` vai sempre ao lado,
+   * para quem lê o correio em texto simples.
+   */
+  html?: string;
   responderPara: string;
 }): Promise<"enviado" | "sem-servico"> {
   const chave = process.env.RESEND_API_KEY?.trim();
@@ -35,6 +43,7 @@ export async function enviarEmailDePedido(email: {
         reply_to: email.responderPara,
         subject: email.assunto,
         text: email.corpo,
+        ...(email.html ? { html: email.html, attachments: [ANEXO_LOGOTIPO] } : {}),
       }),
     });
     if (!resposta.ok) {

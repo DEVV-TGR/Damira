@@ -12,7 +12,7 @@ import { FUSO } from "@/lib/horarios";
 import { formatarCent } from "@/lib/preco";
 import { telefoneArrumado } from "@/lib/telefone";
 import { BLOCOS, NOME_REMETENTE, TEXTOS_EN, TEXTOS_LOJA, TEXTOS_PT, type ModeloCliente, type TextoModelo } from "./textos";
-import { escreverHtmlEmail } from "./html";
+import { avisoDeTeste, escreverHtmlEmail } from "./html";
 import type { DadosCasa, DadosEmailPedido, ModeloEmail } from "./tipos";
 
 export function escreverEmail(
@@ -100,12 +100,17 @@ export function escreverEmail(
     indicativo,
     semPrecos: () => dados.linhas.filter((linha) => linha.totalCent === null)
       .map((linha) => nomeLinha(linha)).join(", "),
-    estado: dados.estado === "confirmado" ? TEXTOS_LOJA.confirmado : TEXTOS_LOJA.porConfirmar,
-    estadoAssunto: () => dados.estado === "confirmado" ? TEXTOS_LOJA.confirmado : preencher(TEXTOS_LOJA.porConfirmarAte),
-    levantamentoAssunto: dados.estado === "confirmado" ? ` · ${dataCurta(dados.levantamentoEm)}` : "",
-    avisoPrazo: () => dados.estado === "por-confirmar" ? `\n${preencher(TEXTOS_LOJA.avisoPrazo)}` : "",
+    // Sem o pedido guardado (`soPorEmail`) não há prazo, nem painel, nem talão, e nada o confirmou: o
+    // assunto leva sempre a data, que é o que a casa procura, e o fim diz como se responde hoje.
+    estado: dados.estado === "confirmado" ? (dados.soPorEmail ? TEXTOS_LOJA.novo : TEXTOS_LOJA.confirmado) : TEXTOS_LOJA.porConfirmar,
+    estadoAssunto: () => dados.estado === "confirmado"
+      ? (dados.soPorEmail ? TEXTOS_LOJA.novo : TEXTOS_LOJA.confirmado)
+      : dados.soPorEmail ? TEXTOS_LOJA.porConfirmar : preencher(TEXTOS_LOJA.porConfirmarAte),
+    levantamentoAssunto: dados.estado === "confirmado" || dados.soPorEmail ? ` · ${dataCurta(dados.levantamentoEm)}` : "",
+    avisoPrazo: () => dados.estado === "por-confirmar" && !dados.soPorEmail ? `\n${preencher(TEXTOS_LOJA.avisoPrazo)}` : "",
     pretendida: dados.estado === "por-confirmar" ? TEXTOS_LOJA.pretendida : "",
-    fimLoja: dados.estado === "confirmado" ? TEXTOS_LOJA.fimConfirmado : TEXTOS_LOJA.fimPorConfirmar,
+    fimLoja: dados.soPorEmail ? TEXTOS_LOJA.fimSoPorEmail
+      : dados.estado === "confirmado" ? TEXTOS_LOJA.fimConfirmado : TEXTOS_LOJA.fimPorConfirmar,
     pagamentoLoja: () => preencher(dados.faltamPrecos ? TEXTOS_LOJA.pagamentoIncompleto : TEXTOS_LOJA.pagamento),
     saudacao: () => preencher(blocos.saudacao),
     pagar: blocos.pagar,
@@ -139,8 +144,9 @@ export function escreverEmail(
     ? (textos.corpoGerente ?? textos.corpo) : textos.corpo;
   const texto = preencher(corpo);
   return {
-    assunto: `${dados.modoDeTeste ? "[TESTE] " : ""}${preencher(textos.assunto)}`,
-    texto: `${dados.modoDeTeste ? `${blocos.teste}\n\n` : ""}${texto}`,
+    // Num pedido só por email (o site em modo de teste) o assunto fica sem «[TESTE]»: pode ser verdadeiro.
+    assunto: `${dados.modoDeTeste && !dados.soPorEmail ? "[TESTE] " : ""}${preencher(textos.assunto)}`,
+    texto: `${dados.modoDeTeste ? `${avisoDeTeste(dados, blocos)}\n\n` : ""}${texto}`,
     html: escreverHtmlEmail({ corpo, campos, partesLinhas, blocos, dados, casa, lingua }),
   };
 }

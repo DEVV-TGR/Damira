@@ -36,16 +36,21 @@ describe("o calendário na página de compra", () => {
     const vaga = vagas.vagas.find((v) => v.livre)!;
     const enviado = await enviar({ levantamento: vaga.inicio, data: "2099-01-01" });
     if (enviado.estado !== "sem-servico") throw new Error(`esperava sem-servico, veio ${enviado.estado}`);
-    const porExtenso = format(new Date(vaga.inicio), "EEEE, d 'de' MMMM 'às' HH:mm", { in: tz("Europe/Lisbon"), locale: pt });
-    expect(enviado.corpo).toContain(`LEVANTAMENTO NA LOJA\n${porExtenso} (hora de Lisboa)`);
+    /* O email é o modelo `criado-loja` (#137), que escreve as horas como a casa: «às 10h30». */
+    const porExtenso = format(new Date(vaga.inicio), "EEEE, d 'de' MMMM 'de' yyyy, 'às' HH'h'mm", { in: tz("Europe/Lisbon"), locale: pt });
+    expect(enviado.corpo.toLowerCase()).toContain(`levantamento na loja\n${porExtenso} (hora de lisboa)`.toLowerCase());
     expect(enviado.registo.data).toBe(vaga.data);
   });
 
-  it("em modo de teste, o email avisa logo no topo", async () => {
+  it("em modo de teste, o email avisa logo no topo — sem dizer que o pedido não é verdadeiro", async () => {
     const vagas = await consultarVagas(LINHAS);
     if (!vagas.ok) throw new Error("devia haver vagas");
     const enviado = await enviar({ levantamento: vagas.vagas.find((v) => v.livre)!.inicio });
-    expect(enviado.estado === "sem-servico" && enviado.corpo.split("\n")[2]).toContain("MODO DE TESTE");
+    if (enviado.estado !== "sem-servico") throw new Error(`esperava sem-servico, veio ${enviado.estado}`);
+    expect(enviado.corpo.split("\n")[0]).toContain("MODO DE TESTE");
+    expect(enviado.corpo).toContain("O pedido pode ser verdadeiro");
+    expect(enviado.corpo).not.toContain("não corresponde a um pedido real");
+    expect(enviado.assunto).not.toContain("[TESTE]");
   });
 
   it("uma hora que não está nas vagas é recusada", async () => {
