@@ -500,6 +500,62 @@ Os emails gravam-se na mesma instrução que muda o estado, e só depois se envi
 que não ficou gravada. Os lembretes à loja, que não mudam estado, gravam-se na
 instrução da tarefa que os decide.
 
+### O emissor da fila (#119, etapa 1)
+
+`enviarEmailsPendentes({ agora, limite })` entrega um email de cada vez ao Resend,
+com o logótipo embutido, até 10 por volta. `enviarDepois()` usa `after()` do Next:
+chama-se **depois da transação bem-sucedida**, na ação que acabou de pôr emails na
+fila. **As chamadas ainda não estão ligadas**: entram com o #139 e a compra.
+Os despertadores, os lembretes e a volta diária são da etapa 2; o ecrã dos falhados
+é do painel. Não há consultas periódicas nesta etapa. **Não ligar os emails da
+compra antes de haver novas tentativas automáticas dentro da janela de 24 h**:
+com um 503 e sem mais ações, a linha pode chegar a `idempotencia-expirada` sem
+ter sido repetida. A etapa 2 tem de resolver este caso sem depender de visitas.
+Antes de ligar o helper, confirmar na Vercel a presença de `RESEND_API_KEY` e
+`EMAIL_REMETENTE` e decidir se Production mantém `EMAILS_SO_PARA` preenchida.
+A existência da integração ou do domínio verificado não confirma estas variáveis.
+
+Uma reserva condicional incrementa `tentativas` e grava `ultima_tentativa_em`;
+só quem a recebe envia. A conclusão confere a tentativa, para um processo antigo
+não concluir uma reserva nova. O cabeçalho `Idempotency-Key` leva o UUID da fila;
+o Resend guarda-o **24 horas**. Depois de uma tentativa, se passaram 24 horas desde
+a criação da linha, o emissor bloqueia novas tentativas com `idempotencia-expirada`:
+é conservador porque o esquema não guarda o instante do primeiro envio. Exige
+reconciliação manual antes de qualquer reenvio. Uma repetição com conteúdo alterado
+pode receber 409 do Resend; fica falhada definitivamente, sem trocar a chave.
+
+O destinatário é sempre o gravado na fila (salvo o redirecionamento de ensaio).
+O pedido é lido como está agora, com nomes, detalhes, preços e totais gravados;
+não se consulta o catálogo para refazer dinheiro. **A língua é sempre PT**, porque
+o pedido ainda não guarda a língua. Nome, morada e contactos da casa vêm da mesma
+fonte do site (`casa.json`): esses campos ainda não existem na tabela `casa`, que
+só guarda configuração. O remetente é «Confeitaria Damira» com `REMETENTE_PEDIDOS` (`EMAIL_REMETENTE`,
+ou o remetente de teste já existente);
+responder a um email da loja abre uma resposta ao cliente; responder a um do
+cliente abre uma resposta ao email público da casa, em vez do endereço técnico.
+
+Um `lembrete-loja` cujo pedido já não está `por-confirmar` é saltado:
+`ultimo_erro = 'saltado: lembrete-sem-espera'`, tentativas no máximo, enviado nulo.
+Para o mesmo pedido e destinatário, o recibo inicial tem prioridade; as
+restantes linhas seguem `criado_em, id`. Uma só se reserva quando as anteriores
+saíram ou ficaram definitivamente falhadas. A seleção ignora as bloqueadas por
+antecessores reservados ou à espera de nova tentativa, sem ocultar outros pedidos. Assim duas
+voltas ou uma espera de nova tentativa não invertem os envios.
+O recibo `criado-por-confirmar-cliente` segue mesmo que o pedido tenha mudado:
+documenta o envio inicial; o novo estado tem o seu próprio email na fila.
+**Enquanto o #139 não entrar, `resposta-cliente` fica pendente sem gastar tentativas**
+e não ocupa o limite da volta. Ao integrar o #139, ligar a credencial de proposta,
+`precoDaProposta` e os critérios de saltar (estado, proposta mais recente, prazo).
+Os restantes modelos usam os dados disponíveis; se faltar um dado obrigatório,
+ficam falhados com `dados-do-modelo`, nunca saem incompletos. Por exemplo, a fonte
+ainda não guarda `levantamentoAnteriorEm`, necessário aos emails de reagendamento.
+O texto de cancelamento depende de `canceladoPor`, que hoje ainda é sempre gerente
+na ação de cancelar (dívida do #133); esta etapa não muda essa ação.
+
+Integração a fazer: chamar o helper após criar com sucesso e após cada transição
+que gravar emails (incluindo a limpeza dos expirados). Uma repetição idempotente
+pode chamar o helper para escoar a fila, mas não deve inserir emails outra vez.
+
 ## O levantamento
 
 `levantamentoEm`: o dia e a hora escolhidos no calendário. Guarda-se em UTC,

@@ -1,3 +1,4 @@
+import { criarEmailsBd } from "./bd-emails";
 import { and, eq, inArray, like, or, sql } from "drizzle-orm";
 import {
   categoriaNova,
@@ -347,6 +348,7 @@ export type OpcoesDaFonteBd = Omit<OpcoesDosPedidos, "leitura"> & {
 export function montarFonteBd(db: BaseDeDados, emLote: ExecutarLote, opcoes: OpcoesDaFonteBd): FonteDeDados {
   const fonte: FonteDeDados = {
     ...criarFonteBd(db, emLote),
+    ...criarEmailsBd(db),
     ...criarPedidosBd(db, emLote, { ...opcoes, leitura: opcoes.leitura ?? (() => fonte) }),
     ...criarPedidosDoPainelBd(db, {
       /* Como está gravada, e nunca a de exemplo: é a mesma que a gerente vê
