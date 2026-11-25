@@ -172,6 +172,13 @@ export const PRAZO_DO_PEDIDO_MS = 31 * 60_000;
  */
 export const PRAZO_DA_RESPOSTA_MS = 48 * 3_600_000;
 
+/**
+ * O prazo do cliente para aceitar a proposta da casa: 24 horas, a contar da proposta (decidido pela
+ * Andreia a 25/11, `pedidos.md` › Em aberto, 2). Passado ele, a proposta expira, a vaga liberta-se
+ * e o cliente recebe o email. Uma proposta revista começa outra vez as 24 horas.
+ */
+export const PRAZO_DO_ACEITE_MS = 24 * 3_600_000;
+
 const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 /**
@@ -382,8 +389,17 @@ export const paraProcura = (texto: string): string => texto.normalize("NFD").rep
  */
 export const podeResponder = (pedido: Pick<Pedido, "estado" | "modoPagamento" | "expiraEm">, agora: Date): boolean =>
   pedido.modoPagamento === "na-loja" &&
-  (pedido.estado === "a-aguardar-aceite" ||
-    (pedido.estado === "por-confirmar" && pedido.expiraEm !== null && pedido.expiraEm.getTime() > agora.getTime()));
+  (pedido.estado === "a-aguardar-aceite" || pedido.estado === "por-confirmar") &&
+  /* Os dois têm prazo: as 48 h da casa, ou as 24 h do cliente. Passado, já não se responde. */
+  pedido.expiraEm !== null &&
+  pedido.expiraEm.getTime() > agora.getTime();
+
+/** A proposta ainda se pode aceitar ou recusar: espera o aceite, na versão do link, e dentro das 24 h. */
+export const propostaEmAberto = (pedido: Pick<Pedido, "estado" | "propostaVersao" | "expiraEm">, versao: number, agora: Date) =>
+  pedido.estado === "a-aguardar-aceite" &&
+  pedido.propostaVersao === versao &&
+  pedido.expiraEm !== null &&
+  pedido.expiraEm.getTime() > agora.getTime();
 
 /** O plano da resposta: o que muda no pedido, já validado, igual para as duas fontes. */
 export type PlanoResposta = {
@@ -475,4 +491,6 @@ export const pedidoRespondido = (pedido: Pedido, plano: PlanoResposta, agora: Da
         levantamentoAnteriorEm: plano.levantamentoAnteriorEm,
         propostaVersao: pedido.propostaVersao + 1,
         propostaEm: agora,
+        /* As 24 horas do cliente substituem as 48 da casa: ela já respondeu. */
+        expiraEm: new Date(agora.getTime() + PRAZO_DO_ACEITE_MS),
       };

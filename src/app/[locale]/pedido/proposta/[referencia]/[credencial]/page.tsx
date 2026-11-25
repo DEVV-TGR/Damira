@@ -80,6 +80,11 @@ export default async function PaginaProposta({ params }: { params: Promise<Param
       <Aviso titulo={t("cancelado.titulo")} texto={t("cancelado.texto", { telefone })} />
     );
   }
+  /* As 24 horas do cliente passaram: expirou, mesmo que a limpeza ainda não o tenha gravado. */
+  const passouOPrazo = pedido.estado === "a-aguardar-aceite" && prazoPassou(pedido);
+  if (passouOPrazo || (pedido.estado === "expirado" && pedido.causaExpiracao === "sem-aceite-do-cliente")) {
+    return <Aviso titulo={t("expirada.titulo")} texto={t("expirada.texto", { telefone })} />;
+  }
   if (pedido.estado !== "a-aguardar-aceite") {
     return <Aviso titulo={t("indisponivel.titulo")} texto={t("indisponivel.texto", { telefone })} />;
   }
@@ -127,6 +132,7 @@ export default async function PaginaProposta({ params }: { params: Promise<Param
           <p className="mt-3">
             <strong>{t("importante")}</strong> {t("importanteTexto")}
           </p>
+          {pedido.expiraEm && <p className="mt-3 font-semibold text-tijolo">{t("prazo", { data: data(pedido.expiraEm) })}</p>}
 
           <DecisaoProposta referencia={pedido.referencia} credencial={credencial} telefone={telefone} />
 
@@ -136,6 +142,13 @@ export default async function PaginaProposta({ params }: { params: Promise<Param
       </div>
     </div>
   );
+}
+
+/* A página é dinâmica e sem cache (`dynamic = "force-dynamic"`): cada pedido lê a hora de agora, e
+   é isso que se quer — fora do componente, porque a regra de pureza do React não sabe que este
+   componente do servidor corre uma vez por pedido. */
+function prazoPassou(pedido: Pedido): boolean {
+  return pedido.expiraEm === null || pedido.expiraEm.getTime() <= Date.now();
 }
 
 function Aviso({ titulo, texto, children }: { titulo: string; texto: string; children?: ReactNode }) {

@@ -8,7 +8,7 @@ import { PRODUTOS, type Produto as ProdutoDasEncomendas } from "@/lib/produtos";
 import mensagensEn from "../../../messages/en.json";
 import mensagensPt from "../../../messages/pt.json";
 import { criarPainelJson, type EstadoJson } from "./json-painel";
-import { conferirPedido, cotarLinhas, gerarReferencia, pedeConfirmacaoInicial, pedidoNaLoja } from "./regras";
+import { conferirPedido, cotarLinhas, gerarReferencia, pedeConfirmacaoInicial, pedidoNaLoja, propostaEmAberto } from "./regras";
 import {
   EsquemaEntradaPedido,
   EsquemaLinhaCesto,
@@ -440,7 +440,7 @@ export function criarFonteJsonComEstado(opcoes: OpcoesFonteJson = {}): { fonte: 
     },
 
     async aceitarProposta(referencia, versao, agora) {
-      return decidirProposta(referencia, versao, (pedido) => ({
+      return decidirProposta(referencia, versao, agora, (pedido) => ({
         ...pedido,
         estado: "confirmado",
         aceiteEm: agora,
@@ -449,7 +449,7 @@ export function criarFonteJsonComEstado(opcoes: OpcoesFonteJson = {}): { fonte: 
     },
 
     async recusarProposta(referencia, versao, agora) {
-      return decidirProposta(referencia, versao, (pedido) => ({
+      return decidirProposta(referencia, versao, agora, (pedido) => ({
         ...pedido,
         estado: "cancelado",
         canceladoEm: agora,
@@ -459,10 +459,15 @@ export function criarFonteJsonComEstado(opcoes: OpcoesFonteJson = {}): { fonte: 
   };
 
   /* O aceite e a recusa: só na versão que o link assina, e só se ainda espera o aceite. */
-  function decidirProposta(referencia: string, versao: number, mudar: (pedido: Pedido) => Pedido): ResultadoProposta {
+  function decidirProposta(
+    referencia: string,
+    versao: number,
+    agora: Date,
+    mudar: (pedido: Pedido) => Pedido,
+  ): ResultadoProposta {
     const pedido = pedidos.get(porReferencia.get(referencia) ?? "");
     if (!pedido) return { ok: false, erro: "nao-existe" };
-    if (pedido.estado !== "a-aguardar-aceite" || pedido.propostaVersao !== versao) {
+    if (!propostaEmAberto(pedido, versao, agora)) {
       return { ok: false, erro: "estado-mudou", pedido };
     }
     const decidido = mudar(pedido);

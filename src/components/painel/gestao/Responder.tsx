@@ -202,6 +202,12 @@ export function Responder({ pedido, onFeito }: { pedido: Pedido; onFeito?: (pedi
       </div>
       {erro && <p className="mt-2 font-semibold text-tijolo">{erro}</p>}
 
+      {aguarda && pedido.expiraEm && (
+        <p className="mt-3 text-sm">
+          O cliente tem até <strong>{diaPorExtenso(pedido.expiraEm)}, {horaDeLisboa(pedido.expiraEm)}</strong> para aceitar. Depois, a
+          proposta expira e a vaga fica livre.
+        </p>
+      )}
       {aguarda && link && (
         <div className="mt-5 border-t border-tinta/10 pt-4">
           <p className="text-sm font-semibold">Link para o cliente</p>

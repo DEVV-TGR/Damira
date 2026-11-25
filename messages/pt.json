@@ -677,6 +677,11 @@
     "invalido": {
       "titulo": "Este link não é válido.",
       "texto": "Confirme que abriu o link completo do email, ou contacte-nos através do {telefone}."
+    },
+    "prazo": "Tem até {data} para aceitar ou recusar.",
+    "expirada": {
+      "titulo": "Esta proposta expirou.",
+      "texto": "Não recebemos a sua resposta dentro do prazo, por isso a encomenda não foi confirmada e não há nada a pagar. Se ainda pretender avançar, faça um novo pedido no site ou contacte-nos através do {telefone}."
     }
   }
 }

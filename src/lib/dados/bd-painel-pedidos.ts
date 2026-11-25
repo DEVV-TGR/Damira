@@ -11,6 +11,7 @@ import {
   naoExiste,
   paraProcura,
   planearResposta,
+  PRAZO_DO_ACEITE_MS,
   podeCancelar as podeCancelarPedido,
   podeResponder,
   REAGENDAVEIS,
@@ -401,7 +402,7 @@ export function criarPedidosDoPainelBd(db: BaseDeDados, leituras: LeiturasDoPain
         and estado = ${pedido.estado}
         and proposta_versao = ${pedido.propostaVersao}::integer
         and levantamento_em = ${instante(pedido.levantamentoEm)}
-        and (estado = 'a-aguardar-aceite' or (estado = 'por-confirmar' and expira_em > ${instante(agora)}))`;
+        and estado in ('por-confirmar', 'a-aguardar-aceite') and expira_em > ${instante(agora)}`;
 
       try {
         if (plano.tipo === "confirmar") {
@@ -441,7 +442,8 @@ export function criarPedidosDoPainelBd(db: BaseDeDados, leituras: LeiturasDoPain
               levantamento_em = ${instante(plano.levantamentoEm)},
               levantamento_anterior_em = ${plano.levantamentoAnteriorEm ? instante(plano.levantamentoAnteriorEm) : sql`null`},
               proposta_versao = proposta_versao + 1,
-              proposta_em = ${instante(agora)}`,
+              proposta_em = ${instante(agora)},
+              expira_em = ${instante(new Date(agora.getTime() + PRAZO_DO_ACEITE_MS))}`,
           condicao,
           id,
           efeitos,

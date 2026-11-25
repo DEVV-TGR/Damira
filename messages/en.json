@@ -677,6 +677,11 @@
     "invalido": {
       "titulo": "This link is not valid.",
       "texto": "Please check that you opened the full link from the email, or contact us on {telefone}."
+    },
+    "prazo": "You have until {data} to accept or decline.",
+    "expirada": {
+      "titulo": "This proposal has expired.",
+      "texto": "We did not receive your answer in time, so the order was not confirmed and there is nothing to pay. If you would still like to go ahead, place a new order on the website or contact us on {telefone}."
     }
   }
 }

@@ -482,10 +482,28 @@ describe("a resposta da casa e o aceite do cliente (pedidos.md › O aceite do c
   });
 
   it("rever a proposta de volta à hora pedida deixa de mudar a hora", async () => {
-    const f = await fonte([comBolo("a", { expiraEm: new Date("2099-01-01T00:00:00Z") })]);
-    await f.responderPedido(u("a"), { precos: [{ posicao: 1, precoUnitarioCent: 4500 }], levantamentoEm: lisboa(9, 11).toISOString() }, GERENTE);
-    const revista = await f.responderPedido(u("a"), { precos: [], levantamentoEm: lisboa(8, 15).toISOString() }, GERENTE);
-    expect(revista.ok && revista.valor).toMatchObject({ levantamentoEm: lisboa(8, 15), levantamentoAnteriorEm: null, propostaVersao: 2 });
+    /* Em 2099: mudar a hora lê a ocupação, que limpa os expirados com a hora real, e as 24 horas
+       da proposta têm de estar no futuro de verdade. */
+    const em2099 = (dia: number, h: number) => new TZDate(2099, 9, dia, h, 0, "Europe/Lisbon");
+    const ctx: ContextoPainel = { papel: "gerente", agora: em2099(7, 10) };
+    const f = await fonte([
+      comBolo("a", { criadoEm: em2099(6, 9), levantamentoEm: em2099(8, 15), expiraEm: em2099(8, 9) }),
+    ]);
+    await f.responderPedido(u("a"), { precos: [{ posicao: 1, precoUnitarioCent: 4500 }], levantamentoEm: em2099(9, 11).toISOString() }, ctx);
+    const revista = await f.responderPedido(u("a"), { precos: [], levantamentoEm: em2099(8, 15).toISOString() }, ctx);
+    expect(revista.ok && revista.valor).toMatchObject({ levantamentoEm: em2099(8, 15), levantamentoAnteriorEm: null, propostaVersao: 2 });
+  });
+
+  it("a proposta dá 24 horas ao cliente, e depois delas já não se aceita nem recusa", async () => {
+    const f = await fonte([comBolo("a")]);
+    const proposta = await f.responderPedido(u("a"), PRECO_DO_BOLO, GERENTE);
+    expect(proposta.ok && proposta.valor.expiraEm).toEqual(new Date(AGORA.getTime() + 24 * 3_600_000));
+    const referencia = proposta.ok ? proposta.valor.referencia : "";
+    const tarde = new Date(AGORA.getTime() + 24 * 3_600_000);
+    expect(await f.aceitarProposta(referencia, 1, tarde)).toMatchObject({ ok: false, erro: "estado-mudou" });
+    expect(await f.recusarProposta(referencia, 1, tarde)).toMatchObject({ ok: false, erro: "estado-mudou" });
+    const aTempo = await f.aceitarProposta(referencia, 1, new Date(tarde.getTime() - 60_000));
+    expect(aTempo.ok).toBe(true);
   });
 
   it("recusa um preço absurdo como dado inválido, sem chegar a gravar", async () => {

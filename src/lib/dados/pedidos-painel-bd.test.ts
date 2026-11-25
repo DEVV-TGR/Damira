@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { casa, emailsPorEnviar, pedidos, reembolsos, vagas } from "@/db/esquema";
 import { porDevolverCent } from "@/lib/painel";
 import { criarPedidosDoPainelBd } from "./bd-painel-pedidos";
+import { limparExpirados } from "./bd-pedidos";
 import { baseComPedidos, idDeTeste as u, type CasaDeTeste } from "./fontes-de-teste";
 import type { ContextoPainel, Pedido } from "./tipos";
 
@@ -374,6 +375,22 @@ describe("a resposta e o aceite deixam o email por enviar, na mesma instrução 
     expect(await modelos(db)).toHaveLength(3);
   });
 
+  it("a limpeza expira a proposta passadas as 24 horas, e o pedido sem resposta às 48, cada um com o seu email", async () => {
+    const semResposta = { ...porConfirmar("b"), referencia: "DAM-0710-BBBB", expiraEm: lisboa(7, 9) };
+    const { db, fonte, ocupadas } = await montar([porConfirmar("a"), semResposta]);
+    const proposta = await fonte.responderPedido(u("a"), { precos: [{ posicao: 1, precoUnitarioCent: 4500 }], levantamentoEm: null }, GERENTE);
+    const vaga = proposta.ok ? proposta.valor.levantamentoEm : new Date();
+    const antes = await ocupadas(vaga);
+    await limparExpirados(db, new Date(AGORA.getTime() + 25 * 3_600_000));
+    const [a, b2] = await Promise.all([fonte.pedidoDoPainel(u("a"), GERENTE), fonte.pedidoDoPainel(u("b"), GERENTE)]);
+    expect(a.ok && a.valor).toMatchObject({ estado: "expirado", causaExpiracao: "sem-aceite-do-cliente" });
+    expect(b2.ok && b2.valor).toMatchObject({ estado: "expirado", causaExpiracao: "sem-resposta-da-casa" });
+    expect(await ocupadas(vaga)).toBe(antes - 2);
+    expect(await modelos(db)).toEqual(
+      ["expirado-cliente → teste@example.com", "proposta-expirada-cliente → teste@example.com", "resposta-cliente → teste@example.com"].sort(),
+    );
+  });
+
   it("recusar liberta a vaga e avisa o cliente", async () => {
     const { db, fonte, ocupadas } = await montar([porConfirmar("a")]);
     const proposta = await fonte.responderPedido(u("a"), { precos: [{ posicao: 1, precoUnitarioCent: 4500 }], levantamentoEm: null }, GERENTE);
@@ -382,7 +399,7 @@ describe("a resposta e o aceite deixam o email por enviar, na mesma instrução 
     expect(await ocupadas(vaga)).toBe(1);
     expect((await fonte.recusarProposta(referencia, 1, lisboa(7, 11))).ok).toBe(true);
     expect(await ocupadas(vaga)).toBe(0);
-    expect(await modelos(db)).toContain("cancelado-cliente → teste@example.com");
+    expect(await modelos(db)).toContain("proposta-recusada-cliente → teste@example.com");
   });
 
   it("o «sim» do balcão deixa a confirmação ao cliente", async () => {
