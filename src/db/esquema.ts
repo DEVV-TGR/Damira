@@ -527,12 +527,14 @@ export const pedidos = pgTable(
         and (${t.confirmadoEm} is not null or not (${t.estado} = 'confirmado'
           or (${t.estado} = 'entregue' and ${t.modoPagamento} not in (${umDe(MODOS_ONLINE)}))))`,
     ),
+    /* Um `a-aguardar-aceite` também: as 24 horas do cliente para aceitar (decidido a 25/11), que
+       a proposta grava no mesmo `expira_em` — a resposta da casa acaba com as 48 horas dela. */
     /* Um `por-confirmar` sabe até quando espera — é por ele que expira — e o
        prazo é sempre depois de nascer. Só existe fora do Stripe, que tem o seu
        (os 31 minutos da sessão, contados do `criado_em`). */
     check(
       "pedidos_expira_em",
-      sql`(${t.estado} <> 'por-confirmar' or ${t.expiraEm} is not null)
+      sql`(${t.estado} not in ('por-confirmar', 'a-aguardar-aceite') or ${t.expiraEm} is not null)
         and (${t.expiraEm} is null
           or (${t.expiraEm} > ${t.criadoEm} and ${t.modoPagamento} not in (${umDe(MODOS_ONLINE)})))`,
     ),
@@ -547,14 +549,16 @@ export const pedidos = pgTable(
         and (${t.estado} <> 'a-aguardar-aceite' or ${t.propostaVersao} > 0)
         and (${t.levantamentoAnteriorEm} is null or ${t.propostaVersao} > 0)`,
     ),
-    /* Um expirado diz porquê, e só ele: a casa não respondeu (que só acontece a
-       quem tinha prazo), ou o Stripe não recebeu (que só acontece com ele). */
+    /* Um expirado diz porquê, e só ele: a casa não respondeu, ou o cliente não aceitou a proposta
+       (os dois só a quem tinha prazo, e o segundo só a quem teve proposta), ou o Stripe não recebeu
+       (que só acontece com ele). */
     check(
       "pedidos_causa_expiracao",
       sql`(${t.estado} = 'expirado') = (${t.causaExpiracao} is not null)
         and (${t.causaExpiracao} is null or (${t.causaExpiracao} in (${umDe(CAUSAS_EXPIRACAO)})
           and (${t.causaExpiracao} = 'sem-pagamento') = (${t.modoPagamento} in (${umDe(MODOS_ONLINE)}))
-          and (${t.causaExpiracao} <> 'sem-resposta-da-casa' or ${t.expiraEm} is not null)))`,
+          and (${t.causaExpiracao} not in ('sem-resposta-da-casa', 'sem-aceite-do-cliente') or ${t.expiraEm} is not null)
+          and (${t.causaExpiracao} <> 'sem-aceite-do-cliente' or ${t.propostaVersao} > 0)))`,
     ),
     check("pedidos_entregue_em", sql`${t.estado} <> 'entregue' or ${t.entregueEm} is not null`),
     /* Cancelado é final: quando, por quem, e o estado, os três ou nenhum. */

@@ -297,10 +297,10 @@ export const ESTADOS_PEDIDO = [
 /**
  * Porque é que um pedido expirou (`pedidos.md` › Os estados): `expirado` e
  * `cancelado` não se confundem, e dentro do expirado a causa também conta. A
- * `sem-aceite-do-cliente` é proposta (`pedidos.md` › Em aberto, 2) e só entra
- * quando for decidida.
+ * `sem-aceite-do-cliente` é a proposta que passou as 24 horas sem resposta do
+ * cliente (`pedidos.md` › Em aberto, 2 — decidido pela Andreia a 25/11).
  */
-export const CAUSAS_EXPIRACAO = ["sem-resposta-da-casa", "sem-pagamento"] as const;
+export const CAUSAS_EXPIRACAO = ["sem-resposta-da-casa", "sem-pagamento", "sem-aceite-do-cliente"] as const;
 
 /**
  * Como se paga (`pedidos.md` › Dinheiro): `na-loja` é o levantamento pago ao

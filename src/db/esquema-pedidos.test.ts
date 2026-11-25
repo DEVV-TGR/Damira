@@ -99,8 +99,12 @@ const PRAZO = new Date(CRIADO.getTime() + 48 * 60 * 60 * 1000);
 /** Um pedido com um produto que necessita de confirmação: espera pela casa. */
 const POR_CONFIRMAR = { ...NA_LOJA, estado: "por-confirmar", confirmadoEm: null, expiraEm: PRAZO } as const;
 
-/** A primeira proposta da casa (`pedidos.md` › O aceite do cliente). */
-const PROPOSTA = { propostaVersao: 1, propostaEm: new Date(CRIADO.getTime() + 60 * 60 * 1000) } as const;
+/** A primeira proposta da casa (`pedidos.md` › O aceite do cliente), com as 24 horas do cliente. */
+const PROPOSTA = {
+  propostaVersao: 1,
+  propostaEm: new Date(CRIADO.getTime() + 60 * 60 * 1000),
+  expiraEm: new Date(CRIADO.getTime() + 25 * 60 * 60 * 1000),
+} as const;
 
 const LINHA = {
   pedidoId: PENDENTE.id,
@@ -221,8 +225,10 @@ describe("o que é válido entra", () => {
       { ...POR_CONFIRMAR, ...outro(4), estado: "expirado", causaExpiracao: "sem-resposta-da-casa" },
       /* Desistiu por telefone antes de a casa responder: nunca foi confirmado. */
       { ...POR_CONFIRMAR, ...outro(5), estado: "cancelado", canceladoEm: PAGO, canceladoPor: "cliente" },
+      /* O cliente não aceitou a proposta nas 24 horas (decidido a 25/11). */
+      { ...POR_CONFIRMAR, ...outro(6), estado: "expirado", causaExpiracao: "sem-aceite-do-cliente", ...PROPOSTA },
     ]);
-    expect(await db.select().from(pedidos)).toHaveLength(5);
+    expect(await db.select().from(pedidos)).toHaveLength(6);
   });
 
   it("um reembolso com o estado do Stripe, de cada um dos cinco", async () => {
@@ -339,6 +345,16 @@ describe("um pedido recusa", () => {
     expect(await tenta({ estado: "por-confirmar", expiraEm: PRAZO })).toBe("pedidos_estado_do_modo");
     expect(await tenta({ estado: "a-aguardar-aceite" })).toBe("pedidos_estado_do_modo");
     expect(await tenta({ expiraEm: PRAZO })).toBe("pedidos_expira_em");
+  });
+
+  it("à espera do aceite sem prazo para o cliente aceitar", async () => {
+    expect(await tenta({ ...POR_CONFIRMAR, estado: "a-aguardar-aceite", ...PROPOSTA, expiraEm: null })).toBe("pedidos_expira_em");
+  });
+
+  it("uma proposta expirada sem ter havido proposta", async () => {
+    expect(await tenta({ ...POR_CONFIRMAR, estado: "expirado", causaExpiracao: "sem-aceite-do-cliente" })).toBe(
+      "pedidos_causa_expiracao",
+    );
   });
 
   it("à espera do aceite sem proposta, ou versão e data da proposta separadas", async () => {
