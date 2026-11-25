@@ -525,8 +525,7 @@ primeiras sete vieram do Santo Burga e continuam a valer — o motor é o mesmo.
    um `id` a uma categoria, ou em que duas categorias puderem ter o mesmo nome.
 9. **`background: currentColor` resolve para a cor do *próprio* elemento.** Uma
    pastilha com `background: currentColor` e `color: transparent` fica
-   transparente, não fica da cor herdada. Declarar as duas cores. Ver o fólio em
-   `cartaz.css`.
+   transparente, não fica da cor herdada. Declarar as duas cores.
 10. **O enchimento à direita de um contentor flex não entra no `scrollWidth`.**
     Quem conta com ele para dar curso a um carril fica com o último item
     cortado. Usar margem no último filho. Ver `.festa__carril`.
