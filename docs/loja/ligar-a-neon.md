@@ -37,9 +37,10 @@ Damira», com o projeto «Damira - Loja Online». A DevPlus entra como *Editor*,
 que não pode apagar o projeto — só os administradores, que são da casa.
 
 - [x] **Conta em nome da Damira**, com a DevPlus convidada.
-- [ ] **Plano Launch** — restauro até 7 dias; o gratuito, em que a conta está,
-      só volta 6 horas atrás (`robustez.md` › Backups). É a casa que paga:
-      pedir antes do lançamento.
+- [x] **Plano Launch** (25/11/2026) — a casa paga. O gratuito só voltava 6
+      horas atrás (`robustez.md` › Backups).
+- [ ] **Janela de restauro de 7 dias** — o Launch permite-a, mas a 25/11 ainda
+      estava nas 6 horas: alargá-la em Settings › Storage (`restauro.md`).
 - [x] **Postgres 18** (18.6). É a versão do PGlite em que tudo está testado;
       uma versão diferente pode comportar-se de forma diferente justamente onde
       os testes não olham.

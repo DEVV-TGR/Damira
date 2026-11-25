@@ -9,10 +9,15 @@ este papel, não a memória.** Porquê há restauro e quanto tempo para trás es
 
 | Plano da Neon | Até onde se volta |
 |---|---|
-| Gratuito (o de hoje, 16/11/2026) | **6 horas** |
-| Launch (pedido à casa, `ligar-a-neon.md`) | 7 dias |
+| Gratuito (até 25/11/2026) | 6 horas, no máximo |
+| Launch (o de hoje, desde 25/11/2026) | até 7 dias, **se a janela for alargada** |
 
-⚠️ **O relógio conta.** No plano gratuito, um erro descoberto à noite e corrigido
+⚠️ **A janela não alarga sozinha com o plano.** A casa passou ao Launch a
+25/11, mas a janela continuou nas **6 horas** do plano gratuito. Muda-se na
+Neon → projeto → **Settings** → **Storage** (a consola chama-lhe *restore
+window* / *history retention*). Confirmar lá quanto está antes de contar com ela.
+
+⚠️ **O relógio conta.** Com 6 horas, um erro descoberto à noite e corrigido
 na manhã seguinte já não tem volta. Se algo correu mal, **começa-se pelo passo 1
 logo**: um ramo criado agora guarda o ponto do passado, e já não depende da
 janela.
