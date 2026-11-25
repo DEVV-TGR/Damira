@@ -6,17 +6,15 @@ ou regras. Se alguma coisa daqui tiver de mudar, muda **aqui primeiro, num PR
 só para isso** — um estado novo que aparece no painel antes de aparecer aqui é
 um estado que os pagamentos não sabem que existe.
 
-> ⚠️ **Contrato para a implementação seguinte, e não descrição do site**
-> (11/11/2026). Desde 11/11 a produção tem a entrada verdadeira do painel ligada
-> e grava na base de dados, mas **a compra continua a acabar num email à casa**
-> e **nenhum pedido usa ainda os estados daqui** (`por-confirmar`,
-> `a-aguardar-aceite`, `confirmado`, a expiração às 48 h): a base de dados
-> ainda cria pedidos
-> `pendente`, com o desenho do Stripe. Nada do que está abaixo «já funciona».
-> Os pontos marcados «(em aberto: ver n.º X)» não estão decididos — estão no
-> fim, com a proposta e quem decide. Este PR muda só o contrato; o alinhamento
-> de `AGENTS.md`, `horarios.md` e restantes documentos segue no trabalho de
-> documentação do #114, depois de aprovado este contrato.
+> ⚠️ **Contrato com implementação parcial, e não descrição integral do site**
+> (25/11/2026, #132). A entrada verdadeira do painel está ligada à base de dados.
+> A fonte já cria levantamentos `confirmado` ou `por-confirmar`, a pagar na loja,
+> e expira os pedidos sem resposta às 48 horas, nas leituras da ocupação e na
+> criação de pedidos. **A compra continua a acabar num email à casa**: ainda não
+> chama essa fonte. Faltam o painel dos confirmados (#133, #125), o aceite por
+> link, as entregas e os emails automáticos; a expiração sem visitas e os
+> lembretes também precisam de implementação. Os pontos marcados «(em aberto:
+> ver n.º X)» continuam por decidir — estão no fim, com a proposta e quem decide.
 
 ## A política da casa manda
 

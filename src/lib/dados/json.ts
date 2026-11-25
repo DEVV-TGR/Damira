@@ -8,7 +8,7 @@ import { PRODUTOS, type Produto as ProdutoDasEncomendas } from "@/lib/produtos";
 import mensagensEn from "../../../messages/en.json";
 import mensagensPt from "../../../messages/pt.json";
 import { criarPainelJson, type EstadoJson } from "./json-painel";
-import { conferirPedido, cotarLinhas, gerarReferencia, pedeConfirmacaoInicial, pedidoPorPagar } from "./regras";
+import { conferirPedido, cotarLinhas, gerarReferencia, pedeConfirmacaoInicial, pedidoNaLoja } from "./regras";
 import {
   EsquemaEntradaPedido,
   EsquemaLinhaCesto,
@@ -272,9 +272,17 @@ const ORDEM_JSON: OrdemEmenta = {
 // ——— A fonte ———
 
 /* O `entregue` continua a ocupar a vaga: gastou a capacidade daquela hora, e o
-   «desfazer» nunca pode esbarrar no limite (`pedidos.md` › O levantamento). Só o
-   cancelado e o expirado a libertam. */
-const ATIVOS = new Set<Pedido["estado"]>(["pendente", "pago", "entregue"]);
+   «desfazer» nunca pode esbarrar no limite (`pedidos.md` › O levantamento). Os
+   que esperam pela casa ou pelo cliente também a ocupam, como um confirmado
+   (`pedidos.md` › Confirmar). Só o cancelado e o expirado a libertam. */
+const ATIVOS = new Set<Pedido["estado"]>([
+  "por-confirmar",
+  "a-aguardar-aceite",
+  "confirmado",
+  "pendente",
+  "pago",
+  "entregue",
+]);
 
 export type OpcoesFonteJson = {
   catalogo?: readonly Produto[];
@@ -417,7 +425,7 @@ export function criarFonteJsonComEstado(opcoes: OpcoesFonteJson = {}): { fonte: 
       let referencia = gerarReferencia(agora);
       while (porReferencia.has(referencia)) referencia = gerarReferencia(agora);
 
-      const pedido = pedidoPorPagar(dados, conferido, { id: randomUUID(), referencia, agora, contaId });
+      const pedido = pedidoNaLoja(dados, conferido, { id: randomUUID(), referencia, agora, contaId });
 
       pedidos.set(pedido.id, pedido);
       porReferencia.set(referencia, pedido.id);

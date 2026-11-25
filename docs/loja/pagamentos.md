@@ -7,13 +7,14 @@ deste ficheiro corre hoje, e a rota do webhook não tem pedidos para marcar. Fic
 escrito como estava — é o desenho para o dia em que o pagamento online voltar,
 e a casa disse «para já», não «nunca». Até lá, não se constrói mais nada aqui.
 
-⚠️ **O contrato novo ainda não está no código.** As regras do `pedidos.md` são
-as aprovadas para a implementação seguinte (#48): o fluxo novo não deverá criar
-pedidos `pendente`, mas essa implementação está por fazer. Hoje a página de
-compra ainda acaba num email à casa, e a fonte da base de dados
-(`bd-pedidos.ts`) ainda cria pedidos `pendente`, com o modelo do Stripe. Até
-esse PR entrar, o código não descreve o contrato, e o contrato não descreve o
-código.
+⚠️ **A fonte dos pedidos já segue a política de pagamento na loja (#132).**
+O `criarPedido`, em `bd-pedidos.ts`, cria levantamentos `confirmado` ou
+`por-confirmar`, com `modoPagamento: na-loja`; já não cria `pendente` do Stripe.
+A limpeza mantém a expiração dos pendentes antigos do Stripe e passa também a
+expirar os pedidos sem resposta da casa às 48 horas. **A página de compra ainda
+acaba num email à casa**: ligá-la à fonte espera pelo painel dos confirmados
+(#133, #125). O aceite do cliente, as entregas, os emails automáticos e os
+lembretes continuam por implementar; o contrato completo não está todo ligado.
 
 Como o dinheiro entra e sai. O que acontece ao pedido quando é pago, expira ou é
 cancelado está em `pedidos.md`; aqui está a ligação ao Stripe.
