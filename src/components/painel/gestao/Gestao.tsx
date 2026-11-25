@@ -15,9 +15,10 @@ import { Produtos } from "./Produtos";
 /**
  * # A gestão — o que a gerente vê por cima do balcão (`painel-gerente.md`)
  *
- * Precisa de atenção, pedidos, produtos, a ordem das categorias, horários,
- * definições e equipa. Tudo tem de funcionar num telemóvel — é lá que a
- * gerente vai preencher os produtos.
+ * Desde a proposta de 25/11 já não tem separadores próprios: o `Balcao` põe a
+ * pesquisa e os menus Produtos / Pedidos / Loja por cima de tudo, e isto
+ * desenha a vista escolhida que não é do balcão. Tudo tem de funcionar num
+ * telemóvel — é lá que a gerente vai preencher os produtos.
  *
  * Só é desenhada para a gerente — e as ações recusam-na a quem não é, no
  * servidor: esconder isto ao balcão não é o que protege (regra 8).
@@ -37,62 +38,57 @@ export type DadosGestao = {
   nomesCategorias: Record<string, string>;
 };
 
-type Secao = "atencao" | "pedidos" | "produtos" | "categorias" | "horarios" | "definicoes" | "equipa";
+export type VistaGestao =
+  | "atencao"
+  | "todos-pedidos"
+  | "produtos"
+  | "por-preencher"
+  | "categorias"
+  | "horarios"
+  | "definicoes"
+  | "equipa";
 
-export function Gestao({ dados }: { dados: DadosGestao }) {
-  const atencao = dados.avisos.length;
-  const [secao, setSecao] = useState<Secao>(atencao > 0 ? "atencao" : "pedidos");
+export function Gestao({
+  dados,
+  vista,
+  procura,
+  onRascunho,
+}: {
+  dados: DadosGestao;
+  vista: VistaGestao;
+  /** A pesquisa de cima, quando o menu aberto é o dos produtos. */
+  procura: string;
+  /** O nome do produto com alterações por guardar, ou `null`. */
+  onRascunho: (nome: string | null) => void;
+}) {
+  /* Um pedido aberto a partir de «Precisa de atenção» ou da lista: o detalhe
+     toma o lugar da vista, e «Voltar» devolve-a como estava. */
   const [aberto, setAberto] = useState<string | null>(null);
+  if (aberto) return <DetalhePedido id={aberto} onVoltar={() => setAberto(null)} />;
 
-  const abrir = (id: string) => {
-    setAberto(id);
-    setSecao("pedidos");
-  };
-
-  const secoes: { id: Secao; rotulo: string }[] = [
-    { id: "atencao", rotulo: atencao > 0 ? `Precisa de atenção · ${atencao}` : "Precisa de atenção" },
-    { id: "pedidos", rotulo: "Pedidos" },
-    { id: "produtos", rotulo: "Produtos" },
-    { id: "categorias", rotulo: "Categorias" },
-    { id: "horarios", rotulo: "Horários" },
-    { id: "definicoes", rotulo: "Definições" },
-    { id: "equipa", rotulo: "Equipa" },
-  ];
-
-  return (
-    <section aria-label="Gestão">
-      <div role="tablist" aria-label="Gestão" className="-mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
-        {secoes.map(({ id, rotulo }) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={secao === id}
-            onClick={() => {
-              setSecao(id);
-              setAberto(null);
-            }}
-            className={`min-h-12 shrink-0 rounded-xl px-4 text-sm font-semibold ${
-              secao === id ? "bg-tijolo text-papel" : "border border-tinta/15 bg-papel"
-            } ${id === "atencao" && atencao > 0 && secao !== id ? "border-tijolo text-tijolo" : ""}`}
-          >
-            {rotulo}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-6">
-        {secao === "atencao" && <Atencao avisos={dados.avisos} pedidos={dados.pedidosDosAvisos} porPreencher={dados.porPreencher} onAbrir={abrir} />}
-        {secao === "pedidos" &&
-          (aberto ? <DetalhePedido id={aberto} onVoltar={() => setAberto(null)} /> : <PedidosGestao onAbrir={setAberto} />)}
-        {secao === "produtos" && <Produtos produtos={dados.produtos} ordem={dados.ordem} />}
-        {secao === "categorias" && (
-          <OrdemCategorias ordem={dados.ordem} produtos={dados.produtos} nomes={dados.nomesCategorias} />
-        )}
-        {secao === "horarios" && <Horarios casa={dados.casa} />}
-        {secao === "definicoes" && <Definicoes definicoes={dados.definicoes} />}
-        {secao === "equipa" && <Equipa />}
-      </div>
-    </section>
-  );
+  switch (vista) {
+    case "atencao":
+      return <Atencao avisos={dados.avisos} pedidos={dados.pedidosDosAvisos} porPreencher={dados.porPreencher} onAbrir={setAberto} />;
+    case "todos-pedidos":
+      return <PedidosGestao onAbrir={setAberto} />;
+    case "produtos":
+    case "por-preencher":
+      return (
+        <Produtos
+          produtos={dados.produtos}
+          ordem={dados.ordem}
+          vistaInicial={vista === "por-preencher" ? "por-preencher" : "todos"}
+          procura={procura}
+          onRascunho={onRascunho}
+        />
+      );
+    case "categorias":
+      return <OrdemCategorias ordem={dados.ordem} produtos={dados.produtos} nomes={dados.nomesCategorias} />;
+    case "horarios":
+      return <Horarios casa={dados.casa} />;
+    case "definicoes":
+      return <Definicoes definicoes={dados.definicoes} />;
+    case "equipa":
+      return <Equipa />;
+  }
 }

@@ -4,14 +4,44 @@ A gerente vê tudo o que o balcão vê (`painel-balcao.md`) e, por cima disso, a
 gestão. Usa-o no tablet e no telemóvel — **tudo aqui tem de funcionar num
 telemóvel**, incluindo tirar uma foto a um bolo e pô-la no site.
 
+## Como se navega (proposta de 25/11)
+
+Ao lado da pesquisa, três menus em vez de uma fila de separadores:
+
+| Menu | Vistas |
+|---|---|
+| **Produtos** | Todos os produtos · Ordem das categorias · Por preencher · Esgotados |
+| **Pedidos** | Levantam hoje · Produzir hoje · Próximos · Todos os pedidos · Arquivo |
+| **Loja** | Precisa de atenção · Horários · Definições · Equipa |
+
+As migalhas por baixo dizem onde se está. A pesquisa procura produtos na lista
+de produtos, e pedidos em todo o resto. **Todos os produtos ficam por ordem alfabética**, na lista do painel e na
+`/encomendas` — um produto novo entra logo no sítio dele. Só as categorias da
+carta seguem a ordem que a gerente escolhe. **Levantam hoje** e **Próximos**
+aparecem à gerente em lista compacta (hora, referência, cliente, estado,
+total); «Ver pedido» abre o mesmo cartão do balcão, com o «Entregue». O balcão
+continua com cartões grandes e separadores (`painel-balcao.md`).
+
+O catálogo é lista à esquerda e ficha à direita a partir de 1024 px; abaixo, a
+ficha toma o lugar da lista. A ficha tem separadores — Geral, Tamanhos e
+preços, Opções, Encomenda, Alergénios, Fotografias — e o guardar num rodapé
+fixo. Na interface, «tamanho» é a `variante` e «opção» é a `escolha`: o modelo
+não mudou (os tamanhos e grupos de opções do #88 pedem contrato novo). Com
+alterações por guardar, trocar de produto ou de menu pergunta primeiro, e o
+painel não recarrega sozinho.
+
+Cada parâmetro tem um «?» com a explicação e um exemplo (`Ajuda.tsx`): abre
+com clique, toque ou teclado, e fecha com Escape ou um toque fora. O que é
+preciso para não errar fica à vista, fora do «?».
+
 Ordem de construção: **Produtos primeiro.** É por lá que a casa preenche fotos,
 alergénios e tempos de produção dos 95 artigos, e os testes reais só acontecem
 depois disso.
 
 ## Precisa de atenção
 
-O topo do painel da gerente é uma lista do que espera por ela, e só aparece
-quando há alguma coisa:
+Em **Loja › Precisa de atenção** está a lista do que espera pela gerente. Com
+alguma coisa lá, é onde o painel abre, e o menu «Loja» leva um ponto:
 
 - pedidos pagos que chegaram depois de expirar (`chegouTarde`, ver `pedidos.md`);
 - possíveis pedidos duplicados (ver `robustez.md`);
@@ -43,7 +73,7 @@ qualquer pedido, com «reembolsar parte» para os que seguem.
 | Campo | Notas |
 |---|---|
 | Nome, descrição, fotos | fotos tiradas no telemóvel, reduzidas no browser antes de subir |
-| Secção do dia a dia (a «carta») e categoria | como hoje no `ementa.json` |
+| Carta e categoria | como hoje no `ementa.json` |
 | Alergénios | lista, ou «sem alergénios» marcado expressamente |
 | Vegan, sem glúten | marcados pela gerente |
 | Unidade | à unidade ou ao quilo |
@@ -54,7 +84,7 @@ qualquer pedido, com «reembolsar parte» para os que seguem.
 | Pede sinal | interruptor; ligado pede a percentagem (ver `pagamentos.md`) |
 | Necessita de confirmação da loja | sim / não — ver abaixo |
 
-**«À venda online» decide se o artigo chega à `/encomendas`.** O dia a dia tem
+**«À venda online» decide se o artigo chega à `/encomendas`.** A carta tem
 95 artigos e nem todos se encomendam — não se encomenda um galão para sexta. Hoje
 essa regra está numa tabela em `encomendavel.ts`; passa a ser este campo.
 
@@ -62,6 +92,14 @@ essa regra está numa tabela em `encomendavel.ts`; passa a ser este campo.
 página lia o valor, e uma caixa que não muda nada no site engana quem a marca.
 A coluna `aparece_na_ementa` continua na base de dados, e o valor que lá está
 guarda-se ao gravar; sai, ou ganha um uso, com as categorias da gerente (#124).
+
+⚠️ **Decidido a 25/11, por fazer: «Mostrar nas encomendas».** A proposta dos
+painéis separa **mostrar** (o produto aparece na `/encomendas`, na sua
+categoria) de **vender** (tem botão de encomendar — «À venda online»). Hoje não
+há onde o guardar: a coluna `aparece_na_ementa` está a `true` nos 95 da carta e
+a `false` nos kits, e reaproveitá-la escondia os kits todos. Pede um campo (ou a
+coluna renomeada, com os valores acertados numa migração): **PR do esquema,
+revisto pelo Sobral**. Até lá, a ficha mostra só «À venda online».
 
 **Limitar quantidade.** Desligado (por defeito), o artigo vende sem limite e só
 contam as regras de horários. Ligado: **por dia** é a capacidade da cozinha e
@@ -146,14 +184,14 @@ lançamento, e é o que nos diz quando podemos fazer os testes reais.
 
 ### ⚠️ Apagar é arquivar
 
-«Apagar» tira o produto de todo o lado, mas não o apaga da base de dados: os
+«Arquivar» (no separador Geral, com dois toques) tira o produto de todo o lado, mas não o apaga da base de dados: os
 pedidos antigos continuam a apontar para ele. Um produto apagado a sério deixava
 pedidos pagos a referir uma coisa que não existe.
 
 ### Ordem das categorias
 
-Pedido da casa a 12/10 (#87). No separador **Categorias**, a gerente escolhe a
-ordem em que as categorias aparecem na secção «Do dia a dia» das encomendas
+Pedido da casa a 12/10 (#87). Em **Produtos › Ordem das categorias**, a gerente escolhe a
+ordem em que as categorias aparecem na secção «Da carta» das encomendas
 (até 12/11 também na `/ementa`, que saiu). **Dentro de cada categoria, os produtos ficam por
 ordem alfabética**, e isso não se escolhe: ninguém ordena noventa e cinco
 artigos à mão num telemóvel. Não há subcategorias para ordenar (os títulos das
@@ -167,7 +205,7 @@ bebidas ficam na ordem do impresso), e as cartas também não se ordenam.
   as páginas, como um preço.
 - ⚠️ **Grava-se a lista inteira, e tem de ser uma permutação das categorias que
   existem.** Uma categoria que faltasse não ia para o fim — desaparecia da
-  «Do dia a dia», porque a secção sai desta lista. O servidor recusa listas com
+  «Da carta», porque a secção sai desta lista. O servidor recusa listas com
   categorias a menos, a mais ou repetidas.
 - ⚠️ **Só a gerente**: o papel verifica-se no servidor (`papeis.ts`), como nos
   produtos.

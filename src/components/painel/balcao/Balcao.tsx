@@ -6,7 +6,9 @@ import { desfazer, procurar, simularPedido } from "@/app/painel/acoes-balcao";
 import type { Papel, Pedido } from "@/lib/dados/tipos";
 import { diaDeLisboa, diaPorExtenso, novidades, type Balcao as SeparadoresDoBalcao } from "@/lib/painel";
 import { horaDeLisboa } from "@/lib/painel-ligacao";
-import { Gestao, type DadosGestao } from "../gestao/Gestao";
+import { Gestao, type DadosGestao, type VistaGestao } from "../gestao/Gestao";
+import { ListaCompacta } from "../gestao/ListaCompacta";
+import { ICONES, MenusGerente, Migalhas, type Menu } from "../gestao/MenuGerente";
 import { usePainel } from "../PainelAberto";
 import { Arquivo } from "./Arquivo";
 import { Avisos, type Aviso } from "./Avisos";
@@ -25,7 +27,10 @@ import { PedidoCartao } from "./PedidoCartao";
  * (som uma vez, e um aviso que fica até alguém lhe tocar) ou **um cancelado**
  * (som e aviso vermelho). Um talão que não saiu faz o alarme repetir-se.
  *
- * A gerente vê isto tudo e, por cima, a gestão (`../gestao/Gestao.tsx`).
+ * A gerente vê isto tudo e a gestão (`../gestao/Gestao.tsx`), arrumados em três
+ * menus junto da pesquisa — Produtos, Pedidos, Loja (proposta de 25/11). Os
+ * dias aparecem-lhe em lista compacta; o balcão continua com cartões grandes,
+ * porque despacha e não procura.
  */
 
 export type ProdutoDoBalcao = { id: string; nome: string; esgotadoHoje: boolean; foraDeVenda: boolean };
@@ -42,7 +47,7 @@ type Props = {
   gestao: DadosGestao | null;
 };
 
-type Separador = "hoje" | "produzir" | "proximos" | "arquivo" | "esgotados" | "gestao";
+type Vista = "hoje" | "produzir" | "proximos" | "arquivo" | "esgotados" | VistaGestao;
 
 /* O alarme do talão que não saiu: insiste até alguém tratar (`impressao.md`). */
 const ALARME_MS = 4000;
@@ -53,7 +58,11 @@ const mapaDe = (pedidos: Pedido[]) => new Map(pedidos.map((p) => [p.id, p.estado
 export function Balcao({ papel, pedidos, balcao, produtos, pausaAte, modoTeste, gestao }: Props) {
   const router = useRouter();
   const { tocar, atualizadoEm } = usePainel();
-  const [separador, setSeparador] = useState<Separador>("hoje");
+  /* A gerente com avisos por tratar abre neles; o resto abre no dia. */
+  const [vista, setVista] = useState<Vista>(gestao && gestao.avisos.length > 0 ? "atencao" : "hoje");
+  const [texto, setTexto] = useState("");
+  const [rascunho, setRascunho] = useState<string | null>(null);
+  const [pendente, setPendente] = useState<Vista | null>(null);
   const [avisos, setAvisos] = useState<Aviso[]>([]);
   const [toques, setToques] = useState(0);
 
@@ -114,58 +123,213 @@ export function Balcao({ papel, pedidos, balcao, produtos, pausaAte, modoTeste, 
       else router.refresh();
     });
 
-  const separadores: { id: Separador; rotulo: string }[] = [
-    { id: "hoje", rotulo: `Levantam hoje · ${balcao.levantamHoje.filter((p) => p.estado === "pago").length}` },
+  const ehGerente = gestao !== null;
+  /* A pesquisa de cima procura produtos quando a lista de produtos está aberta,
+     e pedidos em todo o resto — como no balcão. */
+  const procuraProdutos = vista === "produtos" || vista === "por-preencher";
+  const pesquisa = usePesquisaPedidos(procuraProdutos ? "" : texto);
+
+  /* Mudar de vista com um produto a meio pede confirmação: o rascunho vive na
+     ficha, e a ficha desmonta-se ao sair. */
+  const navegar = (v: Vista) => {
+    if (v === vista) return;
+    if (rascunho) return setPendente(v);
+    setVista(v);
+    setTexto("");
+  };
+
+  const contagemHoje = balcao.levantamHoje.filter((p) => p.estado === "pago").length;
+  const separadores: { id: Vista; rotulo: string }[] = [
+    { id: "hoje", rotulo: `Levantam hoje · ${contagemHoje}` },
     { id: "produzir", rotulo: `Produzir hoje · ${balcao.produzirHoje.length}` },
     { id: "proximos", rotulo: `Próximos · ${balcao.proximos.length}` },
     { id: "arquivo", rotulo: "Arquivo" },
     { id: "esgotados", rotulo: "Esgotados" },
-    ...(gestao ? [{ id: "gestao" as const, rotulo: gestao.avisos.length > 0 ? `Gestão · ${gestao.avisos.length} ⚠` : "Gestão" }] : []),
   ];
+
+  const menus: Menu<Vista>[] = gestao
+    ? [
+        {
+          id: "produtos",
+          rotulo: "Produtos",
+          icone: ICONES.produtos,
+          itens: [
+            { id: "produtos", rotulo: "Todos os produtos" },
+            { id: "categorias", rotulo: "Ordem das categorias" },
+            { id: "por-preencher", rotulo: "Por preencher", contagem: gestao.porPreencher.produtos.length },
+            { id: "esgotados", rotulo: "Esgotados" },
+          ],
+        },
+        {
+          id: "pedidos",
+          rotulo: "Pedidos",
+          icone: ICONES.pedidos,
+          itens: [
+            { id: "hoje", rotulo: "Levantam hoje", contagem: contagemHoje },
+            { id: "produzir", rotulo: "Produzir hoje", contagem: balcao.produzirHoje.length },
+            { id: "proximos", rotulo: "Próximos", contagem: balcao.proximos.length },
+            { id: "todos-pedidos", rotulo: "Todos os pedidos" },
+            { id: "arquivo", rotulo: "Arquivo" },
+          ],
+        },
+        {
+          id: "loja",
+          rotulo: "Loja",
+          icone: ICONES.loja,
+          itens: [
+            { id: "atencao", rotulo: "Precisa de atenção", contagem: gestao.avisos.length, alerta: gestao.avisos.length > 0 },
+            { id: "horarios", rotulo: "Horários" },
+            { id: "definicoes", rotulo: "Definições" },
+            { id: "equipa", rotulo: "Equipa" },
+          ],
+        },
+      ]
+    : [];
 
   return (
     <>
       <Pausa pausaAte={pausaAte} />
-      <Pesquisa>
-        <nav aria-label="Vistas" className="-mx-4 mt-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-          <div role="tablist" className="flex min-w-max gap-2">
-            {separadores.map(({ id, rotulo }) => (
-              <button
-                key={id}
-                type="button"
-                role="tab"
-                aria-selected={separador === id}
-                onClick={() => setSeparador(id)}
-                className={`min-h-12 rounded-full px-5 text-sm font-semibold uppercase tracking-widest ${
-                  separador === id ? "bg-tinta text-papel" : "border border-tinta/15 bg-papel"
-                }`}
-              >
-                {rotulo}
-              </button>
-            ))}
-          </div>
-        </nav>
 
-        <div role="tabpanel" className="mt-6">
-          {erroAviso && <p className="mb-3 font-semibold text-tijolo">{erroAviso}</p>}
-          {separador === "hoje" && (
-            <Lista vazio="Sem pedidos para hoje" atualizadoEm={atualizadoEm}>
-              {balcao.levantamHoje.map((p) => (
-                <PedidoCartao key={p.id} pedido={p} destaque onEntregue={aoEntregar} />
-              ))}
-            </Lista>
-          )}
-          {separador === "produzir" && <Produzir balcao={balcao} atualizadoEm={atualizadoEm} />}
-          {separador === "proximos" && <Proximos pedidos={balcao.proximos} onEntregue={aoEntregar} atualizadoEm={atualizadoEm} />}
-          {separador === "arquivo" && <Arquivo papel={papel} />}
-          {separador === "esgotados" && <Esgotados produtos={produtos} />}
-          {separador === "gestao" && gestao && <Gestao dados={gestao} />}
+      <div className={`mt-4 flex flex-col gap-3 ${ehGerente ? "sm:flex-row sm:items-center" : ""}`}>
+        <CampoPesquisa
+          texto={texto}
+          onTexto={setTexto}
+          rotulo={procuraProdutos ? "Procurar produto" : "Procurar por referência ou nome"}
+        />
+        {ehGerente && <MenusGerente menus={menus} vista={vista} onEscolher={navegar} />}
+      </div>
+
+      {pendente && rascunho && (
+        <div role="alert" className="sticky top-2 z-20 mt-4 flex flex-wrap items-center gap-3 rounded-2xl border-2 border-tijolo bg-papel px-5 py-3 shadow-lg">
+          <p className="mr-auto font-semibold">«{rascunho}» tem alterações por guardar.</p>
+          <button type="button" onClick={() => setPendente(null)} className={BOTAO_SECUNDARIO}>
+            Continuar a editar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setRascunho(null);
+              setPendente(null);
+              setVista(pendente);
+              setTexto("");
+            }}
+            className={`${BOTAO_SECUNDARIO} border-tijolo text-tijolo`}
+          >
+            Descartar e sair
+          </button>
         </div>
-      </Pesquisa>
+      )}
+
+      {pesquisa.ativa ? (
+        <Resultados texto={texto} pesquisa={pesquisa} />
+      ) : (
+        <>
+          {ehGerente ? (
+            <Migalhas menus={menus} vista={vista} />
+          ) : (
+            <nav aria-label="Vistas" className="-mx-4 mt-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+              <div role="tablist" className="flex min-w-max gap-2">
+                {separadores.map(({ id, rotulo }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    role="tab"
+                    aria-selected={vista === id}
+                    onClick={() => navegar(id)}
+                    className={`premivel min-h-14 rounded-full px-5 text-sm font-semibold uppercase tracking-widest ${
+                      vista === id ? "bg-tinta text-papel" : "border border-tinta/15 bg-papel"
+                    }`}
+                  >
+                    {rotulo}
+                  </button>
+                ))}
+              </div>
+            </nav>
+          )}
+
+          <div role={ehGerente ? undefined : "tabpanel"} className={ehGerente ? "mt-4" : "mt-6"}>
+            {erroAviso && <p className="mb-3 font-semibold text-tijolo">{erroAviso}</p>}
+            {vista === "hoje" &&
+              (ehGerente ? (
+                <Compacta titulo="Levantam hoje" pedidos={balcao.levantamHoje} vazio="Sem pedidos para hoje" atualizadoEm={atualizadoEm}>
+                  <ListaCompacta pedidos={balcao.levantamHoje} onEntregue={aoEntregar} rotuloDia={() => "Hoje"} />
+                </Compacta>
+              ) : (
+                <Lista vazio="Sem pedidos para hoje" atualizadoEm={atualizadoEm}>
+                  {balcao.levantamHoje.map((p) => (
+                    <PedidoCartao key={p.id} pedido={p} destaque onEntregue={aoEntregar} />
+                  ))}
+                </Lista>
+              ))}
+            {vista === "produzir" && <Produzir balcao={balcao} atualizadoEm={atualizadoEm} />}
+            {vista === "proximos" &&
+              (ehGerente ? (
+                <Compacta titulo="Próximos" pedidos={balcao.proximos} vazio="Sem pedidos para os próximos dias" atualizadoEm={atualizadoEm}>
+                  <ListaCompacta pedidos={balcao.proximos} onEntregue={aoEntregar} rotuloDia={(p) => primeiraMaiuscula(diaPorExtenso(p.levantamentoEm))} />
+                </Compacta>
+              ) : (
+                <Proximos pedidos={balcao.proximos} onEntregue={aoEntregar} atualizadoEm={atualizadoEm} />
+              ))}
+            {vista === "arquivo" && <Arquivo papel={papel} />}
+            {vista === "esgotados" && <Esgotados produtos={produtos} />}
+            {gestao && ehVistaGestao(vista) && (
+              <Gestao key={vista} dados={gestao} vista={vista} procura={texto} onRascunho={setRascunho} />
+            )}
+          </div>
+        </>
+      )}
 
       {modoTeste && <Simulador />}
       <Avisos avisos={avisos} onFechar={fechar} onDesfazer={desfazerAviso} />
     </>
+  );
+}
+
+const primeiraMaiuscula = (texto: string) => texto.charAt(0).toUpperCase() + texto.slice(1);
+
+const VISTAS_GESTAO: readonly VistaGestao[] = [
+  "atencao",
+  "todos-pedidos",
+  "produtos",
+  "por-preencher",
+  "categorias",
+  "horarios",
+  "definicoes",
+  "equipa",
+];
+const ehVistaGestao = (v: Vista): v is VistaGestao => (VISTAS_GESTAO as readonly string[]).includes(v);
+
+/** A lista compacta da gerente, com o título e a contagem por cima — ou o vazio, com a hora. */
+function Compacta({
+  titulo,
+  pedidos,
+  vazio,
+  atualizadoEm,
+  children,
+}: {
+  titulo: string;
+  pedidos: Pedido[];
+  vazio: string;
+  atualizadoEm: Date;
+  children: React.ReactNode;
+}) {
+  if (pedidos.length === 0) {
+    return (
+      <p className="rounded-2xl border border-tinta/15 bg-papel p-8 text-tinta-suave">
+        {vazio} · atualizado às {horaDeLisboa(atualizadoEm)}
+      </p>
+    );
+  }
+  return (
+    <section aria-label={titulo}>
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <h2 className="titulo-display text-2xl">{titulo}</h2>
+        <p className="text-sm text-tinta-suave">
+          {pedidos.length} {pedidos.length === 1 ? "pedido" : "pedidos"}
+        </p>
+      </div>
+      {children}
+    </section>
   );
 }
 
@@ -255,10 +419,38 @@ function Proximos({
 /**
  * A pesquisa por referência ou nome (`painel-balcao.md`): quem liga diz
  * «DAM-0309-4F7K» ou «é a encomenda da Marta». Com duas letras ou mais, os
- * resultados tomam o lugar dos separadores.
+ * resultados tomam o lugar das vistas.
  */
-function Pesquisa({ children }: { children: React.ReactNode }) {
-  const [texto, setTexto] = useState("");
+function CampoPesquisa({ texto, onTexto, rotulo }: { texto: string; onTexto: (t: string) => void; rotulo: string }) {
+  return (
+    <div className="relative min-w-0 flex-1">
+      <label htmlFor="painel-procura" className="sr-only">
+        {rotulo}
+      </label>
+      <input
+        id="painel-procura"
+        type="search"
+        value={texto}
+        onChange={(e) => onTexto(e.target.value)}
+        placeholder={rotulo}
+        className="[&::-webkit-search-cancel-button]:appearance-none min-h-12 w-full rounded-full border border-tinta/20 bg-papel py-3 pl-5 pr-24 text-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tijolo"
+      />
+      {texto && (
+        <button
+          type="button"
+          onClick={() => onTexto("")}
+          className="absolute right-1.5 top-1/2 min-h-10 -translate-y-1/2 rounded-full px-4 text-xs font-semibold uppercase tracking-widest hover:bg-tinta/5"
+        >
+          Limpar
+        </button>
+      )}
+    </div>
+  );
+}
+
+type Pesquisa = { ativa: boolean; resultados: Pedido[] | null; erro: string | null };
+
+function usePesquisaPedidos(texto: string): Pesquisa {
   const [resultados, setResultados] = useState<Pedido[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const ativa = texto.trim().length >= 2;
@@ -281,45 +473,25 @@ function Pesquisa({ children }: { children: React.ReactNode }) {
     };
   }, [texto, ativa]);
 
+  return { ativa, resultados, erro };
+}
+
+function Resultados({ texto, pesquisa }: { texto: string; pesquisa: Pesquisa }) {
   return (
-    <>
-      <div className="mt-4 flex gap-2">
-        <label htmlFor="balcao-procura" className="sr-only">
-          Procurar por referência ou nome
-        </label>
-        <input
-          id="balcao-procura"
-          type="search"
-          value={texto}
-          onChange={(e) => setTexto(e.target.value)}
-          placeholder="Procurar por referência ou nome"
-          className="min-w-0 flex-1 rounded-full border border-tinta/20 bg-papel px-5 py-3 text-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tijolo"
-        />
-        {texto && (
-          <button type="button" onClick={() => setTexto("")} className={BOTAO_SECUNDARIO}>
-            Limpar
-          </button>
-        )}
-      </div>
-      {ativa ? (
-        <section aria-label="Resultados" className="mt-6">
-          {erro && <p className="mb-3 font-semibold text-tijolo">{erro}</p>}
-          {resultados === null ? (
-            <p className="text-tinta-suave">A procurar…</p>
-          ) : resultados.length === 0 ? (
-            <p className="rounded-2xl border border-tinta/15 bg-papel p-8 text-tinta-suave">Nenhum pedido com «{texto.trim()}».</p>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              {resultados.map((p) => (
-                <PedidoCartao key={p.id} pedido={p} />
-              ))}
-            </div>
-          )}
-        </section>
+    <section aria-label="Resultados" className="mt-6">
+      {pesquisa.erro && <p className="mb-3 font-semibold text-tijolo">{pesquisa.erro}</p>}
+      {pesquisa.resultados === null ? (
+        <p className="text-tinta-suave">A procurar…</p>
+      ) : pesquisa.resultados.length === 0 ? (
+        <p className="rounded-2xl border border-tinta/15 bg-papel p-8 text-tinta-suave">Nenhum pedido com «{texto.trim()}».</p>
       ) : (
-        children
+        <div className="grid gap-4 md:grid-cols-2">
+          {pesquisa.resultados.map((p) => (
+            <PedidoCartao key={p.id} pedido={p} />
+          ))}
+        </div>
       )}
-    </>
+    </section>
   );
 }
 

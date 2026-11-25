@@ -7,6 +7,7 @@ import {
   precoUnicoCent,
   emLingua,
   regraDe,
+  textoDeProcura,
   variantesVisiveis,
 } from "@/lib/vista";
 import type { Locale } from "@/i18n/routing";
@@ -66,7 +67,7 @@ export function CartaoArtigo({
   const porUnidade = artigo.unidade === "kg" ? te("porQuilo") : ` ${t("cadaCurto")}`;
 
   return (
-    <li className="flex flex-col rounded-xl border border-tinta/15 bg-papel p-2.5">
+    <li className="flex flex-col rounded-xl border border-tinta/15 bg-papel p-2.5" data-procura={textoDeProcura(artigo)}>
       <FotoProduto foto={fotoDe(artigo)} alt="" proporcao="3 / 2" discreta />
       <h4 className="mt-2.5 text-sm font-semibold leading-snug">{nome}</h4>
 

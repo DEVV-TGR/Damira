@@ -101,8 +101,8 @@ export function OrdemCategorias({
         Ordem das categorias
       </h3>
       <p className="mt-2 text-tinta-suave">
-        A ordem em que as categorias aparecem nas encomendas, em «Do dia a dia». Dentro de cada categoria, os produtos ficam por
-        ordem alfabética.
+        A ordem em que as categorias aparecem nas encomendas, em «Da carta». Os produtos ficam sempre por ordem alfabética:
+        dentro de cada categoria, e nos kits, bolos e boxes.
       </p>
 
       <ol className="mt-4 divide-y divide-tinta/10 rounded-2xl border border-tinta/15">

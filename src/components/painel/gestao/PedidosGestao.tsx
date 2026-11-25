@@ -7,7 +7,7 @@ import { diaPorExtenso, rotuloPagamento } from "@/lib/painel";
 import { horaDeLisboa } from "@/lib/painel-ligacao";
 import { BOTAO_SECUNDARIO, MENSAGENS } from "../balcao/comum";
 
-const ROTULO_ESTADO: Record<Pedido["estado"], string> = {
+export const ROTULO_ESTADO: Record<Pedido["estado"], string> = {
   "por-confirmar": "Por confirmar",
   "a-aguardar-aceite": "À espera do cliente",
   pendente: "Pendente",
