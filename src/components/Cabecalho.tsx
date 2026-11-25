@@ -7,20 +7,11 @@ import { Marca } from "./Marca";
 import { BotaoConta } from "./conta/BotaoConta";
 import { MenuEncomendas } from "./MenuEncomendas";
 
-/**
- * As duas secções de topo, por ordem de leitura. Uma lista e não dois `<Link>`
- * escritos à mão: o estado de página actual tem de ser decidido da mesma
- * maneira para as duas, e duplicar a condição é como uma delas fica para trás.
- *
- * ⚠️ **Cada uma com o seu nome e o seu desenho.** O `map` tinha o menu das
- * encomendas como caso especial lá dentro e escrevia «Ementa» em todas as
- * outras entradas: com duas dava certo, e uma terceira secção aparecia na barra
- * a chamar-se «Ementa». Agora quem decide é a entrada.
- */
-const SECOES = [
-  { caminho: "/ementa", nome: "ementa", menu: false },
-  { caminho: "/encomendas", nome: "encomendas", menu: true },
-] as const;
+/* ⚠️ **A barra tem uma secção só, as encomendas.** Até 12/11 havia também a
+   ementa, numa lista com as duas; a `/ementa` saiu (#123) e a lista com ela.
+   Se voltar uma segunda secção, volta a lista: o «estou nesta página» tem de
+   ser decidido da mesma maneira para todas, e duplicar a condição é como uma
+   delas fica para trás. */
 
 /**
  * Cliente por causa do seletor de idioma, que precisa de saber em que página
@@ -43,8 +34,8 @@ export function Cabecalho({ locale }: { locale: Locale }) {
   const outra = routing.locales.find((l) => l !== locale) ?? routing.defaultLocale;
 
   return (
-    /* Altura fixa, e não `py-*`: a navegação da ementa cola-se por baixo desta
-       barra com `top-16`, e uma altura que muda com o conteúdo deixava uma
+    /* Altura fixa, e não `py-*`: os títulos das secções da `/encomendas` colam-se
+       por baixo desta barra, e uma altura que muda com o conteúdo deixava uma
        fresta ou uma sobreposição consoante o tamanho do ecrã.
 
        `backdrop-blur` com o papel a 80%: a barra deixa adivinhar o que passa por
@@ -92,37 +83,13 @@ export function Cabecalho({ locale }: { locale: Locale }) {
               outros. O filete a tijolo é a mesma marca que o `.olho` usa e que
               as ligações dos contactos e do rodapé já sublinham — o estado novo
               não traz desenho novo, usa o que a casa tem. */}
-          {SECOES.map((seccao) => {
-            const actual = caminho === seccao.caminho;
-            /* As encomendas abrem um menu com as secções da página (#82). Fica
-               dentro do mesmo `map` para o «estou nesta página» continuar a ser
-               decidido num sítio só. Ver `MenuEncomendas.tsx`. */
-            if (seccao.menu) {
-              return <MenuEncomendas key={seccao.caminho} actual={actual} />;
-            }
-            return (
-              <Link
-                key={seccao.caminho}
-                href={seccao.caminho}
-                aria-current={actual ? "page" : undefined}
-                /* `py-3.5` e não a classe `.alvo-toque`: aqui o espaço sai de
-                   graça, porque a barra tem altura fixa (`h-16`) e os itens
-                   estão centrados — o link passa de 17 px para 45 px de alvo
-                   sem que nada se mexa um pixel. */
-                className={`py-3.5 ${
-                  actual
-                    ? "text-tijolo underline decoration-tijolo decoration-2 underline-offset-[6px]"
-                    : "hover:text-tijolo"
-                }`}
-              >
-                {t(seccao.nome)}
-              </Link>
-            );
-          })}
+          {/* As encomendas abrem um menu com as secções da página (#82). Ver
+              `MenuEncomendas.tsx`. */}
+          <MenuEncomendas actual={caminho === "/encomendas"} />
           {/* ⚠️ **A conta fica antes do idioma e depois das secções.** É
-              navegação pessoal e não navegação do site: pô-la entre a ementa e
-              as encomendas dava-lhe o mesmo peso que às duas páginas que a casa
-              quer que se visitem. Sem conta configurada não renderiza nada e
+              navegação pessoal e não navegação do site: pô-la antes das
+              encomendas dava-lhe o mesmo peso que à página que a casa quer que
+              se visite. Sem conta configurada não renderiza nada e
               este espaço fecha-se sozinho. */}
           <BotaoConta />
 
