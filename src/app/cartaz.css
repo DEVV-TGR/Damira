@@ -99,6 +99,36 @@ body:has(.cartaz) .barra-vidro {
   object-position: 65% center;
 }
 
+.capa__foto--alternativa {
+  opacity: 0;
+  transition: opacity 600ms ease-in-out;
+}
+
+.capa__foto--alternativa[data-visivel] {
+  opacity: 1;
+}
+
+.capa__pausa {
+  position: absolute;
+  z-index: 1;
+  inset-block-start: 1rem;
+  inset-inline-end: var(--margem-cartaz);
+  min-height: 44px;
+  padding-inline: 0.875rem;
+  border: 1px solid var(--color-papel);
+  border-radius: 999px;
+  background: var(--color-tinta);
+  color: var(--color-papel);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.capa__pausa:focus-visible {
+  outline: 2px solid var(--color-papel);
+  outline-offset: 3px;
+}
+
 /* A sombra acompanha a coluna de texto e deixa o letreiro visível à direita. */
 .cap--capa::before {
   content: "";
@@ -468,6 +498,10 @@ body:has(.cartaz) .barra-vidro {
    gramática. Fica como nas outras duas páginas. */
 
 @media (prefers-reduced-motion: reduce) {
+  .capa__foto--alternativa {
+    transition: none;
+  }
+
   .pao__estampa {
     transform: none;
   }
@@ -854,6 +888,10 @@ body:has(.cartaz) .barra-vidro {
 
   .cap {
     padding-block: clamp(3rem, 11vw, 4.5rem);
+  }
+
+  .cap--capa {
+    padding-block-start: 4.75rem;
   }
 
   /* Os atalhos ocupam a largura toda: dois botões meio-a-meio num ecrã de

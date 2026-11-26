@@ -20,7 +20,9 @@
       "credito": "A frase não é nossa. Está pintada no vidro da montra, ao lado da porta.",
       "verEmenta": "Da carta",
       "encomendar": "Encomendar",
-      "atalhos": "Atalhos"
+      "atalhos": "Atalhos",
+      "pausarFotos": "Pausar fotos",
+      "retomarFotos": "Retomar fotos"
     },
     "porta": {
       "numeral": "I",
@@ -52,7 +54,6 @@
       "credito": "Fotografias da Confeitaria e Pão Quente Damira.",
       "verMais": "Ver mais",
       "legendas": {
-        "montraPanoramica": "Vista panorâmica da montra de pastelaria.",
         "montra": "Bolos e pastéis alinhados na montra.",
         "boloFrutosVermelhos": "Bolo em camadas decorado com frutos vermelhos.",
         "sortidoLaminado": "Sortido de peças de massa folhada com diferentes coberturas.",

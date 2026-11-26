@@ -20,7 +20,9 @@
       "credito": "The line is not ours. It is painted on the shop window, beside the door.",
       "verEmenta": "From the menu",
       "encomendar": "Order",
-      "atalhos": "Shortcuts"
+      "atalhos": "Shortcuts",
+      "pausarFotos": "Pause photos",
+      "retomarFotos": "Resume photos"
     },
     "porta": {
       "numeral": "I",
@@ -52,7 +54,6 @@
       "credito": "Photographs by Confeitaria e Pão Quente Damira.",
       "verMais": "See more",
       "legendas": {
-        "montraPanoramica": "Panoramic view of the pastry display.",
         "montra": "Cakes and pastries lined up in the display.",
         "boloFrutosVermelhos": "Layer cake decorated with berries.",
         "sortidoLaminado": "Assorted puff pastries with different toppings.",

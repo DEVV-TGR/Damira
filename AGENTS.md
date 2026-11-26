@@ -302,9 +302,11 @@ que a casa não garantiu.
 ## Fotografia
 
 As imagens da página inicial vêm da Damira. A remessa «Conteúdo Site», de
-26/11/2026, trouxe a fotografia de capa, novas imagens de pão e de decoração de
-um bolo e o álbum que se vê na vitrine. As imagens de Natal vêm juntas no fim
-da vitrine, depois de «Ver mais». A galeria abre com seis fotografias (#80).
+26/11/2026, trouxe duas fotografias de capa, novas imagens de pão e de
+decoração de um bolo e o álbum da vitrine. A capa alterna entre a fachada e
+a montra a cada cinco segundos, com um botão para pausar. As imagens de Natal
+vêm juntas no fim da vitrine, depois de «Ver mais». A galeria abre com seis
+fotografias (#80).
 
 As fotografias são servidas em WebP. As da vitrine ficam em
 `public/vitrine/`, as dos capítulos em `public/fotos/`. Os originais não são

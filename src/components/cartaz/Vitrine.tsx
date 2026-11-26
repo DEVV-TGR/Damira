@@ -5,19 +5,18 @@ import { VitrineGrelha } from "./VitrineGrelha";
  * ficam juntas no fim para a primeira grelha mostrar a oferta habitual.
  */
 const FOTOS = [
-  { ficheiro: "montra-panoramica", chave: "montraPanoramica", larga: true },
+  { ficheiro: "bolachas", chave: "bolachas", larga: true },
   { ficheiro: "montra", chave: "montra" },
   { ficheiro: "bolo-frutos-vermelhos", chave: "boloFrutosVermelhos" },
-  { ficheiro: "sortido-laminado", chave: "sortidoLaminado" },
-  { ficheiro: "bolachas", chave: "bolachas", larga: true },
   { ficheiro: "montra-interior", chave: "montraInterior" },
+  { ficheiro: "sortido-laminado", chave: "sortidoLaminado", larga: true },
   { ficheiro: "bolo-cobertura", chave: "boloCobertura" },
   { ficheiro: "pao-sementes", chave: "paoSementes" },
   { ficheiro: "balcao-pao", chave: "balcaoPao", larga: true },
   { ficheiro: "sortido-pastelaria", chave: "sortidoPastelaria" },
   { ficheiro: "tartelete", chave: "tartelete" },
   { ficheiro: "tabuleiro", chave: "tabuleiro" },
-  { ficheiro: "sala", chave: "sala" },
+  { ficheiro: "sala", chave: "sala", larga: true },
   { ficheiro: "natal-bolo-frutas", chave: "natalBoloFrutas" },
   { ficheiro: "natal-doces", chave: "natalDoces" },
   { ficheiro: "natal-bolo-acucar", chave: "natalBoloAcucar", larga: true },

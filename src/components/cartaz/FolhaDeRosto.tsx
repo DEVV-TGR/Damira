@@ -1,23 +1,16 @@
-import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { casa } from "@/data/casa";
+import { CarrosselCapa } from "./CarrosselCapa";
 
-/** A capa usa a fachada da remessa da Damira. O título vem da montra. */
+/** A capa alterna as duas fotografias entregues pela Damira. */
 export function FolhaDeRosto() {
   const t = useTranslations("cartaz.capa");
   const marca = useTranslations("marca");
 
   return (
     <section className="cap cap--capa" data-sc-act="flow" aria-labelledby="capa">
-      <Image
-        src="/fotos/capa-fachada.webp"
-        alt=""
-        fill
-        sizes="100vw"
-        preload
-        className="capa__foto"
-      />
+      <CarrosselCapa pausar={t("pausarFotos")} retomar={t("retomarFotos")} />
       <div className="cap__caixa" data-sc-in data-sc-stagger="70">
         <p className="cap__olho">
           {t("olho")}, {marca("desde", { ano: casa.desde })}

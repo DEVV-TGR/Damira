@@ -75,7 +75,7 @@ export function generateStaticParams() {
  * ⚠️ **Hoje é outra**, e também foi a casa que a ditou: *a porta* → *o raro*
  * → *o pão* → *as mãos* → *a vitrine* → *os reels*.
  *
- * A folha de rosto abre com a fotografia da fachada entregue pela Damira
+ * A folha de rosto alterna as duas fotografias de capa entregues pela Damira
  * em 26/11/2026. O capítulo I mantém a sua imagem com legenda.
  *
  * ## O silêncio é um acto, não um buraco
