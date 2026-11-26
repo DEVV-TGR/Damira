@@ -4,6 +4,7 @@ import {
   boolean,
   check,
   date,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -146,6 +147,11 @@ export const produtos = pgTable(
     /** ⚠️ Em `kg`, o preço é ao quilo e a quantidade são quilos. */
     unidade: text("unidade").notNull(),
     escolhas: text("escolhas").array().notNull().default(sql`'{}'`),
+    /**
+     * As **opções** (#88): tirar — «sem queijo». São de cada produto e não se
+     * ligam a outros, e nada aponta para elas: vão em `jsonb`.
+     */
+    opcoes: jsonb("opcoes").$type<OpcaoGravada[]>().notNull().default(sql`'[]'::jsonb`),
     /** Os dois `null` é «por preencher»: a casa ainda não o deu. */
     tempoProducaoUnidade: text("tempo_producao_unidade"),
     tempoProducaoValor: numeric("tempo_producao_valor", { mode: "number" }),
@@ -240,6 +246,11 @@ export const variantes = pgTable(
      * o `EsquemaGrupoComposicao` do contrato, ao gravar e ao ler.
      */
     composicao: jsonb("composicao").$type<GrupoComposicao[]>().notNull().default(sql`'[]'::jsonb`),
+    /**
+     * Desligado sem se apagar (#88): «este mês não fazemos o de 70». Sai do site
+     * e do checkout, e volta como estava.
+     */
+    ativa: boolean("ativa").notNull().default(true),
   },
   (t) => [
     /* A `unica` repete-se em todos os produtos: a chave é o par. */
@@ -247,6 +258,151 @@ export const variantes = pgTable(
     check("variantes_rotulo_pt", sql`${t.rotuloEn} is null or ${t.rotuloPt} is not null`),
     check("variantes_pessoas", sql`${t.pessoas} > 0`),
     check("variantes_preco", sql`${t.precoCent} >= 0`),
+  ],
+);
+
+// ——— A personalização (#88) ———
+
+/**
+ * Uma escolha de uma variância e uma opção, em português e inglês. As formas
+ * vivem aqui e não no contrato até a fronteira as expor; nesse dia o contrato
+ * valida-as ao ler, como faz à `composicao`.
+ */
+type NomeGravado = { pt: string; en: string | null };
+export type EscolhaGravada = { id: string; nome: NomeGravado; acrescimoCent: number; ativa: boolean };
+export type OpcaoGravada = { id: string; nome: NomeGravado; ativa: boolean };
+
+/**
+ * Uma **variância** (`painel-gerente.md` › Simples e compostos): trocar uma
+ * coisa por outra — «Salsicha: alemã / americana». O cliente escolhe uma.
+ *
+ * ⚠️ **Não é do produto: liga-se a ele** (`produtos_variancias`). É o «Usar de
+ * outro produto › ligar»: a mesma variância em vários produtos, e mudar o preço
+ * de uma escolha muda-o em todos. Copiar é criar outra.
+ *
+ * As escolhas vão em `jsonb`: nada aponta para elas (o pedido guarda uma cópia
+ * do nome e do preço), e numa tabela à parte eram mais uma ida e volta por
+ * leitura do catálogo.
+ */
+export const variancias = pgTable(
+  "variancias",
+  {
+    id: text("id").primaryKey(),
+    nomePt: text("nome_pt").notNull(),
+    nomeEn: text("nome_en"),
+    escolhas: jsonb("escolhas").$type<EscolhaGravada[]>().notNull(),
+  },
+  (t) => [
+    check("variancias_id_formato", sql`${t.id} ~ '^[a-z0-9-]+$'`),
+    check("variancias_nome_pt", sql`btrim(${t.nomePt}) <> ''`),
+    /* Uma variância sem escolhas é uma pergunta sem respostas: o cliente ficava
+       preso nela. */
+    check(
+      "variancias_escolhas",
+      sql`jsonb_typeof(${t.escolhas}) = 'array' and jsonb_array_length(${t.escolhas}) > 0`,
+    ),
+  ],
+);
+
+export const produtosVariancias = pgTable(
+  "produtos_variancias",
+  {
+    produtoId: text("produto_id")
+      .notNull()
+      .references(() => produtos.id),
+    varianciaId: text("variancia_id")
+      .notNull()
+      .references(() => variancias.id),
+    /** A ordem por que o cliente as vê, neste produto. */
+    posicao: integer("posicao").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.produtoId, t.varianciaId] }),
+    check("produtos_variancias_posicao", sql`${t.posicao} >= 0`),
+  ],
+);
+
+/**
+ * Um **extra**: pôr a mais — «+ fatia de queijo», «topper». Um nome, um preço
+ * por unidade (0 € também vale) e o máximo que se pode pôr numa unidade do
+ * produto. Liga-se aos produtos como a variância, e desliga-se em todos ao
+ * mesmo tempo («acabou o queijo»).
+ */
+export const extras = pgTable(
+  "extras",
+  {
+    id: text("id").primaryKey(),
+    nomePt: text("nome_pt").notNull(),
+    nomeEn: text("nome_en"),
+    precoCent: integer("preco_cent").notNull(),
+    maximo: integer("maximo").notNull(),
+    ativo: boolean("ativo").notNull().default(true),
+  },
+  (t) => [
+    check("extras_id_formato", sql`${t.id} ~ '^[a-z0-9-]+$'`),
+    check("extras_nome_pt", sql`btrim(${t.nomePt}) <> ''`),
+    check("extras_preco", sql`${t.precoCent} >= 0`),
+    check("extras_maximo", sql`${t.maximo} >= 1`),
+  ],
+);
+
+export const produtosExtras = pgTable(
+  "produtos_extras",
+  {
+    produtoId: text("produto_id")
+      .notNull()
+      .references(() => produtos.id),
+    extraId: text("extra_id")
+      .notNull()
+      .references(() => extras.id),
+    posicao: integer("posicao").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.produtoId, t.extraId] }),
+    check("produtos_extras_posicao", sql`${t.posicao} >= 0`),
+  ],
+);
+
+/**
+ * **O que um grupo leva** (o grupo de um composto é a sua `variante`): produtos
+ * simples, cada um com a quantidade que a gerente quiser, ou sem quantidade.
+ *
+ * ⚠️ **Tabela com chave estrangeira para `produtos`, e não `jsonb`**: é por ela
+ * que o painel sabe em que kits está um produto antes de o arquivar («está em 3
+ * kits»). A `composicao` em texto fica para os kits que ainda não passaram a
+ * produtos (`base-de-dados.md` › Simples e composto).
+ *
+ * Que o `simples_id` seja mesmo simples — não há kits dentro de kits — confere-o
+ * a fonte ao gravar: um `CHECK` não vê outras tabelas.
+ */
+export const variantesLeva = pgTable(
+  "variantes_leva",
+  {
+    produtoId: text("produto_id").notNull(),
+    varianteId: text("variante_id").notNull(),
+    posicao: integer("posicao").notNull(),
+    simplesId: text("simples_id")
+      .notNull()
+      .references(() => produtos.id),
+    /* `numeric`: um kit pode levar meio quilo de qualquer coisa. `NULL` é «sem
+       quantidade», que a gerente escolhe quando o número não diz nada. */
+    quantidade: numeric("quantidade", { mode: "number" }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.produtoId, t.varianteId, t.posicao] }),
+    /* Em cascata: as variantes de um produto trocam-se inteiras ao gravar
+       (`editarProduto`), e o que levam vai com elas. */
+    foreignKey({
+      name: "variantes_leva_variante_fk",
+      columns: [t.produtoId, t.varianteId],
+      foreignColumns: [variantes.produtoId, variantes.id],
+    }).onDelete("cascade"),
+    /* Uma vez cada um, por grupo: é por produto que o cliente escolhe as
+       variâncias de dentro, e duas linhas do mesmo davam duas perguntas iguais. */
+    uniqueIndex("variantes_leva_unico").on(t.produtoId, t.varianteId, t.simplesId),
+    check("variantes_leva_posicao", sql`${t.posicao} >= 0`),
+    check("variantes_leva_quantidade", sql`${t.quantidade} > 0`),
+    check("variantes_leva_nao_a_si", sql`${t.simplesId} <> ${t.produtoId}`),
   ],
 );
 
@@ -625,6 +781,13 @@ export const linhasPedido = pgTable(
      * do aceite e o email destacam («Bolo por medida: 45,00 €»).
      */
     precoDaProposta: boolean("preco_da_proposta").notNull().default(false),
+    /**
+     * **A cópia do que se escolheu** (#88): variâncias, opções e extras, com os
+     * nomes e os preços daquele momento, e num composto o grupo e o que levava.
+     * `NULL` nas linhas de antes da #88. Só se mostra e imprime, nunca se
+     * pesquisa — e o produto pode mudar amanhã (`pedidos.md` › Personalização).
+     */
+    personalizacao: jsonb("personalizacao").$type<Record<string, unknown>>(),
   },
   (t) => [
     /* É também o índice `linhas_pedido(pedido_id)` do `robustez.md`. */
