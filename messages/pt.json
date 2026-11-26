@@ -286,7 +286,17 @@
         "abrir": "Abrir no meu email",
         "verTexto": "Ou copiar o texto do pedido"
       },
-      "referencia": "A sua referência"
+      "referencia": "A sua referência",
+      "recebido": {
+        "confirmado": {
+          "titulo": "A sua encomenda está confirmada!",
+          "texto": "Receberá um email com os detalhes. A sua encomenda estará pronta à hora indicada; o levantamento segue a fila de atendimento habitual, por ordem de chegada."
+        },
+        "porConfirmar": {
+          "titulo": "Recebemos a sua encomenda!",
+          "texto": "A nossa equipa irá analisar o seu pedido. Receberá um email com uma resposta, habitualmente no prazo de 24 horas."
+        }
+      }
     },
     "cesto": {
       "titulo": "O seu pedido",
@@ -515,5 +525,64 @@
   "modoTeste": {
     "etiqueta": "Modo de teste",
     "aviso": "Não se cobra nada, e os prazos e as vagas ocupadas são de exemplo."
+  },
+  "proposta": {
+    "metaTitulo": "A proposta do seu pedido",
+    "titulo": "Temos uma proposta para o seu pedido",
+    "intro": "Consulte abaixo os detalhes da nossa proposta e confirme se pretende avançar com a encomenda.",
+    "proposta": "Proposta",
+    "novaHora": "Nova hora de levantamento: {depois} (em vez das {antes})",
+    "novaData": "Nova data de levantamento: {depois} (em vez de {antes})",
+    "resumo": "Resumo do pedido",
+    "total": "Total",
+    "dataLevantamento": "Data de levantamento",
+    "naLoja": "Na loja:",
+    "pagamento": "Pagamento:",
+    "pagamentoTexto": "Depois de aceite a proposta, o pagamento é efetuado na loja, no momento do levantamento. Não é necessário qualquer pagamento antecipado.",
+    "importante": "Importante:",
+    "importanteTexto": "A sua encomenda só ficará confirmada após a aceitação da proposta.",
+    "aceitar": "Aceitar a proposta",
+    "aAceitar": "A aceitar…",
+    "recusar": "Recusar a proposta",
+    "recusarPergunta": "Recusar a proposta? O pedido é cancelado, sem qualquer custo.",
+    "recusarSim": "Sim, recusar",
+    "aRecusar": "A recusar…",
+    "voltar": "Voltar",
+    "referencia": "Referência da encomenda",
+    "duvidas": "Para qualquer questão, entre em contacto connosco através do {telefone}.",
+    "erro": "Não foi possível registar a sua resposta. Tente outra vez, ou contacte-nos através do {telefone}.",
+    "aceite": {
+      "titulo": "A sua encomenda está confirmada!",
+      "texto": "Agradecemos a sua confirmação. Vamos tratar de tudo para que esteja pronta na data combinada."
+    },
+    "recusada": {
+      "titulo": "Recebemos a sua resposta e encerrámos o pedido.",
+      "texto": "Esperamos ter uma nova oportunidade de preparar algo especial para si!"
+    },
+    "cancelado": {
+      "titulo": "Este pedido foi cancelado.",
+      "texto": "Se ainda pretender avançar, contacte-nos através do {telefone}."
+    },
+    "revista": {
+      "titulo": "Esta proposta foi atualizada.",
+      "texto": "Enviámos-lhe uma proposta mais recente. Abra o link do email mais recente."
+    },
+    "indisponivel": {
+      "titulo": "Esta proposta já não está disponível.",
+      "texto": "Se ainda pretender avançar com a encomenda, contacte-nos através do {telefone}."
+    },
+    "invalido": {
+      "titulo": "Este link não é válido.",
+      "texto": "Confirme que abriu o link completo do email, ou contacte-nos através do {telefone}."
+    },
+    "prazo": "Tem até {data} para aceitar ou recusar.",
+    "expirada": {
+      "titulo": "Esta proposta expirou.",
+      "texto": "Não recebemos a sua resposta dentro do prazo, por isso a encomenda não foi confirmada e não há nada a pagar. Se ainda pretender avançar, faça um novo pedido no site ou contacte-nos através do {telefone}."
+    },
+    "falha": {
+      "titulo": "Não foi possível abrir a proposta.",
+      "texto": "O erro é nosso, não seu. Tente mais tarde, ou contacte-nos através do {telefone}."
+    }
   }
 }

@@ -11,6 +11,7 @@ import { formatarCent } from "@/lib/preco";
 import { BOTAO_SECUNDARIO, MENSAGENS } from "../balcao/comum";
 import { PedidoCartao } from "../balcao/PedidoCartao";
 import { DecisoesDoPedido } from "./Decisoes";
+import { Responder } from "./Responder";
 
 const O_QUE: Record<EventoHistorico["o"], string> = {
   criado: "Criado no site",
@@ -111,6 +112,9 @@ export function DetalhePedido({ id, onVoltar }: { id: string; onVoltar: () => vo
               <button type="button" onClick={desfazerJa} disabled={aEnviar} className={BOTAO_SECUNDARIO}>
                 Desfazer «entregue»
               </button>
+            )}
+            {(pedido.estado === "por-confirmar" || pedido.estado === "a-aguardar-aceite") && (
+              <Responder pedido={pedido} onFeito={setPedido} />
             )}
             <DecisoesDoPedido pedido={pedido} onFeito={setPedido} />
             {/* Dizer o que falta, em vez de um botão que não faz nada. */}

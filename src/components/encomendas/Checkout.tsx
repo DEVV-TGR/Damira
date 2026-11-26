@@ -361,14 +361,18 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
 function Enviado({ resultado }: { resultado: Extract<Resultado, { estado: "enviado" | "sem-servico" }> }) {
   const tf = useTranslations("encomendas.formulario");
   const referencia = resultado.registo?.referencia;
+  /* Com o pedido guardado, o ecrã diz em que ficou, com as palavras da Andreia (24/11): confirmado
+     logo, ou em análise. Sem ele (o pedido ainda acaba num email), diz só que foi enviado. */
+  const estadoPedido = resultado.estado === "enviado" ? resultado.estadoPedido : undefined;
+  const chave = estadoPedido === "confirmado" ? "recebido.confirmado" : estadoPedido === "por-confirmar" ? "recebido.porConfirmar" : null;
 
   return (
     <div className="max-w-[40rem] rounded-2xl border border-tinta/15 p-8">
       <p className="titulo-display titulo-gama">
-        {resultado.estado === "enviado" ? tf("sucesso.titulo") : tf("semServico.titulo")}
+        {chave ? tf(`${chave}.titulo`) : resultado.estado === "enviado" ? tf("sucesso.titulo") : tf("semServico.titulo")}
       </p>
       <p className="mt-3 max-w-[52ch] text-tinta-suave">
-        {resultado.estado === "enviado" ? tf("sucesso.texto") : tf("semServico.texto")}
+        {chave ? tf(`${chave}.texto`) : resultado.estado === "enviado" ? tf("sucesso.texto") : tf("semServico.texto")}
       </p>
       {/* A referência é o que a pessoa pode precisar de dizer ao telefone: em
           grande, e a mesma que foi no assunto do email. */}

@@ -348,6 +348,11 @@ body::after {
   line-height: 1;
 }
 
+/* A Caros não é condensada. «Encomendas» tem de caber a 320 px. */
+.site-publico .titulo-capa {
+  font-size: clamp(2.125rem, 9vw, 7.5rem);
+}
+
 /**
  * Etiqueta de secção: pequena, em caixa alta, precedida de um filete tijolo.
  *

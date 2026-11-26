@@ -131,10 +131,7 @@ function Encomendas({
           <p className="titulo-display text-xs uppercase tracking-[0.3em]">
             {t("olho")}
           </p>
-          <h1
-            className="titulo-display titulo-capa mt-4 uppercase"
-            style={{ fontVariationSettings: '"wdth" 68, "opsz" 48' }}
-          >
+          <h1 className="titulo-display titulo-capa mt-4 uppercase">
             {t("titulo")}
           </h1>
           <p className="mt-4 max-w-[46ch] text-lg">{t("intro")}</p>
