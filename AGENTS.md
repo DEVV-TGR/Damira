@@ -153,7 +153,11 @@ ações do #139**: esses PRs chamam `enviarDepois()` depois da escrita que grava
 fila, nunca antes da transação terminar. A compra do `main` mantém o percurso
 provisório por email. Não se promete entrega de um email só porque entrou na fila.
 Fora de produção, `EMAILS_SO_PARA` é obrigatória; sem ela não há envios nem consultas
-do emissor. Não há polling, cron nem despertadores nesta etapa.
+do emissor. A recuperação horária está preparada em `/api/tarefas/emails`,
+**desligada por defeito**: não está ativada em produção nem liga a compra.
+A ativação exige rever a exceção de 24 verificações/dia à regra 6, configurar
+a autenticação e o alerta de erro/ausência. Ver `docs/loja/recuperacao-emails.md`.
+Não criar outros despertadores ou cadências a partir desta exceção.
 
 ### A documentação muda no mesmo PR que o código
 

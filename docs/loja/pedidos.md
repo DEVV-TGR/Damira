@@ -506,11 +506,17 @@ instrução da tarefa que os decide.
 com o logótipo embutido, até 10 por volta. `enviarDepois()` usa `after()` do Next:
 chama-se **depois da transação bem-sucedida**, na ação que acabou de pôr emails na
 fila. **As chamadas ainda não estão ligadas**: entram com o #139 e a compra.
-Os despertadores, os lembretes e a volta diária são da etapa 2; o ecrã dos falhados
-é do painel. Não há consultas periódicas nesta etapa. **Não ligar os emails da
-compra antes de haver novas tentativas automáticas dentro da janela de 24 h**:
-com um 503 e sem mais ações, a linha pode chegar a `idempotencia-expirada` sem
-ter sido repetida. A etapa 2 tem de resolver este caso sem depender de visitas.
+A recuperação horária independente de visitas está preparada, **desligada por
+defeito**, em `/api/tarefas/emails`. Reutiliza o emissor e recupera também o caso
+de morte depois do commit e antes do `after()`. A cadência pode acrescentar
+cerca de uma hora entre tentativas; preserva os mínimos, as cinco tentativas e
+as 24 h. A exceção à regra da base dormir e a ativação com alerta operacional
+exigem revisão (`recuperacao-emails.md`). Os lembretes, expirações sem visitas e
+o ecrã de falhados continuam noutras etapas; nenhuma proposta de cadência foi
+ativada aqui. **Não ligar os emails da compra antes de confirmar a recuperação
+automática e o alerta na plataforma**: testes da rota não provam agendamento
+real. Com um 503 e sem recuperação operacional, a linha ainda pode chegar a
+`idempotencia-expirada` sem ter sido repetida.
 Antes de ligar o helper, confirmar na Vercel a presença de `RESEND_API_KEY` e
 `EMAIL_REMETENTE` e decidir se Production mantém `EMAILS_SO_PARA` preenchida.
 A existência da integração ou do domínio verificado não confirma estas variáveis.

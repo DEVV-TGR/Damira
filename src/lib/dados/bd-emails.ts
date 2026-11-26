@@ -7,6 +7,20 @@ import type { FonteEmails, LinhaEmail } from "./tipos";
 
 const limiteSeguro = (limite: number) => Math.max(1, Math.min(100, Math.trunc(limite) || 10));
 
+/** Sinal operacional interno: não devolve pedidos nem destinatários ao cron. */
+export async function haEmailsDefinitivamenteFalhados(db: BaseDeDados, agora: Date): Promise<boolean> {
+  const [linha] = await db.select({ id: fila.id }).from(fila).where(and(
+    isNull(fila.enviadoEm), sql`${fila.tentativas} >= ${MAXIMO_TENTATIVAS}`,
+    sql`${fila.modelo} <> 'resposta-cliente'`,
+    sql`(${fila.ultimoErro} is null or ${fila.ultimoErro} not like 'saltado: %')`,
+    // A quinta reserva ainda em curso pode concluir: só a consideramos abandonada
+    // depois dos dois minutos. Um erro definitivo já escrito não precisa de esperar.
+    sql`(${fila.ultimoErro} is not null or ${fila.ultimaTentativaEm} is null or
+      ${fila.ultimaTentativaEm} + ${JANELA_RESERVA_MS} * interval '1 millisecond' <= ${agora.toISOString()}::timestamptz)`,
+  )).limit(1);
+  return !!linha;
+}
+
 export function criarEmailsBd(db: BaseDeDados): FonteEmails {
   // A condição é a mesma na leitura e na escrita: a leitura não concede a reserva.
   const disponivel = (agora: Date) => and(
