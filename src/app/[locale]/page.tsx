@@ -75,11 +75,8 @@ export function generateStaticParams() {
  * ⚠️ **Hoje é outra**, e também foi a casa que a ditou: *a porta* → *o raro*
  * → *o pão* → *as mãos* → *a vitrine* → *os reels*.
  *
- * A folha de rosto vem antes de tudo porque a gramática a exige — tipografia
- * no papel, **sem imagem acima da dobra**. É a mudança mais visível em relação
- * à homepage anterior, onde a fachada era o herói com o título por cima. Aqui
- * a fachada é o capítulo I, com legenda, e o primeiro ecrã é a frase da casa
- * sozinha.
+ * A folha de rosto alterna as duas fotografias de capa entregues pela Damira
+ * em 26/11/2026. O capítulo I mantém a sua imagem com legenda.
  *
  * ## O silêncio é um acto, não um buraco
  *
@@ -118,8 +115,8 @@ export function generateStaticParams() {
  *
  * ## As quatro secções que respondem a "para que serve o sítio"
  *
- * - **V a vitrine** — catorze fotografias do álbum da própria casa, seis à
- *   vista e as outras atrás de um «Ver mais»;
+ * - **V a vitrine** — seis fotografias à vista e as restantes atrás de «Ver
+ *   mais», incluindo as imagens de Natal no fim;
  * - **VI os reels** — seis lugares para o vídeo do Instagram, hoje vazios e a
  *   dizê-lo;
  * - **VII a ementa** — as quatro cartas e um preço real de cada, para a

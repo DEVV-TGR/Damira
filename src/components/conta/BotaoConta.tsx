@@ -27,17 +27,14 @@ export function BotaoConta() {
   const caminho = usePathname();
 
   if (aCarregar) {
-    return <span aria-hidden className="h-9 w-9 rounded-full bg-tinta/8" />;
+    return <span aria-hidden className="mx-1 size-9 shrink-0 rounded-full bg-tinta/8 sm:mx-0 sm:size-11" />;
   }
 
   if (!utilizador) {
     return (
       <Link
         href={{ pathname: "/entrar", query: { voltar: caminho } }}
-        className="alvo-toque flex items-center rounded-full border border-tinta/25 px-2 py-2 transition-colors hover:bg-tinta hover:text-papel sm:px-3.5"
-        /* ⚠️ **O nome acessível vem daqui e não do que está escrito**, porque no
-           telemóvel não está escrito nada — está um símbolo. É a mesma regra do
-           botão de idioma, que mostra «en» e se anuncia «English». */
+        className="alvo-toque controlo-cabecalho flex size-11 shrink-0 items-center justify-center rounded-full border border-tinta/25 transition-colors hover:bg-tinta hover:text-papel sm:w-auto sm:px-3.5"
         aria-label={t("entrar")}
       >
         {/* ⚠️ **A palavra «Entrar» não cabe a 390 px.** Com ela, o cabeçalho
@@ -71,13 +68,7 @@ export function BotaoConta() {
   return (
     <Link
       href="/conta"
-      /* ⚠️ **`pr-1` abaixo do `sm`, e não `pr-3`.** O nome está escondido nessa
-         largura, portanto o enchimento à direita ficava a guardar espaço para
-         texto que não existe — e esses 8 px eram o que punha a página com
-         rolagem horizontal a 320 px, mas **só depois de alguém entrar na
-         conta**. É o pior tipo de defeito: não aparece a quem testa sem sessão
-         iniciada. */
-      className="alvo-toque flex items-center gap-2 rounded-full border border-tinta/25 py-1 pl-1 pr-1 transition-colors hover:bg-tinta hover:text-papel sm:gap-2 sm:pr-3"
+      className="alvo-toque controlo-cabecalho flex size-11 shrink-0 items-center justify-center rounded-full border border-tinta/25 transition-colors hover:bg-tinta hover:text-papel sm:w-auto sm:gap-2 sm:pl-1 sm:pr-3"
       aria-label={t("aMinhaConta")}
     >
       {/* ⚠️ `<img>` e não `next/image`: a fotografia vem do Google ou do

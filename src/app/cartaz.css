@@ -51,13 +51,7 @@
 }
 
 /* Na página inicial o cabeçalho acompanha a capa na rolagem para deixar
-   os capítulos e as fotografias ocuparem o ecrã inteiro.
-
-   ⚠️ `relative` e não `static` (#82): o menu do «Encomendas» abre para fora da
-   barra, e num elemento estático o `z-50` não conta — o painel ficava por
-   baixo da capa, que vem depois no DOM, e o toque caía nela. `relative`
-   continua sem colar e dá ao menu um bloco de contenção garantido, também
-   quando o `prefers-reduced-transparency` tira o `backdrop-filter`. */
+   os capítulos e as fotografias ocuparem o ecrã inteiro. */
 body:has(.cartaz) .barra-vidro {
   position: relative;
 }
@@ -82,25 +76,39 @@ body:has(.cartaz) .barra-vidro {
   max-width: 46rem;
 }
 
-/* ⚠️ **A folha de rosto é tijolo, e não papel.** A gramática de capítulos pede
-   tipografia no papel, e assim esteve; o cliente viu e pediu cor. Tem razão, e
-   a razão tem nome: a página abria num ecrã branco com letra preta e o primeiro
-   sinal de que ali havia uma marca era o logótipo de 28 px no cabeçalho. As
-   capas dos impressos da Damira são tijolo chapado — isto é o que a casa faz em
-   papel.
-
-   Papel sobre tijolo dá **6,87:1** e passa a qualquer tamanho. ⚠️ Tinta sobre
-   tijolo dá 2,36:1 e é a armadilha desta paleta: sobre tijolo escreve-se a
-   papel, e é a única opção. */
 .cap--capa {
   background: var(--color-tijolo);
   --sc-ink: var(--color-papel);
-  /* 5,23:1 sobre o tijolo. Ver a tabela no topo deste ficheiro. */
-  --sc-ink-soft: var(--suave-sobre-tijolo);
+  --sc-ink-soft: var(--color-papel);
   color: var(--sc-ink);
   min-height: 88svh;
   display: flex;
   align-items: center;
+  isolation: isolate;
+}
+
+.capa__foto {
+  z-index: -2;
+  object-fit: cover;
+  object-position: 65% center;
+}
+
+.capa__foto--alternativa {
+  opacity: 0;
+  transition: opacity 600ms ease-in-out;
+}
+
+.capa__foto--alternativa[data-visivel] {
+  opacity: 1;
+}
+
+/* A sombra acompanha a coluna de texto e deixa o letreiro visível à direita. */
+.cap--capa::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, rgb(31 29 27 / 82%), rgb(31 29 27 / 70%) 58%, rgb(31 29 27 / 18%));
 }
 
 .cap--capa .cap__caixa {
@@ -270,6 +278,12 @@ body:has(.cartaz) .barra-vidro {
   font-size: 0.85rem;
   color: var(--sc-ink-soft);
   margin-top: 0.75rem;
+}
+
+.cap--maos .cap__estampa img {
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  object-position: center 34%;
 }
 
 .silencio__linha {
@@ -457,6 +471,10 @@ body:has(.cartaz) .barra-vidro {
    gramática. Fica como nas outras duas páginas. */
 
 @media (prefers-reduced-motion: reduce) {
+  .capa__foto--alternativa {
+    display: none;
+  }
+
   .pao__estampa {
     transform: none;
   }
@@ -791,16 +809,12 @@ body:has(.cartaz) .barra-vidro {
   border-color: var(--color-tinta);
   color: var(--color-papel);
 }
-.cap__accao--contorno {
-  border-color: var(--color-papel);
-  color: var(--color-papel);
-}
-.cap__accao--contorno:hover,
-.cap__accao--contorno:focus-visible {
-  background: var(--color-papel);
-  color: var(--color-tijolo);
-}
 
+.capa__atalhos .cap__accao--claro:hover,
+.capa__atalhos .cap__accao--claro:focus-visible {
+  background: var(--color-tijolo);
+  border-color: var(--color-papel);
+}
 .cap__accao--principal {
   background: var(--color-tijolo);
   border-color: var(--color-tijolo);
@@ -837,12 +851,15 @@ body:has(.cartaz) .barra-vidro {
     padding-block: clamp(2.5rem, 9vw, 4rem);
   }
 
+  .cap--capa::before {
+    background: rgb(31 29 27 / 64%);
+  }
+
   .cap {
     padding-block: clamp(3rem, 11vw, 4.5rem);
   }
 
-  /* Os atalhos ocupam a largura toda: dois botões meio-a-meio num ecrã de
-     390 px dão alvos de 170 px, e um deles apanha sempre o polegar errado. */
+  /* O atalho ocupa a largura toda para ficar ao alcance do polegar. */
   .capa__atalhos .cap__accao {
     flex: 1 1 100%;
     justify-content: center;
