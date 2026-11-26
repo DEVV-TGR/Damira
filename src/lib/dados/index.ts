@@ -121,3 +121,16 @@ export const versaoPedidos = painel.versaoPedidos;
  * (#42) põe um pedido a `pago` (regra 4).
  */
 export const simularPedidoDeTeste = fonte.simularPedidoPago ?? null;
+
+// Fila interna, nunca uma ação pública. Os chamadores só a usam depois de gravar.
+export const emailsPendentes: FonteDeDados["emailsPendentes"] = opcoes => fonte.emailsPendentes(opcoes);
+export const reservarEmail: FonteDeDados["reservarEmail"] = (id, agora) => fonte.reservarEmail(id, agora);
+export const marcarEmailEnviado: FonteDeDados["marcarEmailEnviado"] = (reserva, agora) => fonte.marcarEmailEnviado(reserva, agora);
+export const registarFalhaEmail: FonteDeDados["registarFalhaEmail"] = (reserva, codigo, definitiva) => fonte.registarFalhaEmail(reserva, codigo, definitiva);
+export const pedidoDoEmail: FonteDeDados["pedidoDoEmail"] = id => fonte.pedidoDoEmail(id);
+
+/** O ecrã é de outra etapa; esta leitura já exige a sessão de gerente no servidor. */
+export const emailsFalhados = async (limite: number, ctx: import("./tipos").ContextoPainel) => {
+  if (ctx.papel !== "gerente") return { ok: false, erro: "sem-permissao" } as const;
+  return { ok: true, valor: await fonte.emailsFalhados(limite) } as const;
+};

@@ -4,6 +4,7 @@ import {
   boolean,
   check,
   date,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -28,6 +29,9 @@ import {
   FORMATO_TELEFONE,
   type GrupoComposicao,
   MODOS_ONLINE,
+  type Personalizacao,
+  TIPOS_PRODUTO,
+  type TipoProduto,
   MODOS_PAGAMENTO,
   type OrdemEmenta,
 } from "../lib/dados/tipos";
@@ -56,13 +60,9 @@ const umDe = (valores: readonly string[]) => sql.raw(valores.map((v) => `'${v}'`
    por isso: mudar a constante gera uma migração. */
 const formato = (expressao: RegExp) => sql.raw(`'${expressao.source}'`);
 
-/**
- * Os dois tipos de produto (#124). Aqui e não no contrato: até a fronteira os
- * expor (Gonçalo), só a base de dados os conhece — e o contrato importa-os
- * daqui nesse dia, para os dois não se afastarem.
- */
-export const TIPOS_PRODUTO = ["simples", "composto"] as const;
-export type TipoProduto = (typeof TIPOS_PRODUTO)[number];
+/* Os dois tipos de produto (#124) vêm do contrato desde a #88: o contrato vai
+   para o browser e não pode importar daqui. */
+export { TIPOS_PRODUTO, type TipoProduto };
 
 // ——— O catálogo ———
 
@@ -146,6 +146,11 @@ export const produtos = pgTable(
     /** ⚠️ Em `kg`, o preço é ao quilo e a quantidade são quilos. */
     unidade: text("unidade").notNull(),
     escolhas: text("escolhas").array().notNull().default(sql`'{}'`),
+    /**
+     * As **opções** (#88): tirar — «sem queijo». São de cada produto e não se
+     * ligam a outros, e nada aponta para elas: vão em `jsonb`.
+     */
+    opcoes: jsonb("opcoes").$type<OpcaoGravada[]>().notNull().default(sql`'[]'::jsonb`),
     /** Os dois `null` é «por preencher»: a casa ainda não o deu. */
     tempoProducaoUnidade: text("tempo_producao_unidade"),
     tempoProducaoValor: numeric("tempo_producao_valor", { mode: "number" }),
@@ -240,6 +245,11 @@ export const variantes = pgTable(
      * o `EsquemaGrupoComposicao` do contrato, ao gravar e ao ler.
      */
     composicao: jsonb("composicao").$type<GrupoComposicao[]>().notNull().default(sql`'[]'::jsonb`),
+    /**
+     * Desligado sem se apagar (#88): «este mês não fazemos o de 70». Sai do site
+     * e do checkout, e volta como estava.
+     */
+    ativa: boolean("ativa").notNull().default(true),
   },
   (t) => [
     /* A `unica` repete-se em todos os produtos: a chave é o par. */
@@ -247,6 +257,158 @@ export const variantes = pgTable(
     check("variantes_rotulo_pt", sql`${t.rotuloEn} is null or ${t.rotuloPt} is not null`),
     check("variantes_pessoas", sql`${t.pessoas} > 0`),
     check("variantes_preco", sql`${t.precoCent} >= 0`),
+  ],
+);
+
+// ——— A personalização (#88) ———
+
+/**
+ * Uma escolha de uma variância e uma opção, em português e inglês. As formas
+ * vivem aqui e não no contrato até a fronteira as expor; nesse dia o contrato
+ * valida-as ao ler, como faz à `composicao`.
+ */
+type NomeGravado = { pt: string; en: string | null };
+export type EscolhaGravada = {
+  id: string;
+  nome: NomeGravado;
+  acrescimoCent: number;
+  ativa: boolean;
+  /** Desde a página por produto: a foto da escolha. Pode faltar nas gravadas antes. */
+  foto?: string | null;
+};
+export type OpcaoGravada = { id: string; nome: NomeGravado; ativa: boolean };
+
+/**
+ * Uma **variância** (`painel-gerente.md` › Simples e compostos): trocar uma
+ * coisa por outra — «Salsicha: alemã / americana». O cliente escolhe uma.
+ *
+ * ⚠️ **Não é do produto: liga-se a ele** (`produtos_variancias`). É o «Usar de
+ * outro produto › ligar»: a mesma variância em vários produtos, e mudar o preço
+ * de uma escolha muda-o em todos. Copiar é criar outra.
+ *
+ * As escolhas vão em `jsonb`: nada aponta para elas (o pedido guarda uma cópia
+ * do nome e do preço), e numa tabela à parte eram mais uma ida e volta por
+ * leitura do catálogo.
+ */
+export const variancias = pgTable(
+  "variancias",
+  {
+    id: text("id").primaryKey(),
+    nomePt: text("nome_pt").notNull(),
+    nomeEn: text("nome_en"),
+    escolhas: jsonb("escolhas").$type<EscolhaGravada[]>().notNull(),
+  },
+  (t) => [
+    check("variancias_id_formato", sql`${t.id} ~ '^[a-z0-9-]+$'`),
+    check("variancias_nome_pt", sql`btrim(${t.nomePt}) <> ''`),
+    /* Uma variância sem escolhas é uma pergunta sem respostas: o cliente ficava
+       preso nela. */
+    check(
+      "variancias_escolhas",
+      sql`jsonb_typeof(${t.escolhas}) = 'array' and jsonb_array_length(${t.escolhas}) > 0`,
+    ),
+  ],
+);
+
+export const produtosVariancias = pgTable(
+  "produtos_variancias",
+  {
+    produtoId: text("produto_id")
+      .notNull()
+      .references(() => produtos.id),
+    varianciaId: text("variancia_id")
+      .notNull()
+      .references(() => variancias.id),
+    /** A ordem por que o cliente as vê, neste produto. */
+    posicao: integer("posicao").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.produtoId, t.varianciaId] }),
+    check("produtos_variancias_posicao", sql`${t.posicao} >= 0`),
+  ],
+);
+
+/**
+ * Um **extra**: pôr a mais — «+ fatia de queijo», «topper». Um nome, um preço
+ * por unidade (0 € também vale) e o máximo que se pode pôr numa unidade do
+ * produto. Liga-se aos produtos como a variância, e desliga-se em todos ao
+ * mesmo tempo («acabou o queijo»).
+ */
+export const extras = pgTable(
+  "extras",
+  {
+    id: text("id").primaryKey(),
+    nomePt: text("nome_pt").notNull(),
+    nomeEn: text("nome_en"),
+    precoCent: integer("preco_cent").notNull(),
+    maximo: integer("maximo").notNull(),
+    ativo: boolean("ativo").notNull().default(true),
+  },
+  (t) => [
+    check("extras_id_formato", sql`${t.id} ~ '^[a-z0-9-]+$'`),
+    check("extras_nome_pt", sql`btrim(${t.nomePt}) <> ''`),
+    check("extras_preco", sql`${t.precoCent} >= 0`),
+    check("extras_maximo", sql`${t.maximo} >= 1`),
+  ],
+);
+
+export const produtosExtras = pgTable(
+  "produtos_extras",
+  {
+    produtoId: text("produto_id")
+      .notNull()
+      .references(() => produtos.id),
+    extraId: text("extra_id")
+      .notNull()
+      .references(() => extras.id),
+    posicao: integer("posicao").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.produtoId, t.extraId] }),
+    check("produtos_extras_posicao", sql`${t.posicao} >= 0`),
+  ],
+);
+
+/**
+ * **O que um grupo leva** (o grupo de um composto é a sua `variante`): produtos
+ * simples, cada um com a quantidade que a gerente quiser, ou sem quantidade.
+ *
+ * ⚠️ **Tabela com chave estrangeira para `produtos`, e não `jsonb`**: é por ela
+ * que o painel sabe em que kits está um produto antes de o arquivar («está em 3
+ * kits»). A `composicao` em texto fica para os kits que ainda não passaram a
+ * produtos (`base-de-dados.md` › Simples e composto).
+ *
+ * Que o `simples_id` seja mesmo simples — não há kits dentro de kits — confere-o
+ * a fonte ao gravar: um `CHECK` não vê outras tabelas.
+ */
+export const variantesLeva = pgTable(
+  "variantes_leva",
+  {
+    produtoId: text("produto_id").notNull(),
+    varianteId: text("variante_id").notNull(),
+    posicao: integer("posicao").notNull(),
+    simplesId: text("simples_id")
+      .notNull()
+      .references(() => produtos.id),
+    /* `numeric`: um kit pode levar meio quilo de qualquer coisa. `NULL` é «sem
+       quantidade», que a gerente escolhe quando o número não diz nada. */
+    quantidade: numeric("quantidade", { mode: "number" }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.produtoId, t.varianteId, t.posicao] }),
+    /* Em cascata: as variantes de um produto trocam-se inteiras ao gravar
+       (`editarProduto`), e o que levam vai com elas. */
+    foreignKey({
+      name: "variantes_leva_variante_fk",
+      columns: [t.produtoId, t.varianteId],
+      foreignColumns: [variantes.produtoId, variantes.id],
+    }).onDelete("cascade"),
+    /* Uma vez cada um, por grupo: é por produto que o cliente escolhe as
+       variâncias de dentro, e duas linhas do mesmo davam duas perguntas iguais. */
+    uniqueIndex("variantes_leva_unico").on(t.produtoId, t.varianteId, t.simplesId),
+    check("variantes_leva_posicao", sql`${t.posicao} >= 0`),
+    check("variantes_leva_quantidade", sql`${t.quantidade} > 0`),
+    check("variantes_leva_nao_a_si", sql`${t.simplesId} <> ${t.produtoId}`),
   ],
 );
 
@@ -411,6 +573,24 @@ export const pedidos = pgTable(
     expiraEm: instante("expira_em"),
     /** Quando o cliente aceitou a resposta da casa, pelo link (`pedidos.md` › O aceite do cliente). */
     aceiteEm: instante("aceite_em"),
+    /**
+     * A versão da proposta da casa (`pedidos.md` › O aceite do cliente): sobe a cada resposta com
+     * preço ou hora que o cliente ainda não viu. O link do email leva-a, assinada pelo servidor; uma
+     * resposta revista sobe a versão, e o link anterior deixa de aceitar — «uma resposta alterada
+     * não pode ser aceite através de uma versão anterior». `0` é «nunca houve proposta».
+     *
+     * Guarda-se a versão e não a credencial: a credencial é uma assinatura (HMAC) da referência e
+     * da versão, refeita no servidor para a comparar. Sem segredo nenhum na base de dados, uma
+     * cópia dela não deixa aceitar nada.
+     */
+    propostaVersao: integer("proposta_versao").notNull().default(0),
+    /** Quando a casa fez a última proposta. */
+    propostaEm: instante("proposta_em"),
+    /**
+     * A hora que o cliente tinha pedido, quando a proposta a mudou: é o «em vez das 10h30» do email
+     * e da página do aceite. `NULL` quando a proposta não mexeu na hora.
+     */
+    levantamentoAnteriorEm: instante("levantamento_anterior_em"),
     /** `sem-resposta-da-casa` ou `sem-pagamento`; só num `expirado`, e sempre nele. */
     causaExpiracao: text("causa_expiracao"),
     impressoEm: instante("impresso_em"),
@@ -509,25 +689,38 @@ export const pedidos = pgTable(
         and (${t.confirmadoEm} is not null or not (${t.estado} = 'confirmado'
           or (${t.estado} = 'entregue' and ${t.modoPagamento} not in (${umDe(MODOS_ONLINE)}))))`,
     ),
+    /* Um `a-aguardar-aceite` também: as 24 horas do cliente para aceitar (decidido a 25/11), que
+       a proposta grava no mesmo `expira_em` — a resposta da casa acaba com as 48 horas dela. */
     /* Um `por-confirmar` sabe até quando espera — é por ele que expira — e o
        prazo é sempre depois de nascer. Só existe fora do Stripe, que tem o seu
        (os 31 minutos da sessão, contados do `criado_em`). */
     check(
       "pedidos_expira_em",
-      sql`(${t.estado} <> 'por-confirmar' or ${t.expiraEm} is not null)
+      sql`(${t.estado} not in ('por-confirmar', 'a-aguardar-aceite') or ${t.expiraEm} is not null)
         and (${t.expiraEm} is null
           or (${t.expiraEm} > ${t.criadoEm} and ${t.modoPagamento} not in (${umDe(MODOS_ONLINE)})))`,
     ),
     /* Aceitar é o que confirma: quem tem `aceite_em` tem `confirmado_em`. */
     check("pedidos_aceite_em", sql`${t.aceiteEm} is null or ${t.confirmadoEm} is not null`),
-    /* Um expirado diz porquê, e só ele: a casa não respondeu (que só acontece a
-       quem tinha prazo), ou o Stripe não recebeu (que só acontece com ele). */
+    /* Uma proposta tem versão e data, as duas ou nenhuma; quem espera o aceite tem uma; e só uma
+       proposta muda a hora pedida. Um `a-aguardar-aceite` sem versão não tinha link que o aceitasse. */
+    check(
+      "pedidos_proposta",
+      sql`${t.propostaVersao} >= 0
+        and (${t.propostaVersao} = 0) = (${t.propostaEm} is null)
+        and (${t.estado} <> 'a-aguardar-aceite' or ${t.propostaVersao} > 0)
+        and (${t.levantamentoAnteriorEm} is null or ${t.propostaVersao} > 0)`,
+    ),
+    /* Um expirado diz porquê, e só ele: a casa não respondeu, ou o cliente não aceitou a proposta
+       (os dois só a quem tinha prazo, e o segundo só a quem teve proposta), ou o Stripe não recebeu
+       (que só acontece com ele). */
     check(
       "pedidos_causa_expiracao",
       sql`(${t.estado} = 'expirado') = (${t.causaExpiracao} is not null)
         and (${t.causaExpiracao} is null or (${t.causaExpiracao} in (${umDe(CAUSAS_EXPIRACAO)})
           and (${t.causaExpiracao} = 'sem-pagamento') = (${t.modoPagamento} in (${umDe(MODOS_ONLINE)}))
-          and (${t.causaExpiracao} <> 'sem-resposta-da-casa' or ${t.expiraEm} is not null)))`,
+          and (${t.causaExpiracao} not in ('sem-resposta-da-casa', 'sem-aceite-do-cliente') or ${t.expiraEm} is not null)
+          and (${t.causaExpiracao} <> 'sem-aceite-do-cliente' or ${t.propostaVersao} > 0)))`,
     ),
     check("pedidos_entregue_em", sql`${t.estado} <> 'entregue' or ${t.entregueEm} is not null`),
     /* Cancelado é final: quando, por quem, e o estado, os três ou nenhum. */
@@ -589,6 +782,18 @@ export const linhasPedido = pgTable(
     precoUnitarioCent: integer("preco_unitario_cent"),
     totalCent: integer("total_cent"),
     notas: text("notas"),
+    /**
+     * O preço foi fixado pela casa numa proposta, e não visto pelo cliente ao pedir: é o que a página
+     * do aceite e o email destacam («Bolo por medida: 45,00 €»).
+     */
+    precoDaProposta: boolean("preco_da_proposta").notNull().default(false),
+    /**
+     * **A cópia do que se escolheu** (#88): variâncias, opções e extras, com os
+     * nomes e os preços daquele momento, e num composto o grupo e o que levava.
+     * `NULL` nas linhas de antes da #88. Só se mostra e imprime, nunca se
+     * pesquisa — e o produto pode mudar amanhã (`pedidos.md` › Personalização).
+     */
+    personalizacao: jsonb("personalizacao").$type<Personalizacao>(),
   },
   (t) => [
     /* É também o índice `linhas_pedido(pedido_id)` do `robustez.md`. */
@@ -602,6 +807,8 @@ export const linhasPedido = pgTable(
       sql`(${t.precoUnitarioCent} is null) = (${t.totalCent} is null)
         and (${t.precoUnitarioCent} is null or (${t.precoUnitarioCent} >= 0 and ${t.totalCent} >= 0))`,
     ),
+    /* Um preço da proposta é um preço: a casa não propõe «sem preço». */
+    check("linhas_pedido_preco_da_proposta", sql`not ${t.precoDaProposta} or ${t.precoUnitarioCent} is not null`),
   ],
 );
 

@@ -315,6 +315,7 @@ const linhaDoPedido = (
     nome: produto.nome.pt,
     variante: variante.rotulo?.pt ?? null,
     escolhas: [],
+    personalizacao: null,
     unidade: produto.unidade,
     quantidade: qtd,
     precoUnitarioCent: preco,
@@ -530,9 +531,17 @@ export function pedidosDoPainelDeExemplo(
           precoUnitarioCent: null,
           totalCent: null,
           notas: "Mensagem: Parabéns, Rita! 7 anos",
-          fotos: {
-            referencia: ["/exemplo/bolo-referencia-1.webp", "/exemplo/bolo-referencia-2.webp"],
-            imprimir: "/exemplo/bolo-imprimir.webp",
+          personalizacao: {
+            variancias: [],
+            opcoes: [],
+            extras: [],
+            leva: [],
+            bolo: {
+              fotos: {
+                referencia: ["/exemplo/bolo-referencia-1.webp", "/exemplo/bolo-referencia-2.webp"],
+                imprimir: "/exemplo/bolo-imprimir.webp",
+              },
+            },
           },
         },
         natas,

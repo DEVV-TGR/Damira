@@ -102,20 +102,27 @@ export function PedidoCartao({
             <li key={`${linha.produtoId}-${linha.varianteId}-${i}`}>
               <strong className="tabular-nums">{quantidade(linha)}</strong> {linha.nome}
               {linha.variante && <span className="text-tinta-suave"> ({linha.variante})</span>}
-              {/* O bolo personalizado traz uma escolha por campo: uma por linha, como no
-                  talão, e não seis seguidas numa frase. */}
-              {linha.escolhas.length > 0 &&
-                (linha.fotos ? (
-                  <ul className="mt-1 text-sm text-tinta-suave">
-                    {linha.escolhas.map((escolha) => (
-                      <li key={escolha}>{escolha}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <span className="text-tinta-suave"> · {linha.escolhas.join(", ")}</span>
-                ))}
+              {/* Uma escolha por linha (#88): o sabor, o que se tira, os extras, o que
+                  o kit leva. O «SEM» a negrito, como no talão — é a linha que a
+                  cozinha não pode falhar (`impressao.md`). */}
+              {linha.escolhas.length > 0 && (
+                <ul className="pl-4 text-sm text-tinta-suave">
+                  {linha.escolhas.map((escolha, k) => (
+                    <li key={k}>
+                      {escolha.startsWith("SEM ") ? (
+                        <>
+                          <strong className="text-tinta">SEM</strong>
+                          {escolha.slice(3)}
+                        </>
+                      ) : (
+                        escolha
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
               {linha.notas && <span className="block text-sm text-tinta-suave">Nota: {linha.notas}</span>}
-              {linha.fotos && <FotosDoBolo fotos={linha.fotos} />}
+              {linha.personalizacao?.bolo && <FotosDoBolo fotos={linha.personalizacao.bolo.fotos} />}
             </li>
           ))}
         </ul>
@@ -179,7 +186,7 @@ export function PedidoCartao({
  * primeiro, porque é um passo da produção; as de referência a seguir. Tocar
  * abre a foto inteira.
  */
-function FotosDoBolo({ fotos }: { fotos: NonNullable<Pedido["linhas"][number]["fotos"]> }) {
+function FotosDoBolo({ fotos }: { fotos: { referencia: string[]; imprimir: string | null } }) {
   const miniatura = (foto: string, alt: string) => (
     <a key={foto} href={caminhoDaFotoDoBolo(foto)} target="_blank" rel="noreferrer" className="block">
       {/* eslint-disable-next-line @next/next/no-img-element -- fotos do cliente, servidas pela rota do bolo */}

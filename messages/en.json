@@ -322,12 +322,13 @@
       "tipoDoCesto": "Comes from what you added. To change it, edit the order.",
       "juntarArtigo": "Add {nome} to your order",
       "escolha": {
-        "titulo": "Which flavour?",
-        "ajuda": "Each flavour goes in as its own line, with its own minimum quantity.",
+        "titulo": "How would you like it?",
+        "ajuda": "Each combination is a separate line, with its own minimum quantity.",
         "cancelar": "Cancel",
         "rotulo": "Flavour",
         "falta": "Choose the flavour first."
       },
+      "escolherArtigo": "Choose {nome}",
       "total": "Total"
     },
     "procura": {
@@ -488,7 +489,8 @@
       "festa": "Party kit",
       "bolo": "Cake kit",
       "box": "Box",
-      "medida": "Custom cake"
+      "medida": "Custom cake",
+      "ementa": "From the menu"
     },
     "medida": {
       "nome": "Custom cake",
@@ -502,6 +504,7 @@
     "oQueLeva": "What it includes",
     "preco": "Price",
     "paraQuantas": "For how many people?",
+    "escolher": "Choose",
     "paraPessoas": "{n} people",
     "mensagem": "Message on the cake",
     "mensagemDica": "Happy birthday, Maria!",
@@ -513,6 +516,8 @@
     "descricaoGenerica": "{nome}, made to order at Confeitaria e Pão Quente Damira, in Ermesinde.",
     "porQuilo": " /kg",
     "cadaCurto": "ea.",
+    "fotografias": "Product photos",
+    "verFotografia": "Show photo {n} of {total}",
     "bolo": {
       "passos": {
         "tamanho": "Size",
@@ -560,5 +565,19 @@
   "modoTeste": {
     "etiqueta": "Test mode",
     "aviso": "Nothing is charged, and the pick-up times and booked slots are examples."
+  },
+  "personalizar": {
+    "falta": "Choose an option here.",
+    "tirar": "Leave out",
+    "sem": "No {nome}",
+    "extras": "Extras",
+    "porUnidade": "For each unit.",
+    "semCusto": "No charge",
+    "cada": "{preco} each",
+    "ate": "up to {n}",
+    "menos": "Fewer {nome}",
+    "mais": "More {nome}",
+    "leva": "Includes",
+    "juntar": "Customise"
   }
 }

@@ -113,7 +113,7 @@ describe.skipIf(NA_BASE_DE_DADOS)("o catálogo, tal como sai dos JSON", () => {
     });
     const medida = CATALOGO_JSON.find((p) => p.id === "bolo-por-medida")!;
     expect(medida.variantes).toEqual([
-      { id: "unica", rotulo: null, pessoas: null, precoCent: null, composicao: [] },
+      { id: "unica", rotulo: null, pessoas: null, precoCent: null, composicao: [], leva: [], ativa: true },
     ]);
     expect(medida.nome.pt).toBe("Bolo personalizado");
   });

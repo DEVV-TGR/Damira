@@ -322,12 +322,13 @@
       "tipoDoCesto": "Vem do que juntou ao pedido. Para mudar, altere o cesto.",
       "juntarArtigo": "Juntar {nome} ao pedido",
       "escolha": {
-        "titulo": "Qual sabor?",
-        "ajuda": "Cada sabor entra como uma linha à parte, com a sua quantidade mínima.",
+        "titulo": "Como o quer?",
+        "ajuda": "Cada combinação entra como uma linha à parte, com a sua quantidade mínima.",
         "cancelar": "Cancelar",
         "rotulo": "Sabor",
         "falta": "Escolha o sabor primeiro."
       },
+      "escolherArtigo": "Escolher {nome}",
       "total": "Total"
     },
     "procura": {
@@ -488,7 +489,8 @@
       "festa": "Kit de festa",
       "bolo": "Kit de bolo",
       "box": "Box",
-      "medida": "Bolo personalizado"
+      "medida": "Bolo personalizado",
+      "ementa": "Da carta"
     },
     "medida": {
       "nome": "Bolo personalizado",
@@ -502,6 +504,7 @@
     "oQueLeva": "O que leva",
     "preco": "Preço",
     "paraQuantas": "Para quantas pessoas?",
+    "escolher": "Escolha",
     "paraPessoas": "{n} pessoas",
     "mensagem": "Mensagem no bolo",
     "mensagemDica": "Parabéns, Maria!",
@@ -513,6 +516,8 @@
     "descricaoGenerica": "{nome}, por encomenda na Confeitaria e Pão Quente Damira, em Ermesinde.",
     "porQuilo": " /kg",
     "cadaCurto": "un.",
+    "fotografias": "Fotografias do produto",
+    "verFotografia": "Ver a fotografia {n} de {total}",
     "bolo": {
       "passos": {
         "tamanho": "Tamanho",
@@ -560,5 +565,19 @@
   "modoTeste": {
     "etiqueta": "Modo de teste",
     "aviso": "Não se cobra nada, e os prazos e as vagas ocupadas são de exemplo."
+  },
+  "personalizar": {
+    "falta": "Escolha uma opção aqui.",
+    "tirar": "Tirar",
+    "sem": "Sem {nome}",
+    "extras": "A mais",
+    "porUnidade": "Por cada unidade.",
+    "semCusto": "Sem custo",
+    "cada": "{preco} cada",
+    "ate": "até {n}",
+    "menos": "Menos {nome}",
+    "mais": "Mais {nome}",
+    "leva": "Leva",
+    "juntar": "Personalizar"
   }
 }

@@ -117,6 +117,7 @@ const linha = (produtoId: string, quantidade = 1): Pedido["linhas"][number] => (
   nome: produtoId,
   variante: null,
   escolhas: [],
+  personalizacao: null,
   unidade: "un",
   quantidade,
   precoUnitarioCent: 1000,

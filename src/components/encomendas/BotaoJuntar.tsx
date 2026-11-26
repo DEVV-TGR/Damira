@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+
 import { useTranslations } from "next-intl";
 import { useCesto } from "./CestoProvider";
-import { idComEscolha, quantidadeEmTexto, type ItemCesto } from "@/lib/cesto";
+import { quantidadeEmTexto, type ItemCesto } from "@/lib/cesto";
 import type { Locale } from "@/i18n/routing";
 
 /**
@@ -32,13 +32,14 @@ import type { Locale } from "@/i18n/routing";
  * ⚠️ Na compacta o nome do artigo vai no `aria-label`, porque quem ouve a página
  * só ouviria «mais, mais, mais» setenta vezes seguidas.
  *
- * ## Com sabores, pergunta primeiro
+ * ## Só para o que não pede escolha
  *
- * ⚠️ Num produto com escolhas (os folhados vegan: alheira, legumes…), o botão
- * **abre «Qual sabor?» antes de juntar**, e o sabor entra na linha — nunca nas
- * observações. Cada sabor é uma linha à parte, com a sua dúzia (decidido a
- * 05/10). O servidor recusa a linha sem sabor (`escolha-invalida`), por isso
- * isto não é cosmética: sem a pergunta, o cesto não se enviava.
+ * ⚠️ Um produto com variâncias, opções ou extras (#88) **não usa este botão**:
+ * personaliza-se na página dele, onde estão as fotografias (decidido a 26/11 —
+ * antes abria uma janela por cima do cartão). O cartão leva lá
+ * (`CartaoArtigo`). O servidor recusa a linha sem as variâncias respondidas
+ * (`escolha-invalida`), por isso juntar daqui um produto que as tem não
+ * chegava a lado nenhum.
  *
  * ## Sem cesto, sem botão
  *
@@ -50,70 +51,21 @@ export function BotaoJuntar({
   item,
   variante = "principal",
   locale = "pt",
-  escolhas = [],
 }: {
   item: Omit<ItemCesto, "quantidade">;
   variante?: "principal" | "discreta" | "compacta";
   locale?: Locale;
-  /** Os sabores do produto. Com algum, o botão pergunta qual antes de juntar. */
-  escolhas?: readonly string[];
 }) {
   const t = useTranslations("encomendas.cesto");
   const contexto = useCesto();
-  const [aEscolher, setAEscolher] = useState(false);
-  const dialogo = useRef<HTMLDialogElement>(null);
-
-  /* Um `<dialog>` com `showModal()`: o Esc, o foco e o fundo inerte vêm do browser. */
-  useEffect(() => {
-    if (aEscolher) dialogo.current?.showModal();
-    else dialogo.current?.close();
-  }, [aEscolher]);
 
   if (!contexto) return null;
 
-  /* Com sabores, o que conta é o total das linhas deste artigo, de todos os sabores. */
-  const linhas = contexto.cesto.filter((i) =>
-    escolhas.length > 0 ? i.id === item.id || i.id.startsWith(`${item.id}~`) : i.id === item.id,
-  );
+  const linhas = contexto.cesto.filter((i) => i.id === item.id);
   const noCesto = linhas.length > 0 ? { ...linhas[0], quantidade: linhas.reduce((s, i) => s + i.quantidade, 0) } : null;
   const rotuloQuantidade = noCesto ? quantidadeEmTexto(noCesto, locale) : null;
 
-  const juntarCom = (escolha: string | null) => {
-    contexto.juntar({ ...item, id: idComEscolha(item.id, escolha), escolha });
-    setAEscolher(false);
-  };
-  const aoCarregar = () => (escolhas.length > 0 ? setAEscolher(true) : juntarCom(null));
-
-  const janela = escolhas.length > 0 && (
-    <dialog
-      ref={dialogo}
-      onClose={() => setAEscolher(false)}
-      onClick={(e) => e.target === e.currentTarget && setAEscolher(false)}
-      aria-labelledby={`escolha-${item.id}`}
-      className="m-auto w-[min(92vw,26rem)] rounded-3xl bg-papel p-6 text-tinta shadow-2xl backdrop:bg-tinta/50"
-    >
-      <p id={`escolha-${item.id}`} className="titulo-display text-2xl">
-        {t("escolha.titulo")}
-      </p>
-      <p className="mt-1 font-semibold">{item.nome}</p>
-      <p className="mt-1 text-sm text-tinta-suave">{t("escolha.ajuda")}</p>
-      <div className="mt-4 flex flex-wrap gap-2">
-        {escolhas.map((escolha) => (
-          <button
-            key={escolha}
-            type="button"
-            onClick={() => juntarCom(escolha)}
-            className="premivel min-h-11 rounded-full border border-tinta/25 px-4 text-sm font-semibold hover:bg-tinta hover:text-papel"
-          >
-            {escolha}
-          </button>
-        ))}
-      </div>
-      <button type="button" onClick={() => setAEscolher(false)} className="mt-5 min-h-11 text-sm underline underline-offset-4">
-        {t("escolha.cancelar")}
-      </button>
-    </dialog>
-  );
+  const aoCarregar = () => contexto.juntar({ ...item });
 
   if (variante === "compacta") {
     return (
@@ -122,7 +74,6 @@ export function BotaoJuntar({
           type="button"
           onClick={aoCarregar}
           aria-label={t("juntarArtigo", { nome: item.nome })}
-          aria-haspopup={escolhas.length > 0 ? "dialog" : undefined}
           className={`premivel flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-semibold tabular-nums ${
             noCesto
               ? "bg-tijolo text-papel"
@@ -131,7 +82,6 @@ export function BotaoJuntar({
         >
           {rotuloQuantidade ?? <span aria-hidden>+</span>}
         </button>
-        {janela}
       </>
     );
   }
@@ -148,7 +98,6 @@ export function BotaoJuntar({
       <button
         type="button"
         onClick={aoCarregar}
-        aria-haspopup={escolhas.length > 0 ? "dialog" : undefined}
         className={`${base} ${cor}`}
       >
         {noCesto ? t("juntado") : t("juntar")}
@@ -158,7 +107,6 @@ export function BotaoJuntar({
           </span>
         )}
       </button>
-      {janela}
     </>
   );
 }

@@ -1,3 +1,4 @@
+import { criarEmailsJson } from "./json-emails";
 import { randomUUID } from "node:crypto";
 import { OPCOES_BOLO } from "@/data/bolos-personalizados";
 import { casa, DIAS_DA_SEMANA } from "@/data/casa";
@@ -21,6 +22,7 @@ import {
   type FonteLoja,
   type GrupoComposicao,
   type OpcoesBolo,
+  type Variancia,
   type OrdemEmenta,
   type Pedido,
   type Produto,
@@ -64,6 +66,28 @@ const emCent = (euros: number, onde: string): number => {
    (`montarCatalogo`): é calculado, e não um dado dos JSON. */
 type SemConfirmacao = Omit<Produto, "pedeConfirmacao">;
 
+/**
+ * Os sabores de um artigo, como variância a 0 € (#88). ⚠️ **Os mesmos ids que a
+ * migração `0011` dá** (`<produto>-sabor`, `s1`, `s2`…): um cesto feito sobre
+ * os JSON tem de continuar a valer sobre a base de dados.
+ */
+export const varianciaDosSabores = (produtoId: string, sabores: readonly string[]): Variancia[] =>
+  sabores.length === 0
+    ? []
+    : [
+        {
+          id: `${produtoId}-sabor`,
+          nome: { pt: "Sabor", en: "Flavour" },
+          escolhas: sabores.map((sabor, i) => ({
+            id: `s${i + 1}`,
+            nome: { pt: sabor, en: null },
+            acrescimoCent: 0,
+            ativa: true,
+            foto: null,
+          })),
+        },
+      ];
+
 const daEmenta = (artigo: Artigo): SemConfirmacao => {
   /* O mínimo e o passo da encomenda vivem ainda numa tabela por categoria (ver
      `encomendavel.ts`). Passam a ser por produto quando a gerente os puder
@@ -86,6 +110,8 @@ const daEmenta = (artigo: Artigo): SemConfirmacao => {
           pessoas: null,
           precoCent: emCent(variante.preco, `${artigo.id} (${variante.chave})`),
           composicao: [],
+          leva: [],
+          ativa: true,
         }))
       : [
           {
@@ -94,9 +120,14 @@ const daEmenta = (artigo: Artigo): SemConfirmacao => {
             pessoas: null,
             precoCent: artigo.preco === null ? null : emCent(artigo.preco, artigo.id),
             composicao: [],
+            leva: [],
+            ativa: true,
           },
         ],
-    escolhas: artigo.sabores,
+    tipo: "simples",
+    variancias: varianciaDosSabores(artigo.id, artigo.sabores),
+    opcoes: [],
+    extras: [],
     tempoProducao: null,
     quantidadeMinima: regra?.minimo ?? 1,
     multiplo: regra?.passo ?? 1,
@@ -150,6 +181,8 @@ const daEncomenda = (produto: ProdutoDasEncomendas): SemConfirmacao => {
             { grupo: "salgados" as const, linhas: linhas(escalao.salgados) },
             { grupo: "doces" as const, linhas: linhas(escalao.doces) },
           ],
+          leva: [],
+          ativa: true,
         }))
       : [
           {
@@ -158,6 +191,8 @@ const daEncomenda = (produto: ProdutoDasEncomendas): SemConfirmacao => {
             pessoas: null,
             precoCent: produto.preco === null ? null : emCent(produto.preco, produto.id),
             composicao: composicaoDe(produto),
+            leva: [],
+            ativa: true,
           },
         ];
 
@@ -180,7 +215,12 @@ const daEncomenda = (produto: ProdutoDasEncomendas): SemConfirmacao => {
     subcategoria: null,
     unidade: "un",
     variantes,
-    escolhas: [],
+    /* O que se descreve pelo que leva é composto — a mesma conta da base de
+       dados (`tipoDoProduto`). O bolo por medida é simples. */
+    tipo: variantes.some((v) => v.composicao.length > 0) ? "composto" : "simples",
+    variancias: [],
+    opcoes: [],
+    extras: [],
     tempoProducao: null,
     quantidadeMinima: 1,
     multiplo: 1,
@@ -449,5 +489,5 @@ export function criarFonteJsonComEstado(opcoes: OpcoesFonteJson = {}): { fonte: 
     },
   };
 
-  return { fonte: { ...loja, ...criarPainelJson(estado, ocupacaoEntre) }, estado };
+  return { fonte: { ...loja, ...criarPainelJson(estado, ocupacaoEntre), ...criarEmailsJson(() => [...estado.pedidos.values()]) }, estado };
 }
