@@ -103,6 +103,7 @@ export function Produtos({
         key={`${aEditar}-${versao}`}
         produto={produtoAberto}
         ordem={ordem}
+        catalogo={produtos}
         onSujo={marcarSujo}
         onFechar={(mensagem, gravado) => {
           marcarSujo(false);
