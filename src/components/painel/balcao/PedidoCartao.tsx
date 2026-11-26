@@ -101,7 +101,25 @@ export function PedidoCartao({
             <li key={`${linha.produtoId}-${linha.varianteId}-${i}`}>
               <strong className="tabular-nums">{quantidade(linha)}</strong> {linha.nome}
               {linha.variante && <span className="text-tinta-suave"> ({linha.variante})</span>}
-              {linha.escolhas.length > 0 && <span className="text-tinta-suave"> · {linha.escolhas.join(", ")}</span>}
+              {/* Uma escolha por linha (#88): o sabor, o que se tira, os extras, o que
+                  o kit leva. O «SEM» a negrito, como no talão — é a linha que a
+                  cozinha não pode falhar (`impressao.md`). */}
+              {linha.escolhas.length > 0 && (
+                <ul className="pl-4 text-sm text-tinta-suave">
+                  {linha.escolhas.map((escolha, k) => (
+                    <li key={k}>
+                      {escolha.startsWith("SEM ") ? (
+                        <>
+                          <strong className="text-tinta">SEM</strong>
+                          {escolha.slice(3)}
+                        </>
+                      ) : (
+                        escolha
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
               {linha.notas && <span className="block text-sm text-tinta-suave">Nota: {linha.notas}</span>}
             </li>
           ))}

@@ -29,6 +29,9 @@ import {
   FORMATO_TELEFONE,
   type GrupoComposicao,
   MODOS_ONLINE,
+  type Personalizacao,
+  TIPOS_PRODUTO,
+  type TipoProduto,
   MODOS_PAGAMENTO,
   type OrdemEmenta,
 } from "../lib/dados/tipos";
@@ -57,13 +60,9 @@ const umDe = (valores: readonly string[]) => sql.raw(valores.map((v) => `'${v}'`
    por isso: mudar a constante gera uma migração. */
 const formato = (expressao: RegExp) => sql.raw(`'${expressao.source}'`);
 
-/**
- * Os dois tipos de produto (#124). Aqui e não no contrato: até a fronteira os
- * expor (Gonçalo), só a base de dados os conhece — e o contrato importa-os
- * daqui nesse dia, para os dois não se afastarem.
- */
-export const TIPOS_PRODUTO = ["simples", "composto"] as const;
-export type TipoProduto = (typeof TIPOS_PRODUTO)[number];
+/* Os dois tipos de produto (#124) vêm do contrato desde a #88: o contrato vai
+   para o browser e não pode importar daqui. */
+export { TIPOS_PRODUTO, type TipoProduto };
 
 // ——— O catálogo ———
 
@@ -269,7 +268,14 @@ export const variantes = pgTable(
  * valida-as ao ler, como faz à `composicao`.
  */
 type NomeGravado = { pt: string; en: string | null };
-export type EscolhaGravada = { id: string; nome: NomeGravado; acrescimoCent: number; ativa: boolean };
+export type EscolhaGravada = {
+  id: string;
+  nome: NomeGravado;
+  acrescimoCent: number;
+  ativa: boolean;
+  /** Desde a página por produto: a foto da escolha. Pode faltar nas gravadas antes. */
+  foto?: string | null;
+};
 export type OpcaoGravada = { id: string; nome: NomeGravado; ativa: boolean };
 
 /**
@@ -787,7 +793,7 @@ export const linhasPedido = pgTable(
      * `NULL` nas linhas de antes da #88. Só se mostra e imprime, nunca se
      * pesquisa — e o produto pode mudar amanhã (`pedidos.md` › Personalização).
      */
-    personalizacao: jsonb("personalizacao").$type<Record<string, unknown>>(),
+    personalizacao: jsonb("personalizacao").$type<Personalizacao>(),
   },
   (t) => [
     /* É também o índice `linhas_pedido(pedido_id)` do `robustez.md`. */

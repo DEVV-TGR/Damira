@@ -334,12 +334,13 @@
       "tipoDoCesto": "Comes from what you added. To change it, edit the order.",
       "juntarArtigo": "Add {nome} to your order",
       "escolha": {
-        "titulo": "Which flavour?",
-        "ajuda": "Each flavour goes in as its own line, with its own minimum quantity.",
+        "titulo": "How would you like it?",
+        "ajuda": "Each combination is a separate line, with its own minimum quantity.",
         "cancelar": "Cancel",
         "rotulo": "Flavour",
         "falta": "Choose the flavour first."
-      }
+      },
+      "escolherArtigo": "Choose {nome}"
     },
     "procura": {
       "rotulo": "Search products",
@@ -502,7 +503,8 @@
       "festa": "Party kit",
       "bolo": "Cake kit",
       "box": "Box",
-      "medida": "Made-to-order cake"
+      "medida": "Made-to-order cake",
+      "ementa": "From the menu"
     },
     "medida": {
       "nome": "Made-to-order cake",
@@ -526,7 +528,10 @@
     "avisoPreco": "This is the list price, not a bill. Delivery is not included and the final amount comes in our reply.",
     "descricaoGenerica": "{nome}, made to order at Confeitaria e Pão Quente Damira, in Ermesinde.",
     "porQuilo": " /kg",
-    "cadaCurto": "ea."
+    "cadaCurto": "ea.",
+    "escolher": "Choose",
+    "fotografias": "Product photos",
+    "verFotografia": "Show photo {n} of {total}"
   },
   "modoTeste": {
     "etiqueta": "Test mode",
@@ -590,5 +595,19 @@
       "titulo": "We could not open the proposal.",
       "texto": "The error is ours, not yours. Please try again later, or contact us on {telefone}."
     }
+  },
+  "personalizar": {
+    "falta": "Choose an option here.",
+    "tirar": "Leave out",
+    "sem": "No {nome}",
+    "extras": "Extras",
+    "porUnidade": "For each unit.",
+    "semCusto": "No charge",
+    "cada": "{preco} each",
+    "ate": "up to {n}",
+    "menos": "Fewer {nome}",
+    "mais": "More {nome}",
+    "leva": "Includes",
+    "juntar": "Customise"
   }
 }

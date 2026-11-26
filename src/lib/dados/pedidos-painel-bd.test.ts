@@ -39,6 +39,7 @@ const pedido = (nome: string, alteracoes: Partial<Pedido> = {}): Pedido => ({
       nome: "Kit Premium",
       variante: "20 pessoas",
       escolhas: [],
+      personalizacao: null,
       unidade: "un",
       quantidade: 1,
       precoUnitarioCent: 33500,

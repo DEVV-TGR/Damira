@@ -4,6 +4,9 @@ import { formatarCent } from "@/lib/preco";
 import {
   fotoDe,
   nomeDe,
+  caminhoDoProduto,
+  paraPersonalizar,
+  temPersonalizacao,
   precoUnicoCent,
   emLingua,
   regraDe,
@@ -13,6 +16,7 @@ import {
 import type { Locale } from "@/i18n/routing";
 import { FotoProduto } from "./FotoProduto";
 import { BotaoJuntar } from "./BotaoJuntar";
+import { Link } from "@/i18n/navigation";
 
 /**
  * Um artigo do dia a dia, em cartão.
@@ -62,6 +66,12 @@ export function CartaoArtigo({
   const regra = regraDe(artigo);
 
   const nome = nomeDe(artigo, locale);
+  /* Um artigo da carta é simples: não leva produtos, e as peças são as dele. */
+  const personalizavel = paraPersonalizar(artigo, []);
+  /* Com alguma coisa a escolher, o «+» leva à página do artigo (decidido a
+     26/11): é lá que se personaliza e que estão as fotografias. Sem nada, junta
+     logo, como sempre. */
+  const pedeEscolha = temPersonalizacao(personalizavel);
   const variantes = variantesVisiveis(artigo);
   const precoUnico = precoUnicoCent(artigo);
   const porUnidade = artigo.unidade === "kg" ? te("porQuilo") : ` ${t("cadaCurto")}`;
@@ -69,7 +79,13 @@ export function CartaoArtigo({
   return (
     <li className="flex flex-col rounded-xl border border-tinta/15 bg-papel p-2.5" data-procura={textoDeProcura(artigo)}>
       <FotoProduto foto={fotoDe(artigo)} alt="" proporcao="3 / 2" discreta />
-      <h4 className="mt-2.5 text-sm font-semibold leading-snug">{nome}</h4>
+      {/* O nome leva à página do artigo, que desde 26/11 todos os que se
+          encomendam têm. */}
+      <h4 className="mt-2.5 text-sm font-semibold leading-snug">
+        <Link href={caminhoDoProduto(artigo.id)} className="alvo-toque hover:underline hover:underline-offset-4">
+          {nome}
+        </Link>
+      </h4>
 
       {artigo.vegan && (
         <span className="bloco-verde-texto mt-1.5 self-start rounded-full px-1.5 py-0.5 text-[0.58rem] font-bold uppercase tracking-wider">
@@ -92,11 +108,11 @@ export function CartaoArtigo({
                 </span>
                 {v.precoCent !== null && formatarCent(v.precoCent, locale)}
               </p>
-              {regra && (
+              {regra && pedeEscolha && <Escolher nome={nome} id={artigo.id} />}
+              {regra && !pedeEscolha && (
                 <BotaoJuntar
                   variante="compacta"
                   locale={locale}
-                  escolhas={artigo.escolhas}
                   item={{
                     id: `ementa:${artigo.id}:${v.id}`,
                     produtoId: artigo.id,
@@ -130,11 +146,11 @@ export function CartaoArtigo({
             )}
           </p>
 
-          {regra && (
+          {regra && pedeEscolha && <Escolher nome={nome} id={artigo.id} />}
+          {regra && !pedeEscolha && (
             <BotaoJuntar
               variante="compacta"
               locale={locale}
-              escolhas={artigo.escolhas}
               item={{
                 id: `ementa:${artigo.id}`,
                 produtoId: artigo.id,
@@ -154,5 +170,19 @@ export function CartaoArtigo({
         </div>
       )}
     </li>
+  );
+}
+
+/** O «+» de um artigo com escolhas: leva à página dele, com o mesmo feitio. */
+function Escolher({ nome, id }: { nome: string; id: string }) {
+  const t = useTranslations("encomendas.cesto");
+  return (
+    <Link
+      href={caminhoDoProduto(id)}
+      aria-label={t("escolherArtigo", { nome })}
+      className="premivel flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-tinta/25 px-3 text-sm font-semibold hover:bg-tinta hover:text-papel"
+    >
+      <span aria-hidden>+</span>
+    </Link>
   );
 }

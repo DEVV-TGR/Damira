@@ -63,7 +63,7 @@ const novoBolo = (alteracoes: Partial<EntradaProduto> = {}): EntradaProduto => (
   subcategoria: null,
   unidade: "un",
   variantes: [{ rotulo: null, pessoas: null, precoCent: 2500, composicao: [] }],
-  escolhas: [],
+  tipo: "simples",
   tempoProducao: { unidade: "dias", valor: 2 },
   quantidadeMinima: 1,
   multiplo: 1,

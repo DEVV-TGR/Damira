@@ -334,12 +334,13 @@
       "tipoDoCesto": "Vem do que juntou ao pedido. Para mudar, altere o cesto.",
       "juntarArtigo": "Juntar {nome} ao pedido",
       "escolha": {
-        "titulo": "Qual sabor?",
-        "ajuda": "Cada sabor entra como uma linha à parte, com a sua quantidade mínima.",
+        "titulo": "Como o quer?",
+        "ajuda": "Cada combinação entra como uma linha à parte, com a sua quantidade mínima.",
         "cancelar": "Cancelar",
         "rotulo": "Sabor",
         "falta": "Escolha o sabor primeiro."
-      }
+      },
+      "escolherArtigo": "Escolher {nome}"
     },
     "procura": {
       "rotulo": "Procurar produto",
@@ -502,7 +503,8 @@
       "festa": "Kit de festa",
       "bolo": "Kit de bolo",
       "box": "Box",
-      "medida": "Bolo por medida"
+      "medida": "Bolo por medida",
+      "ementa": "Da carta"
     },
     "medida": {
       "nome": "Bolo por medida",
@@ -526,7 +528,10 @@
     "avisoPreco": "É o preço de tabela, não uma conta a pagar. A entrega não está incluída e o valor final vem na nossa resposta.",
     "descricaoGenerica": "{nome}, por encomenda na Confeitaria e Pão Quente Damira, em Ermesinde.",
     "porQuilo": " /kg",
-    "cadaCurto": "un."
+    "cadaCurto": "un.",
+    "escolher": "Escolha",
+    "fotografias": "Fotografias do produto",
+    "verFotografia": "Ver a fotografia {n} de {total}"
   },
   "modoTeste": {
     "etiqueta": "Modo de teste",
@@ -590,5 +595,19 @@
       "titulo": "Não foi possível abrir a proposta.",
       "texto": "O erro é nosso, não seu. Tente mais tarde, ou contacte-nos através do {telefone}."
     }
+  },
+  "personalizar": {
+    "falta": "Escolha uma opção aqui.",
+    "tirar": "Tirar",
+    "sem": "Sem {nome}",
+    "extras": "A mais",
+    "porUnidade": "Por cada unidade.",
+    "semCusto": "Sem custo",
+    "cada": "{preco} cada",
+    "ate": "até {n}",
+    "menos": "Menos {nome}",
+    "mais": "Mais {nome}",
+    "leva": "Leva",
+    "juntar": "Personalizar"
   }
 }

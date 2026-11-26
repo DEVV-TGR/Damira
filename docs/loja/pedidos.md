@@ -456,15 +456,18 @@ variante e as escolhas em texto, a unidade e o preço unitário **tal como estav
 no momento do pedido**, mais a quantidade e as notas do cliente. Uma linha sem
 preço guarda o preço `null` até a gerente o fixar, e a partir daí guarda esse.
 
-**As escolhas** (sabores, recheios) confirmam-se no servidor: um produto com
-escolhas leva **exatamente uma** por linha, e das dele; um sem escolhas, nenhuma
-(`escolha-invalida`). Para misturar sabores, uma linha por sabor, e cada uma
-conta o seu mínimo — 12 de alheira e 12 de legumes (decidido a 05/10).
+**As escolhas** guardam-se em texto, uma por linha («Sabor: Alheira», «SEM
+fiambre», «+ 1 × Molho», «10 × Cão quente — Americana»): é o que o painel, o
+email e o talão escrevem. Confirmam-se no servidor (› Personalização, abaixo).
+Para misturar sabores, uma linha por sabor, e cada uma conta o seu mínimo — 12
+de alheira e 12 de legumes (decidido a 05/10).
 
-### Personalização (#88, por implementar)
+### Personalização (#88)
 
-Decidido a 25/11 (`painel-gerente.md` › Simples e compostos). O browser manda
-só ids e quantidades (regra 1), e o servidor calcula o **preço da unidade**:
+Decidido a 25/11 (`painel-gerente.md` › Simples e compostos), feito a 26/11
+(`personalizar` e `cotarLinhas`, em `regras.ts`). O browser manda só ids e
+quantidades (regra 1) — as `variancias`, `opcoes` e `extras` da linha do cesto
+—, e o servidor calcula o **preço da unidade**:
 
 - **simples** = preço do tamanho escolhido (ou o preço do produto, se não tiver
   tamanhos) + variâncias escolhidas + Σ (extra × quantidade). Tirar não
@@ -483,7 +486,9 @@ Tudo × quantidade da linha (unidades ou quilos), em cêntimos. E recusa:
 (tamanho ou grupo) põe a linha sob orçamento, com o resto escrito ao lado. A
 linha guarda **uma cópia** do que foi escolhido — variâncias, opções, extras,
 e no composto o nome do grupo e os produtos que levava, com as quantidades —, e
-a regra de baixo vale para ela.
+a regra de baixo vale para ela. A cópia vai em dois sítios da linha: em texto nas
+`escolhas` (o que se lê) e inteira na `personalizacao` (`EsquemaPersonalizacao`,
+coluna `jsonb`), com os preços de cada peça; `null` nas linhas de antes.
 
 ⚠️ **Em aberto — o mínimo por linha.** A regra de cima (05/10) faz cada linha
 contar o seu mínimo. Com opções e extras, «6 com queijo e 6 sem» são duas linhas

@@ -315,6 +315,7 @@ const linhaDoPedido = (
     nome: produto.nome.pt,
     variante: variante.rotulo?.pt ?? null,
     escolhas: [],
+    personalizacao: null,
     unidade: produto.unidade,
     quantidade: qtd,
     precoUnitarioCent: preco,

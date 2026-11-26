@@ -226,6 +226,7 @@ export async function lerPedidos(
           nome: l.nome,
           variante: l.variante,
           escolhas: l.escolhas,
+          personalizacao: l.personalizacao,
           unidade: l.unidade,
           quantidade: l.quantidade,
           precoUnitarioCent: l.precoUnitarioCent,

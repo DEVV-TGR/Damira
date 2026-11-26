@@ -23,13 +23,12 @@ total); «Ver pedido» abre o mesmo cartão do balcão, com o «Entregue». O ba
 continua com cartões grandes e separadores (`painel-balcao.md`).
 
 O catálogo é lista à esquerda e ficha à direita a partir de 1024 px; abaixo, a
-ficha toma o lugar da lista. A ficha tem separadores — Geral, Tamanhos e
-preços, Opções, Encomenda, Alergénios, Fotografias — e o guardar num rodapé
-fixo. Na interface, «tamanho» é a `variante` e «opção» é a `escolha`: o modelo
-não mudou (os tamanhos e grupos de opções do #88 pedem contrato novo). ⚠️ Com a
-#88, «Tamanhos e preços» passa a **Preço** no simples e a **Grupos** no composto,
-e «Opções» parte-se em **Variâncias**, **Opções** e **Extras** — «opção» passa a
-querer dizer *tirar* (ver › Simples e compostos). Com
+ficha toma o lugar da lista. A ficha tem separadores e o guardar num rodapé
+fixo. Desde a #88 (`EditorProduto.tsx`, `PecasProduto.tsx`) os separadores
+dependem do tipo: no **simples**, Geral, Preço e tamanhos, Variâncias, Opções,
+Extras, Encomenda, Alergénios, Fotografias; no **composto**, Geral, **Grupos**,
+Encomenda, Alergénios, Fotografias. «Opção» quer dizer *tirar* (ver › Simples e
+compostos). Com
 alterações por guardar, trocar de produto ou de menu pergunta primeiro, e o
 painel não recarrega sozinho.
 
@@ -134,8 +133,9 @@ com preço ou sem ele. No código é o `pedeConfirmacao` (`tipos.ts`).
 
 ### Simples e compostos
 
-Decidido a 25/11 (#88). ⚠️ **Por implementar**: até lá vale o que está em
-› Variantes e escolhas (hoje), mais abaixo.
+Decidido a 25/11 (#88), e feito a 26/11 — no painel, na fronteira e na loja.
+O que ficou diferente do desenho, ou por fazer, está em › O que ficou de fora,
+no fim desta secção.
 
 **O catálogo é da gerente.** Nós não decidimos que tamanhos, grupos, variâncias,
 opções ou extras existem, nem em que produtos: o painel dá-lhe as peças, livres, e
@@ -199,13 +199,21 @@ cliente **escolhe um grupo**; para dois, junta o produto duas vezes.
 
 **Para os dois:**
 
-- Cada escolha **desliga-se** sem se apagar («esgotou o morango»), e a ordem
-  arrasta-se — é a que o cliente vê.
+- Cada escolha, opção, extra, tamanho e grupo **desliga-se** sem se apagar
+  («esgotou o morango», caixa «Disponível»), e a ordem muda-se com ↑ e ↓ — é a
+  que o cliente vê. Não se arrasta: no telemóvel arrastava-se a página em vez
+  do item, e as setas também se usam com o teclado.
 - ⚠️ **Livre é livre para errar**: um extra a 40 € em vez de 0,40 € cobra
-  40 €. A ficha mostra ao lado o cartão e a página como o cliente os vê, com o
-  total de uma unidade.
-- **Uma página por produto.** Todos passam a ter `/encomendas/<id>`; o cartão
-  mantém o botão rápido nos que não têm nada obrigatório para escolher.
+  40 €. Cada preço repete-se por extenso ao lado do campo («+0,40 € cada»), e
+  a ficha tem um **«Como o cliente vê»**: o que se pergunta e quanto custa uma
+  unidade, do mais barato ao mais caro.
+- **Uma página por produto**, os da carta incluídos (decidido a 26/11,
+  `temPagina`): é lá que se personaliza (`ComprarProduto`). O «+» do cartão só
+  junta logo num produto sem nada para escolher; nos outros, leva à página.
+- **Várias fotografias por produto**, numa galeria na página. Cada escolha de
+  uma variância pode ter uma delas («Fotografia» na escolha): escolher o sabor
+  mostra a fotografia dele. Ligada a outro produto, a variância leva as
+  fotografias junto; copiada, não.
 
 **No código**, o tamanho do simples e o grupo do composto são os dois a
 **`variante`** de hoje: já tem nome e preço, e os pedidos gravados já guardam o
@@ -216,16 +224,26 @@ cliente **escolhe um grupo**; para dois, junta o produto duas vezes.
 
 **Os produtos de hoje ficam**, e convertem-se para testarmos:
 
-- as `escolhas` passam a uma variância a 0 € (o mesmo comportamento: escolhe-se
-  uma);
+- as `escolhas` passam a uma variância «Sabor» a 0 € (`<produto>-sabor`, com
+  as escolhas `s1`, `s2`…), na migração `0011` e na fonte dos JSON
+  (`varianciaDosSabores`). Um cesto de antes, que manda o sabor pelo nome,
+  continua a valer: o servidor procura-o nessa variância;
 - as variantes dos simples ficam como tamanhos (o Chocolate do Dubai, quatro
   pesos, quatro preços), sem mudar nada;
-- os escalões dos kits passam a grupos, e o que levam (hoje em texto) passa à
-  mão a produtos simples fora de venda — não há conversão automática que acerte
-  em «1 unidade (800gr)»;
-- personalizações de exemplo (extras, opções) em alguns produtos, **só na fonte
-  JSON com `LOJA_EM_TESTE` e na base de desenvolvimento** — nunca na de
-  produção, onde a gerente as via como dela.
+- os escalões dos kits ficam como grupos, com o que levam **ainda em texto**
+  (a `composicao`). Passa-se à mão a produtos simples fora de venda — não há
+  conversão automática que acerte em «1 unidade (800gr)». A ficha mostra o
+  texto antigo por baixo de cada grupo, e o site continua a mostrá-lo até o
+  grupo levar produtos.
+
+#### O que ficou de fora
+
+- **Personalizações de exemplo** (extras e opções inventados em alguns
+  produtos, só nos JSON com `LOJA_EM_TESTE`) não se fizeram: testa-se criando-os
+  no painel de teste, que não grava nada.
+- **O talão** ainda não existe; o cartão do pedido no balcão já escreve uma
+  escolha por linha, com o `SEM` a negrito (`impressao.md`).
+- **O mínimo por linha** continua em aberto (`pedidos.md` › Personalização).
 
 **Quando ela se sentar para montar o catálogo**, apagam-se os produtos e ela
 cria-os um a um. ⚠️ Só se apagam **enquanto nenhum pedido verdadeiro apontar
@@ -233,9 +251,10 @@ para eles** (`linhas_pedido.produto_id` tem chave estrangeira; regra 9);
 depois do primeiro, arquivam-se. É um script nosso, com cópia de segurança
 antes (`restauro.md`), não um botão.
 
-### Variantes e escolhas (hoje)
+### Variantes e escolhas (antes da #88)
 
-Duas coisas diferentes, e a diferença é o preço:
+Fica para se perceber de onde vêm os dados. Duas coisas diferentes, e a
+diferença era o preço:
 
 - **Variantes mudam o preço** — tamanho, quilos, pessoas («Kit 20 pessoas»,
   «Kit 40 pessoas»). Cada variante tem o seu preço.
