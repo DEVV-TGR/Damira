@@ -299,38 +299,20 @@ carta vegan é vegan —, que continua a ser verdade no JSON. O que **não** mud
 deduzi-lo ("não tem carne, logo é vegan") era pôr o site a garantir uma coisa
 que a casa não garantiu.
 
-## Fotografia — o buraco fechou-se
+## Fotografia
 
-**Havia aqui um aviso a dizer que este site não tinha fotografia nenhuma.**
-Deixou de ser verdade em duas etapas, e o aviso ficou para trás nas duas: vale
-a pena lembrar que um ficheiro de instruções desactualizado engana com mais
-autoridade do que um ficheiro vazio.
+As imagens da página inicial vêm da Damira. A remessa «Conteúdo Site», de
+26/11/2026, trouxe a fotografia de capa, novas imagens de pão e de decoração de
+um bolo e o álbum que se vê na vitrine. As imagens de Natal vêm juntas no fim
+da vitrine, depois de «Ver mais». A galeria abre com seis fotografias (#80).
 
-Hoje há **vinte e uma fotografias**, todas do álbum publicado pela própria casa e
-todas com a marca de água dela — que é o critério de origem, e não a
-composição:
+As fotografias são servidas em WebP. As da vitrine ficam em
+`public/vitrine/`, as dos capítulos em `public/fotos/`. Os originais não são
+versionados e pedem-se ao DevPlus. A fotografia antiga `public/vitrine/09.webp`
+mostra dois clientes reconhecíveis e saiu da galeria quando entrou a nova remessa.
 
-| Onde | Quantas | O que é |
-|---|---|---|
-| `public/fotos/` | 5 | a fachada, a vitrine, as mãos, os bombons, o prato |
-| `public/vitrine/` | 16 | o álbum de gestão, importado inteiro |
-
-Os originais vivem em `originais/fotos`, `originais/heroi` e
-`originais/fotos-gestao`, mas ⚠️ **`originais/` não é versionado** (`.gitignore`):
-um clone novo não os tem, e pedem-se ao DevPlus. Importam-se assim:
-
-```bash
-npm run fotos -- originais/fotos-gestao public/vitrine   # 1600 px, WebP
-```
-
-⚠️ **Continua a valer a proibição de banco de imagens.** O que mudou foi haver
-material da casa; o que não mudou foi a regra. Um croissant genérico ao lado do
-preço de um croissant continua a ser uma promessa que a casa não fez.
-
-⚠️ **A `vitrine/09.webp` mostra dois clientes de frente e reconhecíveis.**
-Levantei o consentimento e o cliente decidiu usá-la. Fica escrito porque é o
-tipo de coisa que ninguém volta a perguntar depois de estar publicada — e
-porque se a autorização não existir, é aquele ficheiro que sai.
+**Não usar fotografias de banco de imagens.** Uma fotografia do produto, ao
+lado de um preço, é uma promessa sobre o que a casa serve.
 
 O campo `artigo.foto` do `ementa.json` continua a `null` nos 95: há fotografia
 da casa, não há fotografia **por artigo**.
@@ -411,7 +393,7 @@ de apresentação, sem dados, estão em `src/lib/vista.ts`.
 
 ⚠️ **As fotografias dos produtos estão vazias em todos, e não se preenchem com o
 que há.**
-Existem vinte e uma fotografias da casa, e **nenhuma é deste kit ou desta box**.
+As fotografias da página inicial mostram a casa, a montra e a pastelaria.
 Numa página de produto qualquer imagem se lê como sendo o produto: pôr ali a
 montra vista da rua é anunciar uma coisa e entregar outra, e é a mesma regra que
 proíbe banco de imagens no resto do site. O `FotoProduto` guarda o espaço e diz
@@ -653,3 +635,13 @@ actualizar uma, regenerar o inventário:
 ```bash
 npm run skills:lock
 ```
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

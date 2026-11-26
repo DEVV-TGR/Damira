@@ -1,65 +1,30 @@
 import { useTranslations } from "next-intl";
 import { VitrineGrelha } from "./VitrineGrelha";
 
-/**
- * # A vitrine: catorze fotografias da casa
- *
- * ## De onde vêm, e porque são de fiar
- *
- * ⚠️ **Todas trazem a marca de água da Damira**, e é esse o critério. Saem de
- * `originais/fotos-gestao`, o álbum publicado pela própria casa — não do álbum
- * geral, onde as fotografias de clientes se misturam com as da loja e onde uma
- * delas era de outro estabelecimento. A marca de água é a prova de origem que
- * uma fotografia solta não tem.
- *
- * ## As três que ficaram de fora, e porquê
- *
- * O álbum tem dezasseis. Ficaram catorze:
- *
- * - **O pão da aldeia e as tarteletes de morango saíram**, e por uma razão só:
- *   são o pico da página e o capítulo III. Repeti-las aqui em miniatura gasta
- *   o pico, e um pico gasto deixa de ser pico.
- *
- * ⚠️ **A fotografia da sala mostra dois clientes de frente e reconhecíveis.**
- * Levantei a questão do consentimento e o cliente decidiu usá-la: é do álbum
- * publicado pela própria casa, e quem sabe se aquelas pessoas autorizaram é
- * ele e não eu. Fica registado aqui para quem vier a seguir saber que a
- * pergunta foi feita e respondida, e não esquecida — se a autorização não
- * existir, é esta a linha a apagar.
- *
- * ## A grelha é irregular de propósito
- *
- * ⚠️ O `taste.md` proíbe uma grelha de cartões iguais como estrutura de página,
- * e treze células do mesmo tamanho são exactamente isso: uma folha de contacto.
- * Aqui há três tamanhos, distribuídos por um padrão fixo, e o resultado lê-se
- * como uma montra — que é o que é.
- *
- * ⚠️ **E nenhuma célula chega ao tamanho da estampa do pico.** Se chegasse,
- * havia dois picos na página, e uma página com dois picos não tem nenhum.
- *
- * ## ⚠️ As fotografias não ampliam, e já ampliaram
- *
- * Houve aqui um `<button>` por célula a abrir um `<dialog>` com a fotografia
- * em grande. O cliente testou-o no telemóvel, não gostou do resultado e pediu
- * para o tirar. Ficou a grelha, que é o que uma montra é: vê-se, não se abre.
- * Se voltar, é um componente à parte e não um botão à volta do `<Image>`.
+/** A ordem intercala a montra, a padaria e a pastelaria. As fotos de Natal
+ * ficam juntas no fim para a primeira grelha mostrar a oferta habitual.
  */
 const FOTOS = [
-  { ficheiro: "01", chave: "montra", largura: 2 },
-  { ficheiro: "02", chave: "folhados", largura: 1 },
-  { ficheiro: "13", chave: "fabrico", largura: 1 },
-  { ficheiro: "06", chave: "caramelo", largura: 1 },
-  { ficheiro: "07", chave: "bombons", largura: 2 },
-  { ficheiro: "08", chave: "castanhas", largura: 1 },
-  { ficheiro: "12", chave: "duchesse", largura: 1 },
-  { ficheiro: "11", chave: "hungaros", largura: 1 },
-  { ficheiro: "05", chave: "boloRei", largura: 2 },
-  { ficheiro: "03", chave: "boloReiChila", largura: 1 },
-  { ficheiro: "04", chave: "boloReiChocolate", largura: 1 },
-  { ficheiro: "10", chave: "peixe", largura: 1 },
-  { ficheiro: "15", chave: "frango", largura: 1 },
-  { ficheiro: "09", chave: "sala", largura: 2 },
-] as const;
+  { ficheiro: "montra-panoramica", chave: "montraPanoramica", larga: true },
+  { ficheiro: "montra", chave: "montra" },
+  { ficheiro: "bolo-frutos-vermelhos", chave: "boloFrutosVermelhos" },
+  { ficheiro: "sortido-laminado", chave: "sortidoLaminado" },
+  { ficheiro: "bolachas", chave: "bolachas", larga: true },
+  { ficheiro: "montra-interior", chave: "montraInterior" },
+  { ficheiro: "bolo-cobertura", chave: "boloCobertura" },
+  { ficheiro: "pao-sementes", chave: "paoSementes" },
+  { ficheiro: "balcao-pao", chave: "balcaoPao", larga: true },
+  { ficheiro: "sortido-pastelaria", chave: "sortidoPastelaria" },
+  { ficheiro: "tartelete", chave: "tartelete" },
+  { ficheiro: "tabuleiro", chave: "tabuleiro" },
+  { ficheiro: "sala", chave: "sala" },
+  { ficheiro: "natal-bolo-frutas", chave: "natalBoloFrutas" },
+  { ficheiro: "natal-doces", chave: "natalDoces" },
+  { ficheiro: "natal-bolo-acucar", chave: "natalBoloAcucar", larga: true },
+  { ficheiro: "natal-bolo-cobertura", chave: "natalBoloCobertura" },
+  { ficheiro: "natal-mesa", chave: "natalMesa", larga: true },
+  { ficheiro: "natal-bolo-fatia", chave: "natalBoloFatia" },
+];
 
 export function Vitrine() {
   const t = useTranslations("cartaz.vitrine");
@@ -82,15 +47,13 @@ export function Vitrine() {
         <p className="cap__texto">{t("texto")}</p>
       </div>
 
-      {/* ⚠️ **Seis à vista, e o resto atrás de um «Ver mais»** (#80, pedido
-          da casa a 12/10/2026). As catorze continuam todas aqui; só deixam
-          de estar todas abertas à chegada. O seis não é ao acaso — ver o
-          `VitrineGrelha.tsx`. */}
+      {/* Seis fotos fecham duas filas no computador. A pedido da casa (#80),
+          as restantes aparecem depois de «Ver mais». */}
       <VitrineGrelha
         fotos={FOTOS.map((foto) => ({
           ficheiro: foto.ficheiro,
           alt: t(`legendas.${foto.chave}`),
-          larga: foto.largura === 2,
+          larga: foto.larga ?? false,
         }))}
         visiveis={6}
         rotuloMais={t("verMais")}

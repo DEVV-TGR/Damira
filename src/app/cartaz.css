@@ -82,25 +82,30 @@ body:has(.cartaz) .barra-vidro {
   max-width: 46rem;
 }
 
-/* ⚠️ **A folha de rosto é tijolo, e não papel.** A gramática de capítulos pede
-   tipografia no papel, e assim esteve; o cliente viu e pediu cor. Tem razão, e
-   a razão tem nome: a página abria num ecrã branco com letra preta e o primeiro
-   sinal de que ali havia uma marca era o logótipo de 28 px no cabeçalho. As
-   capas dos impressos da Damira são tijolo chapado — isto é o que a casa faz em
-   papel.
-
-   Papel sobre tijolo dá **6,87:1** e passa a qualquer tamanho. ⚠️ Tinta sobre
-   tijolo dá 2,36:1 e é a armadilha desta paleta: sobre tijolo escreve-se a
-   papel, e é a única opção. */
 .cap--capa {
   background: var(--color-tijolo);
   --sc-ink: var(--color-papel);
-  /* 5,23:1 sobre o tijolo. Ver a tabela no topo deste ficheiro. */
-  --sc-ink-soft: var(--suave-sobre-tijolo);
+  --sc-ink-soft: var(--color-papel);
   color: var(--sc-ink);
   min-height: 88svh;
   display: flex;
   align-items: center;
+  isolation: isolate;
+}
+
+.capa__foto {
+  z-index: -2;
+  object-fit: cover;
+  object-position: 65% center;
+}
+
+/* A sombra acompanha a coluna de texto e deixa o letreiro visível à direita. */
+.cap--capa::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, rgb(31 29 27 / 82%), rgb(31 29 27 / 70%) 58%, rgb(31 29 27 / 18%));
 }
 
 .cap--capa .cap__caixa {
@@ -270,6 +275,12 @@ body:has(.cartaz) .barra-vidro {
   font-size: 0.85rem;
   color: var(--sc-ink-soft);
   margin-top: 0.75rem;
+}
+
+.cap--maos .cap__estampa img {
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  object-position: center 34%;
 }
 
 .silencio__linha {
@@ -835,6 +846,10 @@ body:has(.cartaz) .barra-vidro {
   .cap--capa {
     min-height: 78svh;
     padding-block: clamp(2.5rem, 9vw, 4rem);
+  }
+
+  .cap--capa::before {
+    background: rgb(31 29 27 / 64%);
   }
 
   .cap {

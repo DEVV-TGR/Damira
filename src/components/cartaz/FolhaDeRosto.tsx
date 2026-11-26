@@ -1,28 +1,23 @@
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { casa } from "@/data/casa";
 
-/**
- * Capítulo zero: a **folha de rosto**.
- *
- * A gramática editorial em capítulos (`uniqueness.md` §2.2) é explícita: o
- * primeiro ecrã é uma folha de rosto, com tipografia no papel e **sem imagem
- * acima da dobra**. A imagem começa no capítulo I.
- *
- * ⚠️ **É uma mudança em relação ao que aqui estava**, e é deliberada. O herói
- * anterior punha a fachada em cheio com o título por cima e um véu de tijolo a
- * 55% a segurar o contraste. Aquilo era a gramática filmica, e esta página não
- * é essa: aqui a fachada é o capítulo I, com a sua legenda, e o primeiro ecrã é
- * a frase da casa sozinha, à escala a que uma capa a poria.
- *
- * A frase continua a ser a da montra, e continua a não ser nossa.
- */
+/** A capa usa a fachada da remessa da Damira. O título vem da montra. */
 export function FolhaDeRosto() {
   const t = useTranslations("cartaz.capa");
   const marca = useTranslations("marca");
 
   return (
     <section className="cap cap--capa" data-sc-act="flow" aria-labelledby="capa">
+      <Image
+        src="/fotos/capa-fachada.webp"
+        alt=""
+        fill
+        sizes="100vw"
+        preload
+        className="capa__foto"
+      />
       <div className="cap__caixa" data-sc-in data-sc-stagger="70">
         <p className="cap__olho">
           {t("olho")}, {marca("desde", { ano: casa.desde })}
