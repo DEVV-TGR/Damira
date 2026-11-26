@@ -13,7 +13,6 @@ import {
   casa,
   categorias,
   extras,
-  familias,
   produtos,
   produtosExtras,
   produtosVariancias,
