@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
  * # Capítulo III: **o pão**. É o pico da página.
  *
  * O cliente escolheu-o na entrevista: *o pão a encher o ecrã*. Continua a ser a
- * única fotografia que ocupa o ecrã inteiro, e continua sem uma letra por cima.
+ * fotografia de largura inteira dedicada ao pão, com a legenda por baixo.
  *
  * ⚠️ **Já não vem logo a seguir ao silêncio.** Desde a reunião com a casa a
  * 12/10/2026 (#79) o capítulo vegan subiu para entre os dois, e o pão passou de
@@ -63,7 +63,7 @@ export function Pao() {
       <section id="cap-pao" className="cap cap--pao" data-capitulo data-sc-act="flow">
         <figure className="pao__estampa" data-sc-reveal="up" data-sc-reveal-at="0.02 0.45">
           <Image
-            src="/fotos/01.webp"
+            src="/fotos/prateleiras-pao.webp"
             alt={t("legenda")}
             fill
             sizes="100vw"

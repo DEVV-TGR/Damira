@@ -46,6 +46,11 @@ e fica o mais tardio. Funciona com unidades misturadas.
 O calendário mostra vagas de 30 minutos dentro do horário da loja. O tamanho é
 configurável.
 
+Na compra, as vagas do dia aparecem depois de escolher Manhã (até às 12:00,
+exclusive) ou Tarde (das 12:00 em diante). Mudar de dia ou de período limpa a
+hora escolhida. Tocar outra vez na mesma hora também a limpa. Os períodos
+agrupam as vagas já calculadas pelo servidor.
+
 **Limitar pedidos por vaga** é um interruptor da gerente, desligado por defeito.
 Ligado, pede o número máximo. Um pedido `pendente` ocupa a vaga enquanto espera
 pelo pagamento (ver `pedidos.md`). Quem decide a última vaga é a base de dados,

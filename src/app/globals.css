@@ -406,6 +406,10 @@ body::after {
   padding-block: var(--espaco-seccao);
 }
 
+.seccao.ficha-produto {
+  padding-block-start: clamp(1.25rem, 3vw, 2rem);
+}
+
 /**
  * Os traços do impresso — o logótipo, o hambúrguer, a taça — são PNG de alfa e
  * usam-se como máscara. O ficheiro guarda só a forma; a cor vem daqui, o que
@@ -541,6 +545,30 @@ body::after {
   content: "";
   position: absolute;
   inset: -0.75rem 0;
+}
+
+/* Em ecrãs estreitos, a moldura dos controlos mede 36 px e o alvo mede 44 px. */
+@media (width < 40rem) {
+  .controlo-cabecalho {
+    isolation: isolate;
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .controlo-cabecalho::before {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    z-index: -1;
+    border: 1px solid color-mix(in srgb, var(--color-tinta) 25%, transparent);
+    border-radius: 50%;
+    pointer-events: none;
+    transition: background-color 160ms ease;
+  }
+
+  .controlo-cabecalho:hover::before {
+    background-color: var(--color-tinta);
+  }
 }
 
 /* ── Movimento ────────────────────────────────────────────────────────── */
@@ -781,6 +809,15 @@ body::after {
     opacity 0.18s ease,
     display 0.18s allow-discrete,
     overlay 0.18s allow-discrete;
+}
+
+.cartao-cesto.menu-encomendas {
+  width: min(25rem, calc(100% - 2rem));
+  overflow-y: auto;
+}
+
+html:has(.menu-encomendas[open]) {
+  overflow: hidden;
 }
 
 .cartao-cesto[open] {
