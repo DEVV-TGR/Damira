@@ -322,8 +322,8 @@
       "tipoDoCesto": "Vem do que juntou ao pedido. Para mudar, altere o cesto.",
       "juntarArtigo": "Juntar {nome} ao pedido",
       "escolha": {
-        "titulo": "Qual sabor?",
-        "ajuda": "Cada sabor entra como uma linha à parte, com a sua quantidade mínima.",
+        "titulo": "Como o quer?",
+        "ajuda": "Cada combinação entra como uma linha à parte, com a sua quantidade mínima.",
         "cancelar": "Cancelar",
         "rotulo": "Sabor",
         "falta": "Escolha o sabor primeiro."
@@ -501,6 +501,7 @@
     "oQueLeva": "O que leva",
     "preco": "Preço",
     "paraQuantas": "Para quantas pessoas?",
+    "escolher": "Escolha",
     "paraPessoas": "{n} pessoas",
     "mensagem": "Mensagem no bolo",
     "mensagemDica": "Parabéns, Maria!",
@@ -516,5 +517,19 @@
   "modoTeste": {
     "etiqueta": "Modo de teste",
     "aviso": "Não se cobra nada, e os prazos e as vagas ocupadas são de exemplo."
+  },
+  "personalizar": {
+    "falta": "Escolha uma opção aqui.",
+    "tirar": "Tirar",
+    "sem": "Sem {nome}",
+    "extras": "A mais",
+    "porUnidade": "Por cada unidade.",
+    "semCusto": "Sem custo",
+    "cada": "{preco} cada",
+    "ate": "até {n}",
+    "menos": "Menos {nome}",
+    "mais": "Mais {nome}",
+    "leva": "Leva",
+    "juntar": "Personalizar"
   }
 }

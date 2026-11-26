@@ -3,10 +3,12 @@
 import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
 import { formatarCent } from "@/lib/preco";
-import { REGRA_SIMPLES, idComEscolha, idComNotas, quantidadeEmTexto } from "@/lib/cesto";
+import { NADA_ESCOLHIDO, REGRA_SIMPLES, idComNotas, idComPersonalizacao, quantidadeEmTexto, type Escolhido } from "@/lib/cesto";
+import type { DadosPersonalizacao } from "@/lib/vista";
 import type { TipoPedido } from "@/lib/pedidos";
 import type { Locale } from "@/i18n/routing";
 import { useCesto } from "./CestoProvider";
+import { acrescimoCent, completo, LevaDoGrupo, Personalizar, soDoGrupo, textoDe } from "./Personalizar";
 
 /**
  * Escolher, personalizar e juntar ao pedido — o fim de uma página de produto.
@@ -18,7 +20,12 @@ import { useCesto } from "./CestoProvider";
  * nome nesta língua, o preço, os escalões. Passar o objecto inteiro rebentava no
  * `build` com um erro sobre serialização que não diz onde está o problema.
  */
-export type EscalaoSimples = { pessoas: number; precoCent: number };
+/**
+ * Um tamanho de um simples ou um grupo de um composto (#88): os dois são a
+ * `variante`. O `rotulo` já vem nesta língua; num kit de festa sem rótulo,
+ * escreve-se pelo número de pessoas.
+ */
+export type OpcaoVariante = { id: string; rotulo: string | null; pessoas: number | null; precoCent: number | null };
 
 export function ComprarProduto({
   id,
@@ -26,12 +33,13 @@ export function ComprarProduto({
   tipo,
   nome,
   precoCent,
-  escaloes,
+  variantes,
   locale,
   comMensagem,
   regra = REGRA_SIMPLES,
   notaDaRegra,
-  escolhas = [],
+  personalizavel,
+  composto,
 }: {
   /** A base do `id` da linha do cesto: `festa-premium`, `ementa:nata`. */
   id: string;
@@ -41,8 +49,8 @@ export function ComprarProduto({
   nome: string;
   /** Em cêntimos. `null` é **sob orçamento** e não zero. Ver `cesto.ts`. */
   precoCent: number | null;
-  /** Só os kits de festa os têm. Vazio nos outros. */
-  escaloes: EscalaoSimples[];
+  /** Os tamanhos ou os grupos disponíveis. Com um só, não se pergunta. */
+  variantes: OpcaoVariante[];
   locale: Locale;
   /**
    * Se faz sentido escrever uma mensagem por cima. Num bolo faz; numa box de
@@ -60,19 +68,20 @@ export function ComprarProduto({
   /** A frase do mínimo, quando há um que não seja «uma unidade». */
   notaDaRegra?: string;
   /**
-   * Os sabores do produto. Com algum, **escolher é obrigatório** antes de
-   * juntar, e o sabor vai na linha — nunca nas observações (decidido a 05/10).
+   * As variâncias, opções e extras (#88). Com variâncias, **escolher é
+   * obrigatório** antes de juntar, e vai na linha — nunca nas observações.
    */
-  escolhas?: readonly string[];
+  personalizavel: DadosPersonalizacao;
+  composto: boolean;
 }) {
   const t = useTranslations("produto");
   const contexto = useCesto();
   const campo = useId();
 
-  const [escolhido, setEscolhido] = useState(0);
-  const [sabor, setSabor] = useState<string | null>(null);
-  const [faltaSabor, setFaltaSabor] = useState(false);
-  const tc = useTranslations("encomendas.cesto");
+  const [indice, setIndice] = useState(0);
+  const [escolhido, setEscolhido_] = useState<Escolhido>(NADA_ESCOLHIDO);
+  const [falta, setFalta] = useState(false);
+  const tp = useTranslations("personalizar");
   const [mensagem, setMensagem] = useState("");
   const [observacoes, setObservacoes] = useState("");
   /* O que se mostra depois de juntar. ⚠️ Um botão que não muda deixa a pessoa
@@ -82,8 +91,17 @@ export function ComprarProduto({
 
   if (!contexto) return null;
 
-  const escalao = escaloes[escolhido] ?? null;
-  const precoFinal = escalao ? escalao.precoCent : precoCent;
+  const variante = variantes[indice] ?? null;
+  const varianteId = variante?.id ?? "unica";
+  const rotuloDe = (v: OpcaoVariante) => v.rotulo ?? (v.pessoas !== null ? t("paraPessoas", { n: v.pessoas }) : v.id);
+  const base = variante ? variante.precoCent : precoCent;
+  /* Só para mostrar: quem cobra é o servidor (`cotarLinhas`). */
+  const precoFinal = base === null ? null : base + acrescimoCent(personalizavel, composto, escolhido);
+  const mudarEscolhido = (valor: Escolhido) => {
+    setEscolhido_(valor);
+    setFalta(false);
+    setJuntado(false);
+  };
 
   const notas =
     [
@@ -94,110 +112,85 @@ export function ComprarProduto({
       .join("\n") || null;
 
   const juntar = () => {
-    if (escolhas.length > 0 && !sabor) {
-      setFaltaSabor(true);
+    const doGrupo = soDoGrupo(personalizavel, varianteId, composto, escolhido, locale);
+    if (!completo(personalizavel, varianteId, composto, doGrupo, locale)) {
+      setFalta(true);
       return;
     }
     contexto.juntar({
       ...regra,
-      /* ⚠️ As notas entram no `id`: dois bolos com mensagens diferentes são duas
-         linhas do pedido, e não um com quantidade dois. Ver `idComNotas`. */
-      id: idComNotas(idComEscolha(escalao ? `${id}:${escalao.pessoas}` : id, sabor), notas),
+      /* ⚠️ As notas e a personalização entram no `id`: dois bolos com mensagens
+         diferentes, ou 6 com fiambre e 6 sem, são duas linhas do pedido, e não
+         uma com quantidade dois. Ver `idComNotas`. */
+      id: idComNotas(idComPersonalizacao(variante ? `${id}:${variante.id}` : id, doGrupo), notas),
       produtoId,
-      /* Num kit de festa a variante é o escalão, e o id dela é o número de
-         pessoas — o mesmo que `@/lib/dados` lhe dá. */
-      varianteId: escalao ? String(escalao.pessoas) : "unica",
+      varianteId,
       tipo,
       nome,
-      variante: escalao ? t("paraPessoas", { n: escalao.pessoas }) : null,
+      variante: variante ? rotuloDe(variante) : null,
       precoCent: precoFinal,
-      pessoas: escalao?.pessoas ?? null,
+      pessoas: variante?.pessoas ?? null,
       notas,
-      escolha: sabor,
+      escolha: textoDe(personalizavel, varianteId, composto, doGrupo, locale, (n) => tp("sem", { nome: n })),
+      personalizacao: doGrupo,
     });
     setJuntado(true);
   };
 
   return (
     <div className="mt-10 rounded-2xl border border-tinta/15 bg-papel-fundo p-6">
-      {escaloes.length > 0 && (
+      {variantes.length > 1 && (
         <fieldset>
           <legend className="text-xs font-semibold uppercase tracking-widest text-tinta-suave">
-            {t("paraQuantas")}
+            {variantes.every((v) => v.pessoas !== null) ? t("paraQuantas") : t("escolher")}
           </legend>
-          {/* ⚠️ **Os três escalões à vista e não num menu.** O que a pessoa está
-              a comparar é justamente o preço dos três; escondê-los atrás de um
+          {/* ⚠️ **Os tamanhos à vista e não num menu.** O que a pessoa está a
+              comparar é justamente o preço de cada um; escondê-los atrás de um
               seletor obriga a abrir três vezes para ver o que cabe numa linha. */}
           <div className="mt-3 flex flex-wrap gap-2">
-            {escaloes.map((e, n) => (
+            {variantes.map((v, n) => (
               <label
-                key={e.pessoas}
-                className={`premivel alvo-toque flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-5 text-sm ${
-                  n === escolhido
+                key={v.id}
+                className={`premivel alvo-toque flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-5 text-sm has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-tijolo ${
+                  n === indice
                     ? "border-tijolo bg-tijolo text-papel"
                     : "border-tinta/25 hover:bg-tinta hover:text-papel"
                 }`}
               >
                 <input
                   type="radio"
-                  name={`${campo}-escalao`}
-                  checked={n === escolhido}
+                  name={`${campo}-variante`}
+                  checked={n === indice}
                   onChange={() => {
-                    setEscolhido(n);
+                    setIndice(n);
+                    setFalta(false);
                     setJuntado(false);
                   }}
                   className="sr-only"
                 />
-                <span className="tabular-nums">
-                  {t("paraPessoas", { n: e.pessoas })}
-                </span>
-                <span className="tabular-nums opacity-80">
-                  {formatarCent(e.precoCent, locale)}
-                </span>
+                <span className="tabular-nums">{rotuloDe(v)}</span>
+                {v.precoCent !== null && <span className="tabular-nums opacity-80">{formatarCent(v.precoCent, locale)}</span>}
               </label>
             ))}
           </div>
         </fieldset>
       )}
 
-      {escolhas.length > 0 && (
-        <fieldset className={escaloes.length > 0 ? "mt-6" : ""}>
-          <legend className="text-xs font-semibold uppercase tracking-widest text-tinta-suave">
-            {tc("escolha.rotulo")}
-          </legend>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {escolhas.map((escolha) => (
-              <label
-                key={escolha}
-                className={`premivel alvo-toque flex min-h-11 cursor-pointer items-center rounded-full border px-5 text-sm ${
-                  sabor === escolha ? "border-tijolo bg-tijolo text-papel" : "border-tinta/25 hover:bg-tinta hover:text-papel"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name={`${campo}-sabor`}
-                  checked={sabor === escolha}
-                  onChange={() => {
-                    setSabor(escolha);
-                    setFaltaSabor(false);
-                    setJuntado(false);
-                  }}
-                  className="sr-only"
-                />
-                {escolha}
-              </label>
-            ))}
-          </div>
-          <p className="mt-2 text-sm text-tinta-suave">{tc("escolha.ajuda")}</p>
-          {faltaSabor && (
-            <p role="alert" className="mt-2 text-sm font-semibold text-tijolo">
-              {tc("escolha.falta")}
-            </p>
-          )}
-        </fieldset>
-      )}
+      {composto && <LevaDoGrupo dados={personalizavel} varianteId={varianteId} locale={locale} />}
 
-      <div className={escaloes.length > 0 || escolhas.length > 0 ? "mt-6 grid gap-4" : "grid gap-4"}>
+      <div className={variantes.length > 1 || composto ? "mt-6" : ""}>
+        <Personalizar
+          dados={personalizavel}
+          varianteId={varianteId}
+          composto={composto}
+          valor={escolhido}
+          onMudar={mudarEscolhido}
+          locale={locale}
+          falta={falta}
+        />
+      </div>
+
+      <div className="mt-6 grid gap-4">
         {comMensagem && (
           <div>
             <label

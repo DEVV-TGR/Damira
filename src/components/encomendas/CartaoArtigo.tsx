@@ -4,6 +4,7 @@ import { formatarCent } from "@/lib/preco";
 import {
   fotoDe,
   nomeDe,
+  paraPersonalizar,
   precoUnicoCent,
   emLingua,
   regraDe,
@@ -62,6 +63,8 @@ export function CartaoArtigo({
   const regra = regraDe(artigo);
 
   const nome = nomeDe(artigo, locale);
+  /* Um artigo da carta é simples: não leva produtos, e as peças são as dele. */
+  const personalizavel = paraPersonalizar(artigo, []);
   const variantes = variantesVisiveis(artigo);
   const precoUnico = precoUnicoCent(artigo);
   const porUnidade = artigo.unidade === "kg" ? te("porQuilo") : ` ${t("cadaCurto")}`;
@@ -96,7 +99,7 @@ export function CartaoArtigo({
                 <BotaoJuntar
                   variante="compacta"
                   locale={locale}
-                  escolhas={artigo.escolhas}
+                  personalizavel={personalizavel}
                   item={{
                     id: `ementa:${artigo.id}:${v.id}`,
                     produtoId: artigo.id,
@@ -134,7 +137,7 @@ export function CartaoArtigo({
             <BotaoJuntar
               variante="compacta"
               locale={locale}
-              escolhas={artigo.escolhas}
+              personalizavel={personalizavel}
               item={{
                 id: `ementa:${artigo.id}`,
                 produtoId: artigo.id,

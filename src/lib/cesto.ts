@@ -95,7 +95,40 @@ export type ItemCesto = {
    * dúzia (ver `idComEscolha`). Opcional no tipo só para os cestos antigos.
    */
   escolha?: string | null;
+  /**
+   * O que se escolheu na personalização (#88), por ids: é isto que vai para o
+   * servidor, que confere e cobra (`cotarLinhas`). O `escolha` de cima passa a
+   * ser o texto disso, para o cesto e o resumo o mostrarem. Sem isto, a linha é
+   * de antes da #88 e manda o sabor pelo nome.
+   */
+  personalizacao?: Escolhido | null;
 };
+
+/** As escolhas de uma linha, por ids, como o `EsquemaLinhaCesto` as recebe. */
+export type Escolhido = {
+  variancias: { produtoId: string | null; varianciaId: string; escolhaId: string }[];
+  opcoes: string[];
+  extras: { id: string; quantidade: number }[];
+};
+
+export const NADA_ESCOLHIDO: Escolhido = { variancias: [], opcoes: [], extras: [] };
+
+/**
+ * O `id` de uma linha com a personalização: como as notas e o sabor, **faz
+ * parte da identidade** — 6 com fiambre e 6 sem são duas linhas. A marca é
+ * estável (a mesma escolha dá a mesma marca), para juntar duas vezes a mesma
+ * coisa somar quantidade.
+ */
+export function idComPersonalizacao(id: string, escolhido: Escolhido | null | undefined): string {
+  if (!escolhido) return id;
+  const partes = [
+    ...escolhido.variancias.map((v) => `${v.produtoId ?? ""}.${v.varianciaId}.${v.escolhaId}`).sort(),
+    ...[...escolhido.opcoes].sort().map((o) => `-${o}`),
+    ...escolhido.extras.map((x) => `+${x.id}.${x.quantidade}`).sort(),
+  ];
+  if (partes.length === 0) return id;
+  return idComNotas(id, partes.join("|")).replace("#", "~p");
+}
 
 /**
  * O que se escreve num artigo que não traz regra própria — os kits, os bolos
@@ -218,9 +251,27 @@ export function normalizarCesto(lido: unknown): ItemCesto[] {
       passo,
       notas: typeof item.notas === "string" && item.notas.trim() ? item.notas : null,
       escolha: typeof item.escolha === "string" && item.escolha.trim() ? item.escolha : null,
+      personalizacao: escolhidoGuardado(item.personalizacao),
     });
   }
   return items;
+}
+
+/* O que está no `localStorage` qualquer pessoa edita: só passa o que tem a forma
+   certa, e o servidor confere o resto. */
+function escolhidoGuardado(valor: unknown): Escolhido | null {
+  if (typeof valor !== "object" || valor === null) return null;
+  const v = valor as Partial<Escolhido>;
+  if (!Array.isArray(v.variancias) || !Array.isArray(v.opcoes) || !Array.isArray(v.extras)) return null;
+  return {
+    variancias: v.variancias.filter(
+      (x) => x && typeof x.varianciaId === "string" && typeof x.escolhaId === "string",
+    ).map((x) => ({ produtoId: typeof x.produtoId === "string" ? x.produtoId : null, varianciaId: x.varianciaId, escolhaId: x.escolhaId })),
+    opcoes: v.opcoes.filter((x): x is string => typeof x === "string"),
+    extras: v.extras
+      .filter((x) => x && typeof x.id === "string" && Number.isInteger(x.quantidade) && x.quantidade > 0)
+      .map((x) => ({ id: x.id, quantidade: x.quantidade })),
+  };
 }
 
 /* Os cestos de antes de outubro de 2026 guardavam euros em `preco`. Lê-se um
@@ -333,7 +384,16 @@ export const linhasDoCesto = (cesto: ItemCesto[]) =>
     varianteId: item.varianteId,
     quantidade: item.quantidade,
     notas: item.notas,
-    escolhas: item.escolha ? [item.escolha] : [],
+    /* Com a personalização, os ids; uma linha de antes da #88 manda o sabor pelo
+       nome, e o servidor procura-o (`personalizar`, em `regras.ts`). */
+    ...(item.personalizacao
+      ? {
+          escolhas: [],
+          variancias: item.personalizacao.variancias,
+          opcoes: item.personalizacao.opcoes,
+          extras: item.personalizacao.extras,
+        }
+      : { escolhas: item.escolha ? [item.escolha] : [] }),
   }));
 
 /**

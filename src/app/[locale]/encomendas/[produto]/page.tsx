@@ -16,8 +16,10 @@ import {
   emLingua,
   fotoDe,
   nomeDe,
+  paraPersonalizar,
   precoUnicoCent,
   tipoDoPedido,
+  type DadosPersonalizacao,
 } from "@/lib/vista";
 import { FotoProduto } from "@/components/encomendas/FotoProduto";
 import { ComprarProduto } from "@/components/encomendas/ComprarProduto";
@@ -50,7 +52,7 @@ const grupoDe = (composicao: GrupoComposicao[], grupo: GrupoComposicao["grupo"])
    o que leva. */
 const escaloesDe = (produto: Produto): Escalao[] =>
   produto.familia === "festa"
-    ? produto.variantes.map((variante) => ({
+    ? produto.variantes.filter((v) => v.ativa && v.pessoas !== null).map((variante) => ({
         pessoas: variante.pessoas!,
         precoCent: variante.precoCent,
         salgados: grupoDe(variante.composicao, "salgados"),
@@ -110,7 +112,13 @@ export default async function PaginaProduto({
   const produto = await produtoDeEncomenda(id);
   if (!produto) notFound();
 
-  return <Detalhe produto={produto} locale={locale as Locale} />;
+  /* Os simples que um composto leva, para as variâncias deles (#88). Com os
+     arquivados: arquivar um simples não o tira de um kit, e o servidor pede as
+     variâncias dele na mesma (`cotarLinhas`). Uma leitura só, e só num composto. */
+  const levados = new Set(produto.variantes.flatMap((v) => v.leva.map((l) => l.produtoId)));
+  const simples = levados.size > 0 ? (await listarProdutos({ incluirArquivados: true })).filter((p) => levados.has(p.id)) : [];
+
+  return <Detalhe produto={produto} personalizavel={paraPersonalizar(produto, simples)} locale={locale as Locale} />;
 }
 
 /**
@@ -135,17 +143,25 @@ export default async function PaginaProduto({
  * ao pedido*, o preço é uma estimativa e o aviso está ao lado dele. Ver
  * `cesto.ts`.
  */
-function Detalhe({ produto, locale }: { produto: Produto; locale: Locale }) {
+function Detalhe({
+  produto,
+  personalizavel,
+  locale,
+}: {
+  produto: Produto;
+  personalizavel: DadosPersonalizacao;
+  locale: Locale;
+}) {
   const t = useTranslations("produto");
   const te = useTranslations("encomendas");
 
   const nome = nomeDe(produto, locale);
   const resumo = descricaoDe(produto, locale);
 
-  const escaloes = escaloesDe(produto).map((e) => ({
-    pessoas: e.pessoas,
-    precoCent: e.precoCent!,
-  }));
+  /* Os tamanhos ou os grupos que se escolhem: os disponíveis. */
+  const variantes = produto.variantes
+    .filter((v) => v.ativa)
+    .map((v) => ({ id: v.id, rotulo: v.rotulo ? emLingua(v.rotulo, locale) : null, pessoas: v.pessoas, precoCent: v.precoCent }));
 
   return (
     <>
@@ -196,16 +212,19 @@ function Detalhe({ produto, locale }: { produto: Produto; locale: Locale }) {
               )}
               {resumo && <p className="mt-5 text-lg text-tinta-suave">{resumo}</p>}
 
-              <Conteudo produto={produto} locale={locale} />
+              {/* O que leva em texto, dos kits de antes da #88. Um grupo que já
+                  passou a produtos mostra-os ao escolher (`LevaDoGrupo`). */}
+              {produto.variantes.every((v) => v.leva.length === 0) && <Conteudo produto={produto} locale={locale} />}
 
               <ComprarProduto
-                escolhas={produto.escolhas}
+                personalizavel={personalizavel}
+                composto={produto.tipo === "composto"}
                 id={produto.id}
                 produtoId={produto.id}
                 tipo={tipoDoPedido(produto)}
                 nome={nome}
                 precoCent={precoUnicoCent(produto)}
-                escaloes={escaloes}
+                variantes={variantes}
                 locale={locale}
                 /* Mensagem por cima só faz sentido onde há bolo. Numa box de
                    pequeno-almoço é um campo a mais, e cada campo a mais é gente
