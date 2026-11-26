@@ -9,6 +9,15 @@ Damira», 24/11, textos T01–T17) e põe ao lado de cada passo **onde se faz** 
 testarem os cenários juntos (secção 7). Escrito a 26/11, contra o `main` em
 `ce0de4b`.
 
+**A simulação, passo a passo, está em `docs/loja/simulacao/`.** São duas
+páginas para abrir no browser, com as capturas do site e do painel e os emails
+tal como o código os escreve:
+- `equipa.html` diz, em cada passo, o que falta e quem o faz;
+- `andreia.html` mostra só o percurso, para validar com a casa.
+
+Geram-se com `python3 docs/loja/simulacao/gerar.py equipa` (e `andreia`), a
+partir da raiz.
+
 ⚠️ **Não substitui o `pedidos.md`.** O contrato continua a ser ele: os estados,
 o dinheiro e as regras. Este ficheiro mostra o fluxo e as falhas. Onde propõe
 alguma coisa que o `pedidos.md` ainda tem em aberto (n.º 6, 8 e 9), diz isso e
@@ -524,6 +533,10 @@ Ver C6.
 - O ecrã dos emails falhados no painel (Sobral, #119). O `emailsFalhados` já existe na fonte.
 - A língua do pedido. O pedido não a guarda, e os emails saem sempre em português.
 - A aprovação final dos textos pela Andreia, mais a referência `#00001` contra a `DAM-…`.
+- **O link da proposta aponta para um site que já não existe.** O painel monta-o
+  com o `NEXT_PUBLIC_SITE_URL`, cujo valor por defeito é `damira-demo.vercel.app`,
+  e esse endereço dá 404. Na Vercel, a variável tem de apontar para o endereço
+  público em cada ambiente (Sobral).
 
 ## 7. Os cenários de teste, para os dois
 
