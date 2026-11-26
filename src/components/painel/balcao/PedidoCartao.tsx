@@ -9,6 +9,7 @@ import { aFazer, balcaoPodeConfirmar, diaPorExtenso, faltaPagarCent, rotuloPagam
 import { horaDeLisboa } from "@/lib/painel-ligacao";
 import { formatarCent } from "@/lib/preco";
 import { telefoneArrumado } from "@/lib/telefone";
+import { Responder } from "../gestao/Responder";
 import { usePainel } from "../PainelAberto";
 import { BOTAO_PRINCIPAL, BOTAO_SECUNDARIO, MENSAGENS, quantidade } from "./comum";
 
@@ -26,6 +27,7 @@ export function PedidoCartao({
   soLeitura = false,
   onEntregue,
   comecaAte,
+  resposta,
 }: {
   pedido: Pedido;
   destaque?: boolean;
@@ -34,6 +36,13 @@ export function PedidoCartao({
   onEntregue?: (pedido: Pedido) => void;
   /** Num `por-confirmar`: quando a produção teria de começar (`organizarBalcao`). */
   comecaAte?: Date | null;
+  /**
+   * Quem responde aqui a um pedido que espera. Só na lista «Por confirmar»: no
+   * detalhe da gestão o «Responder» já vive na coluna ao lado, e na pesquisa o
+   * cartão serve para encontrar. A gerente responde a tudo (`pedidos.md` › Quem
+   * confirma): no lugar do «sim» do balcão, o bloco inteiro da gestão.
+   */
+  resposta?: "balcao" | "gerente";
 }) {
   const router = useRouter();
   const { ocupado } = usePainel();
@@ -174,10 +183,20 @@ export function PedidoCartao({
           {rotuloPagamento(pedido)}
         </p>
 
-        {pedido.estado === "por-confirmar" && !soLeitura && (
-          <Confirmar pedido={pedido} comecaAte={comecaAte ?? null} aEnviar={aEnviar} onConfirmar={confirmarJa} />
+        {pedido.estado === "por-confirmar" && resposta && !soLeitura && (
+          <Confirmar
+            pedido={pedido}
+            comecaAte={comecaAte ?? null}
+            aEnviar={aEnviar}
+            onConfirmar={resposta === "gerente" ? null : confirmarJa}
+          />
         )}
-        {pedido.estado === "a-aguardar-aceite" && pedido.expiraEm && (
+        {resposta === "gerente" && aEspera && !soLeitura && (
+          <div className="mt-4">
+            <Responder pedido={pedido} />
+          </div>
+        )}
+        {pedido.estado === "a-aguardar-aceite" && pedido.expiraEm && resposta !== "gerente" && (
           <p className="mt-4 text-sm text-tinta-suave">
             A casa já respondeu. O cliente tem até {diaPorExtenso(pedido.expiraEm)}, {horaDeLisboa(pedido.expiraEm)}, para aceitar.
           </p>
@@ -239,7 +258,8 @@ function Confirmar({
   pedido: Pedido;
   comecaAte: Date | null;
   aEnviar: boolean;
-  onConfirmar: () => void;
+  /** `null` para a gerente: responde no bloco da gestão, logo por baixo. */
+  onConfirmar: (() => void) | null;
 }) {
   return (
     <div className="mt-4 rounded-xl border-2 border-tinta/15 p-4">
@@ -254,7 +274,7 @@ function Confirmar({
           ? `A produção teria de começar ${diaPorExtenso(comecaAte)}, às ${horaDeLisboa(comecaAte)}.`
           : "Não se sabe quando a produção teria de começar: falta o tempo de um produto ou o horário da cozinha."}
       </p>
-      {balcaoPodeConfirmar(pedido) ? (
+      {onConfirmar === null ? null : balcaoPodeConfirmar(pedido) ? (
         <button type="button" onClick={onConfirmar} disabled={aEnviar} className={`${BOTAO_PRINCIPAL} mt-3 min-h-[60px] w-full text-base`}>
           {aEnviar ? "A confirmar…" : "✓ Confirmar o pedido"}
         </button>

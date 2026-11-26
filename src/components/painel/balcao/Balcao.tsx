@@ -272,7 +272,7 @@ export function Balcao({ papel, pedidos, balcao, produtos, pausaAte, modoTeste, 
                   ))}
                 </Lista>
               ))}
-            {vista === "por-confirmar" && <PorConfirmar balcao={balcao} atualizadoEm={atualizadoEm} />}
+            {vista === "por-confirmar" && <PorConfirmar balcao={balcao} atualizadoEm={atualizadoEm} gerente={ehGerente} />}
             {vista === "produzir" && <Produzir balcao={balcao} atualizadoEm={atualizadoEm} />}
             {vista === "proximos" &&
               (ehGerente ? (
@@ -365,7 +365,7 @@ function Lista({ vazio, atualizadoEm, children }: { vazio: string; atualizadoEm:
  * sabe quando. Cartões grandes também para a gerente — é aqui que se responde,
  * e o «Confirmar» vive no cartão. Por baixo, os que esperam pelo cliente.
  */
-function PorConfirmar({ balcao, atualizadoEm }: { balcao: SeparadoresDoBalcao; atualizadoEm: Date }) {
+function PorConfirmar({ balcao, atualizadoEm, gerente }: { balcao: SeparadoresDoBalcao; atualizadoEm: Date; gerente: boolean }) {
   const urgentes = balcao.porConfirmar.filter((p) => p.urgente).length;
   return (
     <section aria-label="Por confirmar" className="space-y-8">
@@ -385,7 +385,7 @@ function PorConfirmar({ balcao, atualizadoEm }: { balcao: SeparadoresDoBalcao; a
           )}
           <div className="grid gap-4 md:grid-cols-2">
             {balcao.porConfirmar.map(({ pedido, comecaAte }) => (
-              <PedidoCartao key={pedido.id} pedido={pedido} comecaAte={comecaAte} />
+              <PedidoCartao key={pedido.id} pedido={pedido} comecaAte={comecaAte} resposta={gerente ? "gerente" : "balcao"} />
             ))}
           </div>
         </div>
@@ -395,7 +395,7 @@ function PorConfirmar({ balcao, atualizadoEm }: { balcao: SeparadoresDoBalcao; a
           <h2 className="titulo-display mb-3 text-2xl">À espera do cliente</h2>
           <div className="grid gap-4 md:grid-cols-2">
             {balcao.aEsperaDoCliente.map((p) => (
-              <PedidoCartao key={p.id} pedido={p} />
+              <PedidoCartao key={p.id} pedido={p} resposta={gerente ? "gerente" : "balcao"} />
             ))}
           </div>
         </div>
