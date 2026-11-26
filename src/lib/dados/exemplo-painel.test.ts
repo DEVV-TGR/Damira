@@ -35,7 +35,9 @@ describe("os pedidos de exemplo do painel", () => {
 
   it("cada linha custa o que o site cobraria hoje", async () => {
     const { fonte, pedidos } = await doModoDeTeste();
-    for (const linha of pedidos.flatMap((p) => p.linhas)) {
+    /* Sem as linhas sem preço — o bolo por medida do que espera pela casa: não custam nada ainda,
+       e é a gerente que lhes vai dar o preço. */
+    for (const linha of pedidos.flatMap((p) => p.linhas).filter((l) => l.totalCent !== null)) {
       const cotado = await (fonte as FonteDeDados).cotarCesto([
         { produtoId: linha.produtoId, varianteId: linha.varianteId, quantidade: linha.quantidade },
       ]);

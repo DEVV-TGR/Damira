@@ -16,6 +16,7 @@ import {
   pedidoDoPainel,
   reagendarPedido,
   reembolsarPedido,
+  responderPedido,
   tratarAviso,
 } from "@/lib/dados";
 import { ESTADOS_PEDIDO, type AvisoTratavel, type EstadoPedido } from "@/lib/dados/tipos";
@@ -24,6 +25,8 @@ import { intervaloDeDias } from "@/lib/painel";
 import { comSessao, contextoDoPainel } from "@/lib/painel-servidor";
 import { sessao } from "@/lib/sessao-painel";
 import { horasDaLoja } from "@/lib/vagas-servidor";
+import { caminhoDaProposta } from "@/lib/proposta";
+import { URL_SITE } from "@/lib/site";
 
 /**
  * # As ações da gestão (`painel-gerente.md`)
@@ -95,6 +98,34 @@ export async function cancelar(id: string, reembolsoCent: number) {
 
 export async function reembolsar(id: string, valorCent: number) {
   return comSessao((ctx) => reembolsarPedido(id, valorCent, ctx), true);
+}
+
+/**
+ * A resposta a um pedido que espera pela casa: confirmar, ou propor preço e hora
+ * (`responderPedido`). A fronteira deixa o balcão confirmar e só a gerente propor.
+ */
+export async function responder(id: string, entrada: unknown) {
+  return comSessao((ctx) => responderPedido(id, entrada, ctx), true);
+}
+
+/**
+ * O link da proposta, para a gerente o mandar ao cliente à mão (WhatsApp, SMS) enquanto os
+ * emails não saem sozinhos (a fila, #119). Só a gerente, e só de um pedido à espera do aceite.
+ * Assina-o o servidor; o browser nunca vê a chave.
+ */
+export async function linkDaProposta(id: string) {
+  const ctx = await soGerente();
+  if (!ctx) return { ok: false as const, erro: "sem-permissao" as const };
+  const lido = await pedidoDoPainel(id, ctx);
+  if (!lido.ok) return lido;
+  if (lido.valor.estado !== "a-aguardar-aceite") return { ok: false as const, erro: "estado-mudou" as const };
+  /* Sem a `PROPOSTA_SEGREDO` o link não se assina: o painel não mostra o link, em vez de rebentar. */
+  try {
+    return { ok: true as const, valor: `${URL_SITE}${caminhoDaProposta(lido.valor.referencia, lido.valor.propostaVersao)}` };
+  } catch {
+    console.error("[proposta] o link não se assinou: falta a PROPOSTA_SEGREDO?");
+    return { ok: false as const, erro: "dados-invalidos" as const };
+  }
 }
 
 /** As horas da loja num dia, para mudar o levantamento. Só para a gerente. */

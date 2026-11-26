@@ -1,4 +1,5 @@
 import { eq, sql } from "drizzle-orm";
+import { onTestFinished } from "vitest";
 import { casa as tabelaCasa, linhasPedido, pedidos as tabelaPedidos, reembolsos as tabelaReembolsos, vagas } from "@/db/esquema";
 import { loteEmTransacao } from "@/db/lote";
 import { catalogoDeTeste } from "@/db/teste";
@@ -26,10 +27,25 @@ export const NA_BASE_DE_DADOS = process.env.FONTE_DOS_TESTES === "bd";
    cópia limpa dele. */
 let modelo: ReturnType<typeof catalogoDeTeste> | undefined;
 
+/* Cada cópia é um Postgres inteiro em memória, e nada a fechava: ficavam todas
+   abertas até ao fim do ficheiro. Com os testes do #139 a suite passou de ~17 GB
+   para ~24 GB e o runner do CI (16 GB) matava-a a meio, sem um teste falhado.
+   Fecha-se no fim do teste que a abriu; uma aberta fora de um teste (num
+   `beforeAll`, que a partilha por vários) fica até ao fim do ficheiro, como antes. */
+async function copiaDoModelo() {
+  modelo ??= catalogoDeTeste();
+  const copia = await (await modelo).copia();
+  try {
+    onTestFinished(() => copia.cliente.close());
+  } catch {
+    // Fora de um teste: quem a abriu partilha-a, e não é aqui que se fecha.
+  }
+  return copia;
+}
+
 /** A fonte da base de dados, numa cópia limpa do catálogo de hoje. */
 export async function fonteDaBaseDeDados(): Promise<FonteDeDados> {
-  modelo ??= catalogoDeTeste();
-  const { db } = await (await modelo).copia();
+  const { db } = await copiaDoModelo();
   return montarFonteBd(db, loteEmTransacao(db), { deTeste: false });
 }
 
@@ -60,8 +76,7 @@ export async function fonteComPedidos(pedidos: Pedido[], casa: CasaDeTeste = {})
 
 /** A fonte da base de dados com estes pedidos, e a base de dados, para os testes a espreitarem. */
 export async function baseComPedidos(pedidos: Pedido[], casa: CasaDeTeste = {}) {
-  modelo ??= catalogoDeTeste();
-  const { db } = await (await modelo).copia();
+  const { db } = await copiaDoModelo();
   if (casa.limitePorVaga !== undefined) {
     await db.update(tabelaCasa).set({ limitePorVaga: casa.limitePorVaga }).where(eq(tabelaCasa.id, 1));
   }
@@ -100,6 +115,9 @@ async function guardarPedido(db: BaseDeTeste, pedido: Pedido, limite: number | n
     confirmadoEm: pedido.confirmadoEm,
     expiraEm: pedido.expiraEm,
     aceiteEm: pedido.aceiteEm,
+    propostaVersao: pedido.propostaVersao,
+    propostaEm: pedido.propostaEm,
+    levantamentoAnteriorEm: pedido.levantamentoAnteriorEm,
     causaExpiracao: pedido.causaExpiracao,
     chaveIdempotencia: pedido.id,
     procura: textoDeProcura(cliente.nome, pedido.referencia),

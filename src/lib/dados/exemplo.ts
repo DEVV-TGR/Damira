@@ -150,6 +150,7 @@ export function fonteDeExemplo(
       pagoOnlineCent: totalCent,
       reembolsadoCent: 0,
       chegouTarde: false,
+      propostaVersao: 0, propostaEm: null, levantamentoAnteriorEm: null,
       pagoEm,
       impressoEm: talaoFalhou ? null : new Date(pagoEm.getTime() + 5_000),
       entregueEm: null,
@@ -294,6 +295,7 @@ const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const CLIENTES = [
   "Ana Exemplo", "Rui Teste", "Marta Exemplo", "João Teste", "Inês Exemplo", "Pedro Teste", "Carla Exemplo",
   "Tiago Teste", "Sofia Exemplo", "Bruno Teste", "Rita Exemplo", "Nuno Teste", "Luísa Exemplo", "Hugo Teste",
+  "Marco Exemplo",
 ] as const;
 
 const paraEmail = (nome: string) =>
@@ -321,6 +323,7 @@ const linhaDoPedido = (
     precoUnitarioCent: preco,
     totalCent: Math.round(preco * qtd),
     notas: null,
+    precoDaProposta: false,
   };
 };
 
@@ -347,6 +350,11 @@ type Pedir = {
   /** Minutos depois do pagamento do pedido anterior — o duplicado. */
   pagoMinutosDepoisDe?: number;
   notas?: string;
+  /**
+   * Pago na loja e à espera da casa, com um bolo por medida ainda sem preço: é o que deixa
+   * experimentar, sem base de dados, a resposta da gerente e a página do aceite (#119).
+   */
+  porConfirmar?: true;
 };
 
 /**
@@ -432,6 +440,7 @@ export function pedidosDoPainelDeExemplo(
     { dia: daquiA4, hora: "10:00", produtos: [{ produto: box }], cliente: 11 },
     { dia: ontem, hora: "12:30", produtos: [{ produto: festa }], cliente: 12, estado: "entregue" },
     { dia: anteontem, hora: "09:00", produtos: [{ produto: carta }], cliente: 13, estado: "entregue" },
+    { dia: depois, hora: "15:30", produtos: [{ produto: carta }, { produto: bolo }], cliente: 14, porConfirmar: true },
   ];
 
   const referencias = new Set<string>();
@@ -448,12 +457,17 @@ export function pedidosDoPainelDeExemplo(
         : instante(dataEm(Math.min(p.dia - 2, -1)), "10:00");
     const pagoEm = new Date(criadoEm.getTime() + (p.chegouTarde ? 35 : 3) * 60_000);
 
-    const linhas = p.produtos.map(({ produto, quantidade }) => linhaDoPedido(produto, quantidade));
-    const totalCent = linhas.reduce((soma, l) => soma + l.totalCent, 0);
+    const linhas: Pedido["linhas"] = p.produtos.map(({ produto, quantidade }, i) =>
+      /* No que espera pela casa, a última linha é o bolo por medida: ainda sem preço. */
+      p.porConfirmar && i === p.produtos.length - 1
+        ? { ...linhaDoPedido(produto, 1), nome: "Bolo por medida", variante: null, precoUnitarioCent: null, totalCent: null }
+        : linhaDoPedido(produto, quantidade),
+    );
+    const totalCent = linhas.reduce((soma, l) => soma + (l.totalCent ?? 0), 0);
     const referencia = referenciaUnica(`${hoje} ${n}`, criadoEm, (r) => referencias.has(r));
     referencias.add(referencia);
 
-    const estado = p.estado ?? "pago";
+    const estado = p.porConfirmar ? "por-confirmar" : (p.estado ?? "pago");
     const nome = CLIENTES[p.cliente];
     pedidos.push({
       id: `exemplo-${hoje}-${n + 1}`,
@@ -471,13 +485,14 @@ export function pedidosDoPainelDeExemplo(
       linhas,
       observacoes: p.notas ?? null,
       totalCent,
-      modoPagamento: p.sinal ? "sinal" : "total",
-      /* Com sinal, 30 % pago online; o resto cobra-se na loja. */
-      pagoOnlineCent: p.sinal ? Math.round(totalCent * 0.3) : totalCent,
+      modoPagamento: p.porConfirmar ? "na-loja" : p.sinal ? "sinal" : "total",
+      /* Com sinal, 30 % pago online; o resto cobra-se na loja. Pago na loja, nada online. */
+      pagoOnlineCent: p.porConfirmar ? 0 : p.sinal ? Math.round(totalCent * 0.3) : totalCent,
       reembolsadoCent: 0,
       chegouTarde: p.chegouTarde ?? false,
-      pagoEm,
-      impressoEm: new Date(pagoEm.getTime() + 60_000),
+      propostaVersao: 0, propostaEm: null, levantamentoAnteriorEm: null,
+      pagoEm: p.porConfirmar ? null : pagoEm,
+      impressoEm: p.porConfirmar ? null : new Date(pagoEm.getTime() + 60_000),
       entregueEm: estado === "entregue" ? new Date(levantamentoEm.getTime() + 5 * 60_000) : null,
       canceladoEm: estado === "cancelado" ? new Date(pagoEm.getTime() + 60 * 60_000) : null,
       canceladoPor: estado === "cancelado" ? "gerente" : null,
@@ -485,7 +500,8 @@ export function pedidosDoPainelDeExemplo(
       avisosTratados: [],
       reagendadoEm: null,
       confirmadoEm: null,
-      expiraEm: null,
+      /* As 48 horas da casa, a contar de quando nasceu (`pedidos.md`). */
+      expiraEm: p.porConfirmar ? new Date(criadoEm.getTime() + 48 * 3_600_000) : null,
       aceiteEm: null,
       causaExpiracao: null,
     });
@@ -532,6 +548,7 @@ export function pedidosDoPainelDeExemplo(
           precoUnitarioCent: null,
           totalCent: null,
           notas: "Mensagem: Parabéns, Rita! 7 anos",
+          precoDaProposta: false,
           personalizacao: {
             variancias: [],
             opcoes: [],
@@ -565,6 +582,9 @@ export function pedidosDoPainelDeExemplo(
       expiraEm: new Date(criadoEm.getTime() + 48 * 60 * 60_000),
       aceiteEm: null,
       causaExpiracao: null,
+      propostaVersao: 0,
+      propostaEm: null,
+      levantamentoAnteriorEm: null,
     });
   }
   return pedidos;

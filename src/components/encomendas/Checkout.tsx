@@ -2,7 +2,7 @@
 
 import { startTransition, useActionState, useEffect, useId, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { cotarPedido } from "@/app/[locale]/encomendas/pedido/cotacao";
 import { enviarCompra, type Resultado } from "@/app/[locale]/encomendas/pedido/acoes";
@@ -67,6 +67,7 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
   const tcal = useTranslations("encomendas.calendario");
   const id = useId();
   const contexto = useCesto();
+  const caminho = usePathname();
   const historico = useHistorico();
   const { utilizador } = useConta();
   const [resultado, agir, aPendente] = useActionState(enviarCompra, INICIAL);
@@ -169,9 +170,15 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
       <aside className="min-w-0 rounded-2xl border border-tinta/15 p-5 lg:sticky lg:top-24 lg:order-2">
         <div className="flex items-baseline justify-between gap-4">
           <h2 className="titulo-display titulo-gama">{t("resumo")}</h2>
-          <Link href="/encomendas" className="alvo-toque text-xs font-semibold uppercase tracking-widest text-tijolo underline underline-offset-4">
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="cartao-cesto"
+            onClick={() => contexto?.definirCestoAbertoEm(caminho)}
+            className="alvo-toque cursor-pointer text-left text-xs font-semibold uppercase tracking-widest text-tijolo underline underline-offset-4"
+          >
             {t("alterar")}
-          </Link>
+          </button>
         </div>
         <ul className="mt-4 divide-y divide-tinta/10">
           {cesto.map((item, i) => {
@@ -364,14 +371,18 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
 function Enviado({ resultado }: { resultado: Extract<Resultado, { estado: "enviado" | "sem-servico" }> }) {
   const tf = useTranslations("encomendas.formulario");
   const referencia = resultado.registo?.referencia;
+  /* Com o pedido guardado, o ecrã diz em que ficou, com as palavras da Andreia (24/11): confirmado
+     logo, ou em análise. Sem ele (o pedido ainda acaba num email), diz só que foi enviado. */
+  const estadoPedido = resultado.estado === "enviado" ? resultado.estadoPedido : undefined;
+  const chave = estadoPedido === "confirmado" ? "recebido.confirmado" : estadoPedido === "por-confirmar" ? "recebido.porConfirmar" : null;
 
   return (
     <div className="max-w-[40rem] rounded-2xl border border-tinta/15 p-8">
       <p className="titulo-display titulo-gama">
-        {resultado.estado === "enviado" ? tf("sucesso.titulo") : tf("semServico.titulo")}
+        {chave ? tf(`${chave}.titulo`) : resultado.estado === "enviado" ? tf("sucesso.titulo") : tf("semServico.titulo")}
       </p>
       <p className="mt-3 max-w-[52ch] text-tinta-suave">
-        {resultado.estado === "enviado" ? tf("sucesso.texto") : tf("semServico.texto")}
+        {chave ? tf(`${chave}.texto`) : resultado.estado === "enviado" ? tf("sucesso.texto") : tf("semServico.texto")}
       </p>
       {/* A referência é o que a pessoa pode precisar de dizer ao telefone: em
           grande, e a mesma que foi no assunto do email. */}

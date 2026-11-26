@@ -2,7 +2,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { redes, publicado } from "@/data/redes";
 import { marca } from "@/data/marca";
-import { VaporMarca } from "./Vapor";
+import { VaporMarca } from "./VaporMarca";
 
 /**
  * # Os reels: seis lugares para o vídeo da casa

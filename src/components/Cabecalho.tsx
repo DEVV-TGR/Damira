@@ -1,9 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
-import { Marca } from "./Marca";
 import { BotaoConta } from "./conta/BotaoConta";
 import { MenuEncomendas } from "./MenuEncomendas";
 
@@ -20,6 +20,7 @@ import { MenuEncomendas } from "./MenuEncomendas";
  */
 export function Cabecalho({ locale }: { locale: Locale }) {
   const t = useTranslations("nav");
+  const marca = useTranslations("marca");
   /**
    * ⚠️ **Este `usePathname` é o de `@/i18n/navigation`, não o do
    * `next/navigation`.** Só o primeiro devolve o caminho **sem** o prefixo de
@@ -49,16 +50,16 @@ export function Cabecalho({ locale }: { locale: Locale }) {
           desenvolve. Medido à mão a 320, 340, 360, 375, 390 e 414 px. Nada disto
           muda a partir do `sm`. */}
       <div className="envolvente flex h-full items-center justify-between gap-2 sm:gap-6">
-        {/* O tamanho do logótipo sai daqui: a `Marca` desenha-se a `1em` de
-            altura, e a `text-xl` dava 20 px — a palavra "damira" a 52 px de
-            largura, que num cabeçalho não se lê, lê-se-lhe a forma. A 1,75 rem
-            passa a wordmark. */}
-        <Link
-          href="/"
-          className="alvo-toque text-[1.5rem] sm:text-[1.75rem]"
-          aria-label={t("inicio")}
-        >
-          <Marca />
+        <Link href="/" className="alvo-toque flex min-h-11 items-center">
+          <Image
+            src="/marca/damira-horizontal.png"
+            alt={marca("nomeCurto")}
+            width={2091}
+            height={290}
+            className="h-auto w-28 sm:w-44"
+            loading="eager"
+            unoptimized
+          />
         </Link>
 
         {/* ⚠️ **As encomendas estavam fora daqui**, e a chave `nav.encomendas`
@@ -68,7 +69,7 @@ export function Cabecalho({ locale }: { locale: Locale }) {
             se alcança a partir de outra não é uma página de topo.
 
             O «Início» saiu para lhe dar o lugar: o logótipo já é a ligação para
-            a homepage (tem o `aria-label` a dizê-lo) e dois caminhos para o
+            a homepage e dois caminhos para o
             mesmo sítio, lado a lado, gastam a largura que num telemóvel não
             sobra. `gap-4` até ao `sm` pela mesma razão. */}
         <nav className="flex items-center gap-2 text-[0.7rem] font-semibold uppercase tracking-[0.02em] sm:gap-6 sm:text-xs sm:tracking-widest">
@@ -96,27 +97,21 @@ export function Cabecalho({ locale }: { locale: Locale }) {
           <Link
             href={caminho}
             locale={outra}
-            className="alvo-toque rounded-full border border-tinta/25 px-2.5 py-2 transition-colors hover:bg-tinta hover:text-papel sm:px-3.5"
+            className="alvo-toque controlo-cabecalho inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-tinta/25 transition-colors hover:bg-tinta"
             /* `lang` no link diz aos leitores de ecrã para pronunciar "English"
                à inglesa, em vez de o lerem com fonética portuguesa. */
             lang={outra}
-            /* ⚠️ **O nome acessível vem daqui e não do que está escrito.** Num
-               telemóvel o botão mostra só «EN», que poupa a largura que a
-               entrada das encomendas passou a ocupar; sem este `aria-label`,
-               quem ouve a página passava a ouvir duas letras em vez da palavra.
-               A abreviatura é para os olhos, não para os ouvidos. */
+            hrefLang={outra}
             aria-label={t("mudarIdioma")}
           >
-            {/* Duas caixas e não uma cadeia cortada: o código do idioma **é**
-                o idioma (`outra` vale "pt" ou "en"), e escrevê-lo à mão era
-                mais um sítio para desirmanar quando aparecer uma terceira
-                língua. */}
-            <span aria-hidden className="sm:hidden">
-              {outra}
-            </span>
-            <span aria-hidden className="hidden sm:inline">
-              {t("mudarIdioma")}
-            </span>
+            <Image
+              src={`/idiomas/${outra}.png`}
+              alt=""
+              width={96}
+              height={outra === "pt" ? 64 : 58}
+              className="h-auto w-6 rounded-[2px]"
+              unoptimized
+            />
           </Link>
         </nav>
       </div>

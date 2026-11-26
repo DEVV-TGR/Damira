@@ -83,7 +83,7 @@ dados.
 | `a-aguardar-aceite` | a casa respondeu com preço ou hora que o cliente ainda não viu, e espera que ele aceite | a gerente, ao responder | sim, como «à espera do cliente» | não |
 | `confirmado` | a casa vai fazê-lo | servidor, ao criar (sem nada a confirmar); a equipa, ao confirmar um «sim» sem nada novo; o aceite do cliente | sim | sim, uma vez |
 | `entregue` | o cliente levantou e pagou na loja; ou a entrega foi feita | balcão, com um toque | sim, no arquivo | não |
-| `expirado` | a casa não respondeu até `expiraEm`; ou, se aprovado o n.º 2, o cliente não aceitou a resposta a tempo | servidor (ver «Expirar às 48 horas» e «O aceite do cliente») | sim, à parte dos cancelados | não |
+| `expirado` | a casa não respondeu até `expiraEm` (48 h); ou o cliente não aceitou a proposta nas 24 h (decidido a 25/11, n.º 2) | servidor (ver «Expirar às 48 horas» e «O aceite do cliente») | sim, à parte dos cancelados | não |
 | `cancelado` | a casa recusou ou cancelou, ou o cliente desistiu ou cancelou por contacto | a gerente; ou qualquer pessoa da equipa, numa entrega por falta de pagamento (ver «Desistir, cancelar e alterar») | sim, riscado | talão de cancelamento, se o pedido já tinha talão |
 
 Transições permitidas — **e mais nenhuma**, salvo a proposta explicitamente
@@ -100,8 +100,8 @@ marcada como ainda não ativa:
   hora mudada. Dá-a a gerente (ver «O aceite do cliente»)
 - `a-aguardar-aceite → confirmado` — o cliente aceita; grava `aceiteEm`
 - `por-confirmar → expirado` — o servidor, a partir de `expiraEm`
-- **Proposta, ainda não ativa:** `a-aguardar-aceite → expirado`, com causa
-  `sem-aceite-do-cliente`. A transição e o prazo dependem da decisão do n.º 2.
+- `a-aguardar-aceite → expirado`, com causa `sem-aceite-do-cliente` — o
+  servidor, passadas as 24 h da proposta (decidido pela Andreia a 25/11, n.º 2).
 - `por-confirmar → cancelado` e `a-aguardar-aceite → cancelado` — a casa recusa
   ou retira a resposta; ou o cliente desiste, por contacto, registado pela
   gerente
@@ -114,11 +114,11 @@ marcada como ainda não ativa:
   orçamento e o aceite»)
 
 ⚠️ **`expirado` e `cancelado` não se confundem** (pedido da Andreia). Um pedido
-que expirou ficou sem resposta **da casa**, ou, se aprovado o n.º 2, sem aceite do
-cliente depois da resposta; um cancelado pelo cliente foi decisão **dele**. São causas
+que expirou ficou sem resposta **da casa**, ou sem aceite do cliente depois da
+resposta; um cancelado pelo cliente foi decisão **dele**. São causas
 diferentes, e o painel mostra-as separadas. O pedido guarda a causa da
 expiração (`causaExpiracao`): `sem-resposta-da-casa`; a causa
-`sem-aceite-do-cliente` é proposta do n.º 2;
+`sem-aceite-do-cliente`, a da proposta que passou as 24 h;
 `sem-pagamento` é a do pagamento online, e dorme.
 
 ⚠️ **`entregue` quer dizer «levantou e pagou»** num levantamento. Sem pagamento
@@ -277,8 +277,9 @@ Decidido a 11/11:
 - **A aceitação fica registada** no pedido (`aceiteEm`).
 - O orçamento fixa dinheiro, por isso **é da gerente**.
 - Responder com um orçamento **é a resposta da casa**: as 48 h do §1 deixam de
-  correr, e o pedido passa a `a-aguardar-aceite`. Quanto tempo o cliente tem
-  para aceitar: (em aberto: ver n.º 2).
+  correr, e o pedido passa a `a-aguardar-aceite`. **O cliente tem 24 horas para
+  aceitar** (decidido pela Andreia a 25/11): a proposta grava-as no `expiraEm`,
+  e uma proposta revista começa outra vez as 24 horas.
 
 ⚠️ **Abrir o link não aceita nada.** Os filtros de correio abrem os links dos
 emails sozinhos. O link mostra o orçamento; aceitar é um botão na página. O acesso usa uma
@@ -351,12 +352,20 @@ O estado fica entre `por-confirmar` e `confirmado`:
   casa».
 - **A tarefa das 48 h não lhe toca:** a casa já respondeu, e os lembretes são
   para a casa.
-- **Desistir é sem custos** (§4): o cliente liga, e a gerente regista
-  `a-aguardar-aceite → cancelado`, com `canceladoPor = cliente`.
+- **Desistir é sem custos** (§4): o cliente **recusa na própria página do link**
+  (decidido a 24/11, o T13 da Andreia), ou liga, e a gerente regista
+  `a-aguardar-aceite → cancelado`, com `canceladoPor = cliente`. A recusa pela
+  página pede uma segunda confirmação e liberta a vaga.
+- **A gerente responde no painel** (#126, passo 2): no detalhe de um pedido que
+  espera pela casa, confirma, ou fixa o preço das linhas sem preço e propõe outra
+  hora. Pode rever a proposta; a versão sobe e o link antigo deixa de aceitar. O
+  link (`/pedido/proposta/<referência>/<versão>-<assinatura>`) aparece no painel,
+  para o mandar à mão enquanto os emails não saem sozinhos.
 
-⚠️ **A expiração por falta de aceite e o prazo são propostas** (n.º 2), não
-regras em vigor. Até serem aprovadas, nada passa um `a-aguardar-aceite` a
-`expirado`: a vaga fica ocupada até o cliente aceitar ou a gerente cancelar.
+**Passadas as 24 horas sem resposta, a proposta expira** (decidido a 25/11):
+o pedido passa a `expirado` com `sem-aceite-do-cliente`, a vaga liberta-se, e o
+cliente recebe o email `proposta-expirada-cliente`. A página e o painel dizem
+até quando se pode aceitar. Depois disso o link já não aceita nem recusa.
 
 ## Entrega ao domicílio
 
@@ -537,7 +546,7 @@ referência.
 | ao reagendar um confirmado, após acordo | cliente e loja | a nova data e hora acordadas |
 | lembretes à casa (cadência por fechar, n.º 11) | loja | lembrete: este pedido ainda não teve resposta, e expira a … |
 | ao expirar sem resposta da casa | cliente | a casa não respondeu a tempo; o pedido não segue e não há nada a pagar |
-| ao expirar sem aceite, se aprovado o n.º 2 | cliente | terminou o prazo de aceitação; o pedido não segue — não atribuir a falta de resposta à casa |
+| ao expirar sem aceite (24 h depois da proposta) | cliente | terminou o prazo de aceitação; o pedido não segue — não atribuir a falta de resposta à casa |
 | ao cancelar ou recusar | cliente | que não vai ser feito |
 
 ⚠️ **A fila única vai escrita** (§2). Quem chega para levantar entra na fila de
@@ -593,14 +602,16 @@ antecessores reservados ou à espera de nova tentativa, sem ocultar outros pedid
 voltas ou uma espera de nova tentativa não invertem os envios.
 O recibo `criado-por-confirmar-cliente` segue mesmo que o pedido tenha mudado:
 documenta o envio inicial; o novo estado tem o seu próprio email na fila.
-**Enquanto o #139 não entrar, `resposta-cliente` fica pendente sem gastar tentativas**
-e não ocupa o limite da volta. Ao integrar o #139, ligar a credencial de proposta,
+**Até o emissor passar a escrever a proposta, `resposta-cliente` fica pendente sem
+gastar tentativas** e não ocupa o limite da volta. O #139 já grava as propostas; ao
+ligá-las, juntar a credencial de proposta (`caminhoDaProposta` e `PROPOSTA_SEGREDO`),
 `precoDaProposta` e os critérios de saltar (estado, proposta mais recente, prazo).
 Os restantes modelos usam os dados disponíveis; se faltar um dado obrigatório,
-ficam falhados com `dados-do-modelo`, nunca saem incompletos. Por exemplo, a fonte
-ainda não guarda `levantamentoAnteriorEm`, necessário aos emails de reagendamento.
-O texto de cancelamento depende de `canceladoPor`, que hoje ainda é sempre gerente
-na ação de cancelar (dívida do #133); esta etapa não muda essa ação.
+ficam falhados com `dados-do-modelo`, nunca saem incompletos. Por exemplo, o pedido
+já guarda `levantamentoAnteriorEm` (#139), mas o `dadosDoEmail` ainda não o passa: os
+emails de reagendamento falham até isso ser ligado. O texto de cancelamento depende de
+`canceladoPor`: a recusa pelo link grava `cliente` (#139), e a ação de cancelar do
+painel ainda grava sempre `gerente` (dívida do #133).
 
 Integração a fazer: chamar o helper após criar com sucesso e após cada transição
 que gravar emails (incluindo a limpeza dos expirados). Uma repetição idempotente
@@ -762,7 +773,9 @@ regra que depende de um destes pontos remete para ele.
    nossa:* `expiraEm` é o mais cedo entre `criadoEm + 48 h` e a hora em que a
    produção teria de começar; a página diz ao cliente até quando tem resposta.
    *Decide:* Andreia.
-2. **Quanto tempo vale uma resposta à espera do aceite?** As 48 h são da
+2. ✅ **Decidido pela Andreia a 25/11: 24 horas**, a contar da proposta; passado
+   isso, expira com `sem-aceite-do-cliente`. O texto abaixo fica como registo.
+   **Quanto tempo vale uma resposta à espera do aceite?** As 48 h são da
    resposta da casa; a política não diz quanto tempo o cliente tem para aceitar
    um orçamento — nem, fora das entregas, um preço ou uma hora nova. *Exemplo:*
    a casa envia o orçamento às 47 h e o cliente não responde — a vaga fica

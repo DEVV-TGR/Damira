@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
@@ -41,14 +41,13 @@ import { DetalhesDoBolo } from "./DetalhesDoBolo";
 export function Cesto({ locale }: { locale: Locale }) {
   const t = useTranslations("encomendas.cesto");
   const contexto = useCesto();
-  const [aberto, setAberto] = useState(false);
   const caixa = useRef<HTMLDialogElement>(null);
   const caminho = usePathname();
 
   const vazio = !contexto?.pronto || contexto.cesto.length === 0;
   /* Esvaziar o cesto com o cartão aberto fecha-o: um cartão vazio no centro do
      ecrã é um beco, e o botão que o abriu já desapareceu. */
-  const mostrar = aberto && !vazio;
+  const mostrar = contexto?.cestoAbertoEm === caminho && !vazio;
 
   useEffect(() => {
     const dialogo = caixa.current;
@@ -70,12 +69,11 @@ export function Cesto({ locale }: { locale: Locale }) {
     };
   }, [mostrar]);
 
-  if (!contexto || vazio) return null;
-  /* Na página de compra o pedido já está à vista, ao lado: um botão para o
-     abrir outra vez por cima era o mesmo pedido mostrado duas vezes. */
-  if (caminho === "/encomendas/pedido") return null;
-
-  const { cesto, mudarQuantidade, remover, esvaziar } = contexto;
+  if (!contexto) return null;
+  const naCompra = caminho === "/encomendas/pedido";
+  const { cesto, mudarQuantidade, remover, esvaziar, definirCestoAbertoEm } = contexto;
+  const fechar = () => definirCestoAbertoEm(null);
+  const continuar = "premivel flex min-h-12 flex-1 items-center justify-center rounded-full bg-tijolo px-6 text-sm font-semibold uppercase tracking-widest text-papel sm:flex-none";
   const { somaCent, semPreco } = estimativa(cesto);
   const artigos = totalArtigos(cesto);
   /* Só com artigos sob orçamento (um bolo personalizado sozinho), «0,00 €» lia-se
@@ -84,47 +82,52 @@ export function Cesto({ locale }: { locale: Locale }) {
 
   return (
     <>
-      {/* ⚠️ **O calço não é enfeite**, e vem da barra que isto substituiu. O
-          botão é `fixed`: no fim da página fica por cima do que lá estiver, e a
-          barra chegou a tapar a caixa do consentimento, sem a qual o pedido não
-          segue. Este `<div>` está no fluxo e devolve à página a altura que o
-          botão lhe tira. */}
-      <div aria-hidden className="h-20" />
+      {!vazio && !naCompra && (
+        <>
+          {/* ⚠️ **O calço não é enfeite**, e vem da barra que isto substituiu. O
+              botão é `fixed`: no fim da página fica por cima do que lá estiver, e a
+              barra chegou a tapar a caixa do consentimento, sem a qual o pedido não
+              segue. Este `<div>` está no fluxo e devolve à página a altura que o
+              botão lhe tira. */}
+          <div aria-hidden className="h-20" />
 
-      <button
-        type="button"
-        onClick={() => setAberto(true)}
-        aria-haspopup="dialog"
-        aria-label={`${t("verPedido")} · ${t("unidades", { n: artigos })} · ${
-          semPreco > 0 ? t("aPartirDe") : t("estimativa")
-        } ${valor}`}
-        /* O mesmo sítio, a mesma altura (48 px) e a mesma cor do «Encomendas»:
-           é o mesmo botão a mudar de função, e um círculo maior do que ele
-           lia-se como outra coisa. Só o ícone: o valor esteve aqui ao lado e
-           competia com o carrinho — a estimativa está no cartão, e no nome do
-           botão para quem usa leitor de ecrã. */
-        data-flutuante="cesto"
-        className="premivel fixed bottom-5 right-5 z-50 grid size-12 place-items-center rounded-full bg-tijolo text-papel shadow-lg shadow-tinta/25 print:hidden"
-      >
-        <IconeCesto />
-        {/* A contagem fica no canto, **fora** do desenho do cesto: pequena, para
-            não lhe tapar a forma, e a sair da borda do botão, que é onde o olho
-            procura um número destes. */}
-        <span
-          aria-hidden
-          className="absolute -right-1.5 -top-1.5 grid min-w-[1.375rem] place-items-center rounded-full border-2 border-tijolo bg-papel px-1 text-[0.68rem] font-bold leading-[1.125rem] tabular-nums text-tijolo"
-        >
-          {artigos}
-        </span>
-      </button>
+          <button
+            type="button"
+            onClick={() => definirCestoAbertoEm(caminho)}
+            aria-haspopup="dialog"
+            aria-label={`${t("verPedido")} · ${t("unidades", { n: artigos })} · ${
+              semPreco > 0 ? t("aPartirDe") : t("estimativa")
+            } ${valor}`}
+            /* O mesmo sítio, a mesma altura (48 px) e a mesma cor do «Encomendas»:
+               é o mesmo botão a mudar de função, e um círculo maior do que ele
+               lia-se como outra coisa. Só o ícone: o valor esteve aqui ao lado e
+               competia com o carrinho — a estimativa está no cartão, e no nome do
+               botão para quem usa leitor de ecrã. */
+            data-flutuante="cesto"
+            className="premivel fixed bottom-5 right-5 z-50 grid size-12 place-items-center rounded-full bg-tijolo text-papel shadow-lg shadow-tinta/25 print:hidden"
+          >
+            <IconeCesto />
+            {/* A contagem fica no canto, **fora** do desenho do cesto: pequena, para
+                não lhe tapar a forma, e a sair da borda do botão, que é onde o olho
+                procura um número destes. */}
+            <span
+              aria-hidden
+              className="absolute -right-1.5 -top-1.5 grid min-w-[1.375rem] place-items-center rounded-full border-2 border-tijolo bg-papel px-1 text-[0.68rem] font-bold leading-[1.125rem] tabular-nums text-tijolo"
+            >
+              {artigos}
+            </span>
+          </button>
+        </>
+      )}
 
       <dialog
         ref={caixa}
-        onClose={() => setAberto(false)}
+        id="cartao-cesto"
+        onClose={fechar}
         /* Um toque fora fecha: o `::backdrop` não recebe eventos, mas um clique
            nele tem como alvo o próprio `<dialog>`, e o conteúdo vive num filho. */
         onClick={(evento) => {
-          if (evento.target === caixa.current) setAberto(false);
+          if (evento.target === caixa.current) fechar();
         }}
         aria-labelledby="titulo-cesto"
         className="cartao-cesto bg-papel text-tinta"
@@ -139,7 +142,7 @@ export function Cesto({ locale }: { locale: Locale }) {
             </div>
             <button
               type="button"
-              onClick={() => setAberto(false)}
+              onClick={fechar}
               aria-label={t("fechar")}
               className="premivel grid size-11 shrink-0 place-items-center rounded-full border border-tinta/20 hover:bg-tinta hover:text-papel"
             >
@@ -222,13 +225,15 @@ export function Cesto({ locale }: { locale: Locale }) {
               >
                 {t("esvaziar")}
               </button>
-              <Link
-                href="/encomendas/pedido"
-                onClick={() => setAberto(false)}
-                className="premivel flex min-h-12 flex-1 items-center justify-center rounded-full bg-tijolo px-6 text-sm font-semibold uppercase tracking-widest text-papel sm:flex-none"
-              >
-                {t("irParaPedido")}
-              </Link>
+              {naCompra ? (
+                <button type="button" onClick={fechar} className={continuar}>
+                  {t("voltarAoPedido")}
+                </button>
+              ) : (
+                <Link href="/encomendas/pedido" onClick={fechar} className={continuar}>
+                  {t("irParaPedido")}
+                </Link>
+              )}
             </div>
           </div>
         </div>

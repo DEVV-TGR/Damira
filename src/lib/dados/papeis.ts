@@ -76,6 +76,9 @@ export function protegerPainel(fonte: FontePainel): FontePainel {
     reembolsarPedido: exigirPapel(SO_GERENTE, (id: string, valorCent: number, ctx) =>
       fonte.reembolsarPedido(id, valorCent, ctx),
     ),
+    /* Os dois entram: o «sim» pode dá-lo o balcão. Propor um preço ou uma hora é só da gerente, e
+       quem o verifica é a fonte, porque depende do que vem na resposta (`planearResposta`). */
+    responderPedido: exigirPapel(EQUIPA, (id: string, entrada: unknown, ctx) => fonte.responderPedido(id, entrada, ctx)),
     /* Pública de propósito: é um número, servido da cache (`painel.md`). */
     versaoPedidos: () => fonte.versaoPedidos(),
   };
