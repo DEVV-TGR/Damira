@@ -114,6 +114,10 @@ body:has(.cartaz) .barra-vidro {
   align-items: center;
 }
 
+.cap--capa .cap__caixa {
+  max-width: 52rem;
+}
+
 .capa__atalhos {
   display: flex;
   flex-wrap: wrap;
@@ -202,12 +206,11 @@ body:has(.cartaz) .barra-vidro {
 .cap__titulo {
   font-size: clamp(2.2rem, 1.4rem + 3.6vw, 4.4rem);
 }
-/* A capa é o único momento de herói da página, e é onde o `taste.md` levanta o
-   tecto dos 6rem. A Bricolage tem eixo de largura, portanto condensa-se sem
-   trocar de família — é o registo dos impressos. */
+/* O título ganha escala com o ecrã sem ultrapassar a coluna de leitura. */
 .capa__titulo {
-  font-size: clamp(3rem, 1rem + 11vw, 10rem);
-  font-variation-settings: "wdth" 62, "opsz" 48;
+  font-size: clamp(2.5rem, 1rem + 8.5vw, 7.5rem);
+  line-height: 1.02;
+  margin-top: 0.75rem;
   text-transform: uppercase;
   letter-spacing: -0.02em;
 }
@@ -337,7 +340,6 @@ body:has(.cartaz) .barra-vidro {
 .raro__numero {
   font-family: var(--sc-font-display);
   font-size: clamp(4rem, 2rem + 12vw, 11rem);
-  font-variation-settings: "wdth" 70;
   line-height: 0.86;
   letter-spacing: -0.04em;
   color: var(--color-papel);
@@ -455,7 +457,6 @@ body:has(.cartaz) .barra-vidro {
 .festa__ate {
   font-family: var(--sc-font-display);
   font-size: clamp(2rem, 1.4rem + 3vw, 3.6rem);
-  font-variation-settings: "wdth" 66;
   line-height: 1;
   margin: 0;
 }
