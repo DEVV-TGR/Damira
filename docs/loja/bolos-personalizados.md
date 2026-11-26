@@ -63,10 +63,14 @@ só se vê quando o cliente vem buscar o bolo.
   é esse valor ser pago em loja — ficaria algo como sob orçamento»), e o
   pagamento só na loja fecha-a:
   - o cliente vê um **preço base por tamanho**, como «a partir de», que a gerente
-    define no painel (com a #88, os tamanhos do produto simples). É só para mostrar: a linha do bolo entra no pedido **sem
-    preço final**. Os extras (o topper, a impressão da foto, uma cobertura mais
-    cara) são extras (#88, `painel-gerente.md` › Simples e
-    compostos), com preço ou a 0 €;
+    define em **Bolos personalizados › Tamanhos** — e não nos tamanhos do produto
+    da #88, que cobram o preço (decidido a 26/11). É só para mostrar: a linha do
+    bolo entra no pedido **sem preço final**. Os **toppings extra** podem ter um
+    preço indicativo, que só soma ao «a partir de»;
+  - ⚠️ **o bolo personalizado não leva peças da #88** (variâncias, opções,
+    extras — decidido a 26/11): é todo do configurador, a ficha do produto não
+    as mostra, e o servidor recusa a linha que as traga (`bolo-invalido`). O que
+    custa a mais (o topper, a impressão da foto) entra no preço que a gerente dá;
   - **o bolo vai no mesmo cesto que o resto**, e o pedido inteiro fica
     **por confirmar** (`pedidos.md` › Confirmar). O cesto, a página do pedido, o
     email de «recebemos» e o painel mostram o total dos produtos de preço fixo,
@@ -99,8 +103,12 @@ só se vê quando o cliente vem buscar o bolo.
   painel, Fotos › o topping que pede a foto). Sem esse topping o campo nem
   aparece; com ele, a foto e a autorização são obrigatórias.
 - **A ordem do configurador:** tamanho (se houver), massa, cobertura, recheio,
-  «à volta», topping, fotos de referência, foto para imprimir, mensagem e
-  observações. As listas longas são listas nativas: no telemóvel percorrem-se
+  «à volta», topping, **toppings extra** (se a gerente os ligar), fotos de
+  referência, foto para imprimir, mensagem e observações.
+- **Os toppings extra** (26/11): além do topping, até ao máximo que a gerente
+  der (0 desliga, e é o de partida — o PDF não os oferece). Da mesma cobertura,
+  sem o topping principal e sem o que imprime a foto. Vão numa linha só
+  («Toppings extra: Pintarolas, Morangos a decorar»). As listas longas são listas nativas: no telemóvel percorrem-se
   com o polegar.
 - **As fotos sobem para o Vercel Blob** (`/api/bolos/fotos`), já reduzidas no
   browser, e o pedido guarda só o caminho. ⚠️ **No modo de teste sem Blob**
@@ -114,6 +122,9 @@ só se vê quando o cliente vem buscar o bolo.
 - **O texto da autorização é provisório** até a advogada o dar (#52).
 - **No painel**, a linha mostra as escolhas uma por linha e as fotos em dois
   blocos: «Foto para imprimir no bolo» em destaque, e «Fotos de referência».
+- **No pedido guardado**, as escolhas vão em texto nas `escolhas` da linha, e
+  as fotos na `personalizacao` (`bolo.fotos`), o mesmo `jsonb` da #88: ficam na
+  base de dados sem migração própria.
 - **Os nomes das opções são só em português**: é a casa que os escreve.
 
 ## À espera da Damira
