@@ -14,7 +14,10 @@ import type {
   Pedido,
   Produto,
   ResultadoCriarPedido,
+  Personalizacao,
   ResultadoPainel,
+  Variancia,
+  Variante,
 } from "./tipos";
 
 /**
@@ -34,54 +37,128 @@ const noMultiplo = (quantidade: number, minimo: number, multiplo: number) => {
   return Math.abs(passos - Math.round(passos)) < EPSILON;
 };
 
+type LinhaACotar = Pick<LinhaCesto, "produtoId" | "varianteId" | "quantidade"> & {
+  escolhas?: readonly string[];
+  variancias?: readonly { produtoId?: string | null; varianciaId: string; escolhaId: string }[];
+  opcoes?: readonly string[];
+  extras?: readonly { id: string; quantidade: number }[];
+};
+
+/** O preço de uma unidade e a cópia do que se escolheu, ou porque não bate. */
+type Personalizado =
+  | { ok: true; acrescimoCent: number; personalizacao: Personalizacao; texto: string[] }
+  | { ok: false };
+
+const quantidadeEmTexto = (n: number) => String(n).replace(".", ",");
+
+/**
+ * **A personalização de uma linha, conferida e com preço** (#88, `pedidos.md`
+ * › Personalização). Recusa só o que não é conteúdo: uma variância sem escolha
+ * ou com duas, uma peça que o produto não tem ou está desligada, um extra
+ * acima do máximo. Num composto, as variâncias são as dos simples que o grupo
+ * leva, e nada mais.
+ *
+ * ⚠️ **Os cestos de antes da #88 mandam o sabor pelo nome** (`escolhas`). Sem
+ * `variancias`, procura-se esse nome nas escolhas da única variância do produto
+ * — que é o que a `0011` fez dos sabores.
+ */
+export function personalizar(
+  produto: Produto,
+  variante: Variante,
+  linha: LinhaACotar,
+  produtoDe: (id: string) => Produto | undefined,
+): Personalizado {
+  const falha: Personalizado = { ok: false };
+  let pedidas = [...(linha.variancias ?? [])].map((v) => ({ ...v, produtoId: v.produtoId ?? null }));
+  const nomes = linha.escolhas ?? [];
+  if (nomes.length > 0) {
+    if (pedidas.length > 0 || nomes.length !== 1 || produto.variancias.length !== 1) return falha;
+    const [variancia] = produto.variancias;
+    const escolha = variancia.escolhas.find((e) => e.nome.pt === nomes[0]);
+    if (!escolha) return falha;
+    pedidas = [{ produtoId: null, varianciaId: variancia.id, escolhaId: escolha.id }];
+  }
+
+  /* As perguntas a responder: as do próprio simples, ou as dos simples de dentro. */
+  const perguntas: { produtoId: string | null; produto: Produto; variancia: Variancia }[] =
+    produto.tipo === "simples"
+      ? produto.variancias.map((variancia) => ({ produtoId: null, produto, variancia }))
+      : variante.leva.flatMap((l) => {
+          const simples = produtoDe(l.produtoId);
+          return (simples?.variancias ?? []).map((variancia) => ({ produtoId: l.produtoId, produto: simples!, variancia }));
+        });
+  if (pedidas.length !== perguntas.length) return falha;
+
+  const personalizacao: Personalizacao = { variancias: [], opcoes: [], extras: [], leva: [] };
+  const texto: string[] = [];
+  let acrescimoCent = 0;
+  for (const pergunta of perguntas) {
+    const resposta = pedidas.filter(
+      (p) => p.produtoId === pergunta.produtoId && p.varianciaId === pergunta.variancia.id,
+    );
+    if (resposta.length !== 1) return falha;
+    const escolha = pergunta.variancia.escolhas.find((e) => e.id === resposta[0].escolhaId && e.ativa);
+    if (!escolha) return falha;
+    /* Num composto, a variância de dentro diz o que é, e não muda o preço: o
+       preço é o do grupo (`pedidos.md` › Personalização). */
+    if (produto.tipo === "simples") acrescimoCent += escolha.acrescimoCent;
+    personalizacao.variancias.push({
+      produto: pergunta.produtoId === null ? null : pergunta.produto.nome.pt,
+      nome: pergunta.variancia.nome.pt,
+      escolha: escolha.nome.pt,
+      acrescimoCent: produto.tipo === "simples" ? escolha.acrescimoCent : 0,
+    });
+    if (produto.tipo === "simples") texto.push(`${pergunta.variancia.nome.pt}: ${escolha.nome.pt}`);
+  }
+
+  const opcoes = linha.opcoes ?? [];
+  if (new Set(opcoes).size !== opcoes.length) return falha;
+  for (const id of opcoes) {
+    const opcao = produto.opcoes.find((o) => o.id === id && o.ativa);
+    if (!opcao) return falha;
+    personalizacao.opcoes.push(opcao.nome.pt);
+    texto.push(`SEM ${opcao.nome.pt}`);
+  }
+
+  const extras = linha.extras ?? [];
+  if (new Set(extras.map((e) => e.id)).size !== extras.length) return falha;
+  for (const pedido of extras) {
+    const extra = produto.extras.find((e) => e.id === pedido.id && e.ativo);
+    if (!extra || pedido.quantidade > extra.maximo) return falha;
+    acrescimoCent += extra.precoCent * pedido.quantidade;
+    personalizacao.extras.push({ nome: extra.nome.pt, quantidade: pedido.quantidade, precoCent: extra.precoCent });
+    texto.push(`+ ${pedido.quantidade} × ${extra.nome.pt}`);
+  }
+
+  if (produto.tipo === "composto") {
+    for (const l of variante.leva) {
+      const simples = produtoDe(l.produtoId);
+      const nome = simples?.nome.pt ?? l.produtoId;
+      personalizacao.leva.push({ nome, quantidade: l.quantidade });
+      const escolhidas = personalizacao.variancias.filter((v) => v.produto === nome).map((v) => v.escolha);
+      texto.push(
+        `${l.quantidade === null ? "" : `${quantidadeEmTexto(l.quantidade)} × `}${nome}${escolhidas.length ? ` — ${escolhidas.join(", ")}` : ""}`,
+      );
+    }
+  }
+  return { ok: true, acrescimoCent, personalizacao, texto };
+}
+
 /**
  * O preço do cesto, calculado no servidor (regra 1 do `AGENTS.md`). As linhas
  * já vêm validadas pelo `EsquemaLinhaCesto`; o produto de cada uma vem de quem
  * chama — do `Map` dos JSON, ou de uma consulta à base de dados. Um produto
  * arquivado ou tirado de venda tem de vir na mesma: é aqui que se recusa.
+ *
+ * ⚠️ **Num composto, os simples de dentro também têm de vir** (para as
+ * variâncias deles), mesmo fora de venda: entrar só em kits é para isso.
+ *
+ * O preço da unidade (#88): o do tamanho ou do grupo, mais, num simples, as
+ * variâncias e os extras. Tirar não desconta, e num composto o que vem dentro
+ * não soma. Um preço sob orçamento põe a linha sob orçamento.
  */
-export function cotarLinhas(
-  linhas: readonly (Pick<LinhaCesto, "produtoId" | "varianteId" | "quantidade"> & { escolhas?: readonly string[] })[],
-  produtoDe: (id: string) => Produto | undefined,
-): Cotacao {
-  const cotadas = linhas.map((linha): LinhaCotada => {
-    const base = { produtoId: linha.produtoId, varianteId: linha.varianteId, quantidade: linha.quantidade };
-    const falha = (erro: LinhaCotada["erro"]): LinhaCotada => ({
-      ...base,
-      precoUnitarioCent: null,
-      totalCent: null,
-      erro,
-    });
-
-    const produto = produtoDe(linha.produtoId);
-    if (!produto) return falha("produto-desconhecido");
-    const variante = produto.variantes.find((v) => v.id === linha.varianteId);
-    if (!variante) return falha("variante-desconhecida");
-    if (!produto.aVendaOnline || produto.arquivado || produto.foraDeVenda) return falha("fora-de-venda");
-    /* Com escolhas, exatamente uma, e das do produto: para misturar sabores,
-       uma linha por sabor (e cada uma conta o seu mínimo). Sem escolhas, nenhuma. */
-    const escolhas = linha.escolhas ?? [];
-    const escolhaCerta =
-      produto.escolhas.length === 0
-        ? escolhas.length === 0
-        : escolhas.length === 1 && produto.escolhas.includes(escolhas[0]);
-    if (!escolhaCerta) return falha("escolha-invalida");
-    if (linha.quantidade < produto.quantidadeMinima - EPSILON) return falha("abaixo-do-minimo");
-    if (!noMultiplo(linha.quantidade, produto.quantidadeMinima, produto.multiplo)) {
-      return falha("fora-do-multiplo");
-    }
-
-    const preco = variante.precoCent;
-    return {
-      ...base,
-      precoUnitarioCent: preco,
-      /* Ao quilo, 1,5 kg a 1700 cêntimos são 2550: arredonda-se uma vez, no
-         total da linha, e é sempre um inteiro. */
-      totalCent: preco === null ? null : Math.round(preco * linha.quantidade),
-      erro: null,
-    };
-  });
-
+export function cotarLinhas(linhas: readonly LinhaACotar[], produtoDe: (id: string) => Produto | undefined): Cotacao {
+  const cotadas = linhas.map((linha): LinhaCotada => cotarUma(linha, produtoDe).cotada);
   const validas = cotadas.filter((linha) => linha.erro === null);
   return {
     linhas: cotadas,
@@ -90,6 +167,58 @@ export function cotarLinhas(
     valida: validas.length === cotadas.length,
   };
 }
+
+function cotarUma(
+  linha: LinhaACotar,
+  produtoDe: (id: string) => Produto | undefined,
+): { cotada: LinhaCotada; personalizado?: Extract<Personalizado, { ok: true }> } {
+  const base = { produtoId: linha.produtoId, varianteId: linha.varianteId, quantidade: linha.quantidade };
+  const falha = (erro: LinhaCotada["erro"]) => ({
+    cotada: { ...base, precoUnitarioCent: null, totalCent: null, detalhe: [], erro },
+  });
+
+  const produto = produtoDe(linha.produtoId);
+  if (!produto) return falha("produto-desconhecido");
+  const variante = produto.variantes.find((v) => v.id === linha.varianteId && v.ativa);
+  if (!variante) return falha("variante-desconhecida");
+  if (!produto.aVendaOnline || produto.arquivado || produto.foraDeVenda) return falha("fora-de-venda");
+  const personalizado = personalizar(produto, variante, linha, produtoDe);
+  if (!personalizado.ok) return falha("escolha-invalida");
+  if (linha.quantidade < produto.quantidadeMinima - EPSILON) return falha("abaixo-do-minimo");
+  if (!noMultiplo(linha.quantidade, produto.quantidadeMinima, produto.multiplo)) {
+    return falha("fora-do-multiplo");
+  }
+
+  const preco = variante.precoCent === null ? null : variante.precoCent + personalizado.acrescimoCent;
+  return {
+    personalizado,
+    cotada: {
+      ...base,
+      precoUnitarioCent: preco,
+      /* Ao quilo, 1,5 kg a 1700 cêntimos são 2550: arredonda-se uma vez, no
+         total da linha, e é sempre um inteiro. */
+      totalCent: preco === null ? null : Math.round(preco * linha.quantidade),
+      detalhe: personalizado.texto,
+      erro: null,
+    },
+  };
+}
+
+/**
+ * Os ids dos produtos de que um cesto precisa para se cotar: os das linhas e,
+ * nos compostos, os simples que cada grupo leva. Quem lê da base de dados pede
+ * os dois numa consulta cada, nunca um por produto (`robustez.md`).
+ */
+export const simplesLevados = (produtos: readonly Produto[]): string[] => [
+  ...new Set(produtos.flatMap((p) => p.variantes.flatMap((v) => v.leva.map((l) => l.produtoId)))),
+];
+
+/**
+ * O que um composto leva tem de existir e ser **simples** — não há kits dentro
+ * de kits (`painel-gerente.md`). Fora de venda pode: é para isso que serve.
+ */
+export const levaInvalida = (variantes: readonly Pick<Variante, "leva">[], produtoDe: (id: string) => Produto | undefined) =>
+  variantes.some((v) => v.leva.some((l) => produtoDe(l.produtoId)?.tipo !== "simples"));
 
 // ——— Gravar um produto (o painel da gerente) ———
 
@@ -152,6 +281,115 @@ export const comIds = (variantes: EntradaLida["variantes"]): Produto["variantes"
     return { ...variante, id };
   });
 };
+
+/* O id de uma peça nova: o nome em `kebab`, o primeiro livre. */
+const idNovo = (nome: string, recurso: string, ocupado: (id: string) => boolean) =>
+  livre(emId(nome) || recurso, ocupado);
+
+/**
+ * As peças da #88 com ids: as que já os tinham guardam-nos, as novas ganham-nos
+ * a partir do nome.
+ *
+ * ⚠️ **As variâncias e os extras são de todo o catálogo** (o «ligar»), por isso
+ * um id novo tem de estar livre em todo ele, e um id que venha do browser tem
+ * de existir — em qualquer produto. Um que não exista em lado nenhum era o
+ * browser a inventar ids, e devolve o campo a marcar. As opções e as escolhas
+ * são só da sua peça.
+ */
+export function pecasComIds(
+  entrada: Pick<EntradaLida, "variancias" | "opcoes" | "extras">,
+  existentes: { variancias: (id: string) => boolean; extras: (id: string) => boolean },
+): { ok: true; pecas: Pick<Produto, "variancias" | "opcoes" | "extras"> } | { ok: false; campo: string } {
+  if (entrada.variancias.some((v) => v.id !== undefined && !existentes.variancias(v.id))) {
+    return { ok: false, campo: "variancias" };
+  }
+  if (entrada.extras.some((e) => e.id !== undefined && !existentes.extras(e.id))) {
+    return { ok: false, campo: "extras" };
+  }
+  const usadas = new Set<string>();
+  const variancias = entrada.variancias.map((v) => {
+    const id = v.id ?? idNovo(v.nome.pt, "variancia", (c) => usadas.has(c) || existentes.variancias(c));
+    usadas.add(id);
+    const escolhasUsadas = new Set(v.escolhas.flatMap((e) => (e.id ? [e.id] : [])));
+    const escolhas = v.escolhas.map((e) => {
+      const idEscolha = e.id ?? idNovo(e.nome.pt, "escolha", (c) => escolhasUsadas.has(c));
+      escolhasUsadas.add(idEscolha);
+      return { ...e, id: idEscolha };
+    });
+    return { ...v, id, escolhas };
+  });
+  const usados = new Set<string>();
+  const extras = entrada.extras.map((e) => {
+    const id = e.id ?? idNovo(e.nome.pt, "extra", (c) => usados.has(c) || existentes.extras(c));
+    usados.add(id);
+    return { ...e, id };
+  });
+  const opcoesUsadas = new Set(entrada.opcoes.flatMap((o) => (o.id ? [o.id] : [])));
+  const opcoes = entrada.opcoes.map((o) => {
+    const id = o.id ?? idNovo(o.nome.pt, "opcao", (c) => opcoesUsadas.has(c));
+    opcoesUsadas.add(id);
+    return { ...o, id };
+  });
+  return { ok: true, pecas: { variancias, opcoes, extras } };
+}
+
+/**
+ * O que muda nos **outros** produtos quando um grava uma variância ou um extra
+ * partilhado: a mesma peça, com o mesmo id, passa a ser a nova em todos. Só
+ * para a fonte dos JSON — na base de dados é a mesma linha, e muda sozinha.
+ */
+export function comPecasPartilhadas(outro: Produto, gravado: Pick<Produto, "variancias" | "extras">): Produto | null {
+  let mudou = false;
+  const variancias = outro.variancias.map((v) => {
+    const nova = gravado.variancias.find((g) => g.id === v.id);
+    if (nova) mudou = true;
+    return nova ?? v;
+  });
+  const extras = outro.extras.map((e) => {
+    const novo = gravado.extras.find((g) => g.id === e.id);
+    if (novo) mudou = true;
+    return novo ?? e;
+  });
+  return mudou ? { ...outro, variancias, extras } : null;
+}
+
+/**
+ * Tudo o que se confere e completa antes de gravar um produto, nas duas
+ * fontes: os ids das variantes e das peças, e o que um grupo leva. `catalogo`
+ * é o catálogo inteiro, arquivados incluídos; `atual`, o produto que se edita.
+ */
+export function prepararProduto(
+  lido: EntradaLida,
+  catalogo: readonly Produto[],
+  atual: Produto | null,
+):
+  | { ok: true; campos: Pick<Produto, "variantes" | "variancias" | "opcoes" | "extras"> }
+  | { ok: false; resultado: ResultadoPainel<never> } {
+  const recusa = (campo: string) => ({
+    ok: false as const,
+    resultado: { ok: false as const, erro: "dados-invalidos" as const, campos: [campo] },
+  });
+  /* Um id de variante que o produto não tem não se aceita: era o browser a
+     inventar ids, e são eles que os cestos guardam. Uma variante que falte
+     na entrada sai. */
+  const existentes = new Set(atual?.variantes.map((v) => v.id) ?? []);
+  if (lido.variantes.some((v) => v.id !== undefined && !existentes.has(v.id))) return recusa("variantes");
+  const porId = new Map(catalogo.map((p) => [p.id, p]));
+  if (levaInvalida(lido.variantes, (id) => (id === atual?.id ? undefined : porId.get(id)))) return recusa("variantes");
+  const variancias = new Set(catalogo.flatMap((p) => p.variancias.map((v) => v.id)));
+  const extras = new Set(catalogo.flatMap((p) => p.extras.map((e) => e.id)));
+  const pecas = pecasComIds(lido, { variancias: (id) => variancias.has(id), extras: (id) => extras.has(id) });
+  if (!pecas.ok) return recusa(pecas.campo);
+  return { ok: true, campos: { variantes: comIds(lido.variantes), ...pecas.pecas } };
+}
+
+/**
+ * Antes de arquivar um simples, o painel avisa em que compostos ele está
+ * (`painel-gerente.md`): arquivar não o tira de lá, porque um kit não muda
+ * sozinho.
+ */
+export const compostosQueLevam = (id: string, catalogo: readonly Produto[]): Produto[] =>
+  catalogo.filter((p) => !p.arquivado && p.variantes.some((v) => v.leva.some((l) => l.produtoId === id)));
 
 // ——— O pedido ———
 
@@ -268,6 +506,8 @@ export async function conferirPedido(
       const produto = produtos[i];
       const variante = produto.variantes.find((v) => v.id === linha.varianteId)!;
       const cotada = cotacao.linhas[i];
+      /* Já passou na cotação: aqui só se tira a cópia do que se escolheu. */
+      const personalizado = cotarUma(linha, produtoDe).personalizado!;
       return {
         produtoId: produto.id,
         varianteId: variante.id,
@@ -275,7 +515,8 @@ export async function conferirPedido(
            não tem `locale`). */
         nome: produto.nome.pt,
         variante: variante.rotulo?.pt ?? null,
-        escolhas: linha.escolhas,
+        escolhas: personalizado.texto,
+        personalizacao: personalizado.personalizacao,
         unidade: produto.unidade,
         quantidade: linha.quantidade,
         /* `null` numa linha sem preço, até a gerente o fixar. */

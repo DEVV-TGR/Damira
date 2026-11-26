@@ -6,7 +6,7 @@ export function pedidoDeEmail(): Pedido {
     estado: "por-confirmar", criadoEm: agora, levantamentoEm: new Date("2026-10-27T10:00:00Z"),
     cliente: { nome: "Pessoa Exemplo", email: "pessoa@example.com", telefone: "+351912000000", nif: null, contaId: null },
     linhas: [{ produtoId: "festa-premium", varianteId: "unica", nome: "Nome guardado", variante: "Grande",
-      escolhas: ["Baunilha"], unidade: "kg", quantidade: 2, precoUnitarioCent: 1700,
+      escolhas: ["Baunilha"], personalizacao: null, unidade: "kg", quantidade: 2, precoUnitarioCent: 1700,
       totalCent: 3400, notas: "Nota guardada" }],
     totalCent: 3400, observacoes: null, modoPagamento: "na-loja", pagoOnlineCent: 0,
     reembolsadoCent: 0, reembolsos: [], avisosTratados: [], chegouTarde: false,

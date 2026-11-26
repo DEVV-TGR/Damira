@@ -54,8 +54,9 @@ export async function itensDoServidor(
       minimo: regra?.minimo ?? 1,
       passo: regra?.passo ?? 1,
       notas: lidas.data[i].notas || null,
-      /* Já confirmado pelo `cotarCesto` (`escolha-invalida`): é um dos sabores do produto. */
-      escolha: lidas.data[i].escolhas[0] ?? null,
+      /* Já conferida pelo `cotarCesto` (`escolha-invalida`), e escrita por ele:
+         o sabor, o que se tira, os extras, o que o grupo leva (#88). */
+      escolha: linha.detalhe.join(" · ") || null,
     });
   }
   return { ok: true, itens };

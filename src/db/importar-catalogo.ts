@@ -6,6 +6,7 @@ import {
   casaParaLinha,
   lerCasa,
   lerCatalogo,
+  gravarPecas,
   produtoParaLinhas,
   type BaseDeDados,
   type DadosDaCasa,
@@ -82,6 +83,11 @@ export async function importarCatalogo(db: BaseDeDados, origem: OrigemDoCatalogo
     await tx.insert(categorias).values(categoriasDoCatalogo(catalogo, origem.casa.ordem));
     await tx.insert(produtos).values(linhas.map((l) => l.produto));
     await tx.insert(variantes).values(linhas.flatMap((l) => l.variantes));
+    /* As peças da #88 (os sabores, como variâncias): as mesmas instruções do
+       painel, produto a produto — é uma tarefa que corre uma vez. */
+    for (const l of linhas) {
+      for (const instrucao of gravarPecas(tx, l)) await instrucao;
+    }
     await tx.insert(casa).values(casaParaLinha(origem.casa));
 
     return { produtos: linhas.length, variantes: linhas.reduce((soma, l) => soma + l.variantes.length, 0) };

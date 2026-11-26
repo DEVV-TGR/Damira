@@ -8,8 +8,19 @@ import {
   type OrdemEmenta,
   type Produto,
 } from "@/lib/dados/tipos";
-import { categoriaDoProduto, tipoDoProduto } from "./categorias";
-import { casa, categorias, produtos, variantes } from "./esquema";
+import { categoriaDoProduto } from "./categorias";
+import {
+  casa,
+  categorias,
+  extras,
+  produtos,
+  produtosExtras,
+  produtosVariancias,
+  variancias,
+  variantes,
+  variantesLeva,
+} from "./esquema";
+import type { BatchItem } from "drizzle-orm/batch";
 
 /**
  * # O catálogo e a casa, entre o contrato e as tabelas
@@ -30,6 +41,13 @@ export type BaseDeDados = PgDatabase<PgQueryResultHKT>;
 type LinhaProduto = typeof produtos.$inferSelect;
 type LinhaVariante = typeof variantes.$inferSelect;
 type LinhaCasa = typeof casa.$inferSelect;
+type LinhaLeva = typeof variantesLeva.$inferSelect;
+/** As peças partilhadas de um produto, já pela ordem dele (#88). */
+type PecasLidas = {
+  variancias: (typeof variancias.$inferSelect)[];
+  extras: (typeof extras.$inferSelect)[];
+  leva: LinhaLeva[];
+};
 
 // ——— Produto ———
 
@@ -47,7 +65,7 @@ export function colunasEditaveis(produto: Produto) {
     /* Saem da família, da carta e da categoria até a fronteira as ler (#124):
        mudar a categoria no editor muda também estas. */
     categoriaId: categoriaDoProduto(produto).id,
-    tipo: tipoDoProduto(produto),
+    tipo: produto.tipo,
     nomePt: produto.nome.pt,
     nomeEn: produto.nome.en,
     descricaoPt: produto.descricao?.pt ?? null,
@@ -56,7 +74,10 @@ export function colunasEditaveis(produto: Produto) {
     categoria: produto.categoria,
     subcategoria: produto.subcategoria,
     unidade: produto.unidade,
-    escolhas: produto.escolhas,
+    /* Os sabores de antes da #88 passaram a variâncias na `0011`; a coluna fica
+       para o código de antes, e já ninguém a escreve. */
+    escolhas: [],
+    opcoes: produto.opcoes,
     tempoProducaoUnidade: produto.tempoProducao?.unidade ?? null,
     tempoProducaoValor: produto.tempoProducao?.valor ?? null,
     quantidadeMinima: produto.quantidadeMinima,
@@ -95,12 +116,96 @@ export function produtoParaLinhas(produto: Produto, posicao: number) {
         pessoas: variante.pessoas,
         precoCent: variante.precoCent,
         composicao: variante.composicao,
+        ativa: variante.ativa,
       }) satisfies typeof variantes.$inferInsert,
+  );
+  const linhasLeva = produto.variantes.flatMap((variante) =>
+    variante.leva.map(
+      (l, i) =>
+        ({
+          produtoId: produto.id,
+          varianteId: variante.id,
+          posicao: i,
+          simplesId: l.produtoId,
+          quantidade: l.quantidade,
+        }) satisfies typeof variantesLeva.$inferInsert,
+    ),
+  );
+  const linhasVariancias = produto.variancias.map(
+    (v) => ({ id: v.id, nomePt: v.nome.pt, nomeEn: v.nome.en, escolhas: v.escolhas }) satisfies typeof variancias.$inferInsert,
+  );
+  const linhasExtras = produto.extras.map(
+    (e) =>
+      ({
+        id: e.id,
+        nomePt: e.nome.pt,
+        nomeEn: e.nome.en,
+        precoCent: e.precoCent,
+        maximo: e.maximo,
+        ativo: e.ativo,
+      }) satisfies typeof extras.$inferInsert,
   );
 
   /* A categoria vai junto: ao criar ou editar um produto numa categoria que
      ainda não existe, quem grava cria-a primeiro (`categoriaNova`). */
-  return { produto: linha, variantes: linhasVariantes, categoria: categoriaDoProduto(produto) };
+  return {
+    produto: linha,
+    variantes: linhasVariantes,
+    leva: linhasLeva,
+    variancias: linhasVariancias,
+    ligacoesVariancias: produto.variancias.map((v, i) => ({ produtoId: produto.id, varianciaId: v.id, posicao: i })),
+    extras: linhasExtras,
+    ligacoesExtras: produto.extras.map((e, i) => ({ produtoId: produto.id, extraId: e.id, posicao: i })),
+    categoria: categoriaDoProduto(produto),
+  };
+}
+
+/**
+ * As instruções que gravam as peças de um produto (#88), **depois** de o produto
+ * e as variantes existirem (as chaves estrangeiras). As variâncias e os extras
+ * gravam-se por cima dos que já existam com o mesmo id: é o «ligar», e muda-os
+ * em todos os produtos que os têm. As ligações e o que os grupos levam
+ * trocam-se inteiros. Um `insert` sem linhas rebenta no Drizzle: só entra o
+ * que tem.
+ */
+export function gravarPecas(db: BaseDeDados, linhas: ReturnType<typeof produtoParaLinhas>): BatchItem<"pg">[] {
+  const id = linhas.produto.id;
+  const instrucoes: BatchItem<"pg">[] = [
+    db.delete(produtosVariancias).where(eq(produtosVariancias.produtoId, id)),
+    db.delete(produtosExtras).where(eq(produtosExtras.produtoId, id)),
+  ];
+  if (linhas.variancias.length > 0) {
+    instrucoes.push(
+      db
+        .insert(variancias)
+        .values(linhas.variancias)
+        .onConflictDoUpdate({
+          target: variancias.id,
+          set: { nomePt: sql`excluded.nome_pt`, nomeEn: sql`excluded.nome_en`, escolhas: sql`excluded.escolhas` },
+        }),
+      db.insert(produtosVariancias).values(linhas.ligacoesVariancias),
+    );
+  }
+  if (linhas.extras.length > 0) {
+    instrucoes.push(
+      db
+        .insert(extras)
+        .values(linhas.extras)
+        .onConflictDoUpdate({
+          target: extras.id,
+          set: {
+            nomePt: sql`excluded.nome_pt`,
+            nomeEn: sql`excluded.nome_en`,
+            precoCent: sql`excluded.preco_cent`,
+            maximo: sql`excluded.maximo`,
+            ativo: sql`excluded.ativo`,
+          },
+        }),
+      db.insert(produtosExtras).values(linhas.ligacoesExtras),
+    );
+  }
+  if (linhas.leva.length > 0) instrucoes.push(db.insert(variantesLeva).values(linhas.leva));
+  return instrucoes;
 }
 
 /**
@@ -120,7 +225,11 @@ export function categoriaNova(db: BaseDeDados, categoria: ReturnType<typeof cate
 }
 
 /** As variantes já vêm pela ordem delas (`posicao`). */
-export function linhasParaProduto(linha: LinhaProduto, linhasVariantes: LinhaVariante[]): Produto {
+export function linhasParaProduto(
+  linha: LinhaProduto,
+  linhasVariantes: LinhaVariante[],
+  pecas: PecasLidas = { variancias: [], extras: [], leva: [] },
+): Produto {
   return EsquemaProduto.parse({
     id: linha.id,
     origem: linha.origem,
@@ -137,8 +246,21 @@ export function linhasParaProduto(linha: LinhaProduto, linhasVariantes: LinhaVar
       pessoas: v.pessoas,
       precoCent: v.precoCent,
       composicao: v.composicao,
+      ativa: v.ativa,
+      leva: pecas.leva
+        .filter((l) => l.varianteId === v.id)
+        .map((l) => ({ produtoId: l.simplesId, quantidade: l.quantidade })),
     })),
-    escolhas: linha.escolhas,
+    tipo: linha.tipo,
+    variancias: pecas.variancias.map((v) => ({ id: v.id, nome: { pt: v.nomePt, en: v.nomeEn }, escolhas: v.escolhas })),
+    opcoes: linha.opcoes,
+    extras: pecas.extras.map((e) => ({
+      id: e.id,
+      nome: { pt: e.nomePt, en: e.nomeEn },
+      precoCent: e.precoCent,
+      maximo: e.maximo,
+      ativo: e.ativo,
+    })),
     tempoProducao:
       linha.tempoProducaoUnidade === null
         ? null
@@ -172,16 +294,38 @@ export function linhasParaProduto(linha: LinhaProduto, linhasVariantes: LinhaVar
  */
 export async function lerProdutos(db: BaseDeDados, condicao?: SQL): Promise<Produto[]> {
   const ids = db.select({ id: produtos.id }).from(produtos).where(condicao);
-  const [linhas, todasVariantes] = await Promise.all([
+  const dos = <T extends SQL | undefined>(coluna: Parameters<typeof inArray>[0]) =>
+    (condicao ? inArray(coluna, ids) : undefined) as T;
+  const [linhas, todasVariantes, todasVariancias, todosExtras, todaLeva] = await Promise.all([
     db.select().from(produtos).where(condicao).orderBy(asc(produtos.posicao)),
+    db.select().from(variantes).where(dos(variantes.produtoId)).orderBy(asc(variantes.posicao)),
+    /* As peças da #88: uma consulta por tabela, ao mesmo tempo, com a ligação ao
+       produto para a ordem dele. */
     db
-      .select()
-      .from(variantes)
-      .where(condicao ? inArray(variantes.produtoId, ids) : undefined)
-      .orderBy(asc(variantes.posicao)),
+      .select({ produtoId: produtosVariancias.produtoId, peca: variancias })
+      .from(produtosVariancias)
+      .innerJoin(variancias, eq(variancias.id, produtosVariancias.varianciaId))
+      .where(dos(produtosVariancias.produtoId))
+      .orderBy(asc(produtosVariancias.posicao)),
+    db
+      .select({ produtoId: produtosExtras.produtoId, peca: extras })
+      .from(produtosExtras)
+      .innerJoin(extras, eq(extras.id, produtosExtras.extraId))
+      .where(dos(produtosExtras.produtoId))
+      .orderBy(asc(produtosExtras.posicao)),
+    db.select().from(variantesLeva).where(dos(variantesLeva.produtoId)).orderBy(asc(variantesLeva.posicao)),
   ]);
   const porProduto = Map.groupBy(todasVariantes, (v) => v.produtoId);
-  return linhas.map((linha) => linhasParaProduto(linha, porProduto.get(linha.id) ?? []));
+  const varianciasDe = Map.groupBy(todasVariancias, (v) => v.produtoId);
+  const extrasDe = Map.groupBy(todosExtras, (e) => e.produtoId);
+  const levaDe = Map.groupBy(todaLeva, (l) => l.produtoId);
+  return linhas.map((linha) =>
+    linhasParaProduto(linha, porProduto.get(linha.id) ?? [], {
+      variancias: (varianciasDe.get(linha.id) ?? []).map((v) => v.peca),
+      extras: (extrasDe.get(linha.id) ?? []).map((e) => e.peca),
+      leva: levaDe.get(linha.id) ?? [],
+    }),
+  );
 }
 
 /** O catálogo inteiro, arquivados incluídos. */

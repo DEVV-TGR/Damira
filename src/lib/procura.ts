@@ -36,7 +36,8 @@ export function correspondeArtigo(artigo: Produto, termo: string): boolean {
     artigo.nome.en,
     artigo.descricao?.pt,
     artigo.descricao?.en,
-    ...artigo.escolhas,
+    /* «Manga» encontra o batido: as escolhas das variâncias contam como texto do produto. */
+    ...artigo.variancias.flatMap((v) => v.escolhas.map((e) => e.nome.pt)),
   ];
 
   return campos.some((campo) => campo && normalizar(campo).includes(t));

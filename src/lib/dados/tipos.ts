@@ -54,18 +54,82 @@ export const EsquemaGrupoComposicao = z.object({
   linhas: z.array(z.object({ nome: Texto, quantidade: Texto.nullable() })).min(1),
 });
 
+/**
+ * O que um grupo de um composto leva (#88): **produtos simples**, cada um com a
+ * quantidade que a gerente quiser, ou sem quantidade («Salgados variados»). Só
+ * simples: não há kits dentro de kits, e quem o confere é a fonte, que conhece
+ * o catálogo (`conferirLeva`, em `regras.ts`).
+ */
+export const EsquemaLeva = z.object({
+  produtoId: z.string().regex(/^[a-z0-9-]+$/),
+  quantidade: z.number().positive().nullable(),
+});
+
 export const EsquemaVariante = z.object({
   /** `"unica"` num produto sem variantes; `"20"` no escalão de 20 pessoas. */
   id: z.string().min(1),
-  /** `null` na variante única, que não se escreve. */
+  /**
+   * `null` na variante única, que não se escreve. No simples é o **tamanho**
+   * («470 g»); no composto, o **grupo** («20 pessoas», «Kit bolo-rei»). O nome é
+   * da gerente, e o sistema não lhe dá sentido (`painel-gerente.md`).
+   */
   rotulo: Texto.nullable(),
   /** Só nos kits de festa, onde a variante **é** o número de pessoas. */
   pessoas: z.number().int().positive().nullable(),
   /** ⚠️ `null` é **sob orçamento**, nunca zero. O bolo por medida é assim. */
   precoCent: Cent.nullable(),
-  /** Vazio quando o produto não se descreve por partes (um artigo da carta). */
+  /**
+   * O que leva, **em texto** — os kits de antes da #88. Vazio num artigo da
+   * carta, e num grupo que já passou a produtos (`leva`).
+   */
   composicao: z.array(EsquemaGrupoComposicao),
+  /** O que leva, em produtos simples (#88). Só num composto. */
+  leva: z.array(EsquemaLeva).default([]),
+  /** Desligada sem se apagar: sai do site e do checkout, e volta como estava. */
+  ativa: z.boolean().default(true),
 });
+
+/* Os ids das peças da #88: vão no cesto, e voltam do browser. */
+const IdPeca = z.string().regex(/^[a-z0-9-]+$/).max(80);
+
+/**
+ * Uma **variância** (#88): trocar uma coisa por outra — «Salsicha: alemã /
+ * americana». O cliente escolhe **uma**, e cada escolha soma 0 € ou `+X €`.
+ *
+ * ⚠️ **Partilha-se** entre produtos (o «ligar»): o `id` é o da variância, não do
+ * produto, e mudar uma escolha num produto muda-a em todos os que a têm
+ * (`base-de-dados.md` › A personalização).
+ */
+export const EsquemaVariancia = z.object({
+  id: IdPeca,
+  nome: Texto,
+  escolhas: z
+    .array(z.object({ id: IdPeca, nome: Texto, acrescimoCent: Cent, ativa: z.boolean() }))
+    .min(1),
+});
+
+/** Uma **opção** (#88): tirar — «sem fiambre». Sem preço: tirar não desconta. De cada produto. */
+export const EsquemaOpcao = z.object({ id: IdPeca, nome: Texto, ativa: z.boolean() });
+
+/**
+ * Um **extra** (#88): pôr a mais — «+ fatia de queijo». Preço por unidade (0 €
+ * também vale) e o máximo por unidade do produto. Partilha-se, como a variância.
+ */
+export const EsquemaExtra = z.object({
+  id: IdPeca,
+  nome: Texto,
+  precoCent: Cent,
+  maximo: z.number().int().min(1).max(99),
+  ativo: z.boolean(),
+});
+
+/**
+ * Os dois tipos de produto (#124, #88). Aqui e não no esquema da base de dados:
+ * este ficheiro vai para o browser, e o esquema traz o Drizzle com ele. O
+ * esquema importa-os daqui.
+ */
+export const TIPOS_PRODUTO = ["simples", "composto"] as const;
+export type TipoProduto = (typeof TIPOS_PRODUTO)[number];
 
 export const EsquemaProduto = z.object({
   /** Vai para o URL. Único em todo o catálogo, ementa e encomendas juntas. */
@@ -82,8 +146,17 @@ export const EsquemaProduto = z.object({
   unidade: z.enum(["un", "kg"]),
   /** Sempre pelo menos uma: um produto sem variantes tem a `"unica"`. */
   variantes: z.array(EsquemaVariante).min(1),
-  /** Escolhas que não mudam o preço: sabores, cores (`painel-gerente.md`). */
-  escolhas: z.array(z.string()),
+  /**
+   * `simples` — um produto só, com tamanhos opcionais e personalização — ou
+   * `composto` — feito de simples, com grupos (`painel-gerente.md` › Simples e
+   * compostos). Marca-o a gerente.
+   */
+  tipo: z.enum(TIPOS_PRODUTO),
+  /* A personalização (#88). Só num simples: um composto mostra as variâncias
+     dos simples lá dentro, e nunca as opções e os extras deles. */
+  variancias: z.array(EsquemaVariancia).default([]),
+  opcoes: z.array(EsquemaOpcao).default([]),
+  extras: z.array(EsquemaExtra).default([]),
   /** `null` é **por preencher** — a casa ainda não o deu. Não se inventa. */
   tempoProducao: EsquemaTempoProducao.nullable(),
   quantidadeMinima: z.number().positive(),
@@ -142,6 +215,10 @@ export const EsquemaProduto = z.object({
 });
 
 export type GrupoComposicao = z.infer<typeof EsquemaGrupoComposicao>;
+export type Leva = z.infer<typeof EsquemaLeva>;
+export type Variancia = z.infer<typeof EsquemaVariancia>;
+export type Opcao = z.infer<typeof EsquemaOpcao>;
+export type Extra = z.infer<typeof EsquemaExtra>;
 export type Variante = z.infer<typeof EsquemaVariante>;
 export type Produto = z.infer<typeof EsquemaProduto>;
 
@@ -167,7 +244,35 @@ export const EsquemaLinhaCesto = z
     produtoId: z.string().min(1).max(100),
     varianteId: z.string().min(1).max(100),
     quantidade: z.number().positive().max(10_000),
+    /**
+     * ⚠️ **Só dos cestos de antes da #88**: o sabor pelo nome. O servidor
+     * procura-o nas variâncias do produto (`cotarLinhas`); um cesto novo manda
+     * as `variancias`, por id.
+     */
     escolhas: z.array(z.string().max(100)).max(20).default([]),
+    /**
+     * Uma escolha por variância. Num composto, as dos simples lá dentro, com o
+     * `produtoId` de cada um; `null` é o próprio produto.
+     */
+    variancias: z
+      .array(
+        z
+          .object({
+            produtoId: z.string().max(100).nullable().default(null),
+            varianciaId: z.string().max(100),
+            escolhaId: z.string().max(100),
+          })
+          .strict(),
+      )
+      .max(60)
+      .default([]),
+    /** Os ids das opções a tirar. */
+    opcoes: z.array(z.string().max(100)).max(30).default([]),
+    /** Os extras, com quantos de cada **por unidade** do produto. */
+    extras: z
+      .array(z.object({ id: z.string().max(100), quantidade: z.number().int().positive().max(99) }).strict())
+      .max(30)
+      .default([]),
     notas: z.string().trim().max(500).nullable().default(null),
   })
   .strict();
@@ -233,9 +338,10 @@ export type ContextoPedido = {
 // ——— A cotação: o preço que o servidor calcula ———
 
 /**
- * - `escolha-invalida`: o produto tem escolhas (sabores) e a linha não traz
- *   **exatamente uma** que exista nele — ou não tem escolhas e a linha traz
- *   alguma. O browser não decide o que é válido (regra 1): um sabor inventado
+ * - `escolha-invalida`: a personalização não bate com o produto (#88,
+ *   `pedidos.md` › Personalização) — uma variância sem escolha ou com duas, uma
+ *   escolha, opção ou extra que ele não tem ou está desligado, um extra acima do
+ *   máximo. O browser não decide o que é válido (regra 1): um sabor inventado
  *   chegava à cozinha impresso no talão.
  */
 export type ErroLinha =
@@ -253,6 +359,11 @@ export type LinhaCotada = {
   /** O preço **de agora**. Se o cesto guardou outro, o browser avisa. */
   precoUnitarioCent: number | null;
   totalCent: number | null;
+  /**
+   * O que se escolheu, em texto, uma linha cada (#88): o mesmo que a linha do
+   * pedido guarda em `escolhas`. Vazio numa linha com erro.
+   */
+  detalhe: string[];
   erro: ErroLinha | null;
 };
 
@@ -333,12 +444,39 @@ export const FORMATO_REFERENCIA = /^DAM-[0-9]{4}-[A-HJ-NP-Z2-9]{4}$/;
  * preço como estavam quando se pediu. Um pedido antigo nunca se recalcula a
  * partir do produto de hoje (`pedidos.md`).
  */
+/**
+ * **A cópia do que se escolheu** (#88), com os nomes e os preços do momento:
+ * o produto pode mudar amanhã (`pedidos.md` › Personalização). Em português,
+ * como o resto da linha.
+ */
+export const EsquemaPersonalizacao = z.object({
+  /** `produto` é o nome do simples de dentro, num composto; `null` no próprio. */
+  variancias: z.array(
+    z.object({ produto: z.string().nullable(), nome: z.string(), escolha: z.string(), acrescimoCent: Cent }),
+  ),
+  /** O que se tira, pelo nome que a gerente lhe deu: o talão escreve «SEM» à frente. */
+  opcoes: z.array(z.string()),
+  /** Quantos **por unidade** do produto, e o preço de cada. */
+  extras: z.array(z.object({ nome: z.string(), quantidade: z.number().int().positive(), precoCent: Cent })),
+  /** Num composto, o que o grupo levava. */
+  leva: z.array(z.object({ nome: z.string(), quantidade: z.number().positive().nullable() })),
+});
+
+export type Personalizacao = z.infer<typeof EsquemaPersonalizacao>;
+
 export const EsquemaLinhaPedido = z.object({
   produtoId: z.string(),
   varianteId: z.string(),
   nome: z.string(),
   variante: z.string().nullable(),
+  /**
+   * O que se escolheu, **em texto, uma linha cada**: «Sabor: Manga», «SEM
+   * fiambre», «+ 1 × Fatia de queijo». É o que o painel, o email e o talão de
+   * antes já escreviam; a forma inteira está na `personalizacao`.
+   */
   escolhas: z.array(z.string()),
+  /** `null` nas linhas de antes da #88. */
+  personalizacao: EsquemaPersonalizacao.nullable().default(null),
   unidade: z.enum(["un", "kg"]),
   quantidade: z.number().positive(),
   /**
@@ -540,9 +678,47 @@ export const EsquemaEntradaProduto = EsquemaProduto.omit({
 })
   .extend({
     variantes: z.array(EsquemaVariante.extend({ id: z.string().min(1).max(100).optional() })).min(1),
+    /* As peças da #88 também nascem sem id, que o servidor dá. ⚠️ Uma variância
+       ou um extra **com** o id de outro produto é o «ligar»: grava-se por cima
+       desse, e muda em todos os que o têm. */
+    variancias: z
+      .array(
+        EsquemaVariancia.extend({
+          id: IdPeca.optional(),
+          escolhas: z.array(EsquemaVariancia.shape.escolhas.element.extend({ id: IdPeca.optional() })).min(1).max(40),
+        }),
+      )
+      .max(20)
+      .default([]),
+    opcoes: z.array(EsquemaOpcao.extend({ id: IdPeca.optional() })).max(30).default([]),
+    extras: z.array(EsquemaExtra.extend({ id: IdPeca.optional() })).max(30).default([]),
   })
   .strict()
   .superRefine((produto, ctx) => {
+    /* Um composto escolhe-se pelo grupo, e o que leva já traz as variâncias dos
+       simples: as opções e os extras são do simples (`painel-gerente.md`). */
+    if (produto.tipo === "composto") {
+      for (const campo of ["variancias", "opcoes", "extras"] as const) {
+        if (produto[campo].length > 0) ctx.addIssue({ code: "custom", path: [campo], message: "só num simples" });
+      }
+    } else if (produto.variantes.some((v) => v.leva.length > 0)) {
+      ctx.addIssue({ code: "custom", path: ["variantes"], message: "só um composto leva produtos" });
+    }
+    for (const variante of produto.variantes) {
+      const levados = variante.leva.map((l) => l.produtoId);
+      if (new Set(levados).size !== levados.length) {
+        ctx.addIssue({ code: "custom", path: ["variantes"], message: "produto repetido no grupo" });
+      }
+    }
+    const repetidos = (lista: readonly { id?: string }[]) => {
+      const ids = lista.flatMap((x) => (x.id ? [x.id] : []));
+      return new Set(ids).size !== ids.length;
+    };
+    if (repetidos(produto.variancias) || produto.variancias.some((v) => repetidos(v.escolhas))) {
+      ctx.addIssue({ code: "custom", path: ["variancias"], message: "id repetido" });
+    }
+    if (repetidos(produto.opcoes)) ctx.addIssue({ code: "custom", path: ["opcoes"], message: "id repetido" });
+    if (repetidos(produto.extras)) ctx.addIssue({ code: "custom", path: ["extras"], message: "id repetido" });
     /* ⚠️ Na venda à distância os alergénios têm de estar disponíveis antes da
        compra. `null` é «ninguém respondeu», e não conta como «não tem»
        (`painel-gerente.md` › Sem alergénios respondidos). */

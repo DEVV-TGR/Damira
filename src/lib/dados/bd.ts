@@ -5,6 +5,7 @@ import {
   colunasDasDefinicoes,
   colunasDosHorarios,
   colunasEditaveis,
+  gravarPecas,
   lerCasa,
   lerProdutos,
   linhaParaCasa,
@@ -18,7 +19,7 @@ import type { ExecutarLote } from "@/db/lote";
 import { diaDeLisboa } from "@/lib/painel";
 import { criarPedidosDoPainelBd } from "./bd-painel-pedidos";
 import { criarPedidosBd, type LeituraDoPedido, type OpcoesDosPedidos } from "./bd-pedidos";
-import { comIds, cotarLinhas, emId, invalido, livre, naoExiste } from "./regras";
+import { cotarLinhas, emId, invalido, livre, naoExiste, prepararProduto, simplesLevados } from "./regras";
 import {
   EsquemaDefinicoes,
   EsquemaEntradaProduto,
@@ -170,7 +171,11 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
          «produto desconhecido». */
       const ids = [...new Set(lido.data.map((linha) => linha.produtoId))];
       const doCesto = await lerProdutos(db, inArray(produtos.id, ids));
-      const porId = new Map(doCesto.map((produto) => [produto.id, produto]));
+      /* Os simples que os compostos levam, para as variâncias deles: mais uma
+         consulta, e só se houver compostos. */
+      const levados = simplesLevados(doCesto).filter((id) => !ids.includes(id));
+      const dentro = levados.length > 0 ? await lerProdutos(db, inArray(produtos.id, levados)) : [];
+      const porId = new Map([...doCesto, ...dentro].map((produto) => [produto.id, produto]));
       return { ok: true, cotacao: cotarLinhas(lido.data, (id) => porId.get(id)) };
     },
 
@@ -204,10 +209,12 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
               .where(or(eq(produtos.id, base), like(produtos.id, `${base}-%`)))
           ).map((linha) => linha.id),
         );
+        const preparado = prepararProduto(lido.data, await lerProdutos(db), null);
+        if (!preparado.ok) return preparado.resultado;
         const produto = EsquemaProduto.parse({
           ...lido.data,
           id: livre(base, (candidato) => ocupados.has(candidato)),
-          variantes: comIds(lido.data.variantes),
+          ...preparado.campos,
           arquivado: false,
           foraDeVenda: false,
           esgotadoNoDia: null,
@@ -222,6 +229,7 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
               posicao: sql`(select coalesce(max(${produtos.posicao}), -1) + 1 from ${produtos})`,
             }),
             d.insert(variantes).values(linhas.variantes),
+            ...gravarPecas(d, linhas),
           ]);
           return { ok: true, valor: (await lerUm(produto.id))! };
         } catch (erro) {
@@ -237,15 +245,12 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
       const lido = EsquemaEntradaProduto.safeParse(entrada);
       if (!lido.success) return invalido(lido.error);
       if (await foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
-      /* Um id de variante que o produto não tem não se aceita: era o browser a
-         inventar ids, e são eles que os cestos guardam. Uma variante que falte
-         na entrada sai. (A mesma regra do `json-painel.ts`.) */
-      const existentes = new Set(atual.variantes.map((v) => v.id));
-      if (lido.data.variantes.some((v) => v.id !== undefined && !existentes.has(v.id))) {
-        return { ok: false, erro: "dados-invalidos", campos: ["variantes"] };
-      }
+      /* As variantes, as peças partilhadas e o que os grupos levam conferem-se
+         contra o catálogo inteiro: a mesma regra do `json-painel.ts`. */
+      const preparado = prepararProduto(lido.data, await lerProdutos(db), atual);
+      if (!preparado.ok) return preparado.resultado;
 
-      const produto = EsquemaProduto.parse({ ...atual, ...lido.data, variantes: comIds(lido.data.variantes) });
+      const produto = EsquemaProduto.parse({ ...atual, ...lido.data, ...preparado.campos });
       const linhas = produtoParaLinhas(produto, 0);
       await emLote((d) => [
         categoriaNova(d, linhas.categoria),
@@ -256,6 +261,7 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
            não apontam para estas linhas (`pedidos.md` › fotografia do momento). */
         d.delete(variantes).where(eq(variantes.produtoId, id)),
         d.insert(variantes).values(linhas.variantes),
+        ...gravarPecas(d, linhas),
       ]);
       return { ok: true, valor: (await lerUm(id))! };
     },
