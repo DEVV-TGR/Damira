@@ -7,6 +7,7 @@ import type { Locale } from "@/i18n/routing";
 import { estimativa, quantidadeEmTexto, totalArtigos, totalDaLinha } from "@/lib/cesto";
 import { formatarCent } from "@/lib/preco";
 import { useCesto } from "./CestoProvider";
+import { DetalhesDoBolo } from "./DetalhesDoBolo";
 
 /**
  * # O cesto: um botão no canto e um cartão no centro
@@ -75,7 +76,9 @@ export function Cesto({ locale }: { locale: Locale }) {
   const continuar = "premivel flex min-h-12 flex-1 items-center justify-center rounded-full bg-tijolo px-6 text-sm font-semibold uppercase tracking-widest text-papel sm:flex-none";
   const { somaCent, semPreco } = estimativa(cesto);
   const artigos = totalArtigos(cesto);
-  const valor = formatarCent(somaCent, locale);
+  /* Só com artigos sob orçamento (um bolo personalizado sozinho), «0,00 €» lia-se
+     como de graça. */
+  const valor = somaCent === 0 && semPreco > 0 ? t("semPreco") : formatarCent(somaCent, locale);
 
   return (
     <>
@@ -154,6 +157,7 @@ export function Cesto({ locale }: { locale: Locale }) {
               <li key={item.id} className="flex items-start gap-3 py-3">
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold">{item.nome}</p>
+                  <DetalhesDoBolo item={item} />
                   {(item.variante || item.escolha) && (
                     <p className="text-sm text-tinta-suave">{[item.variante, item.escolha].filter(Boolean).join(" · ")}</p>
                   )}
@@ -206,7 +210,7 @@ export function Cesto({ locale }: { locale: Locale }) {
 
           <div className="border-t border-tinta/15 p-5 pt-4">
             <p className="flex items-baseline justify-between gap-4 font-semibold">
-              <span>{semPreco > 0 ? t("aPartirDe") : t("estimativa")}</span>
+              <span>{somaCent === 0 && semPreco > 0 ? t("total") : semPreco > 0 ? t("aPartirDe") : t("estimativa")}</span>
               <span className="titulo-display text-2xl tabular-nums text-tijolo">{valor}</span>
             </p>
             <p className="mt-2 text-sm text-tinta-suave">

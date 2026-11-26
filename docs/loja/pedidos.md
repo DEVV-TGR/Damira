@@ -474,6 +474,10 @@ quantidades (regra 1) — as `variancias`, `opcoes` e `extras` da linha do cesto
   desconta;
 - **composto** = preço do grupo escolhido. O que vem dentro não soma.
 
+⚠️ **O bolo personalizado fica de fora** (26/11): manda o `bolo` e nenhuma
+peça da #88; a linha que as traga é recusada (`bolo-invalido`), e o preço dele é
+sempre por saber (ver «O bolo personalizado», em › O que o pedido guarda).
+
 Tudo × quantidade da linha (unidades ou quilos), em cêntimos. E recusa:
 
 - o que não existe no produto ou está desligado;
@@ -495,6 +499,17 @@ contar o seu mínimo. Com opções e extras, «6 com queijo e 6 sem» são duas 
 de 6, e as duas são recusadas por um mínimo de 12. Ou continua por linha (cada
 lote de 12 sai igual da cozinha), ou passa a contar pela soma do produto no
 pedido. *Decide:* Gonçalo, com a casa.
+
+**O bolo personalizado** (#51) vai na linha como **`bolo`**: os ids do tamanho,
+massa, cobertura, recheio, «à volta», topping e toppings extra, as fotos e a
+autorização — nunca nomes nem preços, e nenhuma peça da #88. O servidor confere-o contra as opções da casa
+(`validarBolo`, em `src/lib/bolo-personalizado.ts`) e recusa a linha com
+`bolo-invalido` se a combinação não existir, se uma opção estiver desligada, se
+faltar a foto para imprimir (ou vier sem o topping que a pede) ou a autorização,
+ou se os toppings extra passarem do máximo. Nenhum outro produto traz `bolo`. A
+linha guardada leva as escolhas em texto («Massa: Red Velvet», uma por escolha,
+em `escolhas`) e as fotos na **`personalizacao`** (`bolo.fotos`), com a de
+imprimir à parte das de referência — o mesmo `jsonb` da #88, sem migração.
 
 ⚠️ **Nunca se recalcula um pedido antigo a partir do produto atual.** A gerente
 muda preços e nomes quando quer; um pedido de ontem tem de continuar a dizer o

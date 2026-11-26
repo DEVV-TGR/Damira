@@ -1,8 +1,9 @@
 # Bolos personalizados
 
-> ⚠️ **Ficheiro incompleto.** Falta a Damira dizer que coberturas leva cada
-> massa, o preço base de cada tamanho, e em que bolos se pode imprimir uma foto
-> (e se isso tem custo). O que está abaixo já está decidido; os valores não.
+> ⚠️ **Falta a Damira dar os tamanhos e o preço base de cada um**, e se a
+> impressão da foto tem custo. As combinações chegaram no PDF «Bolos
+> Personalizados» (26/11) e estão em `src/data/bolos-personalizados.json`; a
+> gerente muda-as no painel (`painel-gerente.md` › Bolos personalizados).
 
 > ⚠️ **Paga-se só na loja**, ao balcão, no levantamento, e sem sinal
 > (decisão da casa a 04/11, confirmada na política de 10/11). O como do pedido
@@ -62,10 +63,14 @@ só se vê quando o cliente vem buscar o bolo.
   é esse valor ser pago em loja — ficaria algo como sob orçamento»), e o
   pagamento só na loja fecha-a:
   - o cliente vê um **preço base por tamanho**, como «a partir de», que a gerente
-    define no painel (com a #88, os tamanhos do produto simples). É só para mostrar: a linha do bolo entra no pedido **sem
-    preço final**. Os extras (o topper, a impressão da foto, uma cobertura mais
-    cara) são extras (#88, `painel-gerente.md` › Simples e
-    compostos), com preço ou a 0 €;
+    define em **Bolos personalizados › Tamanhos** — e não nos tamanhos do produto
+    da #88, que cobram o preço (decidido a 26/11). É só para mostrar: a linha do
+    bolo entra no pedido **sem preço final**. Os **toppings extra** podem ter um
+    preço indicativo, que só soma ao «a partir de»;
+  - ⚠️ **o bolo personalizado não leva peças da #88** (variâncias, opções,
+    extras — decidido a 26/11): é todo do configurador, a ficha do produto não
+    as mostra, e o servidor recusa a linha que as traga (`bolo-invalido`). O que
+    custa a mais (o topper, a impressão da foto) entra no preço que a gerente dá;
   - **o bolo vai no mesmo cesto que o resto**, e o pedido inteiro fica
     **por confirmar** (`pedidos.md` › Confirmar). O cesto, a página do pedido, o
     email de «recebemos» e o painel mostram o total dos produtos de preço fixo,
@@ -87,8 +92,43 @@ só se vê quando o cliente vem buscar o bolo.
   levantamento, e as dos pedidos cancelados ou expirados apagam-se logo. A advogada confirma o
   prazo, e a política de privacidade tem de falar delas (#52).
 
+## Como está feito (#51, 26/11)
+
+- **As combinações do PDF:** 21 massas com as coberturas que cada uma leva
+  (Outras, Pasta de Açúcar, Butter Cream), 42 recheios, 24 «à volta» e 32
+  toppings — estes três com todas as coberturas. **A cobertura é o eixo**: a
+  massa decide as coberturas possíveis, e a cobertura filtra o resto. Uma regra
+  só (`src/lib/bolo-personalizado.ts`), no configurador e no servidor.
+- **A foto para imprimir vem com o topping «Foto em folha de hóstia»** (no
+  painel, Fotos › o topping que pede a foto). Sem esse topping o campo nem
+  aparece; com ele, a foto e a autorização são obrigatórias.
+- **A ordem do configurador:** tamanho (se houver), massa, cobertura, recheio,
+  «à volta», topping, **toppings extra** (se a gerente os ligar), fotos de
+  referência, foto para imprimir, mensagem e observações.
+- **Os toppings extra** (26/11): além do topping, até ao máximo que a gerente
+  der (0 desliga, e é o de partida — o PDF não os oferece). Da mesma cobertura,
+  sem o topping principal e sem o que imprime a foto. Vão numa linha só
+  («Toppings extra: Pintarolas, Morangos a decorar»). As listas longas são listas nativas: no telemóvel percorrem-se
+  com o polegar.
+- **As fotos sobem para o Vercel Blob** (`/api/bolos/fotos`), já reduzidas no
+  browser, e o pedido guarda só o caminho. ⚠️ **No modo de teste sem Blob**
+  ficam numa pasta temporária do servidor, para o fluxo se experimentar em
+  local; fora dele, sem Blob, o envio diz que não está disponível.
+- ⚠️ **O limite de envios é provisório:** 12 por hora e por IP, contado em
+  memória. O `robustez.md` pede contadores na base de dados; vêm com o PR de
+  esquema.
+- **O aviso de foto pequena** aparece abaixo de 1000 px no lado menor —
+  provisório, até a cozinha dar o mínimo.
+- **O texto da autorização é provisório** até a advogada o dar (#52).
+- **No painel**, a linha mostra as escolhas uma por linha e as fotos em dois
+  blocos: «Foto para imprimir no bolo» em destaque, e «Fotos de referência».
+- **No pedido guardado**, as escolhas vão em texto nas `escolhas` da linha, e
+  as fotos na `personalizacao` (`bolo.fotos`), o mesmo `jsonb` da #88: ficam na
+  base de dados sem migração própria.
+- **Os nomes das opções são só em português**: é a casa que os escreve.
+
 ## À espera da Damira
 
-- Que coberturas leva cada massa (o resto das combinações)
-- O preço base de cada tamanho
-- Em que bolos se pode imprimir uma foto, e se a impressão tem custo
+- Os tamanhos e o preço base de cada um
+- Se a impressão da foto tem custo
+- O mínimo de resolução para a foto impressa (a cozinha)

@@ -143,7 +143,12 @@ ela monta o que quiser. O sistema não conhece «queijo», «topper» ou «20
 pessoas», e não tem regras sobre o que faz sentido juntar a quê. Só valida o
 que não é conteúdo (`pedidos.md` › Personalização).
 
-Há dois tipos de produto (`produtos.tipo`, #124), e marca-o ela:
+Há dois tipos de produto (`produtos.tipo`, #124), e marca-o ela.
+
+⚠️ **O bolo personalizado é a exceção** (decidido a 26/11): é um simples, mas
+não leva tamanhos, variâncias, opções nem extras da #88 — a ficha dele não os
+mostra, e tudo o que se escolhe nele está em › Bolos personalizados, mais
+abaixo. O preço é sempre o que a gerente der a cada pedido.
 
 | | **Produto simples** | **Produto composto** |
 |---|---|---|
@@ -345,6 +350,33 @@ bebidas ficam na ordem do impresso), e as cartas também não se ordenam.
   ordem gravada, e não pela sequência em que os artigos chegam.
 - Por defeito, até a gerente mexer, é a ordem do impresso (`CATEGORIAS`, em
   `src/data/ementa.ts`).
+
+### Bolos personalizados
+
+Em **Produtos › Bolos personalizados** (#51, 26/11): tudo o que o configurador
+do site oferece, e nada que a gerente não tenha escrito lá.
+
+- **Separadores:** Tamanhos · Massas · Coberturas · Recheios · À volta ·
+  Toppings · Fotos, cada um com o número de opções ligadas.
+- **Cada lista:** juntar, mudar o nome, ligar/desligar e subir/descer (a ordem
+  é a que o cliente vê). **Desligar não apaga**: os pedidos antigos continuam a
+  dizer o que se pediu. Apagar só existe numa linha nova, ainda por gravar. O
+  id sai do nome quando a opção se grava e nunca muda.
+- **Compatibilidade:** nas massas, recheios, «à volta» e toppings, uma coluna
+  por cobertura, como o PDF da casa. ⚠️ **Lista positiva**: uma cobertura nova,
+  ou uma opção nova, entra **desmarcada** — não fica permitida por esquecimento.
+- **Tamanhos:** opcionais, com o «a partir de» em euros (só para mostrar; vazio
+  é «sem a partir de», nunca zero). Sem tamanhos, o bolo é só «sob orçamento».
+  ⚠️ São estes, e não os tamanhos do produto da #88, que cobram (26/11).
+- **Toppings extra:** no separador Toppings, quantos o cliente pode juntar a
+  mais (0 desliga, e é o de partida), e o preço de cada topping **como extra**
+  — indicativo, soma só ao «a partir de».
+- **Fotos:** quantas de referência (0 a 3) e **que topping pede a foto para
+  imprimir** («Foto em folha de hóstia»).
+- **Pré-visualizar no site** abre o configurador numa aba nova.
+- ⚠️ **Na base de dados, gravar responde `indisponivel`** até ao PR de esquema
+  que lhe dá a tabela: as opções leem-se do JSON. Nos JSON (modo de teste)
+  grava em memória, e o site mostra logo as novas.
 
 ### Fotos
 

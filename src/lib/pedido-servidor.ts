@@ -55,8 +55,12 @@ export async function itensDoServidor(
       passo: regra?.passo ?? 1,
       notas: lidas.data[i].notas || null,
       /* Já conferida pelo `cotarCesto` (`escolha-invalida`), e escrita por ele:
-         o sabor, o que se tira, os extras, o que o grupo leva (#88). */
-      escolha: linha.detalhe.join(" · ") || null,
+         o sabor, o que se tira, os extras, o que o grupo leva (#88). No bolo
+         personalizado (`bolo-invalido`), uma linha por escolha, com os nomes da
+         casa, e as fotos para o email. */
+      ...(lidas.data[i].bolo
+        ? { escolha: null, bolo: lidas.data[i].bolo, detalhes: linha.detalhe }
+        : { escolha: linha.detalhe.join(" · ") || null }),
     });
   }
   return { ok: true, itens };

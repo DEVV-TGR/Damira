@@ -1,7 +1,7 @@
 import { TZDate } from "@date-fns/tz";
 import { describe, expect, it } from "vitest";
 import { fonteDeExemplo } from "./exemplo";
-import { fonteDaBaseDeDados, NA_BASE_DE_DADOS } from "./fontes-de-teste";
+import { fonteDaBaseDeDados, NA_BASE_DE_DADOS, BOLO_DE_TESTE } from "./fontes-de-teste";
 import { CATALOGO_JSON, CONFIGURACAO_JSON } from "./json";
 import { protegerPainel } from "./papeis";
 import type { ContextoPainel, EntradaPedido, EntradaProduto, FonteDeDados, Produto } from "./tipos";
@@ -90,7 +90,9 @@ const paraEntrada = (produto: Produto): EntradaProduto => {
 };
 
 const precoDe = async (f: FonteDeDados, produtoId: string, varianteId: string, quantidade = 1) => {
-  const cotado = await f.cotarCesto([{ produtoId, varianteId, quantidade }]);
+  /* O bolo por medida só se cota montado (#51). */
+  const bolo = produtoId === "bolo-por-medida" ? { bolo: BOLO_DE_TESTE } : {};
+  const cotado = await f.cotarCesto([{ produtoId, varianteId, quantidade, ...bolo }]);
   if (!cotado.ok) throw new Error("cotação inválida");
   return cotado.cotacao.linhas[0];
 };

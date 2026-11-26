@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import type { z } from "zod";
 import { FUSO, validarLevantamento, type ArtigoDoCesto, type VagaOcupada } from "@/lib/horarios";
 import { esgotadoHoje } from "@/lib/painel";
+import { linhasDoBolo, ROTULOS_PT, validarBolo } from "@/lib/bolo-personalizado";
 import type {
   ConfiguracaoDaCasa,
   Cotacao,
@@ -18,6 +19,7 @@ import type {
   ResultadoPainel,
   Variancia,
   Variante,
+  OpcoesBolo,
 } from "./tipos";
 
 /**
@@ -37,7 +39,7 @@ const noMultiplo = (quantidade: number, minimo: number, multiplo: number) => {
   return Math.abs(passos - Math.round(passos)) < EPSILON;
 };
 
-type LinhaACotar = Pick<LinhaCesto, "produtoId" | "varianteId" | "quantidade"> & {
+type LinhaACotar = Pick<LinhaCesto, "produtoId" | "varianteId" | "quantidade" | "bolo"> & {
   escolhas?: readonly string[];
   variancias?: readonly { produtoId?: string | null; varianciaId: string; escolhaId: string }[];
   opcoes?: readonly string[];
@@ -157,8 +159,13 @@ export function personalizar(
  * variâncias e os extras. Tirar não desconta, e num composto o que vem dentro
  * não soma. Um preço sob orçamento põe a linha sob orçamento.
  */
-export function cotarLinhas(linhas: readonly LinhaACotar[], produtoDe: (id: string) => Produto | undefined): Cotacao {
-  const cotadas = linhas.map((linha): LinhaCotada => cotarUma(linha, produtoDe).cotada);
+export function cotarLinhas(
+  linhas: readonly LinhaACotar[],
+  produtoDe: (id: string) => Produto | undefined,
+  /** As opções do bolo personalizado. Sem elas, um bolo personalizado é recusado. */
+  opcoesBolo?: OpcoesBolo,
+): Cotacao {
+  const cotadas = linhas.map((linha): LinhaCotada => cotarUma(linha, produtoDe, opcoesBolo).cotada);
   const validas = cotadas.filter((linha) => linha.erro === null);
   return {
     linhas: cotadas,
@@ -171,6 +178,7 @@ export function cotarLinhas(linhas: readonly LinhaACotar[], produtoDe: (id: stri
 function cotarUma(
   linha: LinhaACotar,
   produtoDe: (id: string) => Produto | undefined,
+  opcoesBolo?: OpcoesBolo,
 ): { cotada: LinhaCotada; personalizado?: Extract<Personalizado, { ok: true }> } {
   const base = { produtoId: linha.produtoId, varianteId: linha.varianteId, quantidade: linha.quantidade };
   const falha = (erro: LinhaCotada["erro"]) => ({
@@ -182,8 +190,27 @@ function cotarUma(
   const variante = produto.variantes.find((v) => v.id === linha.varianteId && v.ativa);
   if (!variante) return falha("variante-desconhecida");
   if (!produto.aVendaOnline || produto.arquivado || produto.foraDeVenda) return falha("fora-de-venda");
+  /* O bolo personalizado (o «bolo por medida», #51) monta-se no configurador e
+     confere-se contra as opções da casa (`validarBolo`). ⚠️ **Não leva peças da
+     #88** — variâncias, opções, extras, sabor pelo nome —: o bolo é todo do
+     configurador, e o preço final é da gerente. Nenhum outro produto traz bolo. */
+  const ehBolo = produto.familia === "medida";
+  if (ehBolo) {
+    const pecas = (linha.escolhas?.length ?? 0) + (linha.variancias?.length ?? 0) + (linha.opcoes?.length ?? 0) + (linha.extras?.length ?? 0);
+    if (pecas > 0 || !linha.bolo || !opcoesBolo || validarBolo(opcoesBolo, linha.bolo) !== null) return falha("bolo-invalido");
+  } else if (linha.bolo) {
+    return falha("bolo-invalido");
+  }
   const personalizado = personalizar(produto, variante, linha, produtoDe);
   if (!personalizado.ok) return falha("escolha-invalida");
+  if (ehBolo && linha.bolo && opcoesBolo) {
+    /* O texto é o do configurador, com os nomes da casa; as fotos ficam na
+       cópia da linha, em dois campos (`bolos-personalizados.md` › As duas fotos). */
+    personalizado.texto = linhasDoBolo(opcoesBolo, linha.bolo, ROTULOS_PT);
+    personalizado.personalizacao.bolo = {
+      fotos: { referencia: [...linha.bolo.fotosReferencia], imprimir: linha.bolo.fotoImprimir },
+    };
+  }
   if (linha.quantidade < produto.quantidadeMinima - EPSILON) return falha("abaixo-do-minimo");
   if (!noMultiplo(linha.quantidade, produto.quantidadeMinima, produto.multiplo)) {
     return falha("fora-do-multiplo");
@@ -468,6 +495,8 @@ export async function conferirPedido(
     configuracao: ConfiguracaoDaCasa;
     produtoDe: (id: string) => Produto | undefined;
     ocupacaoDaVaga: (vaga: Date) => VagaOcupada[] | Promise<VagaOcupada[]>;
+    /** Sem elas, um bolo personalizado é recusado. */
+    opcoesBolo?: OpcoesBolo;
   },
 ): Promise<PedidoConferido | Extract<ResultadoCriarPedido, { ok: false }>> {
   const { definicoes, configuracao, produtoDe, ocupacaoDaVaga } = fontes;
@@ -475,7 +504,7 @@ export async function conferirPedido(
     return { ok: false, erro: "loja-em-pausa" };
   }
 
-  const cotacao = cotarLinhas(dados.linhas, produtoDe);
+  const cotacao = cotarLinhas(dados.linhas, produtoDe, fontes.opcoesBolo);
   if (!cotacao.valida) return { ok: false, erro: "artigo-invalido", linhas: cotacao.linhas };
   /* ⚠️ Com uma linha por orçar, a parte conhecida não diz quanto o pedido vai
      custar — o bolo por medida sozinho dava zero. O mínimo só se confere quando
@@ -517,7 +546,7 @@ export async function conferirPedido(
       const variante = produto.variantes.find((v) => v.id === linha.varianteId)!;
       const cotada = cotacao.linhas[i];
       /* Já passou na cotação: aqui só se tira a cópia do que se escolheu. */
-      const personalizado = cotarUma(linha, produtoDe).personalizado!;
+      const personalizado = cotarUma(linha, produtoDe, fontes.opcoesBolo).personalizado!;
       return {
         produtoId: produto.id,
         varianteId: variante.id,

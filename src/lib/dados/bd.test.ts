@@ -7,6 +7,7 @@ import { baseDeTeste } from "@/db/teste";
 import { criarFonteBd } from "./bd";
 import { CATALOGO_JSON, criarFonteJson } from "./json";
 import type { FiltroProdutos } from "./tipos";
+import { BOLO_DE_TESTE } from "./fontes-de-teste";
 
 /**
  * # A fonte da base de dados dá as mesmas respostas que a dos JSON
@@ -57,7 +58,13 @@ describe("as leituras dão o mesmo", () => {
 });
 
 describe("o preço do cesto dá o mesmo", () => {
-  const unica = (produtoId: string, quantidade: number) => ({ produtoId, varianteId: "unica", quantidade });
+  /* O bolo por medida só se cota montado (#51). */
+  const unica = (produtoId: string, quantidade: number) => ({
+    produtoId,
+    varianteId: "unica",
+    quantidade,
+    ...(produtoId === "bolo-por-medida" ? { bolo: BOLO_DE_TESTE } : {}),
+  });
 
   it.each<[string, unknown]>([
     ["um kit de festa", [{ produtoId: "festa-premium", varianteId: "20", quantidade: 1 }]],
