@@ -97,7 +97,7 @@ export function Cabecalho({ locale }: { locale: Locale }) {
           <Link
             href={caminho}
             locale={outra}
-            className="alvo-toque inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-tinta/25 transition-colors hover:bg-tinta"
+            className="alvo-toque controlo-cabecalho inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-tinta/25 transition-colors hover:bg-tinta"
             /* `lang` no link diz aos leitores de ecrã para pronunciar "English"
                à inglesa, em vez de o lerem com fonética portuguesa. */
             lang={outra}

@@ -27,14 +27,14 @@ export function BotaoConta() {
   const caminho = usePathname();
 
   if (aCarregar) {
-    return <span aria-hidden className="size-11 shrink-0 rounded-full bg-tinta/8" />;
+    return <span aria-hidden className="mx-1 size-9 shrink-0 rounded-full bg-tinta/8 sm:mx-0 sm:size-11" />;
   }
 
   if (!utilizador) {
     return (
       <Link
         href={{ pathname: "/entrar", query: { voltar: caminho } }}
-        className="alvo-toque flex size-11 shrink-0 items-center justify-center rounded-full border border-tinta/25 transition-colors hover:bg-tinta hover:text-papel sm:w-auto sm:px-3.5"
+        className="alvo-toque controlo-cabecalho flex size-11 shrink-0 items-center justify-center rounded-full border border-tinta/25 transition-colors hover:bg-tinta hover:text-papel sm:w-auto sm:px-3.5"
         aria-label={t("entrar")}
       >
         {/* ⚠️ **A palavra «Entrar» não cabe a 390 px.** Com ela, o cabeçalho
@@ -68,7 +68,7 @@ export function BotaoConta() {
   return (
     <Link
       href="/conta"
-      className="alvo-toque flex size-11 shrink-0 items-center justify-center rounded-full border border-tinta/25 transition-colors hover:bg-tinta hover:text-papel sm:w-auto sm:gap-2 sm:pl-1 sm:pr-3"
+      className="alvo-toque controlo-cabecalho flex size-11 shrink-0 items-center justify-center rounded-full border border-tinta/25 transition-colors hover:bg-tinta hover:text-papel sm:w-auto sm:gap-2 sm:pl-1 sm:pr-3"
       aria-label={t("aMinhaConta")}
     >
       {/* ⚠️ `<img>` e não `next/image`: a fotografia vem do Google ou do
