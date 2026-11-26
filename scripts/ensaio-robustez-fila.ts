@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { setTimeout as esperar } from "node:timers/promises";
 import { eq } from "drizzle-orm";
+import { z } from "zod";
+import { erroDoPostgres } from "../src/db/erros";
 import { pedidos, linhasPedido, emailsPorEnviar } from "../src/db/esquema";
 import { baseDaNeon } from "../src/lib/dados/bd-neon";
 import { criarEmailsBd } from "../src/lib/dados/bd-emails";
@@ -56,7 +58,7 @@ async function executar() {
     if (!existente) {
       const criadoEm = new Date("2026-11-22T09:00:00Z");
       const cancelado = numero === 5;
-      const pedido = EsquemaPedido.parse({ ...pedidoDeEmail(), id: id(numero), referencia: `DAM-2211-R${numero}41`,
+      const pedido = EsquemaPedido.parse({ ...pedidoDeEmail(), id: id(numero), referencia: `DAM-2211-R${"ABCDE"[numero - 1]}AA`,
         estado: cancelado ? "cancelado" : "expirado", criadoEm,
         levantamentoEm: new Date("2026-11-27T10:00:00Z"),
         expiraEm: cancelado ? null : new Date(+criadoEm + 48 * 3_600_000),
@@ -188,7 +190,10 @@ async function executar() {
     rececaoGmail: "por confirmar pelo Tomas", duplicadosNaCaixa: "por confirmar pelo Tomas" });
 }
 
-executar().catch(() => {
+executar().catch(erro => {
+  if (erro instanceof z.ZodError) registar("validacao", erro.issues.map(i => ({ caminho: i.path, codigo: i.code })));
+  const codigo = erroDoPostgres(erro)?.code;
+  if (typeof codigo === "string" && /^[0-9A-Z]{5}$/.test(codigo)) registar("postgres", { codigo });
   console.error("[robustez-141] interrompido; conferir o último marco seguro, sem imprimir objetos de erro.");
   process.exitCode = 1;
 });
