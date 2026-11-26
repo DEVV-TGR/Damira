@@ -191,6 +191,10 @@ describe("os toppings extra (26/11)", () => {
     expect(validarBolo(comExtras, comTamanho({ toppingsExtra: ["frutos-vermelhos-a-decorar"] }))).toBe("toppings-extra");
   });
 
+  it("só os que a gerente deixa ir a mais: o «Sem Topping» não vai", () => {
+    expect(validarBolo(comExtras, comTamanho({ toppingsExtra: ["sem-topping"] }))).toBe("toppings-extra");
+  });
+
   it("não aceitam o topping que imprime a foto, nem um que não vai com a cobertura", () => {
     expect(validarBolo(comExtras, comTamanho({ toppingsExtra: ["foto-em-folha-de-hostia"] }))).toBe("toppings-extra");
     const soOutras: OpcoesBolo = {

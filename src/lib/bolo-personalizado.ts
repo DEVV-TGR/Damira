@@ -43,11 +43,20 @@ export function comCobertura(
  * autorização), e duas fotos impressas no mesmo bolo não é coisa que a casa
  * tenha dito que faz.
  */
-export function toppingsExtraPossiveis(opcoes: OpcoesBolo, coberturaId: string | null, toppingId: string | null) {
-  if (opcoes.toppingsExtra.maximo === 0) return [];
-  return comCobertura(opcoes.toppings, coberturaId).filter(
-    (t) => t.id !== toppingId && t.id !== opcoes.fotos.toppingQueImprime,
-  ) as OpcoesBolo["toppings"];
+export function toppingsExtraPossiveis(
+  opcoes: OpcoesBolo,
+  coberturaId: string | null,
+  toppingId: string | null,
+): OpcoesBolo["toppings"] {
+  if (opcoes.toppingsExtra.maximo === 0 || !coberturaId) return [];
+  return opcoes.toppings.filter(
+    (t) =>
+      t.ativa &&
+      t.comoExtra &&
+      t.coberturas.includes(coberturaId) &&
+      t.id !== toppingId &&
+      t.id !== opcoes.fotos.toppingQueImprime,
+  );
 }
 
 /** Se este topping pede a foto para imprimir. */

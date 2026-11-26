@@ -43,7 +43,7 @@ const AJUDA: Record<Separador, string> = {
   recheios: "Marque com que coberturas faz cada recheio.",
   aVolta: "Marque com que coberturas faz cada opção.",
   toppings:
-    "Marque com que coberturas faz cada topping. Um deles pode abrir a foto para imprimir (em «Fotos»). O preço como extra só conta quando o topping vai a mais, e só soma ao «a partir de».",
+    "Marque com que coberturas faz cada topping. Um deles pode abrir a foto para imprimir (em «Fotos»). «Pode ir a mais» diz se o cliente o pode juntar como topping extra; o preço só soma ao «a partir de».",
   fotos: "As fotos que o cliente pode juntar ao bolo.",
 };
 
@@ -207,6 +207,7 @@ function Tabela({
   const linhas = opcoes[lista] as (OpcoesBolo["massas"][number] & {
     precoCent?: number | null;
     precoExtraCent?: number | null;
+    comoExtra?: boolean;
   })[];
   const comCoberturas = lista !== "tamanhos" && lista !== "coberturas";
 
@@ -228,7 +229,7 @@ function Tabela({
         /* Lista positiva: uma opção nova não vai com cobertura nenhuma até ela marcar. */
         ...(comCoberturas ? { coberturas: [] } : {}),
         ...(lista === "tamanhos" ? { precoCent: null } : {}),
-        ...(lista === "toppings" ? { precoExtraCent: null } : {}),
+        ...(lista === "toppings" ? { precoExtraCent: null, comoExtra: true } : {}),
       } as (typeof linhas)[number],
     ]);
 
@@ -248,7 +249,7 @@ function Tabela({
             <tr className="border-b border-tinta/15 bg-tinta/5 text-left">
               <th className="px-3 py-2 font-semibold">Nome</th>
               {lista === "tamanhos" && <th className="px-3 py-2 font-semibold">A partir de (€)</th>}
-              {lista === "toppings" && <th className="px-3 py-2 font-semibold">Como extra (€)</th>}
+              {lista === "toppings" && <th className="px-3 py-2 font-semibold">Pode ir a mais · preço (€)</th>}
               {comCoberturas &&
                 coberturas.map((c) => (
                   <th key={c.id || c.nome} className="px-2 py-2 text-center font-semibold">
@@ -291,9 +292,17 @@ function Tabela({
                   </td>
                 )}
                 {lista === "toppings" && (
-                  <td className="px-3 py-1.5">
+                  <td className="whitespace-nowrap px-3 py-1.5">
+                    <input
+                      type="checkbox"
+                      aria-label={`${linha.nome || "Topping"} pode ir a mais`}
+                      checked={linha.comoExtra !== false}
+                      onChange={(e) => mudarLinha(i, { comoExtra: e.target.checked })}
+                      className="mr-2 size-5 align-middle accent-tijolo"
+                    />
                     <input
                       inputMode="decimal"
+                      disabled={linha.comoExtra === false}
                       aria-label={`Preço como extra, ${linha.nome}`}
                       defaultValue={linha.precoExtraCent == null ? "" : (linha.precoExtraCent / 100).toFixed(2).replace(".", ",")}
                       onBlur={(e) => {

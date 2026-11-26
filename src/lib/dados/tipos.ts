@@ -288,6 +288,11 @@ export const EsquemaOpcoesBolo = z
            * `null` é «sem preço indicado», nunca zero.
            */
           precoExtraCent: Cent.nullable().default(null),
+          /**
+           * Se pode ir **a mais**. O «Sem topping» é uma opção do topping e não
+           * um topping que se junte: é a gerente que diz quais vão.
+           */
+          comoExtra: z.boolean().default(true),
         }),
       )
       .max(200),
