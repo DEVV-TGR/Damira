@@ -37,6 +37,7 @@ const pedido = (nome: string, alteracoes: Partial<Pedido> = {}): Pedido => ({
       precoUnitarioCent: 33500,
       totalCent: 33500,
       notas: null,
+      precoDaProposta: false,
     },
   ],
   observacoes: null,
@@ -45,6 +46,7 @@ const pedido = (nome: string, alteracoes: Partial<Pedido> = {}): Pedido => ({
   pagoOnlineCent: 33500,
   reembolsadoCent: 0,
   chegouTarde: false,
+  propostaVersao: 0, propostaEm: null, levantamentoAnteriorEm: null,
   pagoEm: lisboa(6, 9, 5),
   impressoEm: null,
   entregueEm: null,
@@ -387,14 +389,12 @@ describe("os pedidos pagos na loja", () => {
     expect(await f.ocupacao(quando, quando)).toEqual([]);
   });
 
-  it("e cancela um que ainda espera pela casa", async () => {
-    /* O que espera pelo cliente (`a-aguardar-aceite`) saiu daqui com a 0009: a restrição
-       `pedidos_proposta` exige uma proposta com versão, e o `Pedido` só ganha a versão com o
-       #139, que volta a pôr esse caso neste teste. */
+  it("e cancela um que ainda espera pela casa ou pelo cliente", async () => {
     const f = await fonte([
       naLoja("a", { estado: "por-confirmar", confirmadoEm: null, expiraEm: lisboa(8, 9) }),
+      naLoja("b", { estado: "a-aguardar-aceite", confirmadoEm: null, expiraEm: lisboa(8, 9), propostaVersao: 1, propostaEm: lisboa(7, 9) }),
     ]);
-    for (const nome of ["a"]) {
+    for (const nome of ["a", "b"]) {
       const cancelado = await f.cancelarPedido(u(nome), 0, GERENTE);
       expect(cancelado.ok && cancelado.valor.estado).toBe("cancelado");
     }
@@ -413,5 +413,166 @@ describe("os pedidos pagos na loja", () => {
     ]);
     expect(await f.cancelarPedido(u("a"), 0, GERENTE)).toEqual({ ok: false, erro: "estado-mudou" });
     expect(await f.cancelarPedido(u("b"), 0, GERENTE)).toEqual({ ok: false, erro: "estado-mudou" });
+  });
+});
+
+describe("a resposta da casa e o aceite do cliente (pedidos.md › O aceite do cliente)", () => {
+  /* Um pedido com um bolo por medida: espera pela casa, com uma linha sem preço. */
+  const comBolo = (nome: string, alteracoes: Partial<Pedido> = {}) => {
+    const base = naLoja(nome, { estado: "por-confirmar", confirmadoEm: null, expiraEm: lisboa(8, 9) });
+    return {
+      ...base,
+      linhas: [
+        base.linhas[0],
+        { ...base.linhas[0], nome: "Bolo por medida", variante: null,
+          precoUnitarioCent: null, totalCent: null },
+      ],
+      ...alteracoes,
+    };
+  };
+  const SEM_NADA = { precos: [], levantamentoEm: null };
+  const PRECO_DO_BOLO = { precos: [{ posicao: 1, precoUnitarioCent: 4500 }], levantamentoEm: null };
+
+  it("o balcão confirma um por-confirmar sem nada novo", async () => {
+    const f = await fonte([naLoja("a", { estado: "por-confirmar", confirmadoEm: null, expiraEm: lisboa(8, 9) })]);
+    const resposta = await f.responderPedido(u("a"), SEM_NADA, BALCAO);
+    expect(resposta.ok && resposta.valor).toMatchObject({ estado: "confirmado", confirmadoEm: AGORA, propostaVersao: 0 });
+  });
+
+  it("não confirma com uma linha ainda sem preço", async () => {
+    const f = await fonte([comBolo("a")]);
+    expect(await f.responderPedido(u("a"), SEM_NADA, GERENTE)).toMatchObject({ ok: false, campos: ["precos"] });
+  });
+
+  it("o balcão não fixa preços: a proposta é da gerente", async () => {
+    const f = await fonte([comBolo("a")]);
+    expect(await f.responderPedido(u("a"), PRECO_DO_BOLO, BALCAO)).toEqual({ ok: false, erro: "sem-permissao" });
+  });
+
+  it("a gerente propõe o preço do bolo: fica à espera do cliente, com o total refeito", async () => {
+    const f = await fonte([comBolo("a")]);
+    const resposta = await f.responderPedido(u("a"), PRECO_DO_BOLO, GERENTE);
+    expect(resposta.ok && resposta.valor).toMatchObject({
+      estado: "a-aguardar-aceite",
+      propostaVersao: 1,
+      propostaEm: AGORA,
+      totalCent: 33500 + 4500,
+      levantamentoAnteriorEm: null,
+    });
+    expect(resposta.ok && resposta.valor.linhas[1]).toMatchObject({ precoUnitarioCent: 4500, totalCent: 4500, precoDaProposta: true });
+    expect(resposta.ok && resposta.valor.linhas[0].precoDaProposta).toBe(false);
+  });
+
+  it("não muda o preço que o cliente viu ao pedir", async () => {
+    const f = await fonte([comBolo("a")]);
+    const resposta = await f.responderPedido(u("a"), { precos: [{ posicao: 0, precoUnitarioCent: 1 }], levantamentoEm: null }, GERENTE);
+    expect(resposta).toMatchObject({ ok: false, campos: ["precos"] });
+  });
+
+  it("uma hora nova guarda a que o cliente pediu", async () => {
+    /* Ler a ocupação limpa os expirados com a hora real (`bd-pedidos.ts`): o prazo fica no futuro
+       de verdade, e não só no do teste. */
+    const f = await fonte([naLoja("a", { estado: "por-confirmar", confirmadoEm: null, expiraEm: new Date("2099-01-01T00:00:00Z") })]);
+    const resposta = await f.responderPedido(u("a"), { precos: [], levantamentoEm: lisboa(9, 11).toISOString() }, GERENTE);
+    expect(resposta.ok && resposta.valor).toMatchObject({
+      estado: "a-aguardar-aceite",
+      levantamentoEm: lisboa(9, 11),
+      levantamentoAnteriorEm: lisboa(8, 15),
+    });
+  });
+
+  it("o prazo do cliente nunca passa da hora de levantamento", async () => {
+    /* Levanta amanhã às 9h00: menos de 24 horas depois da proposta. */
+    const f = await fonte([comBolo("a", { levantamentoEm: lisboa(8, 9) })]);
+    const proposta = await f.responderPedido(u("a"), PRECO_DO_BOLO, GERENTE);
+    expect(proposta.ok && proposta.valor.expiraEm).toEqual(lisboa(8, 9));
+  });
+
+  it("não envia uma proposta sem tempo nenhum para a aceitar", async () => {
+    /* O levantamento já passou (o prazo da casa ainda não): não há prazo que caiba. */
+    const f = await fonte([comBolo("a", { levantamentoEm: lisboa(7, 9) })]);
+    expect(await f.responderPedido(u("a"), PRECO_DO_BOLO, GERENTE)).toMatchObject({
+      ok: false,
+      erro: "dados-invalidos",
+      campos: ["levantamentoEm"],
+    });
+  });
+
+  it("uma proposta fora de prazo já não é ativa: não se cancela", async () => {
+    const f = await fonte([
+      comBolo("a", { estado: "a-aguardar-aceite", propostaVersao: 1, propostaEm: lisboa(6, 9), expiraEm: lisboa(7, 9) }),
+    ]);
+    expect(await f.cancelarPedido(u("a"), 0, GERENTE)).toEqual({ ok: false, erro: "estado-mudou" });
+  });
+
+  it("rever a proposta de volta à hora pedida deixa de mudar a hora", async () => {
+    /* Em 2099: mudar a hora lê a ocupação, que limpa os expirados com a hora real, e as 24 horas
+       da proposta têm de estar no futuro de verdade. */
+    const em2099 = (dia: number, h: number) => new TZDate(2099, 9, dia, h, 0, "Europe/Lisbon");
+    const ctx: ContextoPainel = { papel: "gerente", agora: em2099(7, 10) };
+    const f = await fonte([
+      comBolo("a", { criadoEm: em2099(6, 9), levantamentoEm: em2099(8, 15), expiraEm: em2099(8, 9) }),
+    ]);
+    await f.responderPedido(u("a"), { precos: [{ posicao: 1, precoUnitarioCent: 4500 }], levantamentoEm: em2099(9, 11).toISOString() }, ctx);
+    const revista = await f.responderPedido(u("a"), { precos: [], levantamentoEm: em2099(8, 15).toISOString() }, ctx);
+    expect(revista.ok && revista.valor).toMatchObject({ levantamentoEm: em2099(8, 15), levantamentoAnteriorEm: null, propostaVersao: 2 });
+  });
+
+  it("a proposta dá 24 horas ao cliente, e depois delas já não se aceita nem recusa", async () => {
+    const f = await fonte([comBolo("a")]);
+    const proposta = await f.responderPedido(u("a"), PRECO_DO_BOLO, GERENTE);
+    expect(proposta.ok && proposta.valor.expiraEm).toEqual(new Date(AGORA.getTime() + 24 * 3_600_000));
+    const referencia = proposta.ok ? proposta.valor.referencia : "";
+    const tarde = new Date(AGORA.getTime() + 24 * 3_600_000);
+    expect(await f.aceitarProposta(referencia, 1, tarde)).toMatchObject({ ok: false, erro: "estado-mudou" });
+    expect(await f.recusarProposta(referencia, 1, tarde)).toMatchObject({ ok: false, erro: "estado-mudou" });
+    const aTempo = await f.aceitarProposta(referencia, 1, new Date(tarde.getTime() - 60_000));
+    expect(aTempo.ok).toBe(true);
+  });
+
+  it("recusa um preço absurdo como dado inválido, sem chegar a gravar", async () => {
+    const f = await fonte([comBolo("a")]);
+    const resposta = await f.responderPedido(u("a"), { precos: [{ posicao: 1, precoUnitarioCent: 1_000_001 }], levantamentoEm: null }, GERENTE);
+    expect(resposta).toMatchObject({ ok: false, erro: "dados-invalidos" });
+  });
+
+  it("não responde a quem já passou o prazo", async () => {
+    const f = await fonte([comBolo("a", { expiraEm: lisboa(7, 9) })]);
+    expect(await f.responderPedido(u("a"), PRECO_DO_BOLO, GERENTE)).toEqual({ ok: false, erro: "estado-mudou" });
+  });
+
+  it("o cliente aceita a versão do link, e uma segunda vez não muda nada", async () => {
+    const f = await fonte([comBolo("a")]);
+    const proposta = await f.responderPedido(u("a"), PRECO_DO_BOLO, GERENTE);
+    const referencia = proposta.ok ? proposta.valor.referencia : "";
+    const aceite = await f.aceitarProposta(referencia, 1, AGORA);
+    expect(aceite.ok && aceite.pedido).toMatchObject({ estado: "confirmado", aceiteEm: AGORA, confirmadoEm: AGORA });
+    const outraVez = await f.aceitarProposta(referencia, 1, AGORA);
+    expect(outraVez).toMatchObject({ ok: false, erro: "estado-mudou", pedido: { estado: "confirmado" } });
+  });
+
+  it("uma proposta revista não se aceita pelo link antigo", async () => {
+    const f = await fonte([comBolo("a")]);
+    await f.responderPedido(u("a"), PRECO_DO_BOLO, GERENTE);
+    const revista = await f.responderPedido(u("a"), { precos: [{ posicao: 1, precoUnitarioCent: 4000 }], levantamentoEm: null }, GERENTE);
+    expect(revista.ok && revista.valor).toMatchObject({ estado: "a-aguardar-aceite", propostaVersao: 2, totalCent: 33500 + 4000 });
+    const referencia = revista.ok ? revista.valor.referencia : "";
+    expect(await f.aceitarProposta(referencia, 1, AGORA)).toMatchObject({ ok: false, erro: "estado-mudou" });
+    const aceite = await f.aceitarProposta(referencia, 2, AGORA);
+    expect(aceite.ok && aceite.pedido.estado).toBe("confirmado");
+  });
+
+  it("o cliente recusa: cancelado por ele, sem custos", async () => {
+    const f = await fonte([comBolo("a")]);
+    const proposta = await f.responderPedido(u("a"), PRECO_DO_BOLO, GERENTE);
+    const referencia = proposta.ok ? proposta.valor.referencia : "";
+    const recusa = await f.recusarProposta(referencia, 1, AGORA);
+    expect(recusa.ok && recusa.pedido).toMatchObject({ estado: "cancelado", canceladoPor: "cliente", canceladoEm: AGORA });
+    expect(await f.aceitarProposta(referencia, 1, AGORA)).toMatchObject({ ok: false, erro: "estado-mudou" });
+  });
+
+  it("uma referência que não existe", async () => {
+    const f = await fonte([]);
+    expect(await f.aceitarProposta("DAM-0710-ZZZZ", 1, AGORA)).toEqual({ ok: false, erro: "nao-existe" });
   });
 });

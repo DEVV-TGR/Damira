@@ -463,11 +463,22 @@ outra razão; o que ficar parado aparece no painel.
 | `destinatario` | `text` |
 | `criado_em`, `ultima_tentativa_em`, `enviado_em` | `timestamptz` (os dois últimos nulos) |
 | `tentativas` | `integer` `>= 0` |
-| `ultimo_erro` | `text` nulo — o que o Resend respondeu, para o painel |
+| `ultimo_erro` | `text` nulo — código controlado da falha, nunca o corpo do Resend |
 
 **Não há chave única «natural»** (pedido, modelo, destinatário): o mesmo email
 pode ter de sair duas vezes — um pedido reagendado duas vezes. O que impede o
 duplicado é a transição só acontecer uma vez (`pedidos.md`).
+
+O emissor (#119, etapa 1) usa as colunas existentes, **sem migração**. Lê
+pendentes por `criado_em, id`, exclui `resposta-cliente` enquanto não entrar o
+#139, e reserva com `UPDATE … WHERE enviado_em IS NULL AND tentativas < 5`
+e a espera crescente em `ultima_tentativa_em`. A reserva incrementa tentativas;
+marcar enviado ou registar falha confere também o número e instante da reserva.
+Uma reserva abandonada pode ser retomada após a espera. Um saltado fica com
+`tentativas = 5`, `ultimo_erro = 'saltado: <motivo>'`, `enviado_em NULL`;
+uma falha definitiva aplica-se o mesmo máximo, com código sem esse prefixo.
+A consulta dos falhados inclui erros recuperáveis e tentativas esgotadas e
+identifica `saltado` pelo prefixo, para o futuro ecrã do painel.
 
 ### Reembolsos ao mesmo tempo
 

@@ -146,6 +146,16 @@ página fica. ⚠️ Os campos são controlados e o envio é feito à mão, sem 
 reinício automático do `<form action>` do React 19: um erro do servidor nunca
 apaga o que a pessoa escreveu (`robustez.md` › Erros).
 
+### Os emails dos pedidos — emissor (#119, etapa 1)
+
+O emissor de `emails_por_enviar` está em `src/lib/emails/enviar.ts`, com reserva
+condicional e idempotência no Resend. **Ainda não está ligado à compra nem às
+ações do #139**: esses PRs chamam `enviarDepois()` depois da escrita que grava a
+fila, nunca antes da transação terminar. A compra do `main` mantém o percurso
+provisório por email. Não se promete entrega de um email só porque entrou na fila.
+Fora de produção, `EMAILS_SO_PARA` é obrigatória; sem ela não há envios nem consultas
+do emissor. Não há polling, cron nem despertadores nesta etapa.
+
 ### A documentação muda no mesmo PR que o código
 
 Se um PR faz o código contradizer um ficheiro de `docs/loja/` ou uma secção deste
