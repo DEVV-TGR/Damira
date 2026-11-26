@@ -375,6 +375,9 @@ export function prepararProduto(
   const existentes = new Set(atual?.variantes.map((v) => v.id) ?? []);
   if (lido.variantes.some((v) => v.id !== undefined && !existentes.has(v.id))) return recusa("variantes");
   const porId = new Map(catalogo.map((p) => [p.id, p]));
+  /* Um simples que está num kit não passa a composto: ficava um kit dentro de
+     um kit. Tira-se primeiro do kit (`painel-gerente.md`). */
+  if (atual && lido.tipo === "composto" && compostosQueLevam(atual.id, catalogo).length > 0) return recusa("tipo");
   if (levaInvalida(lido.variantes, (id) => (id === atual?.id ? undefined : porId.get(id)))) return recusa("variantes");
   const variancias = new Set(catalogo.flatMap((p) => p.variancias.map((v) => v.id)));
   const extras = new Set(catalogo.flatMap((p) => p.extras.map((e) => e.id)));

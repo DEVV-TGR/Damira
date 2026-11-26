@@ -249,6 +249,10 @@ describe("um produto composto", () => {
       GERENTE,
     );
     expect(simplesComLeva).toMatchObject({ ok: false, campos: ["variantes"] });
+    /* E o simples que está num kit não passa a composto. */
+    const atual = (await f.produtoPorId("cao-quente"))!;
+    const virado = await f.editarProduto("cao-quente", { ...cachorro(), tipo: "composto", variancias: [], opcoes: [], extras: [], variantes: atual.variantes }, GERENTE);
+    expect(virado).toMatchObject({ ok: false, campos: ["tipo"] });
   });
 });
 

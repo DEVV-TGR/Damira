@@ -122,7 +122,9 @@ export function ComprarProduto({
       /* ⚠️ As notas e a personalização entram no `id`: dois bolos com mensagens
          diferentes, ou 6 com fiambre e 6 sem, são duas linhas do pedido, e não
          uma com quantidade dois. Ver `idComNotas`. */
-      id: idComNotas(idComPersonalizacao(variante ? `${id}:${variante.id}` : id, doGrupo), notas),
+      /* Com um tamanho só, o id de sempre (`box-x`): um cesto de antes continua a
+         somar na mesma linha. */
+      id: idComNotas(idComPersonalizacao(variantes.length > 1 && variante ? `${id}:${variante.id}` : id, doGrupo), notas),
       produtoId,
       varianteId,
       tipo,
