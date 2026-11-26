@@ -314,9 +314,20 @@ export function avisosDosPedidos(
 
 /**
  * O estado do pagamento, em grande no cartão e no talão (`painel-balcao.md`):
- * `PAGO`, ou `SINAL PAGO · FALTA 12,50 €`.
+ * `PAGO`, ou `SINAL PAGO · FALTA 12,50 €` com o Stripe; `A PAGAR NA LOJA · 129,00 €` num pedido
+ * pago na loja (`impressao.md`), com `· PREÇO POR FIXAR` enquanto uma linha não tem preço — o total
+ * é só a parte conhecida, e o balcão não pode cobrar só isso.
+ *
+ * ⚠️ Sem o modo, o pedido pago na loja aparecia como «SINAL PAGO · FALTA» o total inteiro, porque
+ * não tem nada pago online.
  */
-export const rotuloPagamento = (pedido: Pick<Pedido, "totalCent" | "pagoOnlineCent">): string => {
+export const rotuloPagamento = (
+  pedido: Pick<Pedido, "totalCent" | "pagoOnlineCent"> & Partial<Pick<Pedido, "modoPagamento" | "linhas">>,
+): string => {
+  if (pedido.modoPagamento === "na-loja") {
+    const porFixar = pedido.linhas?.some((linha) => linha.totalCent === null) ?? false;
+    return `A PAGAR NA LOJA · ${formatarCent(pedido.totalCent, "pt")}${porFixar ? " · PREÇO POR FIXAR" : ""}`;
+  }
   const falta = faltaPagarCent(pedido);
   return falta === 0 ? "PAGO" : `SINAL PAGO · FALTA ${formatarCent(falta, "pt")}`;
 };

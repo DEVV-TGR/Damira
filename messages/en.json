@@ -8,26 +8,23 @@
   "nav": {
     "inicio": "Home",
     "encomendas": "Orders",
-    "todasEncomendas": "See all orders",
+    "todosProdutos": "See all products",
     "voltarAtras": "Go back",
     "saltarParaConteudo": "Skip to content",
     "mudarIdioma": "Português"
   },
   "cartaz": {
-    "folio": "Chapters",
     "capa": {
       "olho": "Bakery and pastry shop",
       "lede": "Open at seven every morning, every day. Hot bread at the counter, lunch at the table, and a case of pastries until nine at night.",
       "credito": "The line is not ours. It is painted on the shop window, beside the door.",
-      "verEmenta": "From the menu",
-      "encomendar": "Order",
-      "atalhos": "Shortcuts"
+      "encomendar": "Order"
     },
     "porta": {
       "numeral": "I",
       "olho": "The door",
       "titulo": "It is on Rua Dom António Castro Meireles",
-      "texto": "Outside, the sign reads Pão Quente and the plate shows a loaf with three ribbons of steam coming off it. That steam is the m in damira, and it is what draws this page as you go down.",
+      "texto": "Outside, the sign reads Pão Quente and the plate shows a loaf with three ribbons of steam coming off it. That steam is the m in damira.",
       "legenda": "The shopfront, from the street."
     },
     "silencio": "Inside, at seven in the morning, the bread is coming out.",
@@ -35,38 +32,42 @@
       "numeral": "III",
       "olho": "The bread",
       "titulo": "Village loaves",
-      "legenda": "Freshly baked village loaves in the shop counter.",
+      "legenda": "Bread on the shelves at Damira.",
       "nota": "It is the trade the house is named for, and the drawing on the plate by the door."
     },
     "maos": {
       "numeral": "IV",
       "olho": "The hands",
       "titulo": "Made here, by hand, one at a time",
-      "texto": "The strawberry tartlets are glazed with a brush, one tartlet at a time, on the bench in the shop. Nothing arrives in a box to be opened at the counter.",
-      "legenda": "Strawberry tartlets being assembled on a tray."
+      "texto": "At Damira, the house cake is decorated by hand at the workbench.",
+      "legenda": "A cake being decorated with strawberries at the workbench."
     },
     "vitrine": {
       "numeral": "V",
       "olho": "The counter",
       "titulo": "The house, photographed by the house",
-      "texto": "Fourteen photographs from Damira's own album. What is in the counter, what comes out of the kitchen, and the room at lunchtime.",
+      "texto": "What is in the display, what we make at the workbench, and where we serve it.",
       "credito": "Photographs by Confeitaria e Pão Quente Damira.",
       "verMais": "See more",
       "legendas": {
-        "montra": "Carob bread and other loaves in the shop counter.",
-        "folhados": "Savoury puff pastries on a tray, freshly baked.",
-        "fabrico": "Chocolates made in the house, lined up on a tray.",
-        "caramelo": "Caramel chocolates.",
-        "bombons": "Assorted chocolates on a tray.",
-        "castanhas": "Castanhas de ovos, an egg-yolk sweet.",
-        "duchesse": "Duchesse with fios de ovos.",
-        "hungaros": "Chocolate-covered pastries on a tray.",
-        "boloRei": "Traditional bolo-rei.",
-        "boloReiChila": "Bolo-rei with chila jam.",
-        "boloReiChocolate": "Chocolate bolo-rei.",
-        "peixe": "Grilled fish with cabbage and potato.",
-        "frango": "Grilled chicken with salad.",
-        "sala": "The dining room at lunchtime, soup being served at a table."
+        "montra": "Cakes and pastries lined up in the display.",
+        "boloFrutosVermelhos": "Layer cake decorated with berries.",
+        "sortidoLaminado": "Assorted puff pastries with different toppings.",
+        "bolachas": "Assorted cookies, some with chocolate chips.",
+        "montraInterior": "The pastry display seen from the dining room.",
+        "boloCobertura": "Cake with light icing and pieces of red cake.",
+        "paoSementes": "Small breads topped with different seeds.",
+        "balcaoPao": "Bread shelves by the counter.",
+        "sortidoPastelaria": "Assorted small cakes and pastries.",
+        "tartelete": "Tartlet topped with fruit.",
+        "tabuleiro": "Tray of golden pastries.",
+        "sala": "Tables and chairs in the Damira dining room.",
+        "natalBoloFrutas": "Cake with candied fruit on a table decorated for Christmas.",
+        "natalDoces": "Wrapped sweets among Christmas lights.",
+        "natalBoloAcucar": "Cake with fruit and powdered sugar on a Christmas table.",
+        "natalBoloCobertura": "Round cake with white icing in front of Christmas decorations.",
+        "natalMesa": "Christmas table with cakes and pastries.",
+        "natalBoloFatia": "Golden cake with a slice cut beside the Christmas tree."
       }
     },
     "reels": {
@@ -287,7 +288,17 @@
         "abrir": "Open in my email",
         "verTexto": "Or copy the request text"
       },
-      "referencia": "Your reference"
+      "referencia": "Your reference",
+      "recebido": {
+        "confirmado": {
+          "titulo": "Your order is confirmed!",
+          "texto": "You will receive an email with the details. Your order will be ready at the time shown; collection follows the shop’s usual queue, in order of arrival."
+        },
+        "porConfirmar": {
+          "titulo": "We have received your order!",
+          "texto": "Our team will review your order. You will receive an email with a response, usually within 24 hours."
+        }
+      }
     },
     "cesto": {
       "titulo": "Your order",
@@ -298,6 +309,7 @@
       "verPedido": "View order",
       "fechar": "Close",
       "irParaPedido": "Continue",
+      "voltarAoPedido": "Back to checkout",
       "esvaziar": "Empty",
       "remover": "Remove {nome} from the order",
       "mais": "One more",
@@ -355,6 +367,9 @@
     },
     "calendario": {
       "titulo": "When would you like to collect?",
+      "periodo": "Time of day",
+      "manha": "Morning",
+      "tarde": "Afternoon",
       "escolha": "Choose the day and the time.",
       "escolhido": "Collect at the shop: {quando}.",
       "horaDeLisboa": "Times are Portugal time.",
@@ -503,7 +518,6 @@
     "oQueLeva": "What it includes",
     "preco": "Price",
     "paraQuantas": "For how many people?",
-    "escolher": "Choose",
     "paraPessoas": "{n} people",
     "mensagem": "Message on the cake",
     "mensagemDica": "Happy birthday, Maria!",
@@ -515,12 +529,72 @@
     "descricaoGenerica": "{nome}, made to order at Confeitaria e Pão Quente Damira, in Ermesinde.",
     "porQuilo": " /kg",
     "cadaCurto": "ea.",
+    "escolher": "Choose",
     "fotografias": "Product photos",
     "verFotografia": "Show photo {n} of {total}"
   },
   "modoTeste": {
     "etiqueta": "Test mode",
     "aviso": "Nothing is charged, and the pick-up times and booked slots are examples."
+  },
+  "proposta": {
+    "metaTitulo": "The proposal for your order",
+    "titulo": "We have a proposal for your order",
+    "intro": "Please see the details of our proposal below and let us know whether you would like to go ahead.",
+    "proposta": "Proposal",
+    "novaHora": "New pick-up time: {depois} (instead of {antes})",
+    "novaData": "New pick-up date: {depois} (instead of {antes})",
+    "resumo": "Order summary",
+    "total": "Total",
+    "dataLevantamento": "Pick-up date",
+    "naLoja": "At the shop:",
+    "pagamento": "Payment:",
+    "pagamentoTexto": "Once you accept the proposal, payment is made in the shop when you collect your order. No advance payment is required.",
+    "importante": "Important:",
+    "importanteTexto": "Your order will only be confirmed once you accept the proposal.",
+    "aceitar": "Accept the proposal",
+    "aAceitar": "Accepting…",
+    "recusar": "Decline the proposal",
+    "recusarPergunta": "Decline the proposal? The order is cancelled, at no cost.",
+    "recusarSim": "Yes, decline",
+    "aRecusar": "Declining…",
+    "voltar": "Back",
+    "referencia": "Order reference",
+    "duvidas": "If you have any questions, please contact us on {telefone}.",
+    "erro": "We could not record your answer. Please try again, or contact us on {telefone}.",
+    "aceite": {
+      "titulo": "Your order is confirmed!",
+      "texto": "Thank you for confirming. We will take care of everything so it is ready on the agreed date."
+    },
+    "recusada": {
+      "titulo": "We have received your answer and closed the order.",
+      "texto": "We hope to have another chance to prepare something special for you!"
+    },
+    "cancelado": {
+      "titulo": "This order has been cancelled.",
+      "texto": "If you would still like to go ahead, please contact us on {telefone}."
+    },
+    "revista": {
+      "titulo": "This proposal has been updated.",
+      "texto": "We have sent you a newer proposal. Please open the link in the most recent email."
+    },
+    "indisponivel": {
+      "titulo": "This proposal is no longer available.",
+      "texto": "If you would still like to go ahead, please contact us on {telefone}."
+    },
+    "invalido": {
+      "titulo": "This link is not valid.",
+      "texto": "Please check that you opened the full link from the email, or contact us on {telefone}."
+    },
+    "prazo": "You have until {data} to accept or decline.",
+    "expirada": {
+      "titulo": "This proposal has expired.",
+      "texto": "We did not receive your answer in time, so the order was not confirmed and there is nothing to pay. If you would still like to go ahead, place a new order on the website or contact us on {telefone}."
+    },
+    "falha": {
+      "titulo": "We could not open the proposal.",
+      "texto": "The error is ours, not yours. Please try again later, or contact us on {telefone}."
+    }
   },
   "personalizar": {
     "falta": "Choose an option here.",

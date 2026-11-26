@@ -61,6 +61,16 @@ export const criarPedido: FonteDeDados["criarPedido"] = (entrada, contexto) =>
 export const pedidoPorReferencia: FonteDeDados["pedidoPorReferencia"] = (referencia) =>
   fonte.pedidoPorReferencia(referencia);
 
+/**
+ * O aceite e a recusa da proposta pelo link do email. ⚠️ Quem chama verifica primeiro a credencial
+ * do link (`src/lib/proposta.ts`): aqui chega só a referência e a versão que ela assina.
+ */
+export const aceitarProposta: FonteDeDados["aceitarProposta"] = (referencia, versao, agora) =>
+  fonte.aceitarProposta(referencia, versao, agora);
+
+export const recusarProposta: FonteDeDados["recusarProposta"] = (referencia, versao, agora) =>
+  fonte.recusarProposta(referencia, versao, agora);
+
 // ——— O painel ———
 
 /*
@@ -102,6 +112,8 @@ export const tratarAviso = painel.tratarAviso;
 export const reagendarPedido = painel.reagendarPedido;
 export const cancelarPedido = painel.cancelarPedido;
 export const reembolsarPedido = painel.reembolsarPedido;
+/** Confirmar (equipa) ou propor preço e hora (gerente). Quem chama avisa o polling. */
+export const responderPedido = painel.responderPedido;
 /**
  * ⚠️ O número do polling. Quem o serve (a rota do painel, #39) põe-no em cache
  * com uma etiqueta, e cada ação que muda um pedido invalida-a (`revalidateTag`):

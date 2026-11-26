@@ -413,6 +413,13 @@ export const PRAZO_DO_PEDIDO_MS = 31 * 60_000;
  */
 export const PRAZO_DA_RESPOSTA_MS = 48 * 3_600_000;
 
+/**
+ * O prazo do cliente para aceitar a proposta da casa: 24 horas, a contar da proposta (decidido pela
+ * Andreia a 25/11, `pedidos.md` › Em aberto, 2). Passado ele, a proposta expira, a vaga liberta-se
+ * e o cliente recebe o email. Uma proposta revista começa outra vez as 24 horas.
+ */
+export const PRAZO_DO_ACEITE_MS = 24 * 3_600_000;
+
 const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 /**
@@ -526,6 +533,7 @@ export async function conferirPedido(
         precoUnitarioCent: cotada.precoUnitarioCent,
         totalCent: cotada.totalCent,
         notas: linha.notas,
+        precoDaProposta: false,
       };
     }),
   };
@@ -571,6 +579,9 @@ export const pedidoNaLoja = (
   expiraEm: conferido.porConfirmar ? new Date(agora.getTime() + PRAZO_DA_RESPOSTA_MS) : null,
   aceiteEm: null,
   causaExpiracao: null,
+  propostaVersao: 0,
+  propostaEm: null,
+  levantamentoAnteriorEm: null,
 });
 
 // ——— O painel ———
@@ -585,7 +596,10 @@ export const CANCELAVEIS_NA_LOJA: readonly Pedido["estado"][] = ["por-confirmar"
 
 export const podeCancelar = (pedido: Pick<Pedido, "estado" | "modoPagamento" | "expiraEm">, agora: Date): boolean =>
   (pedido.estado === "pago" || (pedido.modoPagamento === "na-loja" && CANCELAVEIS_NA_LOJA.includes(pedido.estado))) &&
-  (pedido.estado !== "por-confirmar" || (pedido.expiraEm !== null && pedido.expiraEm.getTime() > agora.getTime()));
+  /* Os dois que esperam têm prazo — a casa (48 h) e o cliente (24 h) —, e passado ele já expiraram,
+     mesmo antes de a limpeza o gravar: não aparecem como ativos nem se cancelam. */
+  ((pedido.estado !== "por-confirmar" && pedido.estado !== "a-aguardar-aceite") ||
+    (pedido.expiraEm !== null && pedido.expiraEm.getTime() > agora.getTime()));
 
 /**
  * Quem a gerente reagenda: o `pago` e o `confirmado`. Mudar a hora de um que
@@ -612,3 +626,132 @@ export const textoDeProcura = (nome: string, referencia: string): string => para
 
 /** Sem acentos e em minúsculas: a mesma conta no que se guarda e no que se procura. */
 export const paraProcura = (texto: string): string => texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+
+// ——— A resposta da casa e o aceite do cliente ———
+
+/**
+ * Quem pode receber a resposta da casa: o que ainda espera por ela, e o que espera o aceite (uma
+ * proposta revista). Um `por-confirmar` com o prazo passado já não se responde, mesmo antes de a
+ * limpeza gravar a expiração (`pedidos.md` › Expirar às 48 horas).
+ */
+export const podeResponder = (pedido: Pick<Pedido, "estado" | "modoPagamento" | "expiraEm">, agora: Date): boolean =>
+  pedido.modoPagamento === "na-loja" &&
+  (pedido.estado === "a-aguardar-aceite" || pedido.estado === "por-confirmar") &&
+  /* Os dois têm prazo: as 48 h da casa, ou as 24 h do cliente. Passado, já não se responde. */
+  pedido.expiraEm !== null &&
+  pedido.expiraEm.getTime() > agora.getTime();
+
+/** A proposta ainda se pode aceitar ou recusar: espera o aceite, na versão do link, e dentro das 24 h. */
+export const propostaEmAberto = (pedido: Pick<Pedido, "estado" | "propostaVersao" | "expiraEm">, versao: number, agora: Date) =>
+  pedido.estado === "a-aguardar-aceite" &&
+  pedido.propostaVersao === versao &&
+  pedido.expiraEm !== null &&
+  pedido.expiraEm.getTime() > agora.getTime();
+
+/** O plano da resposta: o que muda no pedido, já validado, igual para as duas fontes. */
+export type PlanoResposta = {
+  tipo: "confirmar" | "propor";
+  linhas: Pedido["linhas"];
+  totalCent: number;
+  levantamentoEm: Date;
+  levantamentoAnteriorEm: Date | null;
+  /** As posições cujo preço a casa fixou agora. */
+  fixadas: number[];
+  /** Até quando o cliente pode aceitar a proposta; `null` no «sim» da casa. */
+  expiraEm: Date | null;
+};
+
+/**
+ * Decide o que a resposta faz, sem tocar em nada: confirma (sem nada novo), propõe (preço ou hora
+ * novos) ou recusa a entrada. A hora nova valida-a quem chama, com a ocupação das vagas.
+ *
+ * - Só se fixa o preço de uma linha sem preço, ou de uma já fixada numa proposta: o preço que o
+ *   cliente viu ao pedir não muda por aqui.
+ * - Depois de responder, nenhuma linha fica sem preço: um pedido confirmado, ou uma proposta,
+ *   com um «a fixar» não diz ao cliente quanto vai pagar.
+ * - Propor é da gerente; o balcão só dá o «sim» (`pedidos.md` › O aceite do cliente).
+ */
+export function planearResposta(
+  pedido: Pedido,
+  entrada: { precos: { posicao: number; precoUnitarioCent: number }[]; levantamentoEm: Date | null },
+  papel: "funcionario" | "gerente",
+  agora: Date,
+): { ok: true; plano: PlanoResposta } | { ok: false; erro: "dados-invalidos" | "sem-permissao"; campos?: string[] } {
+  const posicoes = entrada.precos.map((p) => p.posicao);
+  if (new Set(posicoes).size !== posicoes.length) return { ok: false, erro: "dados-invalidos", campos: ["precos"] };
+
+  const linhas = pedido.linhas.map((linha) => ({ ...linha }));
+  for (const { posicao, precoUnitarioCent } of entrada.precos) {
+    const linha = linhas[posicao];
+    if (!linha || (linha.precoUnitarioCent !== null && !linha.precoDaProposta)) {
+      return { ok: false, erro: "dados-invalidos", campos: ["precos"] };
+    }
+    /* Ao quilo pede-se meio quilo: o total arredonda ao cêntimo, e o dinheiro fica inteiro. */
+    linhas[posicao] = {
+      ...linha,
+      precoUnitarioCent,
+      totalCent: Math.round(precoUnitarioCent * linha.quantidade),
+      precoDaProposta: true,
+    };
+  }
+  if (linhas.some((linha) => linha.totalCent === null)) return { ok: false, erro: "dados-invalidos", campos: ["precos"] };
+
+  const novaHora =
+    entrada.levantamentoEm !== null && entrada.levantamentoEm.getTime() !== pedido.levantamentoEm.getTime();
+  const propoe = entrada.precos.length > 0 || novaHora;
+  /* Um «sim» só confirma o que ainda esperava pela casa; responder outra vez a uma proposta sem
+     mudar nada não é uma resposta. */
+  if (!propoe && pedido.estado !== "por-confirmar") return { ok: false, erro: "dados-invalidos", campos: ["precos"] };
+  if (propoe && papel !== "gerente") return { ok: false, erro: "sem-permissao" };
+
+  const levantamentoEm = novaHora ? entrada.levantamentoEm! : pedido.levantamentoEm;
+  /* As 24 horas do cliente, mas nunca depois do levantamento: aceitar às 9h30 um pedido das 10h00
+     confirmava-o quando a cozinha já não o faz, e às 12h00 confirmava-o para uma hora passada. Uma
+     proposta sem tempo nenhum para aceitar não se envia. (A margem antes da produção é o n.º 1 do
+     «Em aberto», da Andreia.) */
+  const expiraEm = propoe ? new Date(Math.min(agora.getTime() + PRAZO_DO_ACEITE_MS, levantamentoEm.getTime())) : null;
+  if (expiraEm && expiraEm.getTime() <= agora.getTime()) {
+    return { ok: false, erro: "dados-invalidos", campos: ["levantamentoEm"] };
+  }
+
+  return {
+    ok: true,
+    plano: {
+      tipo: propoe ? "propor" : "confirmar",
+      linhas,
+      totalCent: linhas.reduce((soma, linha) => soma + (linha.totalCent ?? 0), 0),
+      levantamentoEm,
+      levantamentoAnteriorEm: horaAnterior(pedido, novaHora ? entrada.levantamentoEm! : null),
+      fixadas: entrada.precos.map((p) => p.posicao),
+      expiraEm,
+    },
+  };
+}
+
+/**
+ * A hora que o cliente pediu, guardada enquanto a proposta a muda: a primeira, mesmo que a proposta
+ * seja revista várias vezes. Se a revisão voltar à hora pedida, deixa de haver mudança de hora —
+ * senão a página dizia «10h30, em vez das 10h30».
+ */
+function horaAnterior(pedido: Pedido, nova: Date | null): Date | null {
+  if (nova === null) return pedido.levantamentoAnteriorEm;
+  const pedida = pedido.levantamentoAnteriorEm ?? pedido.levantamentoEm;
+  return nova.getTime() === pedida.getTime() ? null : pedida;
+}
+
+/** O pedido depois da resposta, como as duas fontes o gravam. */
+export const pedidoRespondido = (pedido: Pedido, plano: PlanoResposta, agora: Date): Pedido =>
+  plano.tipo === "confirmar"
+    ? { ...pedido, estado: "confirmado", confirmadoEm: agora }
+    : {
+        ...pedido,
+        estado: "a-aguardar-aceite",
+        linhas: plano.linhas,
+        totalCent: plano.totalCent,
+        levantamentoEm: plano.levantamentoEm,
+        levantamentoAnteriorEm: plano.levantamentoAnteriorEm,
+        propostaVersao: pedido.propostaVersao + 1,
+        propostaEm: agora,
+        /* O prazo do cliente substitui as 48 h da casa: ela já respondeu. */
+        expiraEm: plano.expiraEm,
+      };

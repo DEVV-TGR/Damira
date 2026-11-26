@@ -165,7 +165,7 @@ function Detalhe({
 
   return (
     <>
-      <div className="seccao">
+      <div className="seccao ficha-produto">
         <div className="envolvente">
           {/* ⚠️ **O caminho de volta é a primeira coisa da página.** Quem chega
               aqui de uma pesquisa cai num produto sem ter passado pelas

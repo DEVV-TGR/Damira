@@ -123,6 +123,7 @@ const linha = (produtoId: string, quantidade = 1): Pedido["linhas"][number] => (
   precoUnitarioCent: 1000,
   totalCent: 1000 * quantidade,
   notas: null,
+  precoDaProposta: false,
 });
 
 const pedido = (id: string, alteracoes: Partial<Pedido> = {}): Pedido => ({
@@ -139,6 +140,7 @@ const pedido = (id: string, alteracoes: Partial<Pedido> = {}): Pedido => ({
   pagoOnlineCent: 1000,
   reembolsadoCent: 0,
   chegouTarde: false,
+  propostaVersao: 0, propostaEm: null, levantamentoAnteriorEm: null,
   pagoEm: lisboa(10, 5, 9, 5),
   impressoEm: null,
   entregueEm: null,
@@ -308,6 +310,14 @@ describe("o que o balcão mostra", () => {
     expect(rotuloPagamento({ totalCent: 4000, pagoOnlineCent: 2750 }).replace(/\s/g, " ")).toBe(
       "SINAL PAGO · FALTA 12,50 €",
     );
+    /* Pago na loja: nada pago online, e não é um sinal. */
+    expect(rotuloPagamento({ totalCent: 12900, pagoOnlineCent: 0, modoPagamento: "na-loja", linhas: [] }).replace(/\s/g, " ")).toBe(
+      "A PAGAR NA LOJA · 129,00 €",
+    );
+    const semPreco = { ...linha("bolo"), precoUnitarioCent: null, totalCent: null };
+    expect(
+      rotuloPagamento({ totalCent: 8400, pagoOnlineCent: 0, modoPagamento: "na-loja", linhas: [semPreco] }).replace(/\s/g, " "),
+    ).toBe("A PAGAR NA LOJA · 84,00 € · PREÇO POR FIXAR");
   });
 
   it("o dia por extenso é o de Lisboa", () => {

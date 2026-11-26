@@ -13,8 +13,8 @@ import type { Afluencia, VagaDoCalendario } from "@/lib/vagas-servidor";
  * referência: os dias em círculos de cor cheia, dois meses lado a lado no
  * computador, a legenda em etiquetas no canto.
  *
- Cada dia tem a cor da sua procura e, ao tocar, mostra as horas, também com
- * cor; as cheias ficam riscadas. Escolhe-se **dia e hora**, sempre (#36).
+ * Cada dia tem a cor da sua procura. As horas aparecem depois de escolher
+ * manhã ou tarde, e as cheias ficam riscadas. Escolhe-se dia e hora (#36).
  *
  * Quando ainda não há o horário da cozinha nem os tempos dos produtos (a casa
  * ainda não os deu, e o modo de teste está desligado), as horas são as da loja
@@ -46,6 +46,11 @@ const PASTILHA: Record<Afluencia, string> = {
 };
 const CIRCULO_NEUTRO = "border-2 border-tinta/25 bg-papel text-tinta";
 const PASTILHA_NEUTRA = "bg-papel border-tinta/20";
+const PERIODOS = ["manha", "tarde"] as const;
+type Periodo = (typeof PERIODOS)[number];
+
+// O servidor já escreveu a hora de Lisboa com dois dígitos por campo.
+const periodoDaHora = (hora: string): Periodo => hora < "12:00" ? "manha" : "tarde";
 
 /**
  * ⚠️ **A cor de um dia é a média das suas horas, e não a da hora mais livre.**
@@ -84,7 +89,7 @@ type Props = {
   /** As horas são as da loja, e a escolhida confirma-se com a pessoa. */
   aConfirmar?: boolean;
   escolhida: string | null;
-  aoEscolher: (vaga: VagaDoCalendario) => void;
+  aoEscolher: (vaga: VagaDoCalendario | null) => void;
 };
 
 function mapaDeDias(vagas: VagaDoCalendario[]): Map<string, Dia> {
@@ -110,10 +115,12 @@ export function CalendarioLevantamento({
   const lingua = locale === "pt" ? "pt-PT" : "en-GB";
 
   const dias = useMemo(() => mapaDeDias(vagas), [vagas]);
-  const diaEscolhido = vagas.find((v) => v.inicio === escolhidaVaga)?.data ?? null;
+  const vagaEscolhida = vagas.find((v) => v.inicio === escolhidaVaga);
+  const diaEscolhido = vagaEscolhida?.data ?? null;
   const primeiro = [...dias].find(([, d]) => d.ativo)?.[0] ?? null;
   const [aberto, setAberto] = useState<string | null>(() => diaEscolhido ?? primeiro);
   const diaAberto = diaEscolhido ?? aberto;
+  const [periodo, setPeriodo] = useState<Periodo | null>(() => vagaEscolhida ? periodoDaHora(vagaEscolhida.hora) : null);
 
   const meses = useMemo(() => {
     const datas = [...dias.keys()].sort();
@@ -157,7 +164,12 @@ export function CalendarioLevantamento({
 
   const rotulo = (a: Afluencia | null) => (a ? t(`afluencia.${a}`) : "");
   const comCores = [...dias.values()].some((d) => d.afluencia !== null && d.afluencia !== "cheia");
-  const escolher = (data: string) => setAberto(data);
+  const escolherDia = (data: string) => {
+    if (data === diaAberto) return;
+    setAberto(data);
+    setPeriodo(null);
+    aoEscolher(null);
+  };
   /* Os nomes dos dias, de segunda a domingo — 5 de janeiro de 1970 foi segunda —,
      numa letra só, como nos calendários de bolso. */
   const cabecalho = Array.from({ length: 7 }, (_, i) => formato.diaSemana.format(new Date(Date.UTC(1970, 0, 5 + i))));
@@ -172,7 +184,7 @@ export function CalendarioLevantamento({
         <p className="text-center text-base font-semibold first-letter:uppercase">{nomeMes}</p>
         {/* Os dias ocupam a coluna até 40 px, e encolhem com ela: sete círculos
             fixos de 40 px não cabiam num telemóvel de 320 (armadilha 15). */}
-        <div role="grid" aria-label={nomeMes} className="grid grid-cols-7 gap-y-1.5 text-center">
+        <div role="grid" aria-label={nomeMes} className="grid grid-cols-7 gap-x-1 gap-y-1.5 text-center">
           {cabecalho.map((nome, i) => (
             <span key={i} className="pb-1 text-xs font-semibold text-tinta-suave">
               {nome}
@@ -200,9 +212,9 @@ export function CalendarioLevantamento({
                   disabled={!dia.ativo}
                   aria-pressed={marcado}
                   aria-label={`${formato.diaLongo.format(utc(data))}${dia.afluencia ? ` — ${rotulo(dia.afluencia)}` : ""}`}
-                  onClick={() => escolher(data)}
-                  className={`premivel grid aspect-square w-full max-w-10 place-items-center justify-self-center rounded-full text-sm font-bold tabular-nums ${cor} ${
-                    marcado ? "ring-[3px] ring-tinta ring-offset-2 ring-offset-papel" : ""
+                  onClick={() => escolherDia(data)}
+                  className={`premivel grid aspect-square w-full max-w-10 place-items-center justify-self-center rounded-full text-sm font-bold tabular-nums focus-visible:outline-2 focus-visible:-outline-offset-4 ${cor} ${
+                    marcado ? "ring-2 ring-inset ring-tinta" : ""
                   }`}
                 >
                   {i + 1}
@@ -216,6 +228,7 @@ export function CalendarioLevantamento({
   };
 
   const vagasDoDia = diaAberto ? vagas.filter((v) => v.data === diaAberto) : [];
+  const vagasDoPeriodo = vagasDoDia.filter((v) => periodoDaHora(v.hora) === periodo);
 
   return (
     <div className="grid gap-5 rounded-2xl bg-papel p-4 text-tinta sm:p-5">
@@ -264,26 +277,48 @@ export function CalendarioLevantamento({
       {diaAberto && (
         <div className="grid gap-3 border-t border-tinta/10 pt-4">
           <p className="text-sm font-semibold first-letter:uppercase">{formato.diaLongo.format(utc(diaAberto))}</p>
-          <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
-            {vagasDoDia.map((vaga) => {
-              const marcada = vaga.inicio === escolhidaVaga;
-              return (
-                <button
-                  key={vaga.inicio}
-                  type="button"
-                  disabled={!vaga.livre}
-                  aria-pressed={marcada}
-                  aria-label={`${vaga.hora}${vaga.afluencia ? ` — ${rotulo(vaga.afluencia)}` : ""}`}
-                  onClick={() => aoEscolher(vaga)}
-                  className={`premivel min-h-11 rounded-lg border-2 text-sm font-semibold tabular-nums disabled:line-through disabled:opacity-50 ${
-                    marcada ? "border-tinta bg-tinta text-papel" : vaga.afluencia ? PASTILHA[vaga.afluencia] : PASTILHA_NEUTRA
-                  }`}
-                >
-                  {vaga.hora}
-                </button>
-              );
-            })}
+          <div role="group" aria-label={t("periodo")} className="grid grid-cols-2 gap-2">
+            {PERIODOS.map((opcao) => (
+              <button
+                key={opcao}
+                type="button"
+                aria-pressed={periodo === opcao}
+                disabled={!vagasDoDia.some((vaga) => vaga.livre && periodoDaHora(vaga.hora) === opcao)}
+                onClick={() => {
+                  if (opcao === periodo) return;
+                  setPeriodo(opcao);
+                  aoEscolher(null);
+                }}
+                className={`min-h-11 rounded-lg border-2 px-2 text-sm font-semibold transition-colors disabled:opacity-50 ${
+                  periodo === opcao ? "border-tinta bg-tinta text-papel" : "border-tinta/20 bg-papel enabled:hover:border-tinta"
+                }`}
+              >
+                {t(opcao)}
+              </button>
+            ))}
           </div>
+          {periodo && (
+            <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
+              {vagasDoPeriodo.map((vaga) => {
+                const marcada = vaga.inicio === escolhidaVaga;
+                return (
+                  <button
+                    key={vaga.inicio}
+                    type="button"
+                    disabled={!vaga.livre}
+                    aria-pressed={marcada}
+                    aria-label={`${vaga.hora}${vaga.afluencia ? ` — ${rotulo(vaga.afluencia)}` : ""}`}
+                    onClick={() => aoEscolher(marcada ? null : vaga)}
+                    className={`premivel min-h-11 rounded-lg border-2 text-sm font-semibold tabular-nums disabled:line-through disabled:opacity-50 ${
+                      marcada ? "border-tinta bg-tinta text-papel" : vaga.afluencia ? PASTILHA[vaga.afluencia] : PASTILHA_NEUTRA
+                    }`}
+                  >
+                    {vaga.hora}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

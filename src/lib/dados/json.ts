@@ -9,7 +9,7 @@ import { PRODUTOS, type Produto as ProdutoDasEncomendas } from "@/lib/produtos";
 import mensagensEn from "../../../messages/en.json";
 import mensagensPt from "../../../messages/pt.json";
 import { criarPainelJson, type EstadoJson } from "./json-painel";
-import { conferirPedido, cotarLinhas, gerarReferencia, pedeConfirmacaoInicial, pedidoNaLoja } from "./regras";
+import { conferirPedido, cotarLinhas, gerarReferencia, pedeConfirmacaoInicial, pedidoNaLoja, propostaEmAberto } from "./regras";
 import {
   EsquemaEntradaPedido,
   EsquemaLinhaCesto,
@@ -25,6 +25,7 @@ import {
   type Pedido,
   type Produto,
   type ResultadoCriarPedido,
+  type ResultadoProposta,
 } from "./tipos";
 
 /**
@@ -477,7 +478,43 @@ export function criarFonteJsonComEstado(opcoes: OpcoesFonteJson = {}): { fonte: 
     async pedidoPorReferencia(referencia) {
       return pedidos.get(porReferencia.get(referencia) ?? "") ?? null;
     },
+
+    async aceitarProposta(referencia, versao, agora) {
+      return decidirProposta(referencia, versao, agora, (pedido) => ({
+        ...pedido,
+        estado: "confirmado",
+        aceiteEm: agora,
+        confirmadoEm: agora,
+      }));
+    },
+
+    async recusarProposta(referencia, versao, agora) {
+      return decidirProposta(referencia, versao, agora, (pedido) => ({
+        ...pedido,
+        estado: "cancelado",
+        canceladoEm: agora,
+        canceladoPor: "cliente",
+      }));
+    },
   };
+
+  /* O aceite e a recusa: só na versão que o link assina, e só se ainda espera o aceite. */
+  function decidirProposta(
+    referencia: string,
+    versao: number,
+    agora: Date,
+    mudar: (pedido: Pedido) => Pedido,
+  ): ResultadoProposta {
+    const pedido = pedidos.get(porReferencia.get(referencia) ?? "");
+    if (!pedido) return { ok: false, erro: "nao-existe" };
+    if (!propostaEmAberto(pedido, versao, agora)) {
+      return { ok: false, erro: "estado-mudou", pedido };
+    }
+    const decidido = mudar(pedido);
+    pedidos.set(decidido.id, decidido);
+    estado.versao++;
+    return { ok: true, pedido: decidido };
+  }
 
   return { fonte: { ...loja, ...criarPainelJson(estado, ocupacaoEntre), ...criarEmailsJson(() => [...estado.pedidos.values()]) }, estado };
 }
