@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { emailsPorEnviar } from "@/db/esquema";
 import { baseComPedidos } from "@/lib/dados/fontes-de-teste";
-import { criarEmailsBd, haEmailsDefinitivamenteFalhados } from "@/lib/dados/bd-emails";
+import { criarEmailsBd, haEmailsDefinitivamenteFalhados, JANELA_ALERTA_FALHA_MS } from "@/lib/dados/bd-emails";
 import { executarEmissor } from "./executar";
 import { recuperarEmailsAutomaticamente } from "./recuperacao";
 import { agora, pedidoDeEmail, linhaDeEmail } from "./exemplo-emissor-teste";
@@ -48,14 +48,26 @@ describe("recuperação horária com Postgres e emissor reais", () => {
       .where(eq(emailsPorEnviar.id, "00000000-0000-4000-8000-000000000103"));
     expect(await haEmailsDefinitivamenteFalhados(base.db, hora(1))).toBe(false);
   });
-  it("mantém um sinal de intervenção depois de esgotar as tentativas", async () => {
+  it("uma falha definitiva avisa na execução seguinte e não em todas as outras", async () => {
     await preparar();
     expect(await haEmailsDefinitivamenteFalhados(base.db, agora)).toBe(false);
     const reserva = (await fonte.reservarEmail(linhaDeEmail().id, agora))!;
     await fonte.registarFalhaEmail(reserva, "resend-422", true);
     expect(await haEmailsDefinitivamenteFalhados(base.db, hora(1))).toBe(true);
+    expect(await haEmailsDefinitivamenteFalhados(base.db, new Date(+agora + JANELA_ALERTA_FALHA_MS - 1))).toBe(true);
+    // Fora da janela, a linha continua falhada na fila (para o ecrã dos falhados),
+    // mas o cron vazio volta a dar verde: não insiste a cada hora.
+    expect(await haEmailsDefinitivamenteFalhados(base.db, new Date(+agora + JANELA_ALERTA_FALHA_MS))).toBe(false);
     await recuperar(hora(2), sucesso());
-    expect(await haEmailsDefinitivamenteFalhados(base.db, hora(2))).toBe(true);
+    expect(await haEmailsDefinitivamenteFalhados(base.db, hora(2))).toBe(false);
+    expect((await base.db.select().from(emailsPorEnviar))[0]).toMatchObject({ enviadoEm: null, tentativas: 5, ultimoErro: "resend-422" });
+  });
+  it("uma quinta reserva abandonada fica mais de uma hora na janela de aviso", async () => {
+    await preparar();
+    await base.db.update(emailsPorEnviar).set({ tentativas: 5, ultimaTentativaEm: agora });
+    // Abandonada aos dois minutos; uma execução horária cai sempre antes dos 65.
+    expect(await haEmailsDefinitivamenteFalhados(base.db, new Date(+agora + 120_000 + 3_600_000))).toBe(true);
+    expect(await haEmailsDefinitivamenteFalhados(base.db, new Date(+agora + JANELA_ALERTA_FALHA_MS))).toBe(false);
   });
   it("um email saltado não é uma avaria e uma última reserva ainda ativa também não", async () => {
     await preparar();

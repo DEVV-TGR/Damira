@@ -133,8 +133,10 @@ a duração de cada lote (um último timeout pode levar mais 10 s). A rota de
 recuperação tem 300 s, no máximo 12 lotes de dez e não inicia outro lote após
 180 s. Uma avaria interrompe novos lotes. Sem elegíveis, confere ainda falhas
 definitivas por uma leitura booleana filtrada antes do limite; se houver, devolve
-`intervencao-necessaria`, em vez de anunciar sucesso. Saltados e a última reserva
-ainda em curso não contam como avaria. Ver `recuperacao-emails.md`.
+`intervencao-necessaria`, em vez de anunciar sucesso. Só contam as falhas da
+última hora (65 minutos): cada uma avisa uma vez, sem pôr o cron a vermelho a
+cada hora até alguém mexer na base. Saltados e a última reserva ainda em curso
+não contam como avaria. Ver `recuperacao-emails.md`.
 
 Os logs e `ultimo_erro` só recebem códigos controlados: `resend-503`,
 `resend-rede`, `dados-do-modelo`, etc. Nunca o corpo do Resend, a mensagem do

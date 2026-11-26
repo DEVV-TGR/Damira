@@ -102,8 +102,13 @@ emails não enviados com tentativas esgotadas. O filtro aplica-se **antes do
 limite**, sem o risco de esconder terminais atrás de cem erros transitórios.
 Saltados e `resposta-cliente` ainda suspenso pelo #139 ficam excluídos. A última
 reserva em curso não é terminal; uma quinta reserva abandonada passa a exigir
-atenção após os dois minutos. Um cron vazio não volta a dar verde enquanto
-continuar uma falha definitiva por resolver.
+atenção após os dois minutos. **Cada falha definitiva avisa uma vez**: só contam
+as que tiveram a última tentativa nos últimos 65 minutos
+(`JANELA_ALERTA_FALHA_MS`), o que apanha sempre uma execução horária. Contá-las
+todas punha o cron a 503 a cada hora até alguém mexer na base à mão — não há
+ainda ecrã de falhados e não se repõem `tentativas` —, e era esse alerta
+permanente que ensinava a ignorá-lo. A linha continua falhada na fila; o
+histórico é do ecrã dos falhados, não do cron.
 
 **Condição de ativação para clientes:** configurar um monitor externo que
 observe falhas HTTP e a ausência de uma execução bem-sucedida por mais de
@@ -151,7 +156,9 @@ serve Production e o estado da tarefa depois de cada rollback/promoção.
 3. 401/403 do Resend: rever chave/domínio. 429: quota/limite do fornecedor.
    5xx/rede: a chamada horária seguinte tenta de novo, se ainda permitido.
 4. `intervencao-necessaria`: consultar os UUIDs no acesso autorizado à BD/painel
-   de falhados. Não apagar linhas/pedidos nem repor `tentativas` às cegas.
+   de falhados. Não apagar linhas/pedidos nem repor `tentativas` às cegas. O
+   aviso não se repete na hora seguinte: tratá-lo quando chega, porque o cron
+   volta a verde com a falha ainda na fila.
 5. Falha incerta após aceitação, janela expirada ou 409 por conteúdo alterado:
    reconciliar com o fornecedor. Nunca trocar a chave para «fazer passar».
 6. Limite de lotes/tempo: avaliar backlog e capacidade; não declarar que a fila
@@ -196,7 +203,9 @@ as regras da fila. [Schedules](https://vercel.com/docs/schedules).
 ## Verificação desta implementação
 
 `npm run lint`, `npm run build` e `npm test` passaram numa cópia sem `.env`: 54
-ficheiros, 1.274 testes aprovados e 39 saltados. Há 46 testes novos, incluindo
+ficheiros, 1.274 testes aprovados e 39 saltados. Depois da revisão (aviso só
+das falhas da última hora) e junto ao `main` com o #139: 56 ficheiros, 1.332
+aprovados e 39 saltados. Há 46 testes novos, incluindo
 PGlite com emissor/adaptador reais e Resend simulado. Abrangem recuperação sem
 visitas, reserva abandonada, 25 mensagens, chamadas sobrepostas, limite de
 cinco tentativas, mais de 24 h, falhas terminais atrás de 101 transitórias e

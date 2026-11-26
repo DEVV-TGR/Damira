@@ -7,16 +7,29 @@ import type { FonteEmails, LinhaEmail } from "./tipos";
 
 const limiteSeguro = (limite: number) => Math.max(1, Math.min(100, Math.trunc(limite) || 10));
 
+/**
+ * Uma falha definitiva avisa numa execução horária, não em todas as seguintes.
+ * Contá-las todas punha o cron a 503 24 vezes por dia até alguém mexer na base à
+ * mão (não há ecrã de falhados e não se repõem `tentativas`), e um alerta que
+ * toca sempre ensina a ignorá-lo. Os 65 minutos cobrem uma hora de cadência com
+ * folga para o atraso do agendador; o histórico fica para o ecrã dos falhados.
+ */
+export const JANELA_ALERTA_FALHA_MS = 65 * 60_000;
+
 /** Sinal operacional interno: não devolve pedidos nem destinatários ao cron. */
 export async function haEmailsDefinitivamenteFalhados(db: BaseDeDados, agora: Date): Promise<boolean> {
+  const instante = agora.toISOString();
   const [linha] = await db.select({ id: fila.id }).from(fila).where(and(
     isNull(fila.enviadoEm), sql`${fila.tentativas} >= ${MAXIMO_TENTATIVAS}`,
     sql`${fila.modelo} <> 'resposta-cliente'`,
     sql`(${fila.ultimoErro} is null or ${fila.ultimoErro} not like 'saltado: %')`,
     // A quinta reserva ainda em curso pode concluir: só a consideramos abandonada
     // depois dos dois minutos. Um erro definitivo já escrito não precisa de esperar.
-    sql`(${fila.ultimoErro} is not null or ${fila.ultimaTentativaEm} is null or
-      ${fila.ultimaTentativaEm} + ${JANELA_RESERVA_MS} * interval '1 millisecond' <= ${agora.toISOString()}::timestamptz)`,
+    // A janela de aviso conta da última tentativa; a reserva abandonada ainda tem
+    // 63 minutos nela, mais do que o intervalo entre duas execuções.
+    sql`${fila.ultimaTentativaEm} > ${instante}::timestamptz - ${JANELA_ALERTA_FALHA_MS} * interval '1 millisecond'`,
+    sql`(${fila.ultimoErro} is not null or
+      ${fila.ultimaTentativaEm} + ${JANELA_RESERVA_MS} * interval '1 millisecond' <= ${instante}::timestamptz)`,
   )).limit(1);
   return !!linha;
 }
