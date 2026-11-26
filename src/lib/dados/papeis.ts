@@ -51,6 +51,8 @@ export function protegerPainel(fonte: FontePainel): FontePainel {
     guardarOrdemCategorias: exigirPapel(SO_GERENTE, (entrada: unknown, ctx) =>
       fonte.guardarOrdemCategorias(entrada, ctx),
     ),
+    /* As famílias e as categorias desenham a loja inteira (26/11): da gerente. */
+    guardarFamilias: exigirPapel(SO_GERENTE, (entrada: unknown, ctx) => fonte.guardarFamilias(entrada, ctx)),
     /* As opções do bolo personalizado mudam o que o site vende: da gerente. */
     guardarOpcoesDoBolo: exigirPapel(SO_GERENTE, (entrada: unknown, ctx) =>
       fonte.guardarOpcoesDoBolo(entrada, ctx),

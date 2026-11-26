@@ -13,6 +13,7 @@ import {
   type AvisoTratavel,
   type ConfiguracaoDaCasa,
   type DefinicoesLoja,
+  type Familia,
   type FontePainel,
   type OpcoesBolo,
   type OrdemEmenta,
@@ -35,6 +36,8 @@ import {
   prepararProduto,
   REAGENDAVEIS,
 } from "./regras";
+import { categoriaDoProduto } from "@/db/categorias";
+import { arvoreDaLoja, categoriaDe, planearFamilias, type ArvoreGravada } from "./familias";
 
 /**
  * # O painel sobre os JSON — em memória, como os pedidos
@@ -66,6 +69,8 @@ export type EstadoJson = {
   versao: number;
   /** As opções do bolo personalizado, como a gerente as deixou. */
   opcoesBolo: OpcoesBolo;
+  /** As famílias e as categorias (26/11), arquivadas incluídas, como estão «gravadas». */
+  arvore: ArvoreGravada;
 };
 
 /* «Márcia», «marcia» e «MARCIA» são a mesma pessoa ao telefone. */
@@ -127,6 +132,41 @@ export function criarPainelJson(
     campos: ["categoria"],
   };
 
+  /* A categoria escolhida no editor (26/11) tem de existir e estar em uso: a
+     mesma regra do `bd.ts`. */
+  const categoriaEscolhidaInvalida = (categoriaId: string | undefined) =>
+    categoriaId !== undefined && !estado.arvore.categorias.some((c) => c.id === categoriaId && !c.arquivada);
+  const categoriaEscolhidaRecusada: ResultadoPainel<never> = {
+    ok: false,
+    erro: "dados-invalidos",
+    campos: ["categoriaId"],
+  };
+
+  /* Sem categoria escolhida, a que sai da família, da carta e da categoria — e,
+     se ainda não existir, nasce no fim da família dela, como o `categoriaNova`
+     da base de dados. Devolve o produto já com ela. */
+  const comCategoria = (produto: Produto, escolhida: string | undefined): Produto => {
+    if (escolhida !== undefined) return { ...produto, categoriaId: escolhida };
+    const derivada = categoriaDoProduto(produto);
+    if (!estado.arvore.categorias.some((c) => c.id === derivada.id)) {
+      const naFamilia = estado.arvore.categorias.filter((c) => c.familiaId === derivada.familiaId);
+      estado.arvore = {
+        ...estado.arvore,
+        categorias: [
+          ...estado.arvore.categorias,
+          {
+            id: derivada.id,
+            nome: { pt: derivada.nomePt, en: derivada.nomeEn ?? null },
+            familiaId: derivada.familiaId,
+            posicao: Math.max(-1, ...naFamilia.map((c) => c.posicao)) + 1,
+            arquivada: false,
+          },
+        ],
+      };
+    }
+    return { ...produto, categoriaId: derivada.id };
+  };
+
   /* As variâncias e os extras partilhados mudam em todos os que os têm: na base
      de dados é a mesma linha; aqui são cópias, e atualizam-se à mão. */
   const partilhar = (gravado: Produto) => {
@@ -153,17 +193,21 @@ export function criarPainelJson(
       const lido = EsquemaEntradaProduto.safeParse(entrada);
       if (!lido.success) return invalido(lido.error);
       if (foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
+      if (categoriaEscolhidaInvalida(lido.data.categoriaId)) return categoriaEscolhidaRecusada;
       const preparado = prepararProduto(lido.data, [...estado.porId.values()], null);
       if (!preparado.ok) return preparado.resultado;
       const id = livre(emId(lido.data.nome.pt) || "produto", (candidato) => estado.porId.has(candidato));
-      const produto = EsquemaProduto.parse({
-        ...lido.data,
-        id,
-        ...preparado.campos,
-        arquivado: false,
-        foraDeVenda: false,
-        esgotadoNoDia: null,
-      });
+      const produto = comCategoria(
+        EsquemaProduto.parse({
+          ...lido.data,
+          id,
+          ...preparado.campos,
+          arquivado: false,
+          foraDeVenda: false,
+          esgotadoNoDia: null,
+        }),
+        lido.data.categoriaId,
+      );
       estado.porId.set(id, produto);
       partilhar(produto);
       return { ok: true, valor: produto };
@@ -175,9 +219,15 @@ export function criarPainelJson(
       const lido = EsquemaEntradaProduto.safeParse(entrada);
       if (!lido.success) return invalido(lido.error);
       if (foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
+      if (categoriaEscolhidaInvalida(lido.data.categoriaId)) return categoriaEscolhidaRecusada;
       const preparado = prepararProduto(lido.data, [...estado.porId.values()], atual);
       if (!preparado.ok) return preparado.resultado;
-      const resultado = alterar(id, { ...lido.data, ...preparado.campos });
+      /* Sem categoria na entrada, sai outra vez da carta e da categoria: a
+         mesma regra do `bd.ts`. */
+      const semCategoria = EsquemaProduto.safeParse({ ...atual, ...lido.data, ...preparado.campos, categoriaId: undefined });
+      if (!semCategoria.success) return invalido(semCategoria.error);
+      const { categoriaId } = comCategoria(semCategoria.data, lido.data.categoriaId);
+      const resultado = alterar(id, { ...lido.data, ...preparado.campos, categoriaId });
       if (resultado.ok) partilhar(resultado.valor);
       return resultado;
     },
@@ -215,6 +265,30 @@ export function criarPainelJson(
          com as que leu, e o servidor confere o bolo contra as de agora. */
       estado.opcoesBolo = lido.data;
       return { ok: true, valor: estado.opcoesBolo };
+    },
+
+    async guardarFamilias(entrada) {
+      const usadas = new Set([...estado.porId.values()].map(categoriaDe));
+      const planeado = planearFamilias(entrada, estado.arvore, usadas);
+      if (!planeado.ok) return planeado;
+      const { plano } = planeado;
+      /* As arquivadas ficam como estavam; as que saem apagam-se ou arquivam-se. */
+      const apagadas = new Set([...plano.apagarFamilias, ...plano.apagarCategorias]);
+      const tocadas = new Set([...plano.familias, ...plano.categorias].map((l) => l.id));
+      estado.arvore = {
+        familias: [
+          ...plano.familias,
+          ...estado.arvore.familias
+            .filter((f) => !tocadas.has(f.id) && !apagadas.has(f.id))
+            .map((f) => (plano.arquivarFamilias.includes(f.id) ? { ...f, arquivada: true } : f)),
+        ],
+        categorias: [
+          ...plano.categorias,
+          ...estado.arvore.categorias.filter((c) => c.arquivada && !tocadas.has(c.id)),
+        ],
+      };
+      const valor: Familia[] = arvoreDaLoja(estado.arvore);
+      return { ok: true, valor };
     },
 
     async guardarOrdemCategorias(entrada) {

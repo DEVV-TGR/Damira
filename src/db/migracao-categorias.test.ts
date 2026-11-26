@@ -290,18 +290,21 @@ describe("a 0012 e as famílias (26/11)", () => {
 const modelo = await catalogoDeTeste();
 afterAll(() => modelo.fechar());
 
-describe("o painel, até a fronteira ler as categorias", () => {
+describe("o painel, sem a categoria escolhida", () => {
   it("pôr um artigo numa carta e categoria nova cria a categoria, no fim", async () => {
     const { db, cliente } = await modelo.copia();
     try {
       const fonte = criarFonteBd(db, loteEmTransacao(db));
       const atual = (await lerCatalogo(db)).find((p) => p.id === "bolo-de-cenoura")!;
-      /* O que a gerente vê ao abrir o produto: sem o id e os interruptores do balcão. */
+      /* O que a gerente vê ao abrir o produto: sem o id e os interruptores do
+         balcão — e sem a categoria escolhida (26/11), que é o editor de antes:
+         sem ela, a categoria sai da carta e da categoria. */
       const entrada = EsquemaProduto.omit({
         id: true,
         arquivado: true,
         foraDeVenda: true,
         esgotadoNoDia: true,
+        categoriaId: true,
       }).parse(atual);
       const editado = await fonte.editarProduto(
         "bolo-de-cenoura",

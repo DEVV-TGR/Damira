@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { arquivar, gravarProduto } from "@/app/painel/acoes-gestao";
-import type { EntradaProduto, OrdemEmenta, Produto } from "@/lib/dados/tipos";
+import type { EntradaProduto, Familia, OrdemEmenta, Produto } from "@/lib/dados/tipos";
 import { ALERGENIOS_UE, entradaDoProduto, paraCent } from "@/lib/painel";
 import { Ajuda, Rotulo } from "../Ajuda";
 import { BOTAO, BOTAO_PRINCIPAL, BOTAO_SECUNDARIO, MENSAGENS } from "../balcao/comum";
@@ -86,7 +86,8 @@ const CAMPOS: Record<string, { nome: string; em: Separador }> = {
   descricao: { nome: "a descrição", em: "geral" },
   carta: { nome: "a secção", em: "geral" },
   categoria: { nome: "a categoria", em: "geral" },
-  familia: { nome: "a família", em: "geral" },
+  categoriaId: { nome: "onde aparece na loja", em: "geral" },
+  familia: { nome: "o cartão", em: "geral" },
   variantes: { nome: "os tamanhos, os grupos e os preços", em: "precos" },
   tipo: { nome: "o tipo de produto", em: "geral" },
   variancias: { nome: "as variâncias", em: "variancias" },
@@ -177,12 +178,15 @@ function estadoInicial(produto: Produto | null) {
 export function EditorProduto({
   produto,
   ordem,
+  familias,
   catalogo,
   onFechar,
   onSujo,
 }: {
   produto: Produto | null;
   ordem: OrdemEmenta;
+  /** As famílias e as categorias da loja (26/11), para «Onde aparece na loja». */
+  familias: Familia[];
   /** O catálogo inteiro: para ligar peças de outros produtos e escolher o que um grupo leva. */
   catalogo: readonly Produto[];
   /** Sem argumentos, só fecha. Com o produto como ficou no servidor, para a lista o mostrar já. */
@@ -456,7 +460,7 @@ export function EditorProduto({
                     </>
                   }
                 >
-                  Onde aparece
+                  Como se vende
                 </Rotulo>
                 <select
                   id={`${ids}-origem`}
@@ -526,7 +530,7 @@ export function EditorProduto({
                   </select>
                 </div>
                 <div>
-                  <Rotulo htmlFor={`${ids}-categoria`} ajuda="Agrupa os produtos dentro da secção. A ordem muda-se em «Ordem das categorias».">
+                  <Rotulo htmlFor={`${ids}-categoria`} ajuda="A categoria do impresso. Onde o produto aparece na loja escolhe-se em «Onde aparece na loja».">
                     Categoria
                   </Rotulo>
                   <select
@@ -560,8 +564,8 @@ export function EditorProduto({
               </div>
             ) : (
               <div className="sm:max-w-xs">
-                <Rotulo htmlFor={`${ids}-familia`} ajuda="Decide o cartão e a página onde o produto aparece nas encomendas.">
-                  Família
+                <Rotulo htmlFor={`${ids}-familia`} ajuda="Decide o cartão e a página do produto: pessoas num kit de festa, o configurador no bolo por medida. Onde aparece na loja escolhe-se em «Onde aparece na loja».">
+                  Cartão
                 </Rotulo>
                 <select
                   id={`${ids}-familia`}
@@ -577,6 +581,38 @@ export function EditorProduto({
                 </select>
               </div>
             )}
+
+            {/* ⚠️ **É isto que decide onde o produto aparece na loja** (26/11).
+                A carta, a categoria e o cartão de cima ficam para o que já
+                faziam (o cartão, a página, o mínimo); sem nada escolhido aqui,
+                o produto vai para a categoria que sai deles, como antes. */}
+            <div className="sm:max-w-md">
+              <Rotulo
+                htmlFor={`${ids}-onde`}
+                ajuda="A família e a categoria onde o produto aparece nas encomendas. As famílias e as categorias criam-se e ordenam-se em «Famílias e categorias»."
+              >
+                Onde aparece na loja
+              </Rotulo>
+              <select
+                id={`${ids}-onde`}
+                value={e.categoriaId ?? ""}
+                onChange={(ev) => mudar({ categoriaId: ev.target.value || undefined })}
+                className={campo}
+              >
+                <option value="">Automático, pela carta e categoria</option>
+                {familias
+                  .filter((f) => f.categorias.length > 0)
+                  .map((f) => (
+                    <optgroup key={f.id} label={f.nome.pt}>
+                      {f.categorias.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {f.nome.pt} · {c.nome.pt}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+              </select>
+            </div>
 
             <div>
               <Rotulo htmlFor={`${ids}-descricao`} opcional ajuda="Uma ou duas frases: o que leva e para quantos. Aparece por baixo do nome.">

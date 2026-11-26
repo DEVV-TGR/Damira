@@ -62,9 +62,9 @@ export function colunasEditaveis(produto: Produto) {
   return {
     origem: produto.origem,
     familia: produto.familia,
-    /* Saem da família, da carta e da categoria até a fronteira as ler (#124):
-       mudar a categoria no editor muda também estas. */
-    categoriaId: categoriaDoProduto(produto).id,
+    /* A que a gerente escolheu (26/11); sem ela, sai da família, da carta e da
+       categoria, como desde a #124. */
+    categoriaId: produto.categoriaId ?? categoriaDoProduto(produto).id,
     tipo: produto.tipo,
     nomePt: produto.nome.pt,
     nomeEn: produto.nome.en,
@@ -156,7 +156,8 @@ export function produtoParaLinhas(produto: Produto, posicao: number) {
     ligacoesVariancias: produto.variancias.map((v, i) => ({ produtoId: produto.id, varianciaId: v.id, posicao: i })),
     extras: linhasExtras,
     ligacoesExtras: produto.extras.map((e, i) => ({ produtoId: produto.id, extraId: e.id, posicao: i })),
-    categoria: categoriaDoProduto(produto),
+    /* `null` quando a gerente a escolheu: essa já existe, e quem grava confere-o. */
+    categoria: produto.categoriaId === undefined ? categoriaDoProduto(produto) : null,
   };
 }
 
@@ -233,6 +234,7 @@ export function linhasParaProduto(
     id: linha.id,
     origem: linha.origem,
     familia: linha.familia,
+    categoriaId: linha.categoriaId,
     nome: { pt: linha.nomePt, en: linha.nomeEn },
     descricao: linha.descricaoPt === null ? null : { pt: linha.descricaoPt, en: linha.descricaoEn },
     carta: linha.carta,

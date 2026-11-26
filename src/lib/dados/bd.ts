@@ -14,8 +14,9 @@ import {
   type DadosDaCasa,
 } from "@/db/catalogo";
 import { OPCOES_BOLO } from "@/data/bolos-personalizados";
-import { casa as tabelaCasa, produtos, variantes } from "@/db/esquema";
-import { violouChave } from "@/db/erros";
+import { casa as tabelaCasa, categorias, familias as tabelaFamilias, produtos, variantes } from "@/db/esquema";
+import { erroDoPostgres, violouChave } from "@/db/erros";
+import { arvoreDaLoja, planearFamilias, type ArvoreGravada } from "./familias";
 import type { ExecutarLote } from "@/db/lote";
 import { diaDeLisboa } from "@/lib/painel";
 import { criarPedidosDoPainelBd } from "./bd-painel-pedidos";
@@ -57,6 +58,7 @@ export type FonteBd = Pick<
   | "listarProdutos"
   | "produtoPorId"
   | "ordemDaEmenta"
+  | "familias"
   | "configuracaoDaCasa"
   | "definicoesLoja"
   | "cotarCesto"
@@ -73,6 +75,7 @@ export type FonteBd = Pick<
   | "guardarDefinicoes"
   | "pausarLoja"
   | "guardarOrdemCategorias"
+  | "guardarFamilias"
   // Os bolos personalizados.
   | "opcoesDoBolo"
   | "guardarOpcoesDoBolo"
@@ -134,6 +137,39 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
     campos: ["categoria"],
   };
 
+  /* A árvore como está gravada, arquivadas incluídas: é o que a gravação confere. */
+  const lerArvore = async (): Promise<ArvoreGravada> => {
+    const [fs, cs] = await Promise.all([db.select().from(tabelaFamilias), db.select().from(categorias)]);
+    const nome = (l: { nomePt: string; nomeEn: string | null }) => ({ pt: l.nomePt, en: l.nomeEn });
+    return {
+      familias: fs.map((f) => ({ id: f.id, nome: nome(f), posicao: f.posicao, arquivada: f.arquivada })),
+      categorias: cs.map((c) => ({
+        id: c.id,
+        nome: nome(c),
+        posicao: c.posicao,
+        arquivada: c.arquivada,
+        familiaId: c.familiaId,
+      })),
+    };
+  };
+
+  /* ⚠️ Escolher a categoria no editor (26/11) é escolher uma que existe e está
+     em uso. Sem isto, a chave estrangeira recusava a que não existe, mas uma
+     arquivada passava — e o produto desaparecia da loja sem aviso. */
+  const categoriaEscolhidaInvalida = async (categoriaId: string | undefined) => {
+    if (categoriaId === undefined) return false;
+    const [linha] = await db
+      .select({ id: categorias.id })
+      .from(categorias)
+      .where(and(eq(categorias.id, categoriaId), eq(categorias.arquivada, false)));
+    return !linha;
+  };
+  const categoriaEscolhidaRecusada: ResultadoPainel<never> = {
+    ok: false,
+    erro: "dados-invalidos",
+    campos: ["categoriaId"],
+  };
+
   return {
     async listarProdutos(filtro = {}) {
       /* O `and` ignora os `undefined`: um filtro que não vem não filtra. */
@@ -156,6 +192,10 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
 
     async ordemDaEmenta() {
       return (await casa()).ordem;
+    },
+
+    async familias() {
+      return arvoreDaLoja(await lerArvore());
     },
 
     async configuracaoDaCasa() {
@@ -199,6 +239,7 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
       const lido = EsquemaEntradaProduto.safeParse(entrada);
       if (!lido.success) return invalido(lido.error);
       if (await foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
+      if (await categoriaEscolhidaInvalida(lido.data.categoriaId)) return categoriaEscolhidaRecusada;
       const base = emId(lido.data.nome.pt) || "produto";
 
       /* O id é o primeiro livre de `base`, `base-2`… Entre ler os ocupados e
@@ -226,7 +267,7 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
         const linhas = produtoParaLinhas(produto, 0);
         try {
           await emLote((d) => [
-            categoriaNova(d, linhas.categoria),
+            ...(linhas.categoria ? [categoriaNova(d, linhas.categoria)] : []),
             /* Para o fim do catálogo, contado na própria instrução. */
             d.insert(produtos).values({
               ...linhas.produto,
@@ -249,15 +290,24 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
       const lido = EsquemaEntradaProduto.safeParse(entrada);
       if (!lido.success) return invalido(lido.error);
       if (await foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
+      if (await categoriaEscolhidaInvalida(lido.data.categoriaId)) return categoriaEscolhidaRecusada;
       /* As variantes, as peças partilhadas e o que os grupos levam conferem-se
          contra o catálogo inteiro: a mesma regra do `json-painel.ts`. */
       const preparado = prepararProduto(lido.data, await lerProdutos(db), atual);
       if (!preparado.ok) return preparado.resultado;
 
-      const produto = EsquemaProduto.parse({ ...atual, ...lido.data, ...preparado.campos });
+      /* A categoria é a que vem; sem ela, sai outra vez da família, da carta e
+         da categoria (`categoriaDoProduto`) — e não fica a gravada, senão mudar
+         a carta num editor antigo deixava o produto onde estava. */
+      const produto = EsquemaProduto.parse({
+        ...atual,
+        ...lido.data,
+        categoriaId: lido.data.categoriaId,
+        ...preparado.campos,
+      });
       const linhas = produtoParaLinhas(produto, 0);
       await emLote((d) => [
-        categoriaNova(d, linhas.categoria),
+        ...(linhas.categoria ? [categoriaNova(d, linhas.categoria)] : []),
         /* ⚠️ Só as colunas que a entrada traz: sem os interruptores do balcão,
            que a gerente não pode desfazer por gravar um preço. */
         d.update(produtos).set(colunasEditaveis(produto)).where(eq(produtos.id, id)),
@@ -315,6 +365,81 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
 
     async guardarOpcoesDoBolo() {
       return { ok: false, erro: "indisponivel" };
+    },
+
+    async guardarFamilias(entrada) {
+      const atual = await lerArvore();
+      const usadas = await db.selectDistinct({ id: produtos.categoriaId }).from(produtos);
+      const planeado = planearFamilias(entrada, atual, new Set(usadas.map((u) => u.id)));
+      if (!planeado.ok) return planeado;
+      const { plano } = planeado;
+
+      const linhaFamilia = (f: (typeof plano.familias)[number]) => ({
+        id: f.id,
+        nomePt: f.nome.pt,
+        nomeEn: f.nome.en,
+        posicao: f.posicao,
+        arquivada: false,
+      });
+      const substituir = <T extends Record<string, unknown>>(colunas: T) =>
+        Object.fromEntries(Object.entries(colunas).map(([chave, nome]) => [chave, sql.raw(`excluded."${nome}"`)]));
+
+      try {
+        await emLote((d) => [
+          /* As famílias primeiro: as categorias novas apontam para elas. E as
+             categorias que saem antes das famílias que saem, pela mesma razão. */
+          d
+            .insert(tabelaFamilias)
+            .values(plano.familias.map(linhaFamilia))
+            .onConflictDoUpdate({
+              target: tabelaFamilias.id,
+              set: substituir({ nomePt: "nome_pt", nomeEn: "nome_en", posicao: "posicao", arquivada: "arquivada" }),
+            }),
+          ...(plano.categorias.length > 0
+            ? [
+                d
+                  .insert(categorias)
+                  .values(
+                    plano.categorias.map((c) => ({ ...linhaFamilia(c), familiaId: c.familiaId })),
+                  )
+                  .onConflictDoUpdate({
+                    target: categorias.id,
+                    set: substituir({
+                      nomePt: "nome_pt",
+                      nomeEn: "nome_en",
+                      posicao: "posicao",
+                      familiaId: "familia_id",
+                    }),
+                  }),
+              ]
+            : []),
+          ...(plano.apagarCategorias.length > 0
+            ? [d.delete(categorias).where(inArray(categorias.id, plano.apagarCategorias))]
+            : []),
+          ...(plano.arquivarFamilias.length > 0
+            ? [
+                d
+                  .update(tabelaFamilias)
+                  .set({ arquivada: true })
+                  .where(inArray(tabelaFamilias.id, plano.arquivarFamilias)),
+              ]
+            : []),
+          ...(plano.apagarFamilias.length > 0
+            ? [d.delete(tabelaFamilias).where(inArray(tabelaFamilias.id, plano.apagarFamilias))]
+            : []),
+        ]);
+      } catch (erro) {
+        /* Um nome que a base recusou (dois trocados entre si, que a regra de
+           unicidade confere linha a linha) ou um produto que entrou numa
+           categoria a apagar entre a leitura e a gravação: não grava nada, e a
+           gerente tenta outra vez. */
+        const { code, constraint } = erroDoPostgres(erro);
+        if (code === "23505" || code === "23503") {
+          return { ok: false, erro: "dados-invalidos", campos: [constraint?.startsWith("familias") ? "familias" : "categorias"] };
+        }
+        throw erro;
+      }
+      return { ok: true, valor: arvoreDaLoja(await lerArvore()) };
     },
 
     async guardarOrdemCategorias(entrada) {

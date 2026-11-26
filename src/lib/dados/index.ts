@@ -2,6 +2,7 @@ import "server-only";
 import { fonteDoAmbiente, type FonteDeExemplo } from "./exemplo";
 import { listarPelaOrdem } from "@/lib/ordenar";
 import { protegerPainel } from "./papeis";
+import { familiasComProdutos, type FamiliaComProdutos } from "@/lib/vista";
 import type { FonteDeDados } from "./tipos";
 
 /**
@@ -39,6 +40,25 @@ export const listarProdutos: FonteDeDados["listarProdutos"] = (filtro) => listar
 export const produtoPorId: FonteDeDados["produtoPorId"] = (id) => fonte.produtoPorId(id);
 
 export const ordemDaEmenta: FonteDeDados["ordemDaEmenta"] = () => fonte.ordemDaEmenta();
+
+/** As famílias e as categorias, pela ordem da gerente (26/11). */
+export const familias: FonteDeDados["familias"] = () => fonte.familias();
+
+/**
+ * O que a loja vende, arrumado pelas famílias e categorias da gerente, só com o
+ * que tem produtos (`familiasComProdutos`): tudo o que se encomenda — os kits,
+ * os bolos, as boxes e a carta que está à venda online. É o que desenha a
+ * `/encomendas` e o menu «Encomendas» do cabeçalho: os dois leem a mesma coisa,
+ * e um link do menu nunca aponta para uma secção que a página não tem.
+ */
+export async function familiasDaLoja(): Promise<FamiliaComProdutos[]> {
+  const [arvore, encomendas, daCarta] = await Promise.all([
+    fonte.familias(),
+    listarProdutos({ origem: "encomendas" }),
+    listarProdutos({ origem: "ementa", aVendaOnline: true }),
+  ]);
+  return familiasComProdutos(arvore, [...encomendas, ...daCarta]);
+}
 
 export const configuracaoDaCasa: FonteDeDados["configuracaoDaCasa"] = () =>
   fonte.configuracaoDaCasa();
@@ -103,6 +123,8 @@ export const guardarDefinicoes = painel.guardarDefinicoes;
 export const pausarLoja = painel.pausarLoja;
 /** A ordem das categorias da ementa (#87). Só a gerente. Lê-se pelo `ordemDaEmenta`. */
 export const guardarOrdemCategorias = painel.guardarOrdemCategorias;
+/** As famílias e as categorias, a árvore inteira (26/11). Só a gerente. Lê-se pelo `familias`. */
+export const guardarFamilias = painel.guardarFamilias;
 /** As opções do bolo personalizado. Só a gerente. Lê-se pelo `opcoesDoBolo`. */
 export const guardarOpcoesDoBolo = painel.guardarOpcoesDoBolo;
 export const listarPedidos = painel.listarPedidos;
