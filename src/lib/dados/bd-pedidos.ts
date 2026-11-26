@@ -1,3 +1,4 @@
+import { OPCOES_BOLO } from "@/data/bolos-personalizados";
 import { randomUUID } from "node:crypto";
 import { and, asc, eq, gte, inArray, lte, sql, type SQL } from "drizzle-orm";
 import type { BaseDeDados } from "@/db/catalogo";
@@ -281,6 +282,8 @@ export function criarPedidosBd(db: BaseDeDados, emLote: ExecutarLote, opcoes: Op
       const conferido = await conferirPedido(dados, agora, {
         definicoes,
         configuracao,
+        /* As do JSON, como no `cotarCesto` da base de dados, até ao PR de esquema. */
+        opcoesBolo: OPCOES_BOLO,
         produtoDe: (id) => porId.get(id),
         ocupacaoDaVaga: (vaga) => leitura.ocupacao(vaga, vaga),
       });

@@ -118,3 +118,19 @@ async function guardarPedido(db: BaseDeTeste, pedido: Pedido, limite: number | n
       .onConflictDoUpdate({ target: vagas.inicio, set: { ocupadas: sql`${vagas.ocupadas} + 1` } });
   }
 }
+
+/**
+ * Um bolo personalizado que a casa faz (o PDF): sem ele, uma linha do bolo por
+ * medida é recusada com `bolo-invalido` (#51).
+ */
+export const BOLO_DE_TESTE = {
+  tamanhoId: null,
+  massaId: "red-velvet",
+  coberturaId: "butter-cream",
+  recheioId: "cream-cheese",
+  aVoltaId: "migalhas-red-velvet",
+  toppingId: "frutos-vermelhos-a-decorar",
+  fotosReferencia: [],
+  fotoImprimir: null,
+  autorizaFoto: false,
+};
