@@ -10,6 +10,7 @@ import {
   comCobertura,
   imprimeFoto,
   linhasDoBolo,
+  toppingsExtraPossiveis,
   precoAPartirDe,
   validarBolo,
   type ErroBolo,
@@ -65,6 +66,7 @@ export function ConfiguradorBolo({
   const [recheioId, setRecheioId] = useState<string | null>(null);
   const [aVoltaId, setAVoltaId] = useState<string | null>(null);
   const [toppingId, setToppingId] = useState<string | null>(null);
+  const [extras, setExtras] = useState<string[]>([]);
   const [referencia, setReferencia] = useState<FotoEnviada[]>([]);
   const [imprimir, setImprimir] = useState<FotoEnviada | null>(null);
   const [autoriza, setAutoriza] = useState(false);
@@ -83,6 +85,7 @@ export function ConfiguradorBolo({
       recheio: tb("passos.recheio"),
       aVolta: tb("passos.aVolta"),
       topping: tb("passos.topping"),
+      toppingsExtra: tb("passos.toppingsExtra"),
     }),
     [tb],
   );
@@ -93,7 +96,8 @@ export function ConfiguradorBolo({
   const aVolta = comCobertura(opcoes.aVolta, coberturaId);
   const toppings = comCobertura(opcoes.toppings, coberturaId);
   const pedeFoto = imprimeFoto(opcoes, toppingId);
-  const aPartirDe = precoAPartirDe(opcoes, tamanhoId);
+  const aPartirDe = precoAPartirDe(opcoes, tamanhoId, extras);
+  const extrasPossiveis = toppingsExtraPossiveis(opcoes, coberturaId, toppingId);
 
   if (!contexto) return null;
 
@@ -125,6 +129,8 @@ export function ConfiguradorBolo({
       if (!imprimeFoto(opcoes, fica)) setImprimir(null);
       return fica;
     });
+    /* Os extras que deixam de ir com a nova cobertura saem. */
+    setExtras((atuais) => atuais.filter((x) => comCobertura(opcoes.toppings, id).some((t) => t.id === x)));
     mudou();
   };
 
@@ -175,6 +181,7 @@ export function ConfiguradorBolo({
       recheioId: recheioId ?? "",
       aVoltaId: aVoltaId ?? "",
       toppingId: toppingId ?? "",
+      toppingsExtra: extras,
       fotosReferencia: referencia.map((f) => f.caminho),
       fotoImprimir: pedeFoto ? imprimir?.caminho ?? null : null,
       autorizaFoto: pedeFoto && autoriza,
@@ -321,11 +328,58 @@ export function ConfiguradorBolo({
           aoMudar={(id) => {
             setToppingId(id);
             if (!imprimeFoto(opcoes, id)) setImprimir(null);
+            /* O topping principal não se repete nos extras. */
+            setExtras((atuais) => atuais.filter((x) => x !== id));
             mudou();
           }}
           desligada={!coberturaId}
           ajuda={coberturaId ? null : tb("primeiroCobertura")}
         />
+
+        {/* Os toppings extra (26/11): a mais do topping, da mesma lista e com a
+            mesma cobertura. Só aparecem se a gerente os ligou (o máximo) e
+            depois de escolhida a cobertura. */}
+        {coberturaId && extrasPossiveis.length > 0 && (
+          <fieldset className={`rounded-2xl ${marcado("toppings-extra")}`}>
+            <legend className={rotuloCampo}>{tb("passos.toppingsExtra")}</legend>
+            <p className="mt-1.5 text-sm text-tinta-suave">
+              {tb("toppingsExtraAjuda", { n: opcoes.toppingsExtra.maximo })}
+            </p>
+            <div className="mt-3 grid gap-x-4 gap-y-1 sm:grid-cols-2">
+              {extrasPossiveis.map((t) => {
+                const marcadoJa = extras.includes(t.id);
+                const cheio = !marcadoJa && extras.length >= opcoes.toppingsExtra.maximo;
+                return (
+                  <label
+                    key={t.id}
+                    className={`flex min-h-11 cursor-pointer items-center gap-3 text-sm ${cheio ? "cursor-not-allowed opacity-50" : ""}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={marcadoJa}
+                      disabled={cheio}
+                      onChange={(e) => {
+                        setExtras((atuais) =>
+                          e.target.checked ? [...atuais, t.id] : atuais.filter((x) => x !== t.id),
+                        );
+                        mudou();
+                      }}
+                      className="size-5 shrink-0 accent-tijolo"
+                    />
+                    <span className="min-w-0">
+                      {t.nome}
+                      {t.precoExtraCent !== null && (
+                        <span className="ml-1 tabular-nums text-tinta-suave">
+                          +{formatarCent(t.precoExtraCent, locale)}
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+        )}
 
         {opcoes.fotos.referenciaMaximo > 0 && (
           <fieldset className={`rounded-2xl ${marcado("fotos-referencia")}`}>

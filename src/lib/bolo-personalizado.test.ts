@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { OPCOES_BOLO } from "@/data/bolos-personalizados";
 import { criarFonteJson } from "@/lib/dados/json";
-import type { EscolhaBolo, OpcoesBolo } from "@/lib/dados/tipos";
+import type { EntradaBolo, OpcoesBolo } from "@/lib/dados/tipos";
 import {
   coberturasDaMassa,
   comCobertura,
   linhasDoBolo,
+  precoAPartirDe,
   ROTULOS_PT,
   validarBolo,
 } from "./bolo-personalizado";
@@ -14,7 +15,7 @@ const FOTO_A = "bolos/11111111-1111-4111-8111-111111111111.webp";
 const FOTO_B = "bolos/22222222-2222-4222-8222-222222222222.jpg";
 
 /** Um bolo válido com as opções do PDF: Red Velvet aceita as três coberturas. */
-const bolo = (mudar: Partial<EscolhaBolo> = {}): EscolhaBolo => ({
+const bolo = (mudar: Partial<EntradaBolo> = {}): EntradaBolo => ({
   tamanhoId: null,
   massaId: "red-velvet",
   coberturaId: "butter-cream",
@@ -165,5 +166,68 @@ describe("o servidor cota o bolo personalizado", () => {
     const r = await fonte.cotarCesto([linha()]);
     expect(r.ok && r.cotacao.linhas[0].erro).toBe("bolo-invalido");
     expect((await fonte.guardarOpcoesDoBolo({ ...opcoes, coberturas: [] }, ctx)).ok).toBe(false);
+  });
+});
+
+describe("os toppings extra (26/11)", () => {
+  /* Dois a mais, e um preço indicativo nos morangos. */
+  const comExtras: OpcoesBolo = {
+    ...OPCOES_BOLO,
+    toppingsExtra: { maximo: 2 },
+    tamanhos: [{ id: "1-kg", nome: "1 kg", ativa: true, precoCent: 3500 }],
+    toppings: OPCOES_BOLO.toppings.map((t) => (t.id === "morangos-a-decorar" ? { ...t, precoExtraCent: 250 } : t)),
+  };
+  const comTamanho = (mudar: Partial<EntradaBolo> = {}) => bolo({ tamanhoId: "1-kg", ...mudar });
+
+  it("estão desligados de partida: o PDF da casa não os oferece", () => {
+    expect(OPCOES_BOLO.toppingsExtra.maximo).toBe(0);
+    expect(validarBolo(OPCOES_BOLO, bolo({ toppingsExtra: ["pintarolas"] }))).toBe("toppings-extra");
+  });
+
+  it("aceitam até ao máximo, sem repetir e sem o topping principal", () => {
+    expect(validarBolo(comExtras, comTamanho({ toppingsExtra: ["pintarolas", "morangos-a-decorar"] }))).toBeNull();
+    expect(validarBolo(comExtras, comTamanho({ toppingsExtra: ["pintarolas", "morangos-a-decorar", "fios-d-ovos"] }))).toBe("toppings-extra");
+    expect(validarBolo(comExtras, comTamanho({ toppingsExtra: ["pintarolas", "pintarolas"] }))).toBe("toppings-extra");
+    expect(validarBolo(comExtras, comTamanho({ toppingsExtra: ["frutos-vermelhos-a-decorar"] }))).toBe("toppings-extra");
+  });
+
+  it("não aceitam o topping que imprime a foto, nem um que não vai com a cobertura", () => {
+    expect(validarBolo(comExtras, comTamanho({ toppingsExtra: ["foto-em-folha-de-hostia"] }))).toBe("toppings-extra");
+    const soOutras: OpcoesBolo = {
+      ...comExtras,
+      toppings: comExtras.toppings.map((t) => (t.id === "pintarolas" ? { ...t, coberturas: ["outras"] } : t)),
+    };
+    expect(validarBolo(soOutras, comTamanho({ toppingsExtra: ["pintarolas"] }))).toBe("toppings-extra");
+  });
+
+  it("vão escritos numa linha, e somam ao «a partir de» só com um tamanho com preço", () => {
+    const escolha = comTamanho({ toppingsExtra: ["pintarolas", "morangos-a-decorar"] });
+    expect(linhasDoBolo(comExtras, escolha, ROTULOS_PT)).toContain("Toppings extra: Pintarolas, Morangos a decorar");
+    expect(precoAPartirDe(comExtras, "1-kg", ["pintarolas", "morangos-a-decorar"])).toBe(3750);
+    expect(precoAPartirDe(comExtras, null, ["morangos-a-decorar"])).toBeNull();
+  });
+
+  it("o servidor cota o bolo com extras sem preço: a linha continua sob orçamento", async () => {
+    const fonte = criarFonteJson();
+    await fonte.guardarOpcoesDoBolo(comExtras, { papel: "gerente", agora: new Date() });
+    const r = await fonte.cotarCesto([
+      { produtoId: "bolo-por-medida", varianteId: "unica", quantidade: 1, bolo: comTamanho({ toppingsExtra: ["morangos-a-decorar"] }) },
+    ]);
+    expect(r.ok && r.cotacao.linhas[0]).toMatchObject({ erro: null, precoUnitarioCent: null });
+  });
+});
+
+describe("o bolo personalizado não leva peças da #88 (26/11)", () => {
+  it("recusa variâncias, opções, extras ou um sabor pelo nome na linha do bolo", async () => {
+    const base = { produtoId: "bolo-por-medida", varianteId: "unica", quantidade: 1, bolo: bolo() };
+    for (const pecas of [
+      { extras: [{ id: "topper", quantidade: 1 }] },
+      { opcoes: ["sem-acucar"] },
+      { variancias: [{ produtoId: null, varianciaId: "sabor", escolhaId: "s1" }] },
+      { escolhas: ["Chocolate"] },
+    ]) {
+      const r = await criarFonteJson().cotarCesto([{ ...base, ...pecas }]);
+      expect(r.ok && r.cotacao.linhas[0].erro).toBe("bolo-invalido");
+    }
   });
 });

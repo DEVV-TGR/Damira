@@ -525,7 +525,8 @@
         "cobertura": "Covering",
         "recheio": "Filling",
         "aVolta": "Around the sides",
-        "topping": "Topping"
+        "topping": "Topping",
+        "toppingsExtra": "Extra toppings"
       },
       "escolher": "Choose…",
       "primeiroMassa": "Choose the sponge first.",
@@ -556,10 +557,12 @@
         "envio": "The photo could not be uploaded. Please try again.",
         "ilegivel": "This file doesn't open as a photo. Try a JPEG or PNG.",
         "nao-configurado": "Photo upload isn't available yet.",
-        "demasiados-envios": "Too many photos in a row. Please wait a moment and try again."
+        "demasiados-envios": "Too many photos in a row. Please wait a moment and try again.",
+        "toppings-extra": "Check the extra toppings."
       },
       "fotosNoCesto": "{n, plural, one {# reference photo} other {# reference photos}}",
-      "fotoNoCesto": "photo to print on the cake"
+      "fotoNoCesto": "photo to print on the cake",
+      "toppingsExtraAjuda": "You can add up to {n, plural, one {# more topping} other {# more toppings}}."
     }
   },
   "modoTeste": {

@@ -279,7 +279,24 @@ export const EsquemaOpcoesBolo = z
     coberturas: z.array(EsquemaOpcaoBolo).min(1).max(50),
     recheios: z.array(EsquemaOpcaoComCoberturas).max(200),
     aVolta: z.array(EsquemaOpcaoComCoberturas).max(200),
-    toppings: z.array(EsquemaOpcaoComCoberturas).max(200),
+    toppings: z
+      .array(
+        EsquemaOpcaoComCoberturas.extend({
+          /**
+           * O preço indicativo deste topping quando vai **a mais** (os toppings
+           * extra). Só soma ao «a partir de»: a linha do bolo entra sem preço.
+           * `null` é «sem preço indicado», nunca zero.
+           */
+          precoExtraCent: Cent.nullable().default(null),
+        }),
+      )
+      .max(200),
+    /**
+     * Os toppings extra (decidido a 26/11): além do topping, o cliente junta até
+     * `maximo` toppings a mais. 0 desliga — e é o de partida, porque o PDF da casa
+     * não os oferece.
+     */
+    toppingsExtra: z.object({ maximo: z.number().int().min(0).max(5) }).default({ maximo: 0 }),
     fotos: z.object({
       /** Até quantas fotos de referência. 0 desliga o campo. */
       referenciaMaximo: z.number().int().min(0).max(3),
@@ -333,6 +350,8 @@ export const EsquemaEscolhaBolo = z
     recheioId: IdOpcao,
     aVoltaId: IdOpcao,
     toppingId: IdOpcao,
+    /** Os toppings a mais. Vazio nos cestos de antes de 26/11. */
+    toppingsExtra: z.array(IdOpcao).max(5).default([]),
     fotosReferencia: z.array(z.string().regex(FORMATO_FOTO_BOLO)).max(3),
     fotoImprimir: z.string().regex(FORMATO_FOTO_BOLO).nullable(),
     /** A confirmação de que pode usar a foto (texto da advogada, #52). */
@@ -341,6 +360,8 @@ export const EsquemaEscolhaBolo = z
   .strict();
 
 export type EscolhaBolo = z.infer<typeof EsquemaEscolhaBolo>;
+/** O bolo como pode chegar: um cesto de antes de 26/11 não traz `toppingsExtra`. */
+export type EntradaBolo = z.input<typeof EsquemaEscolhaBolo>;
 
 // ——— O que o browser manda ———
 

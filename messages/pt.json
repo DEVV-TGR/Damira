@@ -525,7 +525,8 @@
         "cobertura": "Cobertura",
         "recheio": "Recheio",
         "aVolta": "À volta",
-        "topping": "Topping"
+        "topping": "Topping",
+        "toppingsExtra": "Toppings extra"
       },
       "escolher": "Escolha…",
       "primeiroMassa": "Escolha primeiro a massa.",
@@ -556,10 +557,12 @@
         "envio": "Não foi possível enviar a foto. Tente outra vez.",
         "ilegivel": "Este ficheiro não abre como foto. Experimente um JPEG ou PNG.",
         "nao-configurado": "O envio de fotos ainda não está disponível.",
-        "demasiados-envios": "Enviou muitas fotos seguidas. Espere um pouco e tente outra vez."
+        "demasiados-envios": "Enviou muitas fotos seguidas. Espere um pouco e tente outra vez.",
+        "toppings-extra": "Confira os toppings extra."
       },
       "fotosNoCesto": "{n, plural, one {# foto de referência} other {# fotos de referência}}",
-      "fotoNoCesto": "foto para imprimir no bolo"
+      "fotoNoCesto": "foto para imprimir no bolo",
+      "toppingsExtraAjuda": "Pode juntar até {n, plural, one {# topping} other {# toppings}} a mais, além do topping."
     }
   },
   "modoTeste": {

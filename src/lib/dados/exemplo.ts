@@ -506,6 +506,7 @@ export function pedidosDoPainelDeExemplo(
       recheioId: "cream-cheese",
       aVoltaId: "migalhas-red-velvet",
       toppingId: "foto-em-folha-de-hostia",
+      toppingsExtra: [],
       fotosReferencia: [],
       fotoImprimir: null,
       autorizaFoto: true,

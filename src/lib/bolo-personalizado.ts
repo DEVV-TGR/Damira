@@ -1,4 +1,4 @@
-import type { EscolhaBolo, OpcaoBolo, OpcaoComCoberturas, OpcoesBolo } from "@/lib/dados/tipos";
+import type { EntradaBolo, OpcaoBolo, OpcaoComCoberturas, OpcoesBolo } from "@/lib/dados/tipos";
 import { URL_SITE } from "@/lib/site";
 
 /**
@@ -37,6 +37,19 @@ export function comCobertura(
   return ativas(lista).filter((o) => o.coberturas.includes(coberturaId));
 }
 
+/**
+ * Os toppings que podem ir **a mais**: os desta cobertura, sem o topping
+ * principal e sem o que imprime a foto — esse tem regras próprias (a foto e a
+ * autorização), e duas fotos impressas no mesmo bolo não é coisa que a casa
+ * tenha dito que faz.
+ */
+export function toppingsExtraPossiveis(opcoes: OpcoesBolo, coberturaId: string | null, toppingId: string | null) {
+  if (opcoes.toppingsExtra.maximo === 0) return [];
+  return comCobertura(opcoes.toppings, coberturaId).filter(
+    (t) => t.id !== toppingId && t.id !== opcoes.fotos.toppingQueImprime,
+  ) as OpcoesBolo["toppings"];
+}
+
 /** Se este topping pede a foto para imprimir. */
 export const imprimeFoto = (opcoes: OpcoesBolo, toppingId: string | null): boolean =>
   toppingId !== null && opcoes.fotos.toppingQueImprime === toppingId;
@@ -52,6 +65,7 @@ export type ErroBolo =
   | "recheio"
   | "a-volta"
   | "topping"
+  | "toppings-extra"
   | "fotos-referencia"
   | "foto-imprimir"
   | "autorizacao";
@@ -62,7 +76,7 @@ export type ErroBolo =
  * ⚠️ **Uma opção desligada é recusada** mesmo que o cesto a tenha guardado ontem:
  * a casa deixou de a fazer.
  */
-export function validarBolo(opcoes: OpcoesBolo, escolha: EscolhaBolo): ErroBolo | null {
+export function validarBolo(opcoes: OpcoesBolo, escolha: EntradaBolo): ErroBolo | null {
   const tamanhos = ativas(opcoes.tamanhos);
   /* Sem tamanhos, não se escolhe nenhum; com tamanhos, escolhe-se um dos ligados. */
   if (tamanhos.length === 0 ? escolha.tamanhoId !== null : !tamanhos.some((t) => t.id === escolha.tamanhoId)) {
@@ -73,6 +87,15 @@ export function validarBolo(opcoes: OpcoesBolo, escolha: EscolhaBolo): ErroBolo 
   if (!comCobertura(opcoes.recheios, escolha.coberturaId).some((o) => o.id === escolha.recheioId)) return "recheio";
   if (!comCobertura(opcoes.aVolta, escolha.coberturaId).some((o) => o.id === escolha.aVoltaId)) return "a-volta";
   if (!comCobertura(opcoes.toppings, escolha.coberturaId).some((o) => o.id === escolha.toppingId)) return "topping";
+  const extra = escolha.toppingsExtra ?? [];
+  const possiveis = toppingsExtraPossiveis(opcoes, escolha.coberturaId, escolha.toppingId);
+  if (
+    extra.length > opcoes.toppingsExtra.maximo ||
+    new Set(extra).size !== extra.length ||
+    extra.some((id) => !possiveis.some((t) => t.id === id))
+  ) {
+    return "toppings-extra";
+  }
 
   const referencia = escolha.fotosReferencia;
   if (referencia.length > opcoes.fotos.referenciaMaximo || new Set(referencia).size !== referencia.length) {
@@ -94,13 +117,16 @@ const nomeDe = (lista: readonly OpcaoBolo[], id: string | null): string | null =
   lista.find((o) => o.id === id)?.nome ?? null;
 
 /** Os rótulos de cada campo, na língua de quem lê. */
-export type RotulosDoBolo = Record<"tamanho" | "massa" | "cobertura" | "recheio" | "aVolta" | "topping", string>;
+export type RotulosDoBolo = Record<
+  "tamanho" | "massa" | "cobertura" | "recheio" | "aVolta" | "topping" | "toppingsExtra",
+  string
+>;
 
 /**
  * O bolo escrito em linhas, «Massa: Red Velvet», pela ordem do configurador.
  * É o que vai no cesto, no email, no painel e no talão — sempre o mesmo texto.
  */
-export function linhasDoBolo(opcoes: OpcoesBolo, escolha: EscolhaBolo, rotulos: RotulosDoBolo): string[] {
+export function linhasDoBolo(opcoes: OpcoesBolo, escolha: EntradaBolo, rotulos: RotulosDoBolo): string[] {
   const pares: [string, string | null][] = [
     [rotulos.tamanho, nomeDe(opcoes.tamanhos, escolha.tamanhoId)],
     [rotulos.massa, nomeDe(opcoes.massas, escolha.massaId)],
@@ -108,6 +134,12 @@ export function linhasDoBolo(opcoes: OpcoesBolo, escolha: EscolhaBolo, rotulos: 
     [rotulos.recheio, nomeDe(opcoes.recheios, escolha.recheioId)],
     [rotulos.aVolta, nomeDe(opcoes.aVolta, escolha.aVoltaId)],
     [rotulos.topping, nomeDe(opcoes.toppings, escolha.toppingId)],
+    [
+      rotulos.toppingsExtra,
+      (escolha.toppingsExtra ?? []).length > 0
+        ? (escolha.toppingsExtra ?? []).map((id) => nomeDe(opcoes.toppings, id) ?? id).join(", ")
+        : null,
+    ],
   ];
   return pares.flatMap(([rotulo, nome]) => (nome ? [`${rotulo}: ${nome}`] : []));
 }
@@ -120,11 +152,23 @@ export const ROTULOS_PT: RotulosDoBolo = {
   recheio: "Recheio",
   aVolta: "À volta",
   topping: "Topping",
+  toppingsExtra: "Toppings extra",
 };
 
-/** O «a partir de» do tamanho escolhido. Só para mostrar: a linha entra sem preço. */
-export const precoAPartirDe = (opcoes: OpcoesBolo, tamanhoId: string | null): number | null =>
-  opcoes.tamanhos.find((t) => t.id === tamanhoId)?.precoCent ?? null;
+/**
+ * O «a partir de»: o do tamanho escolhido, mais o preço indicativo dos toppings
+ * extra que o tenham. Só para mostrar: a linha entra sem preço. ⚠️ Sem preço no
+ * tamanho não há «a partir de» nenhum — somar só os extras dava um bolo de 2 €.
+ */
+export function precoAPartirDe(
+  opcoes: OpcoesBolo,
+  tamanhoId: string | null,
+  toppingsExtra: readonly string[] = [],
+): number | null {
+  const base = opcoes.tamanhos.find((t) => t.id === tamanhoId)?.precoCent ?? null;
+  if (base === null) return null;
+  return toppingsExtra.reduce((soma, id) => soma + (opcoes.toppings.find((t) => t.id === id)?.precoExtraCent ?? 0), base);
+}
 
 /**
  * O caminho de uma foto do bolo no site. As fotos não se mostram pelo endereço

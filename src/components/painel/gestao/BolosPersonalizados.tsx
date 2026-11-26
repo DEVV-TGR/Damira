@@ -42,7 +42,8 @@ const AJUDA: Record<Separador, string> = {
     "Uma cobertura nova entra desmarcada em todas as massas, recheios, «à volta» e toppings: marque-a onde a fizer.",
   recheios: "Marque com que coberturas faz cada recheio.",
   aVolta: "Marque com que coberturas faz cada opção.",
-  toppings: "Marque com que coberturas faz cada topping. Um deles pode abrir a foto para imprimir (em «Fotos»).",
+  toppings:
+    "Marque com que coberturas faz cada topping. Um deles pode abrir a foto para imprimir (em «Fotos»). O preço como extra só conta quando o topping vai a mais, e só soma ao «a partir de».",
   fotos: "As fotos que o cliente pode juntar ao bolo.",
 };
 
@@ -148,6 +149,23 @@ export function BolosPersonalizados({ opcoes }: { opcoes: OpcoesBolo }) {
       <p className="mt-4 text-sm text-tinta-suave">{AJUDA[separador]}</p>
 
       <div className="mt-4">
+        {separador === "toppings" && (
+          <label className="mb-4 flex flex-wrap items-center gap-3 text-sm">
+            <span className="font-semibold">Toppings extra, no máximo</span>
+            <select
+              value={rascunho.toppingsExtra.maximo}
+              onChange={(e) => mudar({ ...rascunho, toppingsExtra: { maximo: Number(e.target.value) } })}
+              className="rounded-lg border border-tinta/20 bg-papel px-3 py-2"
+            >
+              {[0, 1, 2, 3, 4, 5].map((n) => (
+                <option key={n} value={n}>
+                  {n === 0 ? "Nenhum (o cliente só escolhe um)" : n}
+                </option>
+              ))}
+            </select>
+            <span className="text-tinta-suave">a mais do topping que o cliente escolhe.</span>
+          </label>
+        )}
         {separador === "fotos" ? (
           <Fotos opcoes={rascunho} onMudar={mudar} />
         ) : (
@@ -186,7 +204,10 @@ function Tabela({
   coberturas: OpcoesBolo["coberturas"];
   onMudar: (novo: OpcoesBolo) => void;
 }) {
-  const linhas = opcoes[lista] as (OpcoesBolo["massas"][number] & { precoCent?: number | null })[];
+  const linhas = opcoes[lista] as (OpcoesBolo["massas"][number] & {
+    precoCent?: number | null;
+    precoExtraCent?: number | null;
+  })[];
   const comCoberturas = lista !== "tamanhos" && lista !== "coberturas";
 
   const trocar = (novas: typeof linhas) => onMudar({ ...opcoes, [lista]: novas } as OpcoesBolo);
@@ -207,6 +228,7 @@ function Tabela({
         /* Lista positiva: uma opção nova não vai com cobertura nenhuma até ela marcar. */
         ...(comCoberturas ? { coberturas: [] } : {}),
         ...(lista === "tamanhos" ? { precoCent: null } : {}),
+        ...(lista === "toppings" ? { precoExtraCent: null } : {}),
       } as (typeof linhas)[number],
     ]);
 
@@ -226,6 +248,7 @@ function Tabela({
             <tr className="border-b border-tinta/15 bg-tinta/5 text-left">
               <th className="px-3 py-2 font-semibold">Nome</th>
               {lista === "tamanhos" && <th className="px-3 py-2 font-semibold">A partir de (€)</th>}
+              {lista === "toppings" && <th className="px-3 py-2 font-semibold">Como extra (€)</th>}
               {comCoberturas &&
                 coberturas.map((c) => (
                   <th key={c.id || c.nome} className="px-2 py-2 text-center font-semibold">
@@ -262,6 +285,24 @@ function Tabela({
                         const euros = Number(texto);
                         /* Vazio é «sem a partir de», nunca zero. Cêntimos inteiros (regra 2). */
                         mudarLinha(i, { precoCent: texto === "" || !Number.isFinite(euros) ? null : Math.round(euros * 100) });
+                      }}
+                      className="w-24 rounded-lg border border-tinta/20 bg-papel px-3 py-2 tabular-nums"
+                    />
+                  </td>
+                )}
+                {lista === "toppings" && (
+                  <td className="px-3 py-1.5">
+                    <input
+                      inputMode="decimal"
+                      aria-label={`Preço como extra, ${linha.nome}`}
+                      defaultValue={linha.precoExtraCent == null ? "" : (linha.precoExtraCent / 100).toFixed(2).replace(".", ",")}
+                      onBlur={(e) => {
+                        const texto = e.target.value.trim().replace(",", ".");
+                        const euros = Number(texto);
+                        /* Vazio é «sem preço indicado», nunca zero. Cêntimos inteiros (regra 2). */
+                        mudarLinha(i, {
+                          precoExtraCent: texto === "" || !Number.isFinite(euros) || euros < 0 ? null : Math.round(euros * 100),
+                        });
                       }}
                       className="w-24 rounded-lg border border-tinta/20 bg-papel px-3 py-2 tabular-nums"
                     />
