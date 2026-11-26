@@ -299,6 +299,7 @@
       "verPedido": "Ver o pedido",
       "fechar": "Fechar",
       "irParaPedido": "Continuar",
+      "voltarAoPedido": "Voltar ao pedido",
       "esvaziar": "Esvaziar",
       "remover": "Tirar {nome} do pedido",
       "mais": "Mais um",
@@ -355,6 +356,9 @@
     },
     "calendario": {
       "titulo": "Quando quer levantar?",
+      "periodo": "Período do dia",
+      "manha": "Manhã",
+      "tarde": "Tarde",
       "escolha": "Escolha o dia e a hora.",
       "escolhido": "Levanta na loja: {quando}.",
       "horaDeLisboa": "Horas de Portugal.",

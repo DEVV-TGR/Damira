@@ -51,13 +51,7 @@
 }
 
 /* Na página inicial o cabeçalho acompanha a capa na rolagem para deixar
-   os capítulos e as fotografias ocuparem o ecrã inteiro.
-
-   ⚠️ `relative` e não `static` (#82): o menu do «Encomendas» abre para fora da
-   barra, e num elemento estático o `z-50` não conta — o painel ficava por
-   baixo da capa, que vem depois no DOM, e o toque caía nela. `relative`
-   continua sem colar e dá ao menu um bloco de contenção garantido, também
-   quando o `prefers-reduced-transparency` tira o `backdrop-filter`. */
+   os capítulos e as fotografias ocuparem o ecrã inteiro. */
 body:has(.cartaz) .barra-vidro {
   position: relative;
 }

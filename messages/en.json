@@ -299,6 +299,7 @@
       "verPedido": "View order",
       "fechar": "Close",
       "irParaPedido": "Continue",
+      "voltarAoPedido": "Back to checkout",
       "esvaziar": "Empty",
       "remover": "Remove {nome} from the order",
       "mais": "One more",
@@ -355,6 +356,9 @@
     },
     "calendario": {
       "titulo": "When would you like to collect?",
+      "periodo": "Time of day",
+      "manha": "Morning",
+      "tarde": "Afternoon",
       "escolha": "Choose the day and the time.",
       "escolhido": "Collect at the shop: {quando}.",
       "horaDeLisboa": "Times are Portugal time.",

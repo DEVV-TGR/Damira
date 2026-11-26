@@ -133,7 +133,8 @@ a um novo deploy.
 O cesto leva a **`/encomendas/pedido`** (#37): o resumo com o total do servidor,
 o calendário de levantamento (sempre embutido, com dia e hora — sem os dados da
 cozinha, as horas são as da loja e a escolhida é **pretendida**, a confirmar) e
-os dados da pessoa. O botão do carrinho não aparece nesta página. O formulário que vivia no
+os dados da pessoa. O botão do carrinho não aparece nesta página. «Alterar o pedido» abre o cartão
+do cesto por cima da compra para editar as quantidades e voltar ao formulário. O formulário que vivia no
 fundo das encomendas saiu. ⚠️ **Até ao pagamento online (#38) o pedido acaba num
 email à casa**, por secções e com todos os dados (os opcionais vazios
 escrevem-se «—»). Desde 25/11 esse email é o **modelo `criado-loja`** (moldura,
