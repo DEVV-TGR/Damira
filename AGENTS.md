@@ -132,7 +132,9 @@ a um novo deploy.
 
 O cesto leva a **`/encomendas/pedido`** (#37): o resumo com o total do servidor,
 o calendário de levantamento (sempre embutido, com dia e hora — sem os dados da
-cozinha, as horas são as da loja e a escolhida é **pretendida**, a confirmar) e
+cozinha, as horas são as da loja e a escolhida é **pretendida**, a confirmar; ⚠️
+**com `DATABASE_URL` não**: a fonte recusa uma hora sem tempos, e o checkout diz
+que não se marca online e dá o telefone) e
 os dados da pessoa. O botão do carrinho não aparece nesta página. O formulário que vivia no
 fundo das encomendas saiu.
 

@@ -408,6 +408,7 @@
       "sobOrcamento": "Priced on request — we'll tell you the amount.",
       "semPagamento": "There's no online payment yet: once you send it, we'll confirm the amount and the time with you.",
       "semPagamentoBd": "You pay at the shop when collecting. If an item needs the shop’s confirmation, your order waits and we let you know.",
+      "semHorasBd": "We can’t book a collection time online for this order right now. Call us and we’ll arrange it:",
       "nif": "Tax number (optional)",
       "nifAjuda": "Only if you need an invoice with your tax number.",
       "observacoes": "Notes (optional)",

@@ -408,6 +408,7 @@
       "sobOrcamento": "Sob orçamento — dizemos-lhe o valor.",
       "semPagamento": "Ainda não há pagamento online: depois de enviar, confirmamos consigo o valor e a hora.",
       "semPagamentoBd": "Paga na loja, ao levantar. Se algum artigo precisar da confirmação da casa, o pedido fica à espera e dizemos-lhe.",
+      "semHorasBd": "De momento não conseguimos marcar online a hora de levantamento deste pedido. Telefone-nos e combinamos:",
       "nif": "NIF (opcional)",
       "nifAjuda": "Só se quiser fatura com contribuinte.",
       "observacoes": "Observações (opcional)",

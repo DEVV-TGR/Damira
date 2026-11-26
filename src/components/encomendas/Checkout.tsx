@@ -108,6 +108,12 @@ export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale:
 
   const vagas = useDoServidor<ResultadoVagas>(linhas, comCesto, consultarVagas, revisaoVagas);
   const cotacao = useDoServidor<ResultadoCotacao>(linhas, comCesto, cotarPedido);
+  /* ⚠️ **Com BD, uma hora «pretendida» não se pode gravar.** Sem a cozinha ou sem
+     o tempo de um produto, o calendário oferece as horas da loja a confirmar,
+     mas o `criarPedido` recusa-as (`indisponivel`): a pessoa escolhia, enviava e
+     ouvia sempre «essa hora já não está disponível». Diz-se logo que não se
+     marca online, com o telefone, e o botão fica desligado. */
+  const semHorasNaBd = comBaseDeDados && vagas?.ok === true && vagas.aConfirmar;
   const [escolhida, setEscolhida] = useState<VagaDoCalendario | null>(null);
   /* A loja em pausa (o balcão com a cozinha cheia): diz-se até quando, e o botão
      fica desligado. O servidor confirma outra vez ao enviar. */
@@ -308,6 +314,15 @@ export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale:
             <p className="text-sm text-tinta-suave" aria-live="polite">
               {tcal("aCarregar")}
             </p>
+          ) : semHorasNaBd ? (
+            <p className="rounded-2xl bg-papel px-5 py-4 text-sm text-tinta">
+              {t("semHorasBd")}{" "}
+              {telefone && (
+                <a href={`tel:${telefone.replace(/\s/g, "")}`} className="font-semibold underline underline-offset-4">
+                  {telefone}
+                </a>
+              )}
+            </p>
           ) : vagas.ok ? (
             <div className="rounded-2xl border border-tinta/15">
               <CalendarioLevantamento
@@ -425,7 +440,7 @@ export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale:
         {erros.geral && <Erro>{erros.geral}</Erro>}
         <button
           type="submit"
-          disabled={aPendente || pausa !== null}
+          disabled={aPendente || pausa !== null || semHorasNaBd}
           className="premivel flex min-h-14 items-center justify-center rounded-full bg-tijolo px-8 text-sm font-semibold uppercase tracking-widest text-papel disabled:opacity-60"
         >
           {aPendente ? tf("aEnviar") : tf("enviar")}
