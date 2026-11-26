@@ -207,7 +207,7 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
           })}
         </ul>
         <p className="mt-2 flex items-baseline justify-between gap-4 border-t border-tinta/15 pt-4 font-semibold">
-          <span>{semPreco > 0 ? tc("aPartirDe") : tc("estimativa")}</span>
+          <span>{totalCent === 0 && semPreco > 0 ? tc("total") : semPreco > 0 ? tc("aPartirDe") : tc("estimativa")}</span>
           <span className="titulo-display text-2xl tabular-nums text-tijolo" aria-live="polite">
             {/* Só com artigos sob orçamento, «0,00 €» lia-se como um bolo de graça. */}
             {totalCent === null ? "…" : totalCent === 0 && semPreco > 0 ? tc("semPreco") : formatarCent(totalCent, locale)}

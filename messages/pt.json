@@ -327,7 +327,8 @@
         "cancelar": "Cancelar",
         "rotulo": "Sabor",
         "falta": "Escolha o sabor primeiro."
-      }
+      },
+      "total": "Total"
     },
     "procura": {
       "rotulo": "Procurar produto",

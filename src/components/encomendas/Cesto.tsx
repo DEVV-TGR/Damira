@@ -207,7 +207,7 @@ export function Cesto({ locale }: { locale: Locale }) {
 
           <div className="border-t border-tinta/15 p-5 pt-4">
             <p className="flex items-baseline justify-between gap-4 font-semibold">
-              <span>{semPreco > 0 ? t("aPartirDe") : t("estimativa")}</span>
+              <span>{somaCent === 0 && semPreco > 0 ? t("total") : semPreco > 0 ? t("aPartirDe") : t("estimativa")}</span>
               <span className="titulo-display text-2xl tabular-nums text-tijolo">{valor}</span>
             </p>
             <p className="mt-2 text-sm text-tinta-suave">

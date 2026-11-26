@@ -327,7 +327,8 @@
         "cancelar": "Cancel",
         "rotulo": "Flavour",
         "falta": "Choose the flavour first."
-      }
+      },
+      "total": "Total"
     },
     "procura": {
       "rotulo": "Search products",
