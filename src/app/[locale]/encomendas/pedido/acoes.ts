@@ -25,7 +25,12 @@ export type Registo = {
 
 export type Resultado =
   | { estado: "inicial" }
-  | { estado: "enviado"; registo?: Registo }
+  /**
+   * `estadoPedido`: em que ficou o pedido guardado — confirmado logo, ou à espera da casa. Chega
+   * quando a página gravar o pedido na base de dados (#126, passo 1); até lá não vem, e o ecrã diz
+   * só que o pedido foi enviado.
+   */
+  | { estado: "enviado"; registo?: Registo; estadoPedido?: "confirmado" | "por-confirmar" }
   | { estado: "sem-servico"; assunto: string; corpo: string; destino: string; registo: Registo }
   | { estado: "erro"; campos: Record<string, string> };
 

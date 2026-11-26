@@ -13,7 +13,9 @@ import {
   type FonteLoja,
   type Pedido,
   type ResultadoCriarPedido,
+  type ResultadoProposta,
 } from "./tipos";
+import { DESTINO_PEDIDOS } from "@/lib/pedidos";
 
 /**
  * # Os pedidos na base de dados (#29, #41)
@@ -48,7 +50,10 @@ export type OpcoesDosPedidos = {
   relogio?: () => Date;
 };
 
-export type FontePedidosBd = Pick<FonteDeDados, "ocupacao" | "criarPedido" | "pedidoPorReferencia" | "versaoPedidos">;
+export type FontePedidosBd = Pick<
+  FonteDeDados,
+  "ocupacao" | "criarPedido" | "pedidoPorReferencia" | "versaoPedidos" | "aceitarProposta" | "recusarProposta"
+>;
 
 /* Os limites de criar pedidos (`robustez.md` › Limites): pedidos em curso ao
    mesmo tempo, por IP e por email. Sem pagamento adiantado, quem não aparece
@@ -71,22 +76,38 @@ const TENTATIVAS_DE_REFERENCIA = 5;
  * algum. É um sítio só para o desconto: a limpeza por idade e o pedido expirado
  * pelo id, no «voltar atrás» do #38, descontam da mesma maneira.
  *
- * ⚠️ **A condição tem de escolher só `pendente` ou `por-confirmar`**: são os
- * dois estados que expiram, e a causa sai do estado — o pendente do Stripe
- * expira `sem-pagamento`, o que esperava pela casa `sem-resposta-da-casa`.
+ * ⚠️ **A condição tem de escolher só `pendente`, `por-confirmar` ou
+ * `a-aguardar-aceite`**: são os três estados que expiram, e a causa sai do
+ * estado — o pendente do Stripe expira `sem-pagamento`, o que esperava pela casa
+ * `sem-resposta-da-casa`, o que esperava pelo cliente `sem-aceite-do-cliente`.
+ *
+ * Deixa o email ao cliente na mesma instrução (`emails_por_enviar`): «não
+ * conseguimos responder a tempo» ou «a proposta expirou». O do Stripe não leva
+ * email: dorme com ele.
  *
  * Duas ao mesmo tempo não descontam duas vezes: a segunda espera pelo *lock* da
  * linha, volta a avaliar a condição e já não a encontra. Os `UPDATE` dentro do
  * `WITH` correm sempre, mesmo sem ninguém os ler.
  */
-function expirar(db: BaseDeDados, condicao: SQL) {
+function expirar(db: BaseDeDados, condicao: SQL, agora: Date) {
   return db.execute(sql`
     with expirados as (
       update pedidos set
         estado = 'expirado',
-        causa_expiracao = case estado when 'pendente' then 'sem-pagamento' else 'sem-resposta-da-casa' end
-      where estado in ('pendente', 'por-confirmar') and (${condicao})
-      returning levantamento_em
+        causa_expiracao = case estado
+          when 'pendente' then 'sem-pagamento'
+          when 'a-aguardar-aceite' then 'sem-aceite-do-cliente'
+          else 'sem-resposta-da-casa' end
+      where estado in ('pendente', 'por-confirmar', 'a-aguardar-aceite') and (${condicao})
+      returning id, levantamento_em, cliente_email, causa_expiracao
+    ),
+    emails as (
+      insert into emails_por_enviar (pedido_id, modelo, destinatario, criado_em)
+      select id,
+        case causa_expiracao when 'sem-aceite-do-cliente' then 'proposta-expirada-cliente' else 'expirado-cliente' end,
+        cliente_email, ${agora.toISOString()}::timestamptz
+      from expirados where causa_expiracao <> 'sem-pagamento'
+      returning 1
     ),
     por_vaga as (
       select levantamento_em, count(*)::int as n from expirados group by levantamento_em
@@ -114,15 +135,18 @@ function expirar(db: BaseDeDados, condicao: SQL) {
  *   ⚠️ nunca antes do prazo — expira quando o Stripe já não aceita o pagamento, e
  *   não um minuto antes. Por isso é «mais velho do que o prazo», estritamente.
  *
- * ⚠️ O email ao cliente de «a casa não respondeu a tempo» ainda não se grava
- * aqui: chega com a fila dos emails (#119), na mesma instrução.
+ * - **o `a-aguardar-aceite` que o cliente não aceitou** nas 24 horas, a partir
+ *   do mesmo `expira_em` (decidido a 25/11).
+ *
+ * O email ao cliente fica por enviar na mesma instrução (`expirar`).
  */
 export function limparExpirados(db: BaseDeDados, agora: Date) {
   const limite = new Date(agora.getTime() - PRAZO_DO_PEDIDO_MS).toISOString();
   return expirar(
     db,
     sql`(estado = 'pendente' and criado_em < ${limite}::timestamptz)
-      or (estado = 'por-confirmar' and expira_em <= ${agora.toISOString()}::timestamptz)`,
+      or (estado in ('por-confirmar', 'a-aguardar-aceite') and expira_em <= ${agora.toISOString()}::timestamptz)`,
+    agora,
   );
 }
 
@@ -130,8 +154,8 @@ export function limparExpirados(db: BaseDeDados, agora: Date) {
  * Expira este pedido já, se ainda estiver pendente; em qualquer outro estado,
  * nada. É o «voltar atrás» do checkout do Stripe (#38), e dorme com ele.
  */
-export function expirarPedido(db: BaseDeDados, id: string) {
-  return expirar(db, sql`estado = 'pendente' and id = ${id}::uuid`);
+export function expirarPedido(db: BaseDeDados, id: string, agora = new Date()) {
+  return expirar(db, sql`estado = 'pendente' and id = ${id}::uuid`, agora);
 }
 
 /**
@@ -207,6 +231,7 @@ export async function lerPedidos(
           precoUnitarioCent: l.precoUnitarioCent,
           totalCent: l.totalCent,
           notas: l.notas,
+          precoDaProposta: l.precoDaProposta,
         })),
       observacoes: p.observacoes,
       totalCent: p.totalCent,
@@ -227,6 +252,9 @@ export async function lerPedidos(
       entregueEm: p.entregueEm,
       canceladoEm: p.canceladoEm,
       canceladoPor: p.canceladoPor,
+      propostaVersao: p.propostaVersao,
+      propostaEm: p.propostaEm,
+      levantamentoAnteriorEm: p.levantamentoAnteriorEm,
       reagendadoEm: p.reagendadoEm,
       confirmadoEm: p.confirmadoEm,
       expiraEm: p.expiraEm,
@@ -238,6 +266,7 @@ export async function lerPedidos(
 
 /** Os pedidos da loja sobre a base de dados. */
 export function criarPedidosBd(db: BaseDeDados, emLote: ExecutarLote, opcoes: OpcoesDosPedidos): FontePedidosBd {
+  const decidirProposta = decidirPropostaBd(db);
   const relogio = opcoes.relogio ?? (() => new Date());
 
   const pedidoPorChave = async (chave: string): Promise<Pedido | null> =>
@@ -341,10 +370,84 @@ export function criarPedidosBd(db: BaseDeDados, emLote: ExecutarLote, opcoes: Op
       return (await lerPedidos(db, eq(pedidos.referencia, referencia)))[0] ?? null;
     },
 
+    async aceitarProposta(referencia, versao, agora) {
+      const momento = sql`${agora.toISOString()}::timestamptz`;
+      return decidirProposta(
+        referencia,
+        versao,
+        agora,
+        sql`estado = 'confirmado', aceite_em = ${momento}, confirmado_em = ${momento}`,
+        /* O cliente e a loja: o aceite é a primeira ordem para a cozinha (`pedidos.md`). */
+        sql`select id, 'aceite-cliente', cliente_email, ${momento} from mudado
+            union all select id, 'aceite-loja', ${DESTINO_PEDIDOS}, ${momento} from mudado`,
+      );
+    },
+
+    async recusarProposta(referencia, versao, agora) {
+      const momento = sql`${agora.toISOString()}::timestamptz`;
+      return decidirProposta(
+        referencia,
+        versao,
+        agora,
+        sql`estado = 'cancelado', cancelado_em = ${momento}, cancelado_por = 'cliente'`,
+        sql`select id, 'proposta-recusada-cliente', cliente_email, ${momento} from mudado`,
+        /* Recusar liberta a vaga, como cancelar. */
+        sql`
+          descontada as (
+            update vagas set ocupadas = vagas.ocupadas - 1
+            from mudado where vagas.inicio = mudado.levantamento_em
+            returning 1
+          ),`,
+      );
+    },
+
     async versaoPedidos() {
       const [linha] = await db.select({ versao: tabelaCasa.versaoPedidos }).from(tabelaCasa).where(eq(tabelaCasa.id, 1));
       return linha?.versao ?? 0;
     },
+  };
+}
+
+/**
+ * O aceite e a recusa: ⚠️ **uma instrução só**, condicional à versão que o link assina e a ainda
+ * esperar o aceite. Muda o pedido, deixa os emails por enviar e sobe a versão do painel; zero linhas
+ * é «já não estava assim», e lê-se o pedido para a página dizer em que ficou.
+ */
+function decidirPropostaBd(db: BaseDeDados) {
+  return async (
+    referencia: string,
+    versao: number,
+    agora: Date,
+    mudanca: SQL,
+    emails: SQL,
+    efeitos: SQL = sql``,
+  ): Promise<ResultadoProposta> => {
+    if (!Number.isSafeInteger(versao) || versao < 1) return { ok: false, erro: "nao-existe" };
+    const resultado = await db.execute(sql`
+      with mudado as (
+        update pedidos set ${mudanca}
+        where referencia = ${referencia} and modo_pagamento = 'na-loja'
+          and estado = 'a-aguardar-aceite' and proposta_versao = ${versao}::integer
+          and expira_em > ${agora.toISOString()}::timestamptz
+        returning id, cliente_email, levantamento_em
+      ),
+      ${efeitos}
+      emails as (
+        insert into emails_por_enviar (pedido_id, modelo, destinatario, criado_em)
+        ${emails}
+        returning 1
+      ),
+      versao as (
+        update casa set versao_pedidos = versao_pedidos + 1
+        where id = 1 and exists (select 1 from mudado)
+        returning 1
+      )
+      select id from mudado
+    `);
+    const mudou = (resultado as unknown as { rows: unknown[] }).rows.length > 0;
+    const pedido = (await lerPedidos(db, eq(pedidos.referencia, referencia)))[0] ?? null;
+    if (!pedido) return { ok: false, erro: "nao-existe" };
+    return mudou ? { ok: true, pedido } : { ok: false, erro: "estado-mudou", pedido };
   };
 }
 

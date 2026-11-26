@@ -287,7 +287,17 @@
         "abrir": "Open in my email",
         "verTexto": "Or copy the request text"
       },
-      "referencia": "Your reference"
+      "referencia": "Your reference",
+      "recebido": {
+        "confirmado": {
+          "titulo": "Your order is confirmed!",
+          "texto": "You will receive an email with the details. Your order will be ready at the time shown; collection follows the shop’s usual queue, in order of arrival."
+        },
+        "porConfirmar": {
+          "titulo": "We have received your order!",
+          "texto": "Our team will review your order. You will receive an email with a response, usually within 24 hours."
+        }
+      }
     },
     "cesto": {
       "titulo": "Your order",
@@ -516,5 +526,64 @@
   "modoTeste": {
     "etiqueta": "Test mode",
     "aviso": "Nothing is charged, and the pick-up times and booked slots are examples."
+  },
+  "proposta": {
+    "metaTitulo": "The proposal for your order",
+    "titulo": "We have a proposal for your order",
+    "intro": "Please see the details of our proposal below and let us know whether you would like to go ahead.",
+    "proposta": "Proposal",
+    "novaHora": "New pick-up time: {depois} (instead of {antes})",
+    "novaData": "New pick-up date: {depois} (instead of {antes})",
+    "resumo": "Order summary",
+    "total": "Total",
+    "dataLevantamento": "Pick-up date",
+    "naLoja": "At the shop:",
+    "pagamento": "Payment:",
+    "pagamentoTexto": "Once you accept the proposal, payment is made in the shop when you collect your order. No advance payment is required.",
+    "importante": "Important:",
+    "importanteTexto": "Your order will only be confirmed once you accept the proposal.",
+    "aceitar": "Accept the proposal",
+    "aAceitar": "Accepting…",
+    "recusar": "Decline the proposal",
+    "recusarPergunta": "Decline the proposal? The order is cancelled, at no cost.",
+    "recusarSim": "Yes, decline",
+    "aRecusar": "Declining…",
+    "voltar": "Back",
+    "referencia": "Order reference",
+    "duvidas": "If you have any questions, please contact us on {telefone}.",
+    "erro": "We could not record your answer. Please try again, or contact us on {telefone}.",
+    "aceite": {
+      "titulo": "Your order is confirmed!",
+      "texto": "Thank you for confirming. We will take care of everything so it is ready on the agreed date."
+    },
+    "recusada": {
+      "titulo": "We have received your answer and closed the order.",
+      "texto": "We hope to have another chance to prepare something special for you!"
+    },
+    "cancelado": {
+      "titulo": "This order has been cancelled.",
+      "texto": "If you would still like to go ahead, please contact us on {telefone}."
+    },
+    "revista": {
+      "titulo": "This proposal has been updated.",
+      "texto": "We have sent you a newer proposal. Please open the link in the most recent email."
+    },
+    "indisponivel": {
+      "titulo": "This proposal is no longer available.",
+      "texto": "If you would still like to go ahead, please contact us on {telefone}."
+    },
+    "invalido": {
+      "titulo": "This link is not valid.",
+      "texto": "Please check that you opened the full link from the email, or contact us on {telefone}."
+    },
+    "prazo": "You have until {data} to accept or decline.",
+    "expirada": {
+      "titulo": "This proposal has expired.",
+      "texto": "We did not receive your answer in time, so the order was not confirmed and there is nothing to pay. If you would still like to go ahead, place a new order on the website or contact us on {telefone}."
+    },
+    "falha": {
+      "titulo": "We could not open the proposal.",
+      "texto": "The error is ours, not yours. Please try again later, or contact us on {telefone}."
+    }
   }
 }
