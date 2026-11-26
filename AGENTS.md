@@ -168,6 +168,9 @@ que as torna falsas:
   base de dados.
 - **«A conta de cliente», regras 2 e 3** — no PR que liga as chaves e no que
   passa o histórico para o servidor.
+- **«Os artigos da carta não têm página»** (em «As páginas de produto») — no
+  PR da #88 que dá página a todos os produtos (decidido a 25/11,
+  `painel-gerente.md` › Simples e compostos).
 - ~~O `vegan: true` só na carta vegan e os mínimos por categoria em
   `encomendavel.ts`~~ — reescritas no PR da edição de produtos (#40, no #66).
 

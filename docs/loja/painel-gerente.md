@@ -26,7 +26,10 @@ O catálogo é lista à esquerda e ficha à direita a partir de 1024 px; abaixo,
 ficha toma o lugar da lista. A ficha tem separadores — Geral, Tamanhos e
 preços, Opções, Encomenda, Alergénios, Fotografias — e o guardar num rodapé
 fixo. Na interface, «tamanho» é a `variante` e «opção» é a `escolha`: o modelo
-não mudou (os tamanhos e grupos de opções do #88 pedem contrato novo). Com
+não mudou (os tamanhos e grupos de opções do #88 pedem contrato novo). ⚠️ Com a
+#88, «Tamanhos e preços» passa a **Preço** no simples e a **Grupos** no composto,
+e «Opções» parte-se em **Variâncias**, **Opções** e **Extras** — «opção» passa a
+querer dizer *tirar* (ver › Simples e compostos). Com
 alterações por guardar, trocar de produto ou de menu pergunta primeiro, e o
 painel não recarrega sozinho.
 
@@ -129,7 +132,108 @@ com preço ou sem ele. No código é o `pedeConfirmacao` (`tipos.ts`).
   a migração `0005` liga-a de partida nos produtos que lá estão sem preço
   (`base-de-dados.md`).
 
-### Variantes e escolhas
+### Simples e compostos
+
+Decidido a 25/11 (#88). ⚠️ **Por implementar**: até lá vale o que está em
+› Variantes e escolhas (hoje), mais abaixo.
+
+**O catálogo é da gerente.** Nós não decidimos que tamanhos, grupos, variâncias,
+opções ou extras existem, nem em que produtos: o painel dá-lhe as peças, livres, e
+ela monta o que quiser. O sistema não conhece «queijo», «topper» ou «20
+pessoas», e não tem regras sobre o que faz sentido juntar a quê. Só valida o
+que não é conteúdo (`pedidos.md` › Personalização).
+
+Há dois tipos de produto (`produtos.tipo`, #124), e marca-o ela:
+
+| | **Produto simples** | **Produto composto** |
+|---|---|---|
+| O que é | um produto só: um cachorro, um bolo ao quilo | é feito de produtos simples: um kit, uma box |
+| Preço | **um preço, ou um por tamanho** (se ela lhe der tamanhos), por unidade ou por quilo, **× a quantidade** | **o do grupo** que o cliente escolhe |
+| O cliente escolhe | o tamanho (se houver), variâncias, opções, extras, quantidade | **um grupo**, a quantidade, e as variâncias dos simples lá dentro |
+| Separadores da ficha | Preço e tamanhos · Variâncias · Opções · Extras | Grupos |
+
+**No simples:**
+
+| Peça | O que é | O cliente escolhe | Preço |
+|---|---|---|---|
+| **Tamanho** (opcional) | versões do produto com preço próprio: 390 g / 470 g; pequeno / grande; caixa de 6 / de 12 | **1**, e depois a quantidade | **o preço do tamanho** × a quantidade |
+| **Variância** | **trocar** uma coisa por outra, sem tirar nem pôr: Salsicha — alemã / americana; Sabor; Cor | **1 por variância** | 0 € ou `+X €` em cada escolha |
+| **Opção** | **tirar**: sem queijo, sem cebola | as que quiser | sem preço; tirar não desconta |
+| **Extra** | **pôr a mais**: + fatia de queijo, + ovo, topper | as que quiser, até ao máximo que ela define | `+X €` por unidade, ou 0 € |
+
+- **Os tamanhos põem-se ou não**: sem tamanhos, o produto tem um preço só; com
+  tamanhos, cada um tem o seu, e o produto deixa de ter um preço à parte. O
+  tamanho **é** o preço; a variância **soma** ao preço. O nome do tamanho é
+  dela («470 g», «Caixa de 12»), e o mínimo e o múltiplo continuam a ser do
+  produto.
+- **Extras e opções não se ligam a ingredientes.** Um extra é um nome, um
+  preço e um máximo; se ela quiser um extra que o produto não leva, põe-no.
+- **Não há combinações proibidas.** «Sem queijo» e «+ queijo» na mesma linha
+  passam: é ela e a cozinha que sabem se é erro.
+- **Reaproveitar:** além de «Criar», «Usar de outro produto» — **ligar**
+  (partilhado: mudar o preço num muda em todos, e o painel diz em quantos
+  está) ou **copiar** (independente). Variâncias e extras ligam-se; opções são
+  de cada produto.
+
+**No composto, grupos.** Um grupo tem **nome**, **preço** (ou sob orçamento) e
+a lista dos **produtos simples** que leva — **quantos ela quiser**, cada um com
+a quantidade que ela quiser, ou sem quantidade. No painel há sempre um
+«+ Juntar produto» no grupo e um «+ Juntar grupo» no composto, sem limite. O
+cliente **escolhe um grupo**; para dois, junta o produto duas vezes.
+
+- O nome é dela, e o sistema não lhe dá sentido: no kit de festa os grupos são
+  «20 pessoas» · 335 € e «40 pessoas» · 650 €; no kit de Natal podem ser «Kit
+  bolo-rei» e «Kit pão de ló». Um kit de bolo ou uma box têm um grupo só, com
+  todos os produtos que levam lá dentro.
+- **Só produtos simples dentro de um grupo** — não há kits dentro de kits.
+- **Pode entrar um simples que não se vende sozinho** (fora de venda):
+  «Salgados variados» cria-se como produto só para entrar em kits.
+- Na página do composto aparecem **as variâncias dos simples lá dentro** (o
+  sabor do bolo do kit), porque sem elas a cozinha não sabe o que fazer. As
+  opções e os extras deles **não**: um kit de 40 salgados não pede 40 caixas
+  «sem queijo».
+- O composto **não herda** limites, esgotados nem tempos de produção dos simples
+  lá dentro: tem os seus.
+- **Arquivar um simples não o tira dos grupos** — lá dentro é conteúdo, e um kit
+  não muda sozinho. O painel avisa «está em 3 kits», e é no kit que se tira.
+
+**Para os dois:**
+
+- Cada escolha **desliga-se** sem se apagar («esgotou o morango»), e a ordem
+  arrasta-se — é a que o cliente vê.
+- ⚠️ **Livre é livre para errar**: um extra a 40 € em vez de 0,40 € cobra
+  40 €. A ficha mostra ao lado o cartão e a página como o cliente os vê, com o
+  total de uma unidade.
+- **Uma página por produto.** Todos passam a ter `/encomendas/<id>`; o cartão
+  mantém o botão rápido nos que não têm nada obrigatório para escolher.
+
+**No código**, o tamanho do simples e o grupo do composto são os dois a
+**`variante`** de hoje: já tem nome e preço, e os pedidos gravados já guardam o
+`varianteId` e o nome dela. Um simples sem tamanhos fica com uma só, a
+`"unica"` — como hoje. O que muda é o que a variante do composto leva: a
+`composicao` em texto passa a uma lista de produtos simples com quantidade
+(`base-de-dados.md`).
+
+**Os produtos de hoje ficam**, e convertem-se para testarmos:
+
+- as `escolhas` passam a uma variância a 0 € (o mesmo comportamento: escolhe-se
+  uma);
+- as variantes dos simples ficam como tamanhos (o Chocolate do Dubai, quatro
+  pesos, quatro preços), sem mudar nada;
+- os escalões dos kits passam a grupos, e o que levam (hoje em texto) passa à
+  mão a produtos simples fora de venda — não há conversão automática que acerte
+  em «1 unidade (800gr)»;
+- personalizações de exemplo (extras, opções) em alguns produtos, **só na fonte
+  JSON com `LOJA_EM_TESTE` e na base de desenvolvimento** — nunca na de
+  produção, onde a gerente as via como dela.
+
+**Quando ela se sentar para montar o catálogo**, apagam-se os produtos e ela
+cria-os um a um. ⚠️ Só se apagam **enquanto nenhum pedido verdadeiro apontar
+para eles** (`linhas_pedido.produto_id` tem chave estrangeira; regra 9);
+depois do primeiro, arquivam-se. É um script nosso, com cópia de segurança
+antes (`restauro.md`), não um botão.
+
+### Variantes e escolhas (hoje)
 
 Duas coisas diferentes, e a diferença é o preço:
 
@@ -139,7 +243,8 @@ Duas coisas diferentes, e a diferença é o preço:
 
 Um bolo pode ter as duas: variantes de tamanho e uma escolha de sabor. Isto evita
 a explosão de combinações («Chocolate · 1 kg», «Chocolate · 2 kg», «Morango ·
-1 kg»…) que ninguém consegue manter num telemóvel.
+1 kg»…) que ninguém consegue manter num telemóvel. Com a #88, as escolhas passam
+a variâncias e as variantes a grupos dos compostos (acima).
 
 ### Regras que mudam em relação ao site atual
 
