@@ -4,7 +4,7 @@ import { erroDoPostgres } from "@/db/erros";
 import type { FonteEmails, LinhaEmail } from "@/lib/dados/tipos";
 import { REMETENTE_PEDIDOS } from "@/lib/pedidos";
 import { emModoDeTeste, type Ambiente } from "@/lib/modo-teste";
-import { dadosDoEmail, foraDaJanelaDeIdempotencia, JANELA_RESERVA_MS } from "./emissor";
+import { anteriorAoEmissor, CORTE_DA_FILA, dadosDoEmail, foraDaJanelaDeIdempotencia, JANELA_RESERVA_MS } from "./emissor";
 import { escreverEmail } from "./modelos";
 import { enviarPeloResend } from "./resend";
 import { NOME_REMETENTE } from "./textos";
@@ -17,6 +17,8 @@ export type DependenciasEmissor = {
   buscar?: typeof fetch; esperar?: (ms: number) => Promise<unknown>;
   /** Milissegundos desde o início da volta; monotónico, injetável nos testes. */
   decorrido?: () => number;
+  /** O corte da fila (`CORTE_DA_FILA`); injetável para os testes com datas antigas. */
+  corte?: Date;
 };
 
 /** Só códigos controlados; o objeto do erro nunca sai para os logs. */
@@ -28,7 +30,7 @@ function registarErro(erro: unknown, referencia?: string, modelo?: string) {
 
 export async function executarEmissor(
   { agora, limite = 10 }: OpcoesEmissor,
-  { fonte, ambiente, casa, buscar = fetch, esperar: pausa = esperar, decorrido }: DependenciasEmissor,
+  { fonte, ambiente, casa, buscar = fetch, esperar: pausa = esperar, decorrido, corte = CORTE_DA_FILA }: DependenciasEmissor,
 ): Promise<ResumoEmissor> {
   const resumo: ResumoEmissor = { enviados: 0, falhados: 0, saltados: 0 };
   const inicio = performance.now();
@@ -38,7 +40,11 @@ export async function executarEmissor(
   try {
     const seguro = ambiente.EMAILS_SO_PARA?.trim();
     const producao = ambiente.VERCEL_ENV === "production";
-    if ((!producao || seguro) && !z.email().safeParse(seguro).success) {
+    /* ⚠️ O modo de teste também prende os envios em produção: até ao lançamento o
+       site no ar grava pedidos de ensaio, e nenhum email desses pode chegar a um
+       cliente nem à casa como se fosse verdadeiro. Vive aqui, e não numa rota, para
+       valer para todos os chamadores — as ações, a recuperação e o ensaio. */
+    if ((!producao || seguro || emModoDeTeste(ambiente)) && !z.email().safeParse(seguro).success) {
       console.error("[emails] emails-so-para-em-falta-ou-invalido");
       return { ...resumo, bloqueado: "sem-destino-seguro" };
     }
@@ -59,6 +65,10 @@ export async function executarEmissor(
         // O tempo avança durante o lote: não se reserva com a hora de um envio anterior.
         reserva = await fonte.reservarEmail(linha.id, instanteAtual());
         if (!reserva) continue;
+        if (anteriorAoEmissor(linha, corte)) {
+          await fonte.registarFalhaEmail(reserva, "saltado: anterior-ao-emissor", true);
+          resumo.saltados++; continue;
+        }
         if (foraDaJanelaDeIdempotencia(linha, instanteAtual())) {
           await fonte.registarFalhaEmail(reserva, "idempotencia-expirada", true);
           resumo.falhados++; continue;

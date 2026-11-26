@@ -9,10 +9,12 @@ import { agora, pedidoDeEmail, linhaDeEmail } from "@/lib/emails/exemplo-emissor
 const ambiente = { VERCEL_ENV: "preview", EMAILS_SO_PARA: "ensaio@example.com", RESEND_API_KEY: "chave-inventada", EMAIL_REMETENTE: "remetente@example.com", LOJA_EM_TESTE: "1" };
 const casa = { nome: "Casa", morada: "Rua Exemplo", localidade: "Localidade", telefone: "+351 229 730 939", email: "casa@example.com" };
 const mais = (ms: number) => new Date(+agora + ms);
+/* As linhas de exemplo são de outubro, antes do corte da fila: estes testes são do envio. */
+const corte = new Date(0);
 let base: Awaited<ReturnType<typeof baseComPedidos>>;
 let fonte: ReturnType<typeof criarEmailsBd>;
 const executar = (buscar: typeof fetch, data = agora, env = ambiente, origem = fonte) => executarEmissor({ agora: data, limite: 10 }, {
-  fonte: origem, ambiente: env, casa, buscar, esperar: async () => {}, decorrido: () => 0,
+  fonte: origem, ambiente: env, casa, buscar, esperar: async () => {}, decorrido: () => 0, corte,
 });
 const sucesso = () => vi.fn<typeof fetch>().mockResolvedValue(new Response('{"id":"inventado"}', { status: 200 }));
 
@@ -78,7 +80,7 @@ describe("emissor com Postgres", () => {
     await preparar({ tentativas: 1, ultimaTentativaEm: agora });
     const buscar = sucesso();
     await executarEmissor({ agora: mais(86399000), limite: 10 }, {
-      fonte, ambiente, casa, buscar, esperar: async () => {}, decorrido: () => 2000,
+      fonte, ambiente, casa, buscar, esperar: async () => {}, decorrido: () => 2000, corte,
     });
     expect(buscar).not.toHaveBeenCalled();
     expect(await fonte.emailsFalhados(10)).toMatchObject([{ ultimoErro: "idempotencia-expirada" }]);
@@ -89,13 +91,13 @@ describe("emissor com Postgres", () => {
     const lenta = { ...fonte, pedidoDoEmail: async (id: string) => {
       const pedido = await fonte.pedidoDoEmail(id); decorrido = 2000; return pedido;
     } };
-    await executarEmissor({ agora: mais(86399000) }, { fonte: lenta, ambiente, casa, buscar, decorrido: () => decorrido });
+    await executarEmissor({ agora: mais(86399000) }, { fonte: lenta, ambiente, casa, buscar, decorrido: () => decorrido, corte });
     expect(buscar).not.toHaveBeenCalled();
     expect(await fonte.emailsFalhados(10)).toMatchObject([{ ultimoErro: "idempotencia-expirada" }]);
   });
   it("o limite temporal deixa a fila por tentar e não gasta reservas", async () => {
     await preparar(); const buscar = sucesso();
-    await executarEmissor({ agora }, { fonte, ambiente, casa, buscar, decorrido: () => 45000 });
+    await executarEmissor({ agora }, { fonte, ambiente, casa, buscar, decorrido: () => 45000, corte });
     expect(buscar).not.toHaveBeenCalled();
     expect((await base.db.select().from(emailsPorEnviar))[0].tentativas).toBe(0);
   });
@@ -118,7 +120,7 @@ describe("emissor com Postgres", () => {
   });
   it("marca com instante posterior ao de uma linha criada durante a volta", async () => {
     await preparar({ criadoEm: mais(1000) }); const buscar = sucesso();
-    expect(await executarEmissor({ agora }, { fonte, ambiente, casa, buscar, decorrido: () => 2000 })).toMatchObject({ enviados: 1 });
+    expect(await executarEmissor({ agora }, { fonte, ambiente, casa, buscar, decorrido: () => 2000, corte })).toMatchObject({ enviados: 1 });
     expect((await base.db.select().from(emailsPorEnviar))[0].enviadoEm).toEqual(mais(2000));
   });
   it("usa o remetente de teste existente se EMAIL_REMETENTE estiver ausente", async () => {
@@ -152,7 +154,7 @@ describe("emissor com Postgres", () => {
     const lenta = { ...fonte, pedidoDoEmail: async (id: string) => {
       const pedido = await fonte.pedidoDoEmail(id); decorrido = 110000; return pedido;
     } };
-    expect(await executarEmissor({ agora }, { fonte: lenta, ambiente, casa, buscar, decorrido: () => decorrido })).toMatchObject({ falhados: 1 });
+    expect(await executarEmissor({ agora }, { fonte: lenta, ambiente, casa, buscar, decorrido: () => decorrido, corte })).toMatchObject({ falhados: 1 });
     expect(buscar).not.toHaveBeenCalled();
     expect(await fonte.emailsFalhados(10)).toMatchObject([{ ultimoErro: "reserva-expirada" }]);
   });
@@ -164,8 +166,28 @@ describe("emissor com Postgres", () => {
   });
   it("produção usa o destinatário gravado e loja responde ao cliente", async () => {
     await preparar({ modelo: "criado-loja", destinatario: "destino-gravado@example.com" }); const buscar = sucesso();
-    await executar(buscar, agora, { ...ambiente, VERCEL_ENV: "production", EMAILS_SO_PARA: "" });
+    await executar(buscar, agora, { ...ambiente, VERCEL_ENV: "production", EMAILS_SO_PARA: "", LOJA_EM_TESTE: "" });
     expect(JSON.parse(buscar.mock.calls[0][1]!.body as string)).toMatchObject({ to: ["destino-gravado@example.com"], reply_to: "pessoa@example.com" });
+  });
+  it("em produção com o modo de teste, sem caixa segura não consulta nem envia", async () => {
+    await preparar(); const buscar = sucesso(); const ler = vi.spyOn(fonte, "emailsPendentes");
+    expect(await executar(buscar, agora, { ...ambiente, VERCEL_ENV: "production", EMAILS_SO_PARA: "" }))
+      .toMatchObject({ bloqueado: "sem-destino-seguro" });
+    expect(ler).not.toHaveBeenCalled(); expect(buscar).not.toHaveBeenCalled(); ler.mockRestore();
+  });
+  it("em produção com o modo de teste, tudo vai para a caixa segura", async () => {
+    await preparar({ modelo: "criado-loja", destinatario: "destino-gravado@example.com" }); const buscar = sucesso();
+    await executar(buscar, agora, { ...ambiente, VERCEL_ENV: "production" });
+    expect(JSON.parse(buscar.mock.calls[0][1]!.body as string)).toMatchObject({ to: [ambiente.EMAILS_SO_PARA] });
+  });
+  it("o que entrou na fila antes do corte salta sem chegar ao Resend, e o seguinte sai", async () => {
+    await preparar();
+    await base.db.insert(emailsPorEnviar).values({ ...linhaDeEmail(), id: "00000000-0000-4000-8000-000000000003", modelo: "criado-loja", destinatario: "casa@example.com", criadoEm: mais(60_000) });
+    const buscar = sucesso(); const ler = vi.spyOn(fonte, "pedidoDoEmail");
+    const resumo = await executarEmissor({ agora: mais(120_000) }, { fonte, ambiente, casa, buscar, esperar: async () => {}, decorrido: () => 0, corte: mais(30_000) });
+    expect(resumo).toMatchObject({ enviados: 1, saltados: 1, falhados: 0 });
+    expect(buscar).toHaveBeenCalledTimes(1); expect(ler).toHaveBeenCalledTimes(1); ler.mockRestore();
+    expect(await fonte.emailsFalhados(10)).toMatchObject([{ ultimoErro: "saltado: anterior-ao-emissor", enviadoEm: null, saltado: true }]);
   });
   it("resposta sem #139 fica pendente e não impede o próximo email", async () => {
     await preparar({ modelo: "resposta-cliente" });

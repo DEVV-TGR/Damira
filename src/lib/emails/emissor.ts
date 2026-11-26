@@ -4,6 +4,20 @@ import type { DadosEmailPedido } from "./tipos";
 export const MAXIMO_TENTATIVAS = 5;
 export const JANELA_RESERVA_MS = 120_000;
 export const JANELA_IDEMPOTENCIA_MS = 24 * 3_600_000;
+
+/**
+ * O corte da fila: o instante em que o emissor passou a ser chamado pelas ações.
+ * O #139 grava emails na fila desde 26/11, e nessa altura ninguém os enviava. O
+ * primeiro envio não pode despejar de uma vez avisos de pedidos antigos, que já
+ * ninguém espera: o que foi gravado antes daqui sai como
+ * `saltado: anterior-ao-emissor`, sem tentativa no Resend.
+ *
+ * ⚠️ Não se adianta esta data. O que entrar na fila depois dela é para sair.
+ */
+export const CORTE_DA_FILA = new Date("2026-11-26T17:00:00Z");
+
+export const anteriorAoEmissor = (linha: LinhaEmail, corte: Date = CORTE_DA_FILA): boolean =>
+  +linha.criadoEm < +corte;
 export const esperaDaTentativa = (tentativas: number): number =>
   JANELA_RESERVA_MS * 2 ** Math.max(0, tentativas - 1);
 
