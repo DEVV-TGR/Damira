@@ -2,10 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { entregar } from "@/app/painel/acoes-balcao";
+import { confirmar, entregar } from "@/app/painel/acoes-balcao";
 import type { Pedido } from "@/lib/dados/tipos";
 import { caminhoDaFotoDoBolo } from "@/lib/bolo-personalizado";
-import { faltaPagarCent, rotuloPagamento } from "@/lib/painel";
+import { aFazer, balcaoPodeConfirmar, diaPorExtenso, faltaPagarCent, rotuloPagamento } from "@/lib/painel";
 import { horaDeLisboa } from "@/lib/painel-ligacao";
 import { formatarCent } from "@/lib/preco";
 import { telefoneArrumado } from "@/lib/telefone";
@@ -25,20 +25,45 @@ export function PedidoCartao({
   destaque = false,
   soLeitura = false,
   onEntregue,
+  comecaAte,
 }: {
   pedido: Pedido;
   destaque?: boolean;
   /** Sem «Entregue»: para comparar dois pedidos, não para os despachar. */
   soLeitura?: boolean;
   onEntregue?: (pedido: Pedido) => void;
+  /** Num `por-confirmar`: quando a produção teria de começar (`organizarBalcao`). */
+  comecaAte?: Date | null;
 }) {
   const router = useRouter();
   const { ocupado } = usePainel();
   const [confirmarFalta, setConfirmarFalta] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [aEnviar, iniciar] = useTransition();
-  const falta = faltaPagarCent(pedido);
+  /* Num pedido pago na loja nada está pago online, e o «falta» seria o total
+     inteiro: o dinheiro entra no toque do «Entregue» (`pedidos.md`). */
+  const falta = pedido.modoPagamento === "na-loja" ? 0 : faltaPagarCent(pedido);
   const cancelado = pedido.estado === "cancelado";
+  const aEspera = pedido.estado === "por-confirmar" || pedido.estado === "a-aguardar-aceite";
+
+  const confirmarJa = () =>
+    iniciar(async () => {
+      setErro(null);
+      const libertar = ocupado();
+      try {
+        const resultado = await confirmar(pedido.id);
+        if (resultado.ok) {
+          router.refresh();
+          return;
+        }
+        setErro(MENSAGENS[resultado.erro]);
+        if (resultado.erro === "estado-mudou") router.refresh();
+      } catch {
+        setErro("Sem ligação: não ficou confirmado. Tente outra vez.");
+      } finally {
+        libertar();
+      }
+    });
 
   const entregarJa = (faltaCobrada: boolean) =>
     iniciar(async () => {
@@ -83,6 +108,16 @@ export function PedidoCartao({
         {cancelado && (
           <p className="mb-3 inline-block rounded-full bg-tijolo px-3 py-1 text-xs font-semibold uppercase tracking-widest text-papel">
             Cancelado
+          </p>
+        )}
+        {aEspera && (
+          /* O dia vai por extenso: na lista «Por confirmar» há pedidos de vários
+             dias, e a hora do cabeçalho sozinha não diz qual. */
+          <p className="mb-3 text-sm">
+            <span className="mr-2 inline-block rounded-full bg-tinta px-3 py-1 text-xs font-semibold uppercase tracking-widest text-papel">
+              {pedido.estado === "por-confirmar" ? "Por confirmar" : "À espera do cliente"}
+            </span>
+            <span className="first-letter:uppercase">{diaPorExtenso(pedido.levantamentoEm)}</span>
           </p>
         )}
         <p className={cancelado ? "line-through" : ""}>
@@ -139,7 +174,16 @@ export function PedidoCartao({
           {rotuloPagamento(pedido)}
         </p>
 
-        {pedido.estado === "pago" && !soLeitura && (
+        {pedido.estado === "por-confirmar" && !soLeitura && (
+          <Confirmar pedido={pedido} comecaAte={comecaAte ?? null} aEnviar={aEnviar} onConfirmar={confirmarJa} />
+        )}
+        {pedido.estado === "a-aguardar-aceite" && pedido.expiraEm && (
+          <p className="mt-4 text-sm text-tinta-suave">
+            A casa já respondeu. O cliente tem até {diaPorExtenso(pedido.expiraEm)}, {horaDeLisboa(pedido.expiraEm)}, para aceitar.
+          </p>
+        )}
+
+        {aFazer(pedido) && !soLeitura && (
           <div className="mt-4">
             {confirmarFalta ? (
               /* ⚠️ Entregar sem cobrar o resto é o erro mais caro do balcão, e o mais
@@ -177,6 +221,47 @@ export function PedidoCartao({
         </p>
       </div>
     </article>
+  );
+}
+
+/**
+ * O «sim» do balcão (`pedidos.md` › Quem confirma): o pedido tal como está.
+ * Com uma linha sem preço não há «sim» possível — alguém tem de dizer quanto
+ * custa, e fixar dinheiro é da gerente. O balcão vê-o dito, em vez de um botão
+ * que o servidor ia recusar.
+ */
+function Confirmar({
+  pedido,
+  comecaAte,
+  aEnviar,
+  onConfirmar,
+}: {
+  pedido: Pedido;
+  comecaAte: Date | null;
+  aEnviar: boolean;
+  onConfirmar: () => void;
+}) {
+  return (
+    <div className="mt-4 rounded-xl border-2 border-tinta/15 p-4">
+      {pedido.expiraEm && (
+        <p className="text-sm">
+          Responder até <strong>{diaPorExtenso(pedido.expiraEm)}, {horaDeLisboa(pedido.expiraEm)}</strong>. Depois expira, e a vaga fica
+          livre.
+        </p>
+      )}
+      <p className="mt-1 text-sm text-tinta-suave">
+        {comecaAte
+          ? `A produção teria de começar ${diaPorExtenso(comecaAte)}, às ${horaDeLisboa(comecaAte)}.`
+          : "Não se sabe quando a produção teria de começar: falta o tempo de um produto ou o horário da cozinha."}
+      </p>
+      {balcaoPodeConfirmar(pedido) ? (
+        <button type="button" onClick={onConfirmar} disabled={aEnviar} className={`${BOTAO_PRINCIPAL} mt-3 min-h-[60px] w-full text-base`}>
+          {aEnviar ? "A confirmar…" : "✓ Confirmar o pedido"}
+        </button>
+      ) : (
+        <p className="mt-3 font-semibold">Tem um artigo sem preço: a gerente responde a este pedido.</p>
+      )}
+    </div>
   );
 }
 

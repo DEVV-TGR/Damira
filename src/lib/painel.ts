@@ -143,12 +143,48 @@ export type AProduzir = {
   referencias: string[];
 };
 
+/**
+ * Os pedidos que a cozinha faz: o `confirmado` de quem paga na loja e o `pago` do
+ * Stripe, que dorme (`pedidos.md` › Os estados). ⚠️ Antes da #125 o balcão só
+ * contava os `pago`, e com o pagamento na loja isso queria dizer **nenhum**: um
+ * pedido gravado pelo site não aparecia em lista nenhuma.
+ */
+export const aFazer = (pedido: Pick<Pedido, "estado">): boolean =>
+  pedido.estado === "pago" || pedido.estado === "confirmado";
+
+/**
+ * Um pedido que espera pela casa, e o que o balcão precisa de saber para não o
+ * esquecer (`pedidos.md` › Por confirmar não é esquecido): até quando espera e
+ * quando a produção teria de começar.
+ */
+export type PorConfirmar = {
+  pedido: Pedido;
+  /** O mais cedo de todas as linhas; `null` sem a cozinha ou sem o tempo de um produto. */
+  comecaAte: Date | null;
+  /**
+   * A produção teria de começar hoje, ou já devia ter começado — ou não se sabe
+   * quando, e isso também é motivo para responder já.
+   */
+  urgente: boolean;
+};
+
 export type Balcao = {
-  /** Pagos para hoje, e os cancelados de hoje, riscados até ao fim do dia. */
+  /** Confirmados (ou pagos) para hoje, e os cancelados de hoje, riscados até ao fim do dia. */
   levantamHoje: Pedido[];
   produzirHoje: AProduzir[];
-  /** Pagos para depois de hoje. */
+  /** Confirmados (ou pagos) para depois de hoje. */
   proximos: Pedido[];
+  /**
+   * Os `por-confirmar` ainda dentro do prazo, os urgentes primeiro e depois pelo
+   * prazo que acaba mais cedo. Não entram em «Produzir» nem em «Levantam»: a casa
+   * ainda não disse que os faz.
+   */
+  porConfirmar: PorConfirmar[];
+  /**
+   * Os `a-aguardar-aceite`: a casa já respondeu e é o cliente que tem de aceitar.
+   * O balcão não pode fazer nada por eles; mostra-os para quem atende o telefone.
+   */
+  aEsperaDoCliente: Pedido[];
   /**
    * Pedidos de que não se sabe quando começar — falta o horário da cozinha ou o
    * tempo de um produto. Mostram-se à parte: uma lista de produção que os
@@ -182,13 +218,33 @@ export function organizarBalcao(
 
   const levantamHoje: Pedido[] = [];
   const proximos: Pedido[] = [];
+  const porConfirmar: PorConfirmar[] = [];
+  const aEsperaDoCliente: Pedido[] = [];
   const semInicio = new Set<string>();
   const aProduzir = new Map<string, AProduzir>();
+  /* Um prazo que já passou é um pedido expirado, mesmo antes de a limpeza o
+     gravar (`pedidos.md` › Expirar às 48 horas): o balcão já não lhe responde. */
+  const dentroDoPrazo = (pedido: Pedido) => pedido.expiraEm === null || pedido.expiraEm.getTime() > agora.getTime();
 
   for (const pedido of pedidos) {
     const dia = diaDeLisboa(pedido.levantamentoEm);
-    if (dia === hoje && (pedido.estado === "pago" || pedido.estado === "cancelado")) levantamHoje.push(pedido);
-    if (pedido.estado !== "pago") continue;
+    if (pedido.estado === "por-confirmar" && dentroDoPrazo(pedido)) {
+      const inicios = pedido.linhas.map((linha) => {
+        const tempo = tempos.get(linha.produtoId);
+        return config && tempo ? inicioDaProducao([{ tempo }], pedido.levantamentoEm, config) : null;
+      });
+      const comecaAte = inicios.includes(null)
+        ? null
+        : new Date(Math.min(...(inicios as Date[]).map((d) => d.getTime())));
+      porConfirmar.push({ pedido, comecaAte, urgente: comecaAte === null || diaDeLisboa(comecaAte) <= hoje });
+      continue;
+    }
+    if (pedido.estado === "a-aguardar-aceite" && dentroDoPrazo(pedido)) {
+      aEsperaDoCliente.push(pedido);
+      continue;
+    }
+    if (dia === hoje && (aFazer(pedido) || pedido.estado === "cancelado")) levantamHoje.push(pedido);
+    if (!aFazer(pedido)) continue;
     if (dia > hoje) proximos.push(pedido);
     if (dia < hoje) continue;
 
@@ -225,6 +281,13 @@ export function organizarBalcao(
     levantamHoje: levantamHoje.sort(porLevantamento),
     produzirHoje: [...aProduzir.values()].sort((a, b) => a.comecaAte.getTime() - b.comecaAte.getTime()),
     proximos: proximos.sort(porLevantamento),
+    porConfirmar: porConfirmar.sort(
+      (a, b) =>
+        Number(b.urgente) - Number(a.urgente) ||
+        (a.pedido.expiraEm?.getTime() ?? Infinity) - (b.pedido.expiraEm?.getTime() ?? Infinity) ||
+        porLevantamento(a.pedido, b.pedido),
+    ),
+    aEsperaDoCliente: aEsperaDoCliente.sort(porLevantamento),
     semInicio: [...semInicio],
   };
 }
@@ -347,19 +410,33 @@ export const diaPorExtenso = (instante: Date): string => DIA_DE_LISBOA.format(in
  * e **cancelados** (som e aviso vermelho). Na primeira leitura não há nada de
  * novo — abrir o painel de manhã não é receber trinta pedidos.
  *
- * Um pedido novo é um `pago` que não estava lá antes; um cancelado é um que
- * estava `pago` e passou a `cancelado`.
+ * - **novo:** um pedido a fazer (`confirmado`, ou `pago`) que não estava lá, ou
+ *   que estava à espera — da casa ou do cliente — e foi confirmado. É o momento
+ *   do talão (`pedidos.md`: os efeitos saem da transição).
+ * - **por confirmar:** um `por-confirmar` que não estava lá. Toca o som e avisa,
+ *   mas **não é um talão**: a casa ainda não disse que o faz.
+ * - **cancelado:** um que estava a fazer e passou a `cancelado` — o talão já
+ *   está na cozinha. Um que ainda esperava não teve talão; sai da lista calado.
  */
 export function novidades(
   anteriores: ReadonlyMap<string, Pedido["estado"]> | null,
   atuais: readonly Pedido[],
-): { novos: Pedido[]; cancelados: Pedido[] } {
-  if (anteriores === null) return { novos: [], cancelados: [] };
+): { novos: Pedido[]; porConfirmar: Pedido[]; cancelados: Pedido[] } {
+  if (anteriores === null) return { novos: [], porConfirmar: [], cancelados: [] };
+  const aEspera = (estado: Pedido["estado"] | undefined) => estado === "por-confirmar" || estado === "a-aguardar-aceite";
   return {
-    novos: atuais.filter((p) => p.estado === "pago" && !anteriores.has(p.id)),
-    cancelados: atuais.filter((p) => p.estado === "cancelado" && anteriores.get(p.id) === "pago"),
+    novos: atuais.filter((p) => aFazer(p) && (!anteriores.has(p.id) || aEspera(anteriores.get(p.id)))),
+    porConfirmar: atuais.filter((p) => p.estado === "por-confirmar" && !anteriores.has(p.id)),
+    cancelados: atuais.filter((p) => {
+      const antes = anteriores.get(p.id);
+      return p.estado === "cancelado" && antes !== undefined && aFazer({ estado: antes });
+    }),
   };
 }
+
+/** O balcão confirma «tal como está»: sem uma linha por fixar preço, que é da gerente (`pedidos.md` › Quem confirma). */
+export const balcaoPodeConfirmar = (pedido: Pick<Pedido, "estado" | "linhas">): boolean =>
+  pedido.estado === "por-confirmar" && pedido.linhas.every((linha) => linha.precoUnitarioCent !== null);
 
 // ——— Os formulários da gestão ———
 

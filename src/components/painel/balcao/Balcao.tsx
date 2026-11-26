@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { desfazer, procurar, simularPedido } from "@/app/painel/acoes-balcao";
 import type { Papel, Pedido } from "@/lib/dados/tipos";
-import { diaDeLisboa, diaPorExtenso, novidades, type Balcao as SeparadoresDoBalcao } from "@/lib/painel";
+import { aFazer, diaDeLisboa, diaPorExtenso, novidades, type Balcao as SeparadoresDoBalcao } from "@/lib/painel";
 import { horaDeLisboa } from "@/lib/painel-ligacao";
 import { Gestao, type DadosGestao, type VistaGestao } from "../gestao/Gestao";
 import { ListaCompacta } from "../gestao/ListaCompacta";
@@ -20,12 +20,12 @@ import { PedidoCartao } from "./PedidoCartao";
 /**
  * # A vista do balcão (`painel-balcao.md`)
  *
- * Os três separadores — **Levantam hoje**, **Produzir hoje**, **Próximos** —,
- * o arquivo, a pesquisa, os esgotados e a pausa. Os dados chegam do servidor
+ * Os separadores — **Levantam hoje**, **Por confirmar**, **Produzir hoje**,
+ * **Próximos** —, o arquivo, a pesquisa, os esgotados e a pausa. Os dados chegam do servidor
  * (`page.tsx`, com o `organizarBalcao`); quando a versão do polling muda, a
  * página volta a pedi-los, e é aqui que se vê o que mudou: **um pedido novo**
- * (som uma vez, e um aviso que fica até alguém lhe tocar) ou **um cancelado**
- * (som e aviso vermelho). Um talão que não saiu faz o alarme repetir-se.
+ * (som uma vez, e um aviso que fica até alguém lhe tocar), **um por confirmar**
+ * (som e aviso, sem talão) ou **um cancelado** (som e aviso vermelho). Um talão que não saiu faz o alarme repetir-se.
  *
  * A gerente vê isto tudo e a gestão (`../gestao/Gestao.tsx`), arrumados em três
  * menus junto da pesquisa — Produtos, Pedidos, Loja (proposta de 25/11). Os
@@ -37,7 +37,7 @@ export type ProdutoDoBalcao = { id: string; nome: string; esgotadoHoje: boolean;
 
 type Props = {
   papel: Papel;
-  /** Os pedidos de hoje em diante (pagos, cancelados, entregues): é daqui que saem as novidades. */
+  /** Os pedidos de hoje em diante (a fazer, à espera, cancelados, entregues): é daqui que saem as novidades. */
   pedidos: Pedido[];
   balcao: SeparadoresDoBalcao;
   produtos: ProdutoDoBalcao[];
@@ -47,7 +47,7 @@ type Props = {
   gestao: DadosGestao | null;
 };
 
-type Vista = "hoje" | "produzir" | "proximos" | "arquivo" | "esgotados" | VistaGestao;
+type Vista = "hoje" | "por-confirmar" | "produzir" | "proximos" | "arquivo" | "esgotados" | VistaGestao;
 
 /* O alarme do talão que não saiu: insiste até alguém tratar (`impressao.md`). */
 const ALARME_MS = 4000;
@@ -71,12 +71,15 @@ export function Balcao({ papel, pedidos, balcao, produtos, pausaAte, modoTeste, 
      passagem que a lista nova. Na primeira leitura não há nada de novo. */
   const [vistos, setVistos] = useState(() => ({ pedidos, mapa: mapaDe(pedidos) }));
   if (vistos.pedidos !== pedidos) {
-    const { novos, cancelados } = novidades(vistos.mapa, pedidos);
+    const { novos, porConfirmar, cancelados } = novidades(vistos.mapa, pedidos);
     setVistos({ pedidos, mapa: mapaDe(pedidos) });
-    if (novos.length > 0 || cancelados.length > 0) {
+    if (novos.length > 0 || porConfirmar.length > 0 || cancelados.length > 0) {
       setAvisos((atuais) => [
-        ...atuais,
+        /* Confirmado aqui ou pelo link do cliente, o aviso «por confirmar» do
+           mesmo pedido já não diz a verdade: sai, e fica o do talão. */
+        ...atuais.filter((a) => !(a.tipo === "por-confirmar" && novos.some((p) => p.id === a.pedido.id))),
         ...novos.map((p): Aviso => ({ id: `novo-${p.id}`, tipo: p.impressoEm ? "novo" : "talao", pedido: p })),
+        ...porConfirmar.map((p): Aviso => ({ id: `por-confirmar-${p.id}`, tipo: "por-confirmar", pedido: p })),
         ...cancelados.map((p): Aviso => ({ id: `cancelado-${p.id}`, tipo: "cancelado", pedido: p })),
       ]);
       setToques((t) => t + 1);
@@ -138,9 +141,10 @@ export function Balcao({ papel, pedidos, balcao, produtos, pausaAte, modoTeste, 
     setTexto("");
   };
 
-  const contagemHoje = balcao.levantamHoje.filter((p) => p.estado === "pago").length;
+  const contagemHoje = balcao.levantamHoje.filter(aFazer).length;
   const separadores: { id: Vista; rotulo: string }[] = [
     { id: "hoje", rotulo: `Levantam hoje · ${contagemHoje}` },
+    { id: "por-confirmar", rotulo: `Por confirmar · ${balcao.porConfirmar.length}` },
     { id: "produzir", rotulo: `Produzir hoje · ${balcao.produzirHoje.length}` },
     { id: "proximos", rotulo: `Próximos · ${balcao.proximos.length}` },
     { id: "arquivo", rotulo: "Arquivo" },
@@ -167,6 +171,12 @@ export function Balcao({ papel, pedidos, balcao, produtos, pausaAte, modoTeste, 
           icone: ICONES.pedidos,
           itens: [
             { id: "hoje", rotulo: "Levantam hoje", contagem: contagemHoje },
+            {
+              id: "por-confirmar",
+              rotulo: "Por confirmar",
+              contagem: balcao.porConfirmar.length,
+              alerta: balcao.porConfirmar.some((p) => p.urgente),
+            },
             { id: "produzir", rotulo: "Produzir hoje", contagem: balcao.produzirHoje.length },
             { id: "proximos", rotulo: "Próximos", contagem: balcao.proximos.length },
             { id: "todos-pedidos", rotulo: "Todos os pedidos" },
@@ -262,6 +272,7 @@ export function Balcao({ papel, pedidos, balcao, produtos, pausaAte, modoTeste, 
                   ))}
                 </Lista>
               ))}
+            {vista === "por-confirmar" && <PorConfirmar balcao={balcao} atualizadoEm={atualizadoEm} />}
             {vista === "produzir" && <Produzir balcao={balcao} atualizadoEm={atualizadoEm} />}
             {vista === "proximos" &&
               (ehGerente ? (
@@ -346,6 +357,51 @@ function Lista({ vazio, atualizadoEm, children }: { vazio: string; atualizadoEm:
     );
   }
   return <div className="grid gap-4 md:grid-cols-2">{children}</div>;
+}
+
+/**
+ * Os pedidos que esperam pela casa (`pedidos.md` › Por confirmar não é
+ * esquecido), os urgentes primeiro: a produção teria de começar hoje, ou não se
+ * sabe quando. Cartões grandes também para a gerente — é aqui que se responde,
+ * e o «Confirmar» vive no cartão. Por baixo, os que esperam pelo cliente.
+ */
+function PorConfirmar({ balcao, atualizadoEm }: { balcao: SeparadoresDoBalcao; atualizadoEm: Date }) {
+  const urgentes = balcao.porConfirmar.filter((p) => p.urgente).length;
+  return (
+    <section aria-label="Por confirmar" className="space-y-8">
+      {balcao.porConfirmar.length === 0 ? (
+        <p className="rounded-2xl border border-tinta/15 bg-papel p-8 text-tinta-suave">
+          Nenhum pedido à espera da casa · atualizado às {horaDeLisboa(atualizadoEm)}
+        </p>
+      ) : (
+        <div>
+          {urgentes > 0 && (
+            <p className="mb-4 rounded-2xl border-2 border-tijolo bg-papel p-4">
+              <strong>
+                {urgentes === 1 ? "1 pedido urgente" : `${urgentes} pedidos urgentes`}
+              </strong>
+              : a produção teria de começar hoje, ou não se sabe quando.
+            </p>
+          )}
+          <div className="grid gap-4 md:grid-cols-2">
+            {balcao.porConfirmar.map(({ pedido, comecaAte }) => (
+              <PedidoCartao key={pedido.id} pedido={pedido} comecaAte={comecaAte} />
+            ))}
+          </div>
+        </div>
+      )}
+      {balcao.aEsperaDoCliente.length > 0 && (
+        <div>
+          <h2 className="titulo-display mb-3 text-2xl">À espera do cliente</h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            {balcao.aEsperaDoCliente.map((p) => (
+              <PedidoCartao key={p.id} pedido={p} />
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
 }
 
 function Produzir({ balcao, atualizadoEm }: { balcao: SeparadoresDoBalcao; atualizadoEm: Date }) {
