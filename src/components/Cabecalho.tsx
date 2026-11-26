@@ -97,27 +97,21 @@ export function Cabecalho({ locale }: { locale: Locale }) {
           <Link
             href={caminho}
             locale={outra}
-            className="alvo-toque rounded-full border border-tinta/25 px-2.5 py-2 transition-colors hover:bg-tinta hover:text-papel sm:px-3.5"
+            className="alvo-toque inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-tinta/25 transition-colors hover:bg-tinta"
             /* `lang` no link diz aos leitores de ecrã para pronunciar "English"
                à inglesa, em vez de o lerem com fonética portuguesa. */
             lang={outra}
-            /* ⚠️ **O nome acessível vem daqui e não do que está escrito.** Num
-               telemóvel o botão mostra só «EN», que poupa a largura que a
-               entrada das encomendas passou a ocupar; sem este `aria-label`,
-               quem ouve a página passava a ouvir duas letras em vez da palavra.
-               A abreviatura é para os olhos, não para os ouvidos. */
+            hrefLang={outra}
             aria-label={t("mudarIdioma")}
           >
-            {/* Duas caixas e não uma cadeia cortada: o código do idioma **é**
-                o idioma (`outra` vale "pt" ou "en"), e escrevê-lo à mão era
-                mais um sítio para desirmanar quando aparecer uma terceira
-                língua. */}
-            <span aria-hidden className="sm:hidden">
-              {outra}
-            </span>
-            <span aria-hidden className="hidden sm:inline">
-              {t("mudarIdioma")}
-            </span>
+            <Image
+              src={`/idiomas/${outra}.png`}
+              alt=""
+              width={96}
+              height={outra === "pt" ? 64 : 58}
+              className="h-auto w-6 rounded-[2px]"
+              unoptimized
+            />
           </Link>
         </nav>
       </div>

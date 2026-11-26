@@ -108,27 +108,6 @@ body:has(.cartaz) .barra-vidro {
   opacity: 1;
 }
 
-.capa__pausa {
-  position: absolute;
-  z-index: 1;
-  inset-block-start: 1rem;
-  inset-inline-end: var(--margem-cartaz);
-  min-height: 44px;
-  padding-inline: 0.875rem;
-  border: 1px solid var(--color-papel);
-  border-radius: 999px;
-  background: var(--color-tinta);
-  color: var(--color-papel);
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.capa__pausa:focus-visible {
-  outline: 2px solid var(--color-papel);
-  outline-offset: 3px;
-}
-
 /* A sombra acompanha a coluna de texto e deixa o letreiro visível à direita. */
 .cap--capa::before {
   content: "";
@@ -499,7 +478,7 @@ body:has(.cartaz) .barra-vidro {
 
 @media (prefers-reduced-motion: reduce) {
   .capa__foto--alternativa {
-    transition: none;
+    display: none;
   }
 
   .pao__estampa {
@@ -836,16 +815,12 @@ body:has(.cartaz) .barra-vidro {
   border-color: var(--color-tinta);
   color: var(--color-papel);
 }
-.cap__accao--contorno {
-  border-color: var(--color-papel);
-  color: var(--color-papel);
-}
-.cap__accao--contorno:hover,
-.cap__accao--contorno:focus-visible {
-  background: var(--color-papel);
-  color: var(--color-tijolo);
-}
 
+.capa__atalhos .cap__accao--claro:hover,
+.capa__atalhos .cap__accao--claro:focus-visible {
+  background: var(--color-tijolo);
+  border-color: var(--color-papel);
+}
 .cap__accao--principal {
   background: var(--color-tijolo);
   border-color: var(--color-tijolo);
@@ -890,12 +865,7 @@ body:has(.cartaz) .barra-vidro {
     padding-block: clamp(3rem, 11vw, 4.5rem);
   }
 
-  .cap--capa {
-    padding-block-start: 4.75rem;
-  }
-
-  /* Os atalhos ocupam a largura toda: dois botões meio-a-meio num ecrã de
-     390 px dão alvos de 170 px, e um deles apanha sempre o polegar errado. */
+  /* O atalho ocupa a largura toda para ficar ao alcance do polegar. */
   .capa__atalhos .cap__accao {
     flex: 1 1 100%;
     justify-content: center;

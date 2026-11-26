@@ -3,25 +3,18 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-export function CarrosselCapa({
-  pausar,
-  retomar,
-}: {
-  pausar: string;
-  retomar: string;
-}) {
+export function CarrosselCapa() {
   const [mostraMontra, definirMostraMontra] = useState(false);
-  const [pausado, definirPausado] = useState(false);
 
   useEffect(() => {
-    if (pausado) return;
-
+    const movimentoReduzido = window.matchMedia("(prefers-reduced-motion: reduce)");
     const intervalo = window.setInterval(() => {
+      if (movimentoReduzido.matches) return;
       definirMostraMontra((anterior) => !anterior);
     }, 5000);
 
     return () => window.clearInterval(intervalo);
-  }, [pausado]);
+  }, []);
 
   return (
     <>
@@ -43,13 +36,6 @@ export function CarrosselCapa({
         className="capa__foto capa__foto--alternativa"
         data-visivel={mostraMontra ? "" : undefined}
       />
-      <button
-        type="button"
-        className="capa__pausa"
-        onClick={() => definirPausado((anterior) => !anterior)}
-      >
-        {pausado ? retomar : pausar}
-      </button>
     </>
   );
 }

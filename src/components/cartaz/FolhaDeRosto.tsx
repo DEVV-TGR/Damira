@@ -10,7 +10,7 @@ export function FolhaDeRosto() {
 
   return (
     <section className="cap cap--capa" data-sc-act="flow" aria-labelledby="capa">
-      <CarrosselCapa pausar={t("pausarFotos")} retomar={t("retomarFotos")} />
+      <CarrosselCapa />
       <div className="cap__caixa" data-sc-in data-sc-stagger="70">
         <p className="cap__olho">
           {t("olho")}, {marca("desde", { ano: casa.desde })}
@@ -23,21 +23,9 @@ export function FolhaDeRosto() {
 
         <p className="cap__lede">{t("lede")}</p>
 
-        {/* ⚠️ **Os dois atalhos vivem aqui, no primeiro ecrã.** A gramática de
-            capítulos abre em folha de rosto e o instinto é deixá-la só com o
-            título — mas a maior parte das visitas chega de telemóvel e a
-            pergunta que traz é *o que têm* ou *como encomendo*. Obrigá-la a
-            rolar catorze ecrãs até à secção IX para descobrir que se pode
-            encomendar é fazer o sítio parecer um cartaz e não uma casa aberta.
-
-            São dois e não quatro: o `taste.md` limita o primeiro ecrã a quatro
-            elementos de texto, e já lá estão o olho, o título e a linha de
-            abertura. */}
+        {/* O catálogo reúne toda a oferta num só destino, incluindo a carta. */}
         <p className="capa__atalhos">
-          <Link className="cap__accao cap__accao--claro" href="/encomendas#da-ementa">
-            {t("verEmenta")}
-          </Link>
-          <Link className="cap__accao cap__accao--contorno" href="/encomendas">
+          <Link className="cap__accao cap__accao--claro" href="/encomendas">
             {t("encomendar")}
           </Link>
         </p>
