@@ -56,10 +56,18 @@ import {
 type Separador = "geral" | "precos" | "variancias" | "opcoes" | "extras" | "encomenda" | "alergenios" | "fotos";
 
 /* O composto não tem variâncias, opções nem extras: escolhe-se pelo grupo, e as
-   variâncias que mostra são as dos simples lá dentro. */
-const separadoresDe = (tipo: EntradaProduto["tipo"]): { id: Separador; rotulo: string }[] => [
+   variâncias que mostra são as dos simples lá dentro. ⚠️ **O bolo personalizado
+   também não** (#51, decidido a 26/11): tamanhos, massas, coberturas, toppings e
+   fotos são todos de «Bolos personalizados», e o preço final é da gerente — um
+   «Preço e tamanhos» aqui cobrava um preço que ninguém deu. */
+const separadoresDe = (
+  tipo: EntradaProduto["tipo"],
+  familia: EntradaProduto["familia"],
+): { id: Separador; rotulo: string }[] => [
   { id: "geral", rotulo: "Geral" },
-  ...(tipo === "simples"
+  ...(familia === "medida"
+    ? []
+    : tipo === "simples"
     ? ([
         { id: "precos", rotulo: "Preço e tamanhos" },
         { id: "variancias", rotulo: "Variâncias" },
@@ -201,7 +209,7 @@ export function EditorProduto({
   const sujo =
     JSON.stringify([e, variantes, modoAlergenios, pecas]) !==
     JSON.stringify([inicial.e, inicial.variantes, inicial.modo, inicial.pecas]);
-  const SEPARADORES = separadoresDe(e.tipo);
+  const SEPARADORES = separadoresDe(e.tipo, e.familia);
   const composto = e.tipo === "composto";
   const kitsQueLevam = produto && !composto ? compostosQueLevam(produto.id, catalogo) : [];
 
@@ -416,6 +424,12 @@ export function EditorProduto({
       >
         {separador === "geral" && (
           <>
+            {e.familia === "medida" && (
+              <p className="rounded-xl bg-tinta/5 px-4 py-3 text-sm">
+                Os tamanhos, as massas, as coberturas, os recheios, os toppings e as fotos deste bolo mudam-se em{" "}
+                <strong>Produtos › Bolos personalizados</strong>. O preço é sempre o que der a cada pedido.
+              </p>
+            )}
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <Rotulo
