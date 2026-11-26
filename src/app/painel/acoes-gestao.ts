@@ -10,6 +10,7 @@ import {
   editarProduto,
   guardarDefinicoes,
   guardarHorarios,
+  guardarOpcoesDoBolo,
   guardarOrdemCategorias,
   listarPedidos,
   pedidoDoPainel,
@@ -141,6 +142,16 @@ export async function arquivar(id: string, arquivado: boolean) {
  */
 export async function gravarOrdemCategorias(categorias: string[]) {
   const resultado = await comSessao((ctx) => guardarOrdemCategorias({ categorias }, ctx));
+  if (resultado.ok) revalidatePath("/", "layout");
+  return resultado;
+}
+
+/**
+ * As opções do bolo personalizado. A página do bolo é estática: sem revalidar,
+ * o site mostrava as opções antigas até ao deploy seguinte.
+ */
+export async function gravarOpcoesDoBolo(opcoes: unknown) {
+  const resultado = await comSessao((ctx) => guardarOpcoesDoBolo(opcoes, ctx));
   if (resultado.ok) revalidatePath("/", "layout");
   return resultado;
 }

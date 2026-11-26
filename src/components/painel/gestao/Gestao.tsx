@@ -1,9 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import type { AvisoAtencao, ConfiguracaoDaCasa, DefinicoesLoja, OrdemEmenta, Pedido, Produto } from "@/lib/dados/tipos";
+import type {
+  AvisoAtencao,
+  ConfiguracaoDaCasa,
+  DefinicoesLoja,
+  OpcoesBolo,
+  OrdemEmenta,
+  Pedido,
+  Produto,
+} from "@/lib/dados/tipos";
 import type { contarPorPreencher } from "@/lib/painel";
 import { Atencao } from "./Atencao";
+import { BolosPersonalizados } from "./BolosPersonalizados";
 import { Definicoes } from "./Definicoes";
 import { DetalhePedido } from "./DetalhePedido";
 import { Equipa } from "./Equipa";
@@ -36,6 +45,8 @@ export type DadosGestao = {
   ordem: OrdemEmenta;
   /** Os nomes das categorias como o site os escreve, para a ordem (#87). */
   nomesCategorias: Record<string, string>;
+  /** As opções do bolo personalizado, desligadas incluídas. */
+  opcoesBolo: OpcoesBolo;
 };
 
 export type VistaGestao =
@@ -44,6 +55,7 @@ export type VistaGestao =
   | "produtos"
   | "por-preencher"
   | "categorias"
+  | "bolos"
   | "horarios"
   | "definicoes"
   | "equipa";
@@ -84,6 +96,8 @@ export function Gestao({
       );
     case "categorias":
       return <OrdemCategorias ordem={dados.ordem} produtos={dados.produtos} nomes={dados.nomesCategorias} />;
+    case "bolos":
+      return <BolosPersonalizados opcoes={dados.opcoesBolo} />;
     case "horarios":
       return <Horarios casa={dados.casa} />;
     case "definicoes":
