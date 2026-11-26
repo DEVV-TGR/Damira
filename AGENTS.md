@@ -168,9 +168,8 @@ que as torna falsas:
   base de dados.
 - **«A conta de cliente», regras 2 e 3** — no PR que liga as chaves e no que
   passa o histórico para o servidor.
-- **«Os artigos da carta não têm página»** (em «As páginas de produto») — no
-  PR da #88 que dá página a todos os produtos (decidido a 25/11,
-  `painel-gerente.md` › Simples e compostos).
+- ~~«Os artigos da carta não têm página»~~ — reescrita no PR da #88 que lhes
+  deu página (decidido a 26/11).
 - ~~O `vegan: true` só na carta vegan e os mínimos por categoria em
   `encomendavel.ts`~~ — reescritas no PR da edição de produtos (#40, no #66).
 
@@ -430,6 +429,12 @@ montra vista da rua é anunciar uma coisa e entregar outra, e é a mesma regra q
 proíbe banco de imagens no resto do site. O `FotoProduto` guarda o espaço e diz
 que a fotografia está por chegar.
 
+**A gerente pode pôr várias por produto**, e a página mostra-as numa galeria
+(`GaleriaProduto`). Cada escolha de uma variância pode ter a sua (o bolo de
+morango, o de chocolate): ao escolhê-la, a galeria mostra-a. ⚠️ Uma foto que
+uma escolha ainda mostra **não se apaga do Blob** quando sai do produto — a
+variância pode estar ligada a outro (`gravarProduto`).
+
 ⚠️ **A `/ementa` saiu a 12/11 (#123)**, com as 95 páginas `/ementa/<id>` e o
 painel que levava lá. O site fica com a página inicial e as encomendas. Saíram
 também do `sitemap.xml`, das `ROTAS_FIXAS` e de todos os links — o cabeçalho, o
@@ -437,14 +442,20 @@ rodapé, a folha de rosto e o capítulo do vegan, que agora levam a
 `/encomendas#da-ementa`. ⚠️ **Antes de pôr um link para `/ementa` em lado
 nenhum, a página tem de voltar a existir**: um link esquecido é um 404 no menu.
 
-**Os artigos da carta não têm página.** O cartão (`CartaoArtigo`) é tudo:
-nome, preço e o botão compacto, **com a quantidade mínima no cabeçalho da
-categoria**. Um artigo com variantes (o chocolate do Dubai, quatro pesos) tem
-**um botão por variante** no próprio cartão — antes mandava para a página do
-artigo, onde estavam os quatro. O que não se encomenda (`aVendaOnline: false`:
-as bebidas, os pratos, a pausa) não chega à `/encomendas` e não ganha botão em
-lado nenhum: um galão com um botão de encomendar era prometer um serviço que a
-casa não tem.
+**Desde 26/11 os artigos da carta que se encomendam também têm página**
+(`/encomendas/<id>`, `temPagina` em `vista.ts`): é lá que se escolhe o sabor, o
+que se tira e os extras (#88), e que se veem as fotografias todas. O cartão
+(`CartaoArtigo`) continua com nome, preço e o botão compacto, **com a quantidade
+mínima no cabeçalho da categoria**, e o nome leva à página. ⚠️ **O «+» só junta
+logo num artigo sem nada para escolher**; num com variâncias, opções ou extras,
+leva à página — uma janela por cima do cartão foi tentada e desfeita no mesmo
+dia: não cabiam lá as fotografias. Um artigo com variantes (o chocolate do
+Dubai, quatro pesos) tem **um botão por variante** no cartão. ⚠️ **A linha do
+cesto tem o mesmo id no cartão e na página** (`ementa:<id>`): com ids
+diferentes, o mesmo artigo juntado nos dois sítios ficava em duas linhas. O que
+não se encomenda (`aVendaOnline: false`: as bebidas, os pratos, a pausa) não
+chega à `/encomendas`, não tem página e não ganha botão em lado nenhum: um galão
+com um botão de encomendar era prometer um serviço que a casa não tem.
 
 ⚠️ **O bolo por medida não vem do JSON.** Não é um produto de catálogo, é uma
 conversa: não tem preço e o que se escolhe são massas e recheios. Entra na lista

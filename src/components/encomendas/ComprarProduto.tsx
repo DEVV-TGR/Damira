@@ -8,6 +8,7 @@ import type { DadosPersonalizacao } from "@/lib/vista";
 import type { TipoPedido } from "@/lib/pedidos";
 import type { Locale } from "@/i18n/routing";
 import { useCesto } from "./CestoProvider";
+import { useMostrarFoto } from "./GaleriaProduto";
 import { acrescimoCent, completo, LevaDoGrupo, Personalizar, soDoGrupo, textoDe } from "./Personalizar";
 
 /**
@@ -82,6 +83,7 @@ export function ComprarProduto({
   const [escolhido, setEscolhido_] = useState<Escolhido>(NADA_ESCOLHIDO);
   const [falta, setFalta] = useState(false);
   const tp = useTranslations("personalizar");
+  const mostrarFoto = useMostrarFoto();
   const [mensagem, setMensagem] = useState("");
   const [observacoes, setObservacoes] = useState("");
   /* O que se mostra depois de juntar. ⚠️ Um botão que não muda deixa a pessoa
@@ -98,6 +100,11 @@ export function ComprarProduto({
   /* Só para mostrar: quem cobra é o servidor (`cotarLinhas`). */
   const precoFinal = base === null ? null : base + acrescimoCent(personalizavel, composto, escolhido);
   const mudarEscolhido = (valor: Escolhido) => {
+    /* A escolha acabada de tocar, se tiver fotografia, passa para a galeria. */
+    const nova = valor.variancias.find((v) => !escolhido.variancias.some((x) => x.varianciaId === v.varianciaId && x.produtoId === v.produtoId && x.escolhaId === v.escolhaId));
+    const variancias = nova?.produtoId ? (personalizavel.dentro[varianteId] ?? []).find((l) => l.produtoId === nova.produtoId)?.variancias : personalizavel.variancias;
+    const foto = nova && variancias?.find((v) => v.id === nova.varianciaId)?.escolhas.find((e) => e.id === nova.escolhaId)?.foto;
+    if (foto) mostrarFoto(foto);
     setEscolhido_(valor);
     setFalta(false);
     setJuntado(false);

@@ -327,7 +327,8 @@
         "cancelar": "Cancel",
         "rotulo": "Flavour",
         "falta": "Choose the flavour first."
-      }
+      },
+      "escolherArtigo": "Choose {nome}"
     },
     "procura": {
       "rotulo": "Search products",
@@ -487,7 +488,8 @@
       "festa": "Party kit",
       "bolo": "Cake kit",
       "box": "Box",
-      "medida": "Made-to-order cake"
+      "medida": "Made-to-order cake",
+      "ementa": "From the menu"
     },
     "medida": {
       "nome": "Made-to-order cake",
@@ -512,7 +514,9 @@
     "avisoPreco": "This is the list price, not a bill. Delivery is not included and the final amount comes in our reply.",
     "descricaoGenerica": "{nome}, made to order at Confeitaria e Pão Quente Damira, in Ermesinde.",
     "porQuilo": " /kg",
-    "cadaCurto": "ea."
+    "cadaCurto": "ea.",
+    "fotografias": "Product photos",
+    "verFotografia": "Show photo {n} of {total}"
   },
   "modoTeste": {
     "etiqueta": "Test mode",

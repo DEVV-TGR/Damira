@@ -104,7 +104,21 @@ export const EsquemaVariancia = z.object({
   id: IdPeca,
   nome: Texto,
   escolhas: z
-    .array(z.object({ id: IdPeca, nome: Texto, acrescimoCent: Cent, ativa: z.boolean() }))
+    .array(
+      z.object({
+        id: IdPeca,
+        nome: Texto,
+        acrescimoCent: Cent,
+        ativa: z.boolean(),
+        /**
+         * A fotografia desta escolha (o bolo de morango, o de chocolate): ao
+         * escolhê-la, a página mostra-a. Uma das `fotos` do produto, escolhida
+         * pela gerente; `null` deixa a galeria como está. Vai no `jsonb` da
+         * variância, sem migração.
+         */
+        foto: z.string().max(500).nullable().default(null),
+      }),
+    )
     .min(1),
 });
 

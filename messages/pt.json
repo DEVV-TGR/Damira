@@ -327,7 +327,8 @@
         "cancelar": "Cancelar",
         "rotulo": "Sabor",
         "falta": "Escolha o sabor primeiro."
-      }
+      },
+      "escolherArtigo": "Escolher {nome}"
     },
     "procura": {
       "rotulo": "Procurar produto",
@@ -487,7 +488,8 @@
       "festa": "Kit de festa",
       "bolo": "Kit de bolo",
       "box": "Box",
-      "medida": "Bolo por medida"
+      "medida": "Bolo por medida",
+      "ementa": "Da carta"
     },
     "medida": {
       "nome": "Bolo por medida",
@@ -512,7 +514,9 @@
     "avisoPreco": "É o preço de tabela, não uma conta a pagar. A entrega não está incluída e o valor final vem na nossa resposta.",
     "descricaoGenerica": "{nome}, por encomenda na Confeitaria e Pão Quente Damira, em Ermesinde.",
     "porQuilo": " /kg",
-    "cadaCurto": "un."
+    "cadaCurto": "un.",
+    "fotografias": "Fotografias do produto",
+    "verFotografia": "Ver a fotografia {n} de {total}"
   },
   "modoTeste": {
     "etiqueta": "Modo de teste",

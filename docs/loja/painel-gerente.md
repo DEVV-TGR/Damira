@@ -207,9 +207,13 @@ cliente **escolhe um grupo**; para dois, junta o produto duas vezes.
   40 €. Cada preço repete-se por extenso ao lado do campo («+0,40 € cada»), e
   a ficha tem um **«Como o cliente vê»**: o que se pergunta e quanto custa uma
   unidade, do mais barato ao mais caro.
-- Um artigo da carta continua **sem página**: o botão do cartão abre a
-  personalização numa janela (`BotaoJuntar`), e junta ao fechar. Os produtos
-  das encomendas personalizam-se na página deles (`ComprarProduto`).
+- **Uma página por produto**, os da carta incluídos (decidido a 26/11,
+  `temPagina`): é lá que se personaliza (`ComprarProduto`). O «+» do cartão só
+  junta logo num produto sem nada para escolher; nos outros, leva à página.
+- **Várias fotografias por produto**, numa galeria na página. Cada escolha de
+  uma variância pode ter uma delas («Fotografia» na escolha): escolher o sabor
+  mostra a fotografia dele. Ligada a outro produto, a variância leva as
+  fotografias junto; copiada, não.
 
 **No código**, o tamanho do simples e o grupo do composto são os dois a
 **`variante`** de hoje: já tem nome e preço, e os pedidos gravados já guardam o

@@ -14,30 +14,30 @@ import {
   caminhoDoProduto,
   descricaoDe,
   emLingua,
-  fotoDe,
   nomeDe,
   paraPersonalizar,
+  temPagina,
   precoUnicoCent,
   tipoDoPedido,
   type DadosPersonalizacao,
 } from "@/lib/vista";
-import { FotoProduto } from "@/components/encomendas/FotoProduto";
 import { ComprarProduto } from "@/components/encomendas/ComprarProduto";
+import { ComFotoEscolhida, GaleriaProduto } from "@/components/encomendas/GaleriaProduto";
 import { VoltarAtras } from "@/components/VoltarAtras";
 
 /** Uma página por produto e por língua, todas geradas no `build`. */
 export async function generateStaticParams() {
-  const produtos = await listarProdutos({ origem: "encomendas" });
+  const produtos = (await listarProdutos()).filter(temPagina);
   return routing.locales.flatMap((locale) =>
     produtos.map((produto) => ({ locale, produto: produto.id })),
   );
 }
 
-/* Um artigo da ementa também é um produto, mas não é desta página: a carta e a
-   encomenda continuam separadas (AGENTS.md). */
+/* Desde 26/11 os artigos da carta que se encomendam também têm página
+   (`temPagina`): é onde se personalizam e onde estão as fotografias todas. */
 const produtoDeEncomenda = async (id: string): Promise<Produto | null> => {
   const produto = await produtoPorId(id);
-  return produto?.origem === "encomendas" ? produto : null;
+  return produto && temPagina(produto) ? produto : null;
 };
 
 type Linha = GrupoComposicao["linhas"][number];
@@ -188,6 +188,7 @@ function Detalhe({
               horizontal a 320 px, apesar de a tabela já viver dentro de um
               `overflow-x-auto` que era suposto tratar disso. Só na página dos
               kits de festa; as outras não têm tabela e davam verde. */}
+          <ComFotoEscolhida>
           <div className="mt-8 grid gap-10 lg:grid-cols-2 lg:gap-16">
             <div className="min-w-0">
               {/* ⚠️ **Colada ao topo enquanto se rola.** A tabela de um kit de
@@ -196,7 +197,7 @@ function Detalhe({
                   baixo, e quem chegasse ao preço já não via o produto. Só a
                   partir do `lg`, que é onde há duas colunas. */}
               <div className="lg:sticky lg:top-20">
-                <FotoProduto foto={fotoDe(produto)} alt={nome} proporcao="3 / 2" />
+                <GaleriaProduto fotos={produto.fotos} alt={nome} />
               </div>
             </div>
 
@@ -219,7 +220,9 @@ function Detalhe({
               <ComprarProduto
                 personalizavel={personalizavel}
                 composto={produto.tipo === "composto"}
-                id={produto.id}
+                /* O mesmo id que o cartão da carta dá (`ementa:<id>`): juntar
+                   aqui e lá soma na mesma linha. */
+                id={produto.origem === "ementa" ? `ementa:${produto.id}` : produto.id}
                 produtoId={produto.id}
                 tipo={tipoDoPedido(produto)}
                 nome={nome}
@@ -230,6 +233,16 @@ function Detalhe({
                    pequeno-almoço é um campo a mais, e cada campo a mais é gente
                    que hesita sem razão. */
                 comMensagem={produto.familia === "bolo" || produto.familia === "medida"}
+                /* O mínimo e o passo são do produto (#40): uma dúzia de natas de
+                   6 em 6, um bolo ao quilo. Nos kits é «um de cada vez». */
+                regra={{ unidade: produto.unidade, minimo: produto.quantidadeMinima, passo: produto.multiplo }}
+                notaDaRegra={
+                  produto.unidade === "kg"
+                    ? te("daEmenta.regraKg", { minimo: produto.quantidadeMinima })
+                    : produto.quantidadeMinima > 1
+                      ? te("daEmenta.regraUn", { minimo: produto.quantidadeMinima, passo: produto.multiplo })
+                      : undefined
+                }
               />
 
               {/* O prazo é a informação mais importante desta página, e continua
@@ -237,6 +250,7 @@ function Detalhe({
               <p className="mt-6 text-sm text-tinta-suave">{te("como.prazo")}</p>
             </div>
           </div>
+          </ComFotoEscolhida>
         </div>
       </div>
 

@@ -81,6 +81,7 @@ export const varianciaDosSabores = (produtoId: string, sabores: readonly string[
             nome: { pt: sabor, en: null },
             acrescimoCent: 0,
             ativa: true,
+            foto: null,
           })),
         },
       ];

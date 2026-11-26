@@ -268,7 +268,19 @@ export function EditorProduto({
       }
       /* O composto não leva variâncias, opções nem extras: o que ficou no rascunho
          de quando era simples não se grava. */
-      const lidasPecas = composto ? null : pecasDoForm(pecas);
+      /* Uma fotografia tirada deste produto deixa de ser a de uma escolha: senão a
+         página mostrava uma imagem que já saiu. As que vêm de outro produto
+         ligado ficam, que são dele. */
+      const semFotosTiradas: PecasForm = {
+        ...pecas,
+        variancias: pecas.variancias.map((v) => ({
+          ...v,
+          escolhas: v.escolhas.map((x) =>
+            x.foto && !e.fotos.includes(x.foto) && inicial.e.fotos.includes(x.foto) ? { ...x, foto: null } : x,
+          ),
+        })),
+      };
+      const lidasPecas = composto ? null : pecasDoForm(semFotosTiradas);
       if (lidasPecas && !lidasPecas.ok) return falhar(lidasPecas.texto, [lidasPecas.em]);
       if (modoAlergenios === "lista" && (e.alergenios ?? []).length === 0) {
         return falhar("Marque pelo menos um alergénio, ou escolha «sem alergénios».", ["alergenios"]);
@@ -804,6 +816,7 @@ export function EditorProduto({
               ids={`${ids}-variancias`}
               valor={pecas.variancias}
               onMudar={(variancias) => mudarPecas({ variancias })}
+              fotos={e.fotos}
               catalogo={catalogo}
               produtoId={produto?.id ?? null}
             />

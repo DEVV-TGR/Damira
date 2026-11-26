@@ -40,7 +40,7 @@ const porExtenso = (cent: number) => `${emEuros(cent)} €`;
 /* Os preços ficam em texto enquanto se escreve («0,4» a meio de «0,40»), e só
    passam a cêntimos ao gravar. O inglês, que esta ficha não edita, viaja junto
    para não se perder. */
-export type EscolhaForm = { id?: string; nome: string; en: string | null; acrescimo: string; ativa: boolean };
+export type EscolhaForm = { id?: string; nome: string; en: string | null; acrescimo: string; ativa: boolean; foto: string | null };
 export type VarianciaForm = { id?: string; nome: string; en: string | null; escolhas: EscolhaForm[] };
 export type OpcaoForm = { id?: string; nome: string; en: string | null; ativa: boolean };
 export type ExtraForm = { id?: string; nome: string; en: string | null; preco: string; maximo: string; ativo: boolean };
@@ -49,6 +49,8 @@ export type PecasForm = { variancias: VarianciaForm[]; opcoes: OpcaoForm[]; extr
 
 type Pecas = Pick<Produto, "variancias" | "opcoes" | "extras">;
 
+/* Copiar uma variância de outro produto não leva as fotografias dele: são
+   daquele produto. Ligar leva-as, porque a variância é a mesma. */
 const varianciaParaForm = (v: Produto["variancias"][number], comIds: boolean): VarianciaForm => ({
   ...(comIds ? { id: v.id } : {}),
   nome: v.nome.pt,
@@ -59,6 +61,7 @@ const varianciaParaForm = (v: Produto["variancias"][number], comIds: boolean): V
     en: e.nome.en,
     acrescimo: emEuros(e.acrescimoCent),
     ativa: e.ativa,
+    foto: comIds ? (e.foto ?? null) : null,
   })),
 });
 
@@ -118,7 +121,13 @@ export function pecasDoForm(
           id: v.id,
           nome: nome(v.nome, v.en),
           escolhas: v.escolhas.map((e) =>
-            semId({ id: e.id, nome: nome(e.nome, e.en), acrescimoCent: paraCent(e.acrescimo || "0")!, ativa: e.ativa }),
+            semId({
+              id: e.id,
+              nome: nome(e.nome, e.en),
+              acrescimoCent: paraCent(e.acrescimo || "0")!,
+              ativa: e.ativa,
+              foto: e.foto,
+            }),
           ),
         }),
       ),
@@ -310,8 +319,11 @@ export function ListaVariancias({
   onMudar,
   catalogo,
   produtoId,
+  fotos,
 }: {
   ids: string;
+  /** As fotografias do produto (do rascunho): é delas que se escolhe a de cada escolha. */
+  fotos: readonly string[];
   valor: VarianciaForm[];
   onMudar: (v: VarianciaForm[]) => void;
   catalogo: readonly Produto[];
@@ -386,6 +398,32 @@ export function ListaVariancias({
                           />
                         </div>
                       </div>
+                      {(fotos.length > 0 || e.foto) && (
+                        <div className="mt-2 sm:max-w-xs">
+                          <Rotulo
+                            htmlFor={`${ids}-va${i}-e${k}-foto`}
+                            opcional
+                            ajuda="Quando o cliente escolhe isto, a página mostra esta fotografia. As fotografias põem-se no separador Fotografias."
+                          >
+                            Fotografia
+                          </Rotulo>
+                          <select
+                            id={`${ids}-va${i}-e${k}-foto`}
+                            value={e.foto ?? ""}
+                            onChange={(ev) => mudarEscolha({ foto: ev.target.value || null })}
+                            className={campo}
+                          >
+                            <option value="">— nenhuma —</option>
+                            {fotos.map((f, n) => (
+                              <option key={f} value={f}>
+                                Fotografia {n + 1}
+                                {n === 0 ? " (principal)" : ""}
+                              </option>
+                            ))}
+                            {e.foto && !fotos.includes(e.foto) && <option value={e.foto}>De outro produto ligado</option>}
+                          </select>
+                        </div>
+                      )}
                       <div className="mt-1 flex flex-wrap items-center gap-x-4">
                         <span className="text-sm tabular-nums text-tinta-suave">{precoAoLado(e.acrescimo)}</span>
                         <Ativa ligada={e.ativa} onMudar={(ativa) => mudarEscolha({ ativa })} rotulo="Disponível" />
@@ -405,7 +443,7 @@ export function ListaVariancias({
               </ul>
               <button
                 type="button"
-                onClick={() => mudarUma(i, { escolhas: [...v.escolhas, { nome: "", en: null, acrescimo: "", ativa: true }] })}
+                onClick={() => mudarUma(i, { escolhas: [...v.escolhas, { nome: "", en: null, acrescimo: "", ativa: true, foto: null }] })}
                 className={`${BOTAO_SECUNDARIO} mt-2`}
               >
                 + Escolha
@@ -416,7 +454,7 @@ export function ListaVariancias({
       </ul>
       <button
         type="button"
-        onClick={() => onMudar([...valor, { nome: "", en: null, escolhas: [{ nome: "", en: null, acrescimo: "", ativa: true }] }])}
+        onClick={() => onMudar([...valor, { nome: "", en: null, escolhas: [{ nome: "", en: null, acrescimo: "", ativa: true, foto: null }] }])}
         className={`${BOTAO_SECUNDARIO} mt-3`}
       >
         + Criar variância

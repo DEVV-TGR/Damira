@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { routing } from "@/i18n/routing";
 import { listarProdutos } from "@/lib/dados";
 import { ROTAS_FIXAS, urlLocalizado } from "@/lib/site";
-import { caminhoDoProduto } from "@/lib/vista";
+import { caminhoDoProduto, temPagina } from "@/lib/vista";
 
 /**
  * Todas as rotas públicas.
@@ -23,8 +23,10 @@ import { caminhoDoProduto } from "@/lib/vista";
  * que dão 404.
  */
 async function rotasPublicas(): Promise<string[]> {
-  const encomendas = await listarProdutos({ origem: "encomendas" });
-  return [...ROTAS_FIXAS, ...encomendas.map((p) => caminhoDoProduto(p.id))];
+  /* As mesmas páginas que a rota gera (`temPagina`): as encomendas e os
+     artigos da carta que se encomendam. */
+  const comPagina = (await listarProdutos()).filter(temPagina);
+  return [...ROTAS_FIXAS, ...comPagina.map((p) => caminhoDoProduto(p.id))];
 }
 
 /**

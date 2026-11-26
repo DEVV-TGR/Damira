@@ -65,6 +65,15 @@ export const tipoDoPedido = (produto: Produto): TipoPedido =>
 export const caminhoDoProduto = (id: string): string => `/encomendas/${id}`;
 
 /**
+ * Quem tem página própria (decidido a 26/11): os produtos das encomendas, como
+ * sempre, e **os da carta que se encomendam** — é na página que se escolhe o
+ * sabor, o que se tira e os extras, e que se veem as fotografias todas. Um
+ * galão (`aVendaOnline: false`) continua sem página: não se encomenda.
+ */
+export const temPagina = (produto: Produto): boolean =>
+  !produto.arquivado && (produto.origem === "encomendas" || produto.aVendaOnline);
+
+/**
  * As secções da `/encomendas`, pela ordem da página: os `id` das `<section>`, e
  * por onde navegam o índice do herói e o menu do «Encomendas» do cabeçalho
  * (#82). ⚠️ **Uma lista só para os dois**: o menu tinha uma cópia, e mudar um

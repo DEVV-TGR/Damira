@@ -268,7 +268,14 @@ export const variantes = pgTable(
  * valida-as ao ler, como faz à `composicao`.
  */
 type NomeGravado = { pt: string; en: string | null };
-export type EscolhaGravada = { id: string; nome: NomeGravado; acrescimoCent: number; ativa: boolean };
+export type EscolhaGravada = {
+  id: string;
+  nome: NomeGravado;
+  acrescimoCent: number;
+  ativa: boolean;
+  /** Desde a página por produto: a foto da escolha. Pode faltar nas gravadas antes. */
+  foto?: string | null;
+};
 export type OpcaoGravada = { id: string; nome: NomeGravado; ativa: boolean };
 
 /**

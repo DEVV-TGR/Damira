@@ -157,6 +157,29 @@ describe("um produto simples personalizado", () => {
   });
 });
 
+describe("a fotografia de uma escolha", () => {
+  it("grava-se com a escolha e volta igual", async () => {
+    const f = await fonte();
+    const foto = "/fotos/morango.webp";
+    const entrada = cachorro();
+    const p = await criado(f, {
+      ...entrada,
+      fotos: [foto],
+      variancias: [
+        {
+          nome: texto("Sabor"),
+          escolhas: [
+            { nome: texto("Morango"), acrescimoCent: 0, ativa: true, foto },
+            { nome: texto("Chocolate"), acrescimoCent: 0, ativa: true },
+          ],
+        },
+      ],
+    });
+    expect(p.variancias[0].escolhas.map((e) => e.foto)).toEqual([foto, null]);
+    expect((await f.produtoPorId(p.id))!.variancias[0].escolhas[0].foto).toBe(foto);
+  });
+});
+
 describe("ligar e copiar", () => {
   it("uma variância ligada muda em todos os produtos que a têm", async () => {
     const f = await fonte();
