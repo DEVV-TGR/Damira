@@ -4,7 +4,7 @@ import { erroDoPostgres } from "@/db/erros";
 import type { FonteEmails, LinhaEmail } from "@/lib/dados/tipos";
 import { REMETENTE_PEDIDOS } from "@/lib/pedidos";
 import { emModoDeTeste, type Ambiente } from "@/lib/modo-teste";
-import { anteriorAoEmissor, CORTE_DA_FILA, dadosDoEmail, foraDaJanelaDeIdempotencia, JANELA_RESERVA_MS } from "./emissor";
+import { anteriorAoEmissor, CORTE_DA_FILA, dadosDoEmail, foraDaJanelaDeIdempotencia, JANELA_RESERVA_MS, type LinkDaProposta } from "./emissor";
 import { escreverEmail } from "./modelos";
 import { enviarPeloResend } from "./resend";
 import { NOME_REMETENTE } from "./textos";
@@ -19,6 +19,8 @@ export type DependenciasEmissor = {
   decorrido?: () => number;
   /** O corte da fila (`CORTE_DA_FILA`); injetável para os testes com datas antigas. */
   corte?: Date;
+  /** Assina o link do aceite. Sem ele, uma proposta falha em vez de sair sem botão. */
+  linkDaProposta?: LinkDaProposta;
 };
 
 /** Só códigos controlados; o objeto do erro nunca sai para os logs. */
@@ -30,7 +32,7 @@ function registarErro(erro: unknown, referencia?: string, modelo?: string) {
 
 export async function executarEmissor(
   { agora, limite = 10 }: OpcoesEmissor,
-  { fonte, ambiente, casa, buscar = fetch, esperar: pausa = esperar, decorrido, corte = CORTE_DA_FILA }: DependenciasEmissor,
+  { fonte, ambiente, casa, buscar = fetch, esperar: pausa = esperar, decorrido, corte = CORTE_DA_FILA, linkDaProposta }: DependenciasEmissor,
 ): Promise<ResumoEmissor> {
   const resumo: ResumoEmissor = { enviados: 0, falhados: 0, saltados: 0 };
   const inicio = performance.now();
@@ -82,7 +84,7 @@ export async function executarEmissor(
         let email: ReturnType<typeof escreverEmail>;
         try {
           if (!MODELOS_EMAIL.includes(linha.modelo as ModeloEmail)) throw new Error("modelo");
-          const dados = dadosDoEmail(pedido, linha, { agora: instanteAtual(), modoDeTeste: emModoDeTeste(ambiente) });
+          const dados = dadosDoEmail(pedido, linha, { agora: instanteAtual(), modoDeTeste: emModoDeTeste(ambiente), linkDaProposta });
           if ("saltar" in dados) {
             await fonte.registarFalhaEmail(reserva, `saltado: ${dados.saltar}`, true);
             resumo.saltados++; continue;

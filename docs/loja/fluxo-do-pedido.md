@@ -97,7 +97,7 @@ flowchart TB
         direction TB
         C1["/encomendas/pedido<br/>a compra ✅<br/>(não grava ❌)"]
         C2["«Pedido enviado.»<br/>referência ✅"]
-        C3["Email com botão<br/>«Consultar e aceitar proposta»<br/>(o emissor ainda não escreve o link ❌)"]
+        C3["Email com botão<br/>«Consultar e aceitar proposta» ✅"]
         C4["/pedido/proposta/‹ref›/‹credencial›<br/>Aceitar ✅ · Recusar ✅"]
         C5["💡 «Pedir alteração»<br/>na página da proposta"]
         C6["Telefone da casa<br/>alterar · cancelar"]
@@ -205,7 +205,7 @@ flowchart TB
     end
     A2 --> B1
     B4 -- "confirmado-cliente na fila ✅ · envio ❌" --> R3
-    B5 -- "resposta-cliente na fila ✅ · emissor sem link ❌" --> R4
+    B5 -- "resposta-cliente na fila ✅ · sai com o link ✅" --> R4
     B6 -- "recusado-cliente ❌" --> R16
     B8 -- "expirado-cliente na fila ✅ · envio ❌" --> R10
 
@@ -271,7 +271,7 @@ flowchart TB
 - A página: `src/app/[locale]/pedido/proposta/[referencia]/[credencial]/page.tsx`, com `src/components/pedido/DecisaoProposta.tsx`.
 - Aceitar e recusar: `aceitarProposta` e `recusarProposta`, em `bd-pedidos.ts:373` e `:386`. Os dois gravam os emails na mesma instrução.
 - A credencial é `src/lib/proposta.ts` (`caminhoDaProposta`), assinada com o `PROPOSTA_SEGREDO`.
-- ⚠️ O emissor exclui o `resposta-cliente` (`src/lib/emails/emissor.ts:20`) e não passa o `linkAceitar`. Enquanto isso não mudar, o T04 **nunca sai**, e a gerente tem de copiar o link no painel.
+- O T04 sai com o link da versão em vigor (`dadosDoEmail`, em `src/lib/emails/emissor.ts`, com o link montado em `enviar.ts`). Uma proposta substituída ou que já não espera o aceite é saltada. O link do painel continua, para mandar à mão.
 
 ### C4. Entrega ao domicílio (T05, T07, T08, T15) — tudo ❌
 
@@ -406,7 +406,7 @@ que o modelo exige. Os textos estão em `src/lib/emails/textos.ts`, e a lista em
 | T02 | `criado-por-confirmar-cliente` | cliente | compra com análise | ❌ ninguém | ✅ | ❌ |
 | — | `criado-loja` | loja | qualquer compra | ❌ (hoje vai direto, `soPorEmail`) | ✅ | 🟡 |
 | T03 | `confirmado-cliente` | cliente | loja confirma | ✅ `bd-painel-pedidos.ts:412` | ✅ | ✅ |
-| T04 | `resposta-cliente` | cliente | loja propõe / revê | ✅ `:436` | ❌ sem `linkAceitar`, excluído em `emissor.ts:20` | 🟡 |
+| T04 | `resposta-cliente` | cliente | loja propõe / revê | ✅ `:436` | ✅ com o `linkAceitar` da versão em vigor | ✅ |
 | T05 | *(não existe)* | cliente | proposta com entrega | ❌ | ❌ | ❌ |
 | T06 | `aceite-cliente` | cliente | cliente aceita | ✅ `bd-pedidos.ts:373` | ✅ | ✅ |
 | — | `aceite-loja` | loja | cliente aceita | ✅ `bd-pedidos.ts:373` | ✅ | ✅ |
@@ -466,7 +466,16 @@ emails com o ponto 5.
 - A expiração às 48 h e às 24 h (T10, T14) e o `lembrete-loja` (que hoje ninguém grava) correm na mesma tarefa horária, e não só quando alguém visita o site.
 - **Pronto quando:** um pedido por confirmar sem visitas expira à hora certa, com o T10 enviado, e a loja recebe o lembrete antes.
 
-### 4. O emissor escreve propostas e reagendamentos — Sobral, com o Gonçalo a rever
+### 4. O emissor escreve propostas e reagendamentos — Sobral, com o Gonçalo a rever ✅ (propostas, 26/11)
+
+Feito para a proposta, como se descreve abaixo. Uma proposta substituída é
+reconhecida pelo instante: a linha da fila entra na mesma instrução que grava o
+`proposta_em`, por isso uma linha mais antiga do que o `proposta_em` do pedido é
+de uma versão anterior. **O reagendamento fica para o ponto 5:** o
+`levantamentoAnteriorEm` é a hora pedida antes da proposta, não a de antes de um
+reagendamento, e por isso não vai nos `reagendado-*`. O `reagendarPedido` tem de
+gravar a hora anterior dele (uma coluna nova, num PR de esquema) para esses
+emails saírem.
 
 **Para o Sobral:**
 - **Em `dadosDoEmail`** (`src/lib/emails/emissor.ts:22`), passar:

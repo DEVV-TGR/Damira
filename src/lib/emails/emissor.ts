@@ -1,4 +1,5 @@
 import type { Pedido, LinhaEmail } from "@/lib/dados/tipos";
+import { propostaEmAberto } from "@/lib/dados/regras";
 import type { DadosEmailPedido } from "./tipos";
 
 export const MAXIMO_TENTATIVAS = 5;
@@ -30,17 +31,46 @@ export function reservaDisponivel(linha: LinhaEmail, agora: Date): boolean {
       +agora >= +linha.ultimaTentativaEm + esperaDaTentativa(linha.tentativas));
 }
 
-/** Sem o #139 não existe credencial de proposta nem a fotografia dos preços fixados. */
-export const modeloSuportado = (modelo: string): boolean => modelo !== "resposta-cliente";
+/**
+ * O endereço absoluto da página do aceite, para uma referência e uma versão da proposta. Quem o
+ * monta é o chamador (`enviar.ts`, com o `PROPOSTA_SEGREDO` e o `URL_SITE`): este ficheiro não
+ * toca na chave, e os testes passam um falso.
+ */
+export type LinkDaProposta = (referencia: string, versao: number) => string;
+
+/**
+ * O que distingue a proposta (o T04) dos outros emails: o pedido muda depois de ela entrar na
+ * fila, e o email escreve-se com o pedido **como está agora**, não como estava. Por isso só sai a
+ * proposta em vigor:
+ *
+ * - **Substituída** — a gerente reviu-a depois de este email entrar na fila. O link desta versão
+ *   já não abre nada, e a mais nova tem o seu próprio email, logo a seguir. A linha não guarda a
+ *   versão: entrou na fila na mesma instrução que gravou o `proposta_em`, com o mesmo instante,
+ *   e é isso que a liga à versão dela.
+ * - **Fechada** — o cliente já aceitou ou recusou (a gerente pode ter-lhe mandado o link à mão),
+ *   o pedido foi cancelado, ou as 24 horas passaram. Mandar agora «aceite a proposta» era pedir
+ *   uma coisa que a página recusa.
+ */
+function propostaPorEnviar(pedido: Pedido, linha: LinhaEmail, agora: Date): { saltar: string } | null {
+  if (pedido.propostaEm !== null && +pedido.propostaEm > +linha.criadoEm) return { saltar: "proposta-substituida" };
+  if (!propostaEmAberto(pedido, pedido.propostaVersao, agora)) return { saltar: "proposta-fechada" };
+  return null;
+}
 
 export function dadosDoEmail(
   pedido: Pedido,
   linha: LinhaEmail,
-  { modoDeTeste }: { agora: Date; modoDeTeste: boolean },
+  { agora, modoDeTeste, linkDaProposta }: { agora: Date; modoDeTeste: boolean; linkDaProposta?: LinkDaProposta },
 ): DadosEmailPedido | { saltar: string } {
-  if (!modeloSuportado(linha.modelo)) throw new Error("modelo-nao-suportado");
   if (linha.modelo === "lembrete-loja" && pedido.estado !== "por-confirmar") {
     return { saltar: "lembrete-sem-espera" };
+  }
+  const proposta = linha.modelo === "resposta-cliente";
+  if (proposta) {
+    const saltar = propostaPorEnviar(pedido, linha, agora);
+    if (saltar) return saltar;
+    // Sem quem assine, falha aqui (`dados-do-modelo`): um T04 sem botão não deixa aceitar nada.
+    if (!linkDaProposta) throw new Error("sem-link-da-proposta");
   }
   // O recibo documenta o envio inicial mesmo que uma resposta da casa já esteja na fila.
   const estado = linha.modelo === "criado-por-confirmar-cliente" ? "por-confirmar"
@@ -53,6 +83,9 @@ export function dadosDoEmail(
       detalhe: [l.variante, ...l.escolhas, l.notas].filter(Boolean).join(" · ") || null,
       quantidade: l.quantidade, unidade: l.unidade, precoUnitCent: l.precoUnitarioCent,
       totalCent: l.totalCent, aoQuilo: l.unidade === "kg",
+      // O preço que a casa fixou na proposta: a proposta lista-o como mudança, e a loja vê-o sem
+      // o unitário, que não foi o que o cliente pediu.
+      ...(l.precoDaProposta ? { fixadoAgora: true } : {}),
     })),
     totalCent: pedido.totalCent,
     faltamPrecos: pedido.linhas.some(l => l.precoUnitarioCent === null || l.totalCent === null),
@@ -61,6 +94,14 @@ export function dadosDoEmail(
     reagendadoEm: pedido.reagendadoEm ?? undefined,
     canceladoPor: pedido.canceladoPor ?? undefined,
     observacoes: pedido.observacoes, modoDeTeste,
+    /* ⚠️ A hora pedida só vai na proposta. O `levantamento_anterior_em` é a hora que o cliente
+       pediu antes de a proposta a mudar, não a de antes de um reagendamento: dá-la ao
+       `reagendado-*` punha no email uma «data inicialmente prevista» que não era a anterior.
+       O reagendar ainda não grava a sua (`fluxo-do-pedido.md` › 6, ponto 5). */
+    ...(proposta ? {
+      linkAceitar: linkDaProposta!(pedido.referencia, pedido.propostaVersao),
+      levantamentoAnteriorEm: pedido.levantamentoAnteriorEm ?? undefined,
+    } : {}),
   };
 }
 

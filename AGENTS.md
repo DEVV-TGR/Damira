@@ -189,9 +189,16 @@ Três coisas que se desfazem sem querer:
   tentativa. Não se adianta a data.
 - **A expiração às 48 h e às 24 h** grava o email na limpeza; sai no próximo
   envio pedido (uma compra cria sempre um, porque a limpeza corre dentro do
-  `criarPedido`) ou na volta horária do #149. Ainda não sai sozinho sem visitas,
-  e o `resposta-cliente` (a proposta) fica na fila até o emissor escrever o link
-  (`fluxo-do-pedido.md` › 6, pontos 3 e 4).
+  `criarPedido`) ou na volta horária do #149. Ainda não sai sozinho sem visitas
+  (`fluxo-do-pedido.md` › 6, ponto 3).
+- ⚠️ **A proposta (`resposta-cliente`) escreve-se com o pedido como está
+  agora**, com o link assinado da versão em vigor. Por isso só sai a proposta
+  em vigor: a que outra mais nova substituiu sai como
+  `saltado: proposta-substituida`, e a de um pedido que já não espera o aceite
+  como `saltado: proposta-fechada`. Sem `PROPOSTA_SEGREDO` falha
+  (`dados-do-modelo`) em vez de sair sem botão. A hora pedida
+  (`levantamentoAnteriorEm`) **só vai na proposta**: não é a hora de antes de
+  um reagendamento.
 
 Não se promete entrega de um email só porque entrou na fila.
 

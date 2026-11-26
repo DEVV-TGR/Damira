@@ -126,9 +126,9 @@ export async function responder(id: string, entrada: unknown) {
 }
 
 /**
- * O link da proposta, para a gerente o mandar ao cliente à mão (WhatsApp, SMS) enquanto o
- * email da proposta não sai sozinho (o emissor ainda não escreve o link: `fluxo-do-pedido.md`
- * › 6, ponto 4). Só a gerente, e só de um pedido à espera do aceite.
+ * O link da proposta, para a gerente o mandar ao cliente à mão (WhatsApp, SMS) além do email
+ * (o T04 leva o mesmo link, montado em `enviar.ts`). Só a gerente, e só de um pedido à espera
+ * do aceite.
  * Assina-o o servidor; o browser nunca vê a chave.
  */
 export async function linkDaProposta(id: string) {
