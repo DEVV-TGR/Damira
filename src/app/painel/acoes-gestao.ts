@@ -26,6 +26,7 @@ import { comSessao, contextoDoPainel } from "@/lib/painel-servidor";
 import { sessao } from "@/lib/sessao-painel";
 import { horasDaLoja } from "@/lib/vagas-servidor";
 import { caminhoDaProposta } from "@/lib/proposta";
+import { enviarDepois } from "@/lib/emails/depois";
 import { URL_SITE } from "@/lib/site";
 
 /**
@@ -83,17 +84,33 @@ export async function gravarDefinicoes(entrada: unknown) {
 // ——— As decisões da gerente (`pedidos.md`) ———
 // Todas mudam um pedido: avisam o polling, e o balcão vê-as na volta seguinte.
 
+/**
+ * Pede o envio da fila depois de uma decisão que pode ter gravado emails, e só se
+ * ficou gravada: a fronteira põe-nos na fila na mesma instrução que muda o pedido,
+ * e um email nunca sai de uma mudança que falhou. Sem emails novos, o emissor lê a
+ * fila e não envia nada — a base já estava acordada pela decisão.
+ *
+ * O cancelar e o reagendar ainda não gravam emails (o T11, o T12 e o T09 são da
+ * fonte, `fluxo-do-pedido.md` › 6, ponto 5); ficam já ligados para esse PR só ter
+ * de mexer na fronteira.
+ */
+async function eEnviaEmails<T extends { ok: boolean }>(resultado: Promise<T>): Promise<T> {
+  const lido = await resultado;
+  if (lido.ok) enviarDepois();
+  return lido;
+}
+
 /** «Aceitar», «manter neste dia», «já devolvi»: o facto fica, o aviso sai. */
 export async function tratar(id: string, tipo: AvisoTratavel) {
   return comSessao((ctx) => tratarAviso(id, tipo, ctx), true);
 }
 
 export async function reagendar(id: string, levantamentoEm: string) {
-  return comSessao((ctx) => reagendarPedido(id, levantamentoEm, ctx), true);
+  return eEnviaEmails(comSessao((ctx) => reagendarPedido(id, levantamentoEm, ctx), true));
 }
 
 export async function cancelar(id: string, reembolsoCent: number) {
-  return comSessao((ctx) => cancelarPedido(id, reembolsoCent, ctx), true);
+  return eEnviaEmails(comSessao((ctx) => cancelarPedido(id, reembolsoCent, ctx), true));
 }
 
 export async function reembolsar(id: string, valorCent: number) {
@@ -105,12 +122,13 @@ export async function reembolsar(id: string, valorCent: number) {
  * (`responderPedido`). A fronteira deixa o balcão confirmar e só a gerente propor.
  */
 export async function responder(id: string, entrada: unknown) {
-  return comSessao((ctx) => responderPedido(id, entrada, ctx), true);
+  return eEnviaEmails(comSessao((ctx) => responderPedido(id, entrada, ctx), true));
 }
 
 /**
- * O link da proposta, para a gerente o mandar ao cliente à mão (WhatsApp, SMS) enquanto os
- * emails não saem sozinhos (a fila, #119). Só a gerente, e só de um pedido à espera do aceite.
+ * O link da proposta, para a gerente o mandar ao cliente à mão (WhatsApp, SMS) enquanto o
+ * email da proposta não sai sozinho (o emissor ainda não escreve o link: `fluxo-do-pedido.md`
+ * › 6, ponto 4). Só a gerente, e só de um pedido à espera do aceite.
  * Assina-o o servidor; o browser nunca vê a chave.
  */
 export async function linkDaProposta(id: string) {
