@@ -217,8 +217,10 @@ function Tabela({
     <>
       {/* ⚠️ `min-w-0` e a rolagem de lado **dentro** da caixa: a grelha das
           coberturas não cabe num telemóvel, e sem isto arrastava a página
-          inteira (armadilha 16 do AGENTS.md). */}
-      <div className="min-w-0 overflow-x-auto rounded-2xl border border-tinta/15">
+          inteira (armadilha 16 do AGENTS.md). E ⚠️ `relative`: o «Ordem» do
+          cabeçalho é `sr-only`, que é `position: absolute`, e sem um contentor
+          posicionado escapava ao recorte e alargava a página 143 px a 360. */}
+      <div className="relative min-w-0 overflow-x-auto rounded-2xl border border-tinta/15">
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-tinta/15 bg-tinta/5 text-left">
