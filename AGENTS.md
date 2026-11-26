@@ -231,6 +231,10 @@ papel:
 | `ementa.json` | 95 artigos com preço, em 4 cartas | pede-se ao balcão e leva-se |
 | `encomendas.json` | kits de festa, kits de bolo, boxes | tem data, antecedência e orçamento |
 | `bolos.json` | catálogo de massas, recheios, coberturas | **não tem preços nenhuns** |
+
+⚠️ O configurador do bolo personalizado **não lê o `bolos.json`**: lê o
+`bolos-personalizados.json` (o PDF da casa de novembro de 2026, #51), pela
+fronteira. O `bolos.json` ficou para os textos da página inicial.
 | `casa.json` | morada, telefone, horário, entregas | é um objeto, não uma lista |
 
 Há ainda `marca.json` (nome e redes, fonte única do cabeçalho e do rodapé) e
@@ -436,6 +440,12 @@ casa não tem.
 ⚠️ **O bolo por medida não vem do JSON.** Não é um produto de catálogo, é uma
 conversa: não tem preço e o que se escolhe são massas e recheios. Entra na lista
 para ter página e cartão, com `preco: null`, que é *sob orçamento* e não zero.
+Desde 26/11 (#51) chama-se **«Bolo personalizado»** no site (o id continua
+`bolo-por-medida`, que está nos cestos) e a página é o **configurador**
+(`ConfiguradorBolo`): as opções vêm de `bolos-personalizados.json` — o PDF da
+casa — pela fronteira (`opcoesDoBolo`), e as regras de combinação vivem em
+`src/lib/bolo-personalizado.ts`, as mesmas no browser e no servidor. O
+`bolos.json` antigo fica só para os textos da página inicial.
 
 ## A conta de cliente, e as três regras que a seguram
 

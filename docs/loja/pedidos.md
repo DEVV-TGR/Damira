@@ -452,6 +452,17 @@ escolhas leva **exatamente uma** por linha, e das dele; um sem escolhas, nenhuma
 (`escolha-invalida`). Para misturar sabores, uma linha por sabor, e cada uma
 conta o seu mínimo — 12 de alheira e 12 de legumes (decidido a 05/10).
 
+**O bolo personalizado** (#51) vai na linha como **`bolo`**: os ids do tamanho,
+massa, cobertura, recheio, «à volta» e topping, as fotos e a autorização — nunca
+nomes nem preços. O servidor confere-o contra as opções da casa
+(`validarBolo`, em `src/lib/bolo-personalizado.ts`) e recusa a linha com
+`bolo-invalido` se a combinação não existir, se uma opção estiver desligada, se
+faltar a foto para imprimir (ou vier sem o topping que a pede) ou a autorização.
+Nenhum outro produto traz `bolo`. A linha guardada leva as escolhas em texto
+(«Massa: Red Velvet», uma por escolha, em `escolhas`) e as fotos em **`fotos`**,
+com a de imprimir à parte das de referência. ⚠️ `fotos` só a fonte dos JSON a
+guarda, até a coluna existir (PR de esquema).
+
 ⚠️ **Nunca se recalcula um pedido antigo a partir do produto atual.** A gerente
 muda preços e nomes quando quer; um pedido de ontem tem de continuar a dizer o
 que se combinou ontem — no painel e no talão reimpresso.
