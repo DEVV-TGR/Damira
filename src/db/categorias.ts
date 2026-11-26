@@ -1,5 +1,5 @@
 import type { OrdemEmenta, Produto } from "../lib/dados/tipos";
-import type { categorias, TipoProduto } from "./esquema";
+import type { categorias, familias, TipoProduto } from "./esquema";
 
 /**
  * # As categorias da gerente, tiradas do catálogo de hoje (#124)
@@ -17,6 +17,24 @@ import type { categorias, TipoProduto } from "./esquema";
  */
 
 type LinhaCategoria = typeof categorias.$inferInsert;
+type LinhaFamilia = typeof familias.$inferInsert;
+
+/**
+ * As famílias de partida (26/11): as secções da `/encomendas` de hoje, com as
+ * âncoras e os títulos de hoje, e o Natal, que a casa pediu. ⚠️ A migração
+ * `0012` escreve as mesmas, e o `migracao-categorias.test.ts` compara.
+ */
+export const FAMILIAS_DE_PARTIDA: readonly LinhaFamilia[] = [
+  { id: "festas", nomePt: "Kit Festas", nomeEn: "Party Kits", posicao: 0 },
+  { id: "kits-bolo", nomePt: "Bolo e mesa decorada", nomeEn: "Cake and decorated table", posicao: 1 },
+  { id: "boxes", nomePt: "Boxes para dias especiais", nomeEn: "Boxes for special days", posicao: 2 },
+  { id: "da-ementa", nomePt: "Da carta", nomeEn: "From the menu", posicao: 3 },
+  { id: "natal", nomePt: "Natal", nomeEn: "Christmas", posicao: 4 },
+];
+
+/** A família de partida de uma categoria: as das encomendas são a sua; as outras, da carta. */
+export const familiaDaCategoria = (categoriaId: string): string =>
+  ["festas", "kits-bolo", "boxes"].includes(categoriaId) ? categoriaId : "da-ementa";
 
 /** Os títulos das secções da `/encomendas` de hoje, e as âncoras delas. */
 const DAS_ENCOMENDAS = {
@@ -74,14 +92,17 @@ const rotulo = (chave: string) => ROTULOS[chave] ?? { pt: chave, en: chave };
 
 /** A categoria de um produto, com o nome que leva se for a primeira vez que aparece. */
 export function categoriaDoProduto(produto: Produto): Omit<LinhaCategoria, "posicao"> {
-  if (produto.familia !== "ementa") return { ...DAS_ENCOMENDAS[produto.familia] };
+  if (produto.familia !== "ementa") {
+    const daEncomenda = DAS_ENCOMENDAS[produto.familia];
+    return { ...daEncomenda, familiaId: familiaDaCategoria(daEncomenda.id) };
+  }
 
   /* O contrato obriga a carta e a categoria nos artigos da carta (`EsquemaProduto`). */
   const carta = produto.carta!;
   const categoria = produto.categoria!;
   const id = `${carta}-${categoria}`;
   const proprio = NOMES_PROPRIOS[id];
-  if (proprio) return { id, nomePt: proprio.pt, nomeEn: proprio.en };
+  if (proprio) return { id, nomePt: proprio.pt, nomeEn: proprio.en, familiaId: familiaDaCategoria(id) };
 
   const base = rotulo(categoria);
   const sufixo = DA_CARTA[carta] ?? { pt: ` (${carta})`, en: `${carta} ` };
@@ -89,6 +110,7 @@ export function categoriaDoProduto(produto: Produto): Omit<LinhaCategoria, "posi
     id,
     nomePt: base.pt + sufixo.pt,
     nomeEn: sufixo.en === "" ? base.en : sufixo.en + base.en.toLowerCase(),
+    familiaId: familiaDaCategoria(id),
   };
 }
 
