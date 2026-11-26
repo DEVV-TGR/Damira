@@ -1,4 +1,6 @@
 import type { TipoPedido } from "@/lib/pedidos";
+import { urlDaFotoDoBolo } from "@/lib/bolo-personalizado";
+import { EsquemaEscolhaBolo, type EscolhaBolo } from "@/lib/dados/tipos";
 import type { Locale } from "@/i18n/routing";
 import { formatarCent } from "@/lib/preco";
 
@@ -95,6 +97,16 @@ export type ItemCesto = {
    * dúzia (ver `idComEscolha`). Opcional no tipo só para os cestos antigos.
    */
   escolha?: string | null;
+  /**
+   * O bolo personalizado, como se montou: **ids**, que é o que vai para o
+   * servidor (`linhasDoCesto`). Só no bolo personalizado.
+   */
+  bolo?: EscolhaBolo | null;
+  /**
+   * O bolo escrito, «Massa: Red Velvet», para o cesto e o email mostrarem. Só
+   * para mostrar: o servidor reescreve-o a partir das opções da casa.
+   */
+  detalhes?: string[];
 };
 
 /**
@@ -218,6 +230,13 @@ export function normalizarCesto(lido: unknown): ItemCesto[] {
       passo,
       notas: typeof item.notas === "string" && item.notas.trim() ? item.notas : null,
       escolha: typeof item.escolha === "string" && item.escolha.trim() ? item.escolha : null,
+      /* Um bolo que já não se percebe sai do cesto sem rebentar: o servidor
+         recusava-o de qualquer forma (`bolo-invalido`). */
+      ...(item.bolo !== undefined && item.bolo !== null
+        ? EsquemaEscolhaBolo.safeParse(item.bolo).success
+          ? { bolo: item.bolo, detalhes: Array.isArray(item.detalhes) ? item.detalhes.filter((d) => typeof d === "string") : [] }
+          : {}
+        : {}),
     });
   }
   return items;
@@ -309,7 +328,14 @@ export function cestoEmTexto(
     /* ⚠️ **As notas vão indentadas por baixo do artigo a que pertencem**, e não
        todas juntas no fim. Num pedido com três bolos, três mensagens em bloco no
        fim do email obrigam quem lê a adivinhar qual é de qual. */
-    return item.notas ? [linha, `    ${item.notas.replace(/\n/g, "\n    ")}`] : [linha];
+    /* O bolo personalizado por baixo do artigo, uma escolha por linha, como no
+       talão; e as fotos, com o endereço, para a casa as abrir do email. */
+    const doBolo = [
+      ...(item.detalhes ?? []),
+      ...(item.bolo?.fotosReferencia ?? []).map((foto, i) => `Foto de referência ${i + 1}: ${urlDaFotoDoBolo(foto)}`),
+      ...(item.bolo?.fotoImprimir ? [`FOTO PARA IMPRIMIR NO BOLO: ${urlDaFotoDoBolo(item.bolo.fotoImprimir)}`] : []),
+    ].map((texto) => `    ${texto}`);
+    return item.notas ? [linha, ...doBolo, `    ${item.notas.replace(/\n/g, "\n    ")}`] : [linha, ...doBolo];
   });
 
   const { somaCent, semPreco } = estimativa(cesto);
@@ -334,6 +360,7 @@ export const linhasDoCesto = (cesto: ItemCesto[]) =>
     quantidade: item.quantidade,
     notas: item.notas,
     escolhas: item.escolha ? [item.escolha] : [],
+    ...(item.bolo ? { bolo: item.bolo } : {}),
   }));
 
 /**

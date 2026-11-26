@@ -2,6 +2,7 @@ import type { Locale } from "@/i18n/routing";
 import type { ItemCesto } from "@/lib/cesto";
 import { EsquemaLinhaCesto, type FonteDeDados } from "@/lib/dados/tipos";
 import { emLingua, regraDe, tipoDoPedido } from "@/lib/vista";
+import { linhasDoBolo, ROTULOS_PT } from "@/lib/bolo-personalizado";
 
 /**
  * # O cesto, refeito no servidor
@@ -20,7 +21,7 @@ export type ItensDoServidor = { ok: true; itens: ItemCesto[] } | { ok: false };
 
 export async function itensDoServidor(
   linhas: unknown,
-  fonte: Pick<FonteDeDados, "cotarCesto" | "produtoPorId">,
+  fonte: Pick<FonteDeDados, "cotarCesto" | "produtoPorId" | "opcoesDoBolo">,
   locale: Locale,
 ): Promise<ItensDoServidor> {
   const lidas = EsquemaLinhaCesto.array().min(1).max(50).safeParse(linhas);
@@ -31,6 +32,9 @@ export async function itensDoServidor(
      segue: o pedido volta para trás em vez de chegar à casa com uma linha que
      ninguém consegue cumprir. */
   if (!cotado.ok || !cotado.cotacao.valida) return { ok: false };
+
+  /* Só se leem se houver um bolo no cesto: o resto do catálogo não precisa delas. */
+  const opcoesBolo = lidas.data.some((l) => l.bolo) ? await fonte.opcoesDoBolo() : null;
 
   const itens: ItemCesto[] = [];
   for (const [i, linha] of cotado.cotacao.linhas.entries()) {
@@ -56,6 +60,11 @@ export async function itensDoServidor(
       notas: lidas.data[i].notas || null,
       /* Já confirmado pelo `cotarCesto` (`escolha-invalida`): é um dos sabores do produto. */
       escolha: lidas.data[i].escolhas[0] ?? null,
+      /* Já conferido pelo `cotarCesto` (`bolo-invalido`). O texto é reescrito aqui,
+         com os nomes da casa: o que o browser mostrava não chega ao email. */
+      ...(lidas.data[i].bolo && opcoesBolo
+        ? { bolo: lidas.data[i].bolo, detalhes: linhasDoBolo(opcoesBolo, lidas.data[i].bolo!, ROTULOS_PT) }
+        : {}),
     });
   }
   return { ok: true, itens };

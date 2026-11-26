@@ -1,6 +1,7 @@
 import { casa } from "@/data/casa";
 import type { ItemCesto } from "@/lib/cesto";
 import { estimativa, totalDaLinha } from "@/lib/cesto";
+import { urlDaFotoDoBolo } from "@/lib/bolo-personalizado";
 import type { DadosCompra } from "@/lib/pedidos";
 import { escreverEmail } from "./modelos";
 import type { DadosCasa, DadosEmailPedido } from "./tipos";
@@ -48,7 +49,17 @@ export function emailDaCompraParaLoja(pedido: {
       nome: item.nome,
       /* O modelo não tem sítio para as notas da linha, e a mensagem do bolo não
          se pode perder: vai no detalhe, entre aspas, depois da variante e do sabor. */
-      detalhe: [item.variante, item.escolha, item.notas ? `«${item.notas.replace(/\s+/g, " ").trim()}»` : null]
+      detalhe: [
+        item.variante,
+        item.escolha,
+        /* O bolo personalizado, escolha a escolha, e as fotos com o endereço:
+           sem elas a gerente não faz o orçamento. A de imprimir em maiúsculas,
+           como no talão, para não se confundir com as de referência. */
+        ...(item.detalhes ?? []),
+        ...(item.bolo?.fotosReferencia ?? []).map((foto, i) => `Foto de referência ${i + 1}: ${urlDaFotoDoBolo(foto)}`),
+        item.bolo?.fotoImprimir ? `FOTO PARA IMPRIMIR NO BOLO: ${urlDaFotoDoBolo(item.bolo.fotoImprimir)}` : null,
+        item.notas ? `«${item.notas.replace(/\s+/g, " ").trim()}»` : null,
+      ]
         .filter(Boolean)
         .join(" · ") || null,
       quantidade: item.quantidade,

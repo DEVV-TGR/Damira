@@ -1,4 +1,5 @@
 import type { EscolhaBolo, OpcaoBolo, OpcaoComCoberturas, OpcoesBolo } from "@/lib/dados/tipos";
+import { URL_SITE } from "@/lib/site";
 
 /**
  * # As regras do bolo personalizado
@@ -124,3 +125,14 @@ export const ROTULOS_PT: RotulosDoBolo = {
 /** O «a partir de» do tamanho escolhido. Só para mostrar: a linha entra sem preço. */
 export const precoAPartirDe = (opcoes: OpcoesBolo, tamanhoId: string | null): number | null =>
   opcoes.tamanhos.find((t) => t.id === tamanhoId)?.precoCent ?? null;
+
+/**
+ * O caminho de uma foto do bolo no site. As fotos não se mostram pelo endereço
+ * do Blob: passam pela rota `/api/bolos/fotos`, que no modo de teste sem Blob as
+ * lê da pasta temporária. As do pedido de exemplo já são caminhos do site.
+ */
+export const caminhoDaFotoDoBolo = (foto: string): string =>
+  foto.startsWith("/") ? foto : `/api/bolos/fotos/${foto.replace(/^bolos\//, "")}`;
+
+/** O mesmo, com o domínio: é o que vai no email. */
+export const urlDaFotoDoBolo = (foto: string): string => `${URL_SITE}${caminhoDaFotoDoBolo(foto)}`;

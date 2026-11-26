@@ -6,9 +6,8 @@ import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { URL_SITE, caminhoLocalizado, urlLocalizado } from "@/lib/site";
 import { imagensDePartilha } from "@/lib/metadata";
-import { GRUPOS, opcoesDe, quantasOpcoes } from "@/data/bolos";
-import { listarProdutos, produtoPorId } from "@/lib/dados";
-import type { GrupoComposicao, Produto } from "@/lib/dados/tipos";
+import { listarProdutos, opcoesDoBolo, produtoPorId } from "@/lib/dados";
+import type { GrupoComposicao, OpcoesBolo, Produto } from "@/lib/dados/tipos";
 import { formatarCent } from "@/lib/preco";
 import {
   caminhoDoProduto,
@@ -21,6 +20,7 @@ import {
 } from "@/lib/vista";
 import { FotoProduto } from "@/components/encomendas/FotoProduto";
 import { ComprarProduto } from "@/components/encomendas/ComprarProduto";
+import { ConfiguradorBolo } from "@/components/encomendas/ConfiguradorBolo";
 import { VoltarAtras } from "@/components/VoltarAtras";
 
 /** Uma página por produto e por língua, todas geradas no `build`. */
@@ -109,8 +109,10 @@ export default async function PaginaProduto({
   setRequestLocale(locale);
   const produto = await produtoDeEncomenda(id);
   if (!produto) notFound();
+  /* Só o bolo personalizado precisa delas, e só ele as lê. */
+  const opcoes = produto.familia === "medida" ? await opcoesDoBolo() : null;
 
-  return <Detalhe produto={produto} locale={locale as Locale} />;
+  return <Detalhe produto={produto} opcoes={opcoes} locale={locale as Locale} />;
 }
 
 /**
@@ -135,7 +137,7 @@ export default async function PaginaProduto({
  * ao pedido*, o preço é uma estimativa e o aviso está ao lado dele. Ver
  * `cesto.ts`.
  */
-function Detalhe({ produto, locale }: { produto: Produto; locale: Locale }) {
+function Detalhe({ produto, opcoes, locale }: { produto: Produto; opcoes: OpcoesBolo | null; locale: Locale }) {
   const t = useTranslations("produto");
   const te = useTranslations("encomendas");
 
@@ -198,20 +200,25 @@ function Detalhe({ produto, locale }: { produto: Produto; locale: Locale }) {
 
               <Conteudo produto={produto} locale={locale} />
 
-              <ComprarProduto
-                escolhas={produto.escolhas}
-                id={produto.id}
-                produtoId={produto.id}
-                tipo={tipoDoPedido(produto)}
-                nome={nome}
-                precoCent={precoUnicoCent(produto)}
-                escaloes={escaloes}
-                locale={locale}
-                /* Mensagem por cima só faz sentido onde há bolo. Numa box de
-                   pequeno-almoço é um campo a mais, e cada campo a mais é gente
-                   que hesita sem razão. */
-                comMensagem={produto.familia === "bolo" || produto.familia === "medida"}
-              />
+              {/* O bolo personalizado monta-se; o resto junta-se. */}
+              {opcoes ? (
+                <ConfiguradorBolo opcoes={opcoes} produtoId={produto.id} nome={nome} locale={locale} />
+              ) : (
+                <ComprarProduto
+                  escolhas={produto.escolhas}
+                  id={produto.id}
+                  produtoId={produto.id}
+                  tipo={tipoDoPedido(produto)}
+                  nome={nome}
+                  precoCent={precoUnicoCent(produto)}
+                  escaloes={escaloes}
+                  locale={locale}
+                  /* Mensagem por cima só faz sentido onde há bolo. Numa box de
+                     pequeno-almoço é um campo a mais, e cada campo a mais é gente
+                     que hesita sem razão. */
+                  comMensagem={produto.familia === "bolo" || produto.familia === "medida"}
+                />
+              )}
 
               {/* O prazo é a informação mais importante desta página, e continua
                   por confirmar pela casa. Ver a #3. */}
@@ -220,8 +227,6 @@ function Detalhe({ produto, locale }: { produto: Produto; locale: Locale }) {
           </div>
         </div>
       </div>
-
-      {produto.familia === "medida" && <CatalogoDoBolo locale={locale} />}
 
       {/* O «voltar» fixo (#86), no fim do documento de propósito: no teclado o
           link do topo já é o primeiro, e este fica para quem chegou ao fim. */}
@@ -417,89 +422,5 @@ function Grupo({
         </tr>
       ))}
     </>
-  );
-}
-
-/**
- * O catálogo do bolo por medida.
- *
- * ⚠️ **Estava no meio da `/encomendas` e ocupava meia página.** Noventa e nove
- * opções entre a linha clássica e a vegan, entre as boxes e o formulário, a
- * separar duas coisas que se compram e que passavam a estar a cinco ecrãs uma da
- * outra. Aqui é o conteúdo principal da página de quem veio ver o bolo — e não
- * aparece a quem veio ver uma box.
- */
-function CatalogoDoBolo({ locale }: { locale: Locale }) {
-  const bolos = useTranslations("bolos");
-
-  return (
-    <section aria-labelledby="catalogo" className="seccao bg-papel-fundo">
-      <div className="envolvente">
-        <h2 id="catalogo" className="titulo-display titulo-gama">
-          {bolos("titulo")}
-        </h2>
-        <p className="mt-3 max-w-[52ch] text-tinta-suave">
-          {bolos("texto", {
-            classica: quantasOpcoes("classica"),
-            vegan: quantasOpcoes("vegan"),
-          })}
-        </p>
-
-        <div className="mt-10 grid gap-x-12 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-          {GRUPOS.map((grupo) => {
-            const classicas = opcoesDe(grupo, "classica");
-            const veganas = opcoesDe(grupo, "vegan");
-            const soVeganas = veganas.filter(
-              (v) => !classicas.some((c) => c.nome.pt === v.nome.pt),
-            );
-
-            return (
-              <div key={grupo}>
-                <h3 className="titulo-display text-sm uppercase tracking-[0.2em] text-tijolo">
-                  {bolos(`grupos.${grupo}`)}
-                </h3>
-                <ul className="mt-3 space-y-1 text-sm">
-                  {classicas.map((opcao) => (
-                    <li key={opcao.nome.pt}>
-                      {opcao.nome[locale]}
-                      {opcao.nota && (
-                        <span className="text-tinta-suave"> {opcao.nota[locale]}</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-
-                {/* As opções vegan que a linha clássica não tem. Repetir as que
-                    são iguais nas duas listas dava uma coluna que ninguém lê e
-                    uma correção que só entra numa delas. */}
-                {soVeganas.length > 0 && (
-                  <>
-                    <p className="mt-4 text-xs font-semibold uppercase tracking-widest text-verde-forte">
-                      {bolos("soVegan")}
-                    </p>
-                    <ul className="mt-2 space-y-1 text-sm">
-                      {soVeganas.map((opcao) => (
-                        <li key={opcao.nome.pt}>
-                          {opcao.nome[locale]}
-                          {opcao.nota && (
-                            <span className="text-tinta-suave"> {opcao.nota[locale]}</span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* ⚠️ Nenhuma destas escolhas tem preço no impresso, e não se inventa um.
-            Ver o cabeçalho de `bolos.ts`. */}
-        <p className="mt-10 max-w-[60ch] text-sm text-tinta-suave">
-          {bolos("semPrecos")}
-        </p>
-      </div>
-    </section>
   );
 }

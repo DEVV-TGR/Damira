@@ -487,11 +487,11 @@
       "festa": "Kit de festa",
       "bolo": "Kit de bolo",
       "box": "Box",
-      "medida": "Bolo por medida"
+      "medida": "Bolo personalizado"
     },
     "medida": {
-      "nome": "Bolo por medida",
-      "resumo": "O bolo feito à sua maneira: escolhe a massa, o recheio e a cobertura, e nós dizemos-lhe o preço."
+      "nome": "Bolo personalizado",
+      "resumo": "O bolo feito à sua maneira: escolhe a massa, a cobertura, o recheio e a decoração, junta fotos de inspiração, e a casa diz-lhe o preço."
     },
     "ver": "Ver o produto",
     "desde": "desde",
@@ -511,7 +511,48 @@
     "avisoPreco": "É o preço de tabela, não uma conta a pagar. A entrega não está incluída e o valor final vem na nossa resposta.",
     "descricaoGenerica": "{nome}, por encomenda na Confeitaria e Pão Quente Damira, em Ermesinde.",
     "porQuilo": " /kg",
-    "cadaCurto": "un."
+    "cadaCurto": "un.",
+    "bolo": {
+      "passos": {
+        "tamanho": "Tamanho",
+        "massa": "Massa",
+        "cobertura": "Cobertura",
+        "recheio": "Recheio",
+        "aVolta": "À volta",
+        "topping": "Topping"
+      },
+      "escolher": "Escolha…",
+      "primeiroMassa": "Escolha primeiro a massa.",
+      "primeiroCobertura": "Escolha primeiro a cobertura.",
+      "quantasCoberturas": "Com esta massa, a casa faz {n, plural, one {# cobertura} other {# coberturas}}.",
+      "aPartirDe": "a partir de {preco}",
+      "fotosReferencia": "Fotos de referência",
+      "fotosReferenciaAjuda": "Até {n, plural, one {# foto} other {# fotos}} para mostrar o aspeto do bolo: os andares, a cobertura, a decoração. Servem de inspiração e não são impressas.",
+      "fotoImprimir": "Foto para imprimir no bolo",
+      "fotoImprimirAjuda": "É esta foto que vai impressa em cima do bolo, em folha de hóstia.",
+      "fotoPequena": "Esta foto é pequena: pode ficar desfocada na impressão. Se tiver uma maior, troque-a.",
+      "juntarFoto": "Juntar foto",
+      "trocarFoto": "Trocar foto",
+      "tirarFoto": "Tirar",
+      "aEnviar": "A enviar…",
+      "autorizacao": "Confirmo que tenho autorização das pessoas que aparecem nesta foto para a imprimir no bolo.",
+      "notaPreco": "O preço final é da casa: recebe-o por email, e o pedido só fica confirmado quando o aceitar. Paga-se na loja, ao levantar.",
+      "erros": {
+        "tamanho": "Escolha o tamanho.",
+        "massa": "Escolha a massa.",
+        "cobertura": "Escolha a cobertura.",
+        "recheio": "Escolha o recheio.",
+        "a-volta": "Escolha o que vai à volta.",
+        "topping": "Escolha o topping.",
+        "fotos-referencia": "Confira as fotos de referência.",
+        "foto-imprimir": "Junte a foto para imprimir no bolo.",
+        "autorizacao": "Confirme que pode usar esta foto.",
+        "envio": "Não foi possível enviar a foto. Tente outra vez.",
+        "ilegivel": "Este ficheiro não abre como foto. Experimente um JPEG ou PNG.",
+        "nao-configurado": "O envio de fotos ainda não está disponível.",
+        "demasiados-envios": "Enviou muitas fotos seguidas. Espere um pouco e tente outra vez."
+      }
+    }
   },
   "modoTeste": {
     "etiqueta": "Modo de teste",

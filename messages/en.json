@@ -487,11 +487,11 @@
       "festa": "Party kit",
       "bolo": "Cake kit",
       "box": "Box",
-      "medida": "Made-to-order cake"
+      "medida": "Custom cake"
     },
     "medida": {
-      "nome": "Made-to-order cake",
-      "resumo": "A cake made your way: pick the sponge, the filling and the coating, and we will quote it."
+      "nome": "Custom cake",
+      "resumo": "Your cake, your way: choose the sponge, covering, filling and decoration, add inspiration photos, and we tell you the price."
     },
     "ver": "View product",
     "desde": "from",
@@ -511,7 +511,48 @@
     "avisoPreco": "This is the list price, not a bill. Delivery is not included and the final amount comes in our reply.",
     "descricaoGenerica": "{nome}, made to order at Confeitaria e Pão Quente Damira, in Ermesinde.",
     "porQuilo": " /kg",
-    "cadaCurto": "ea."
+    "cadaCurto": "ea.",
+    "bolo": {
+      "passos": {
+        "tamanho": "Size",
+        "massa": "Sponge",
+        "cobertura": "Covering",
+        "recheio": "Filling",
+        "aVolta": "Around the sides",
+        "topping": "Topping"
+      },
+      "escolher": "Choose…",
+      "primeiroMassa": "Choose the sponge first.",
+      "primeiroCobertura": "Choose the covering first.",
+      "quantasCoberturas": "With this sponge, we make {n, plural, one {# covering} other {# coverings}}.",
+      "aPartirDe": "from {preco}",
+      "fotosReferencia": "Reference photos",
+      "fotosReferenciaAjuda": "Up to {n, plural, one {# photo} other {# photos}} to show how the cake should look: tiers, covering, decoration. They are for inspiration and are not printed.",
+      "fotoImprimir": "Photo to print on the cake",
+      "fotoImprimirAjuda": "This is the photo printed on top of the cake, on wafer paper.",
+      "fotoPequena": "This photo is small and may print blurry. If you have a larger one, replace it.",
+      "juntarFoto": "Add photo",
+      "trocarFoto": "Replace photo",
+      "tirarFoto": "Remove",
+      "aEnviar": "Uploading…",
+      "autorizacao": "I confirm the people in this photo have allowed me to have it printed on the cake.",
+      "notaPreco": "The final price is set by the shop: you get it by email, and the order is only confirmed once you accept it. You pay in store when you collect.",
+      "erros": {
+        "tamanho": "Choose the size.",
+        "massa": "Choose the sponge.",
+        "cobertura": "Choose the covering.",
+        "recheio": "Choose the filling.",
+        "a-volta": "Choose what goes around the sides.",
+        "topping": "Choose the topping.",
+        "fotos-referencia": "Check the reference photos.",
+        "foto-imprimir": "Add the photo to print on the cake.",
+        "autorizacao": "Confirm you may use this photo.",
+        "envio": "The photo could not be uploaded. Please try again.",
+        "ilegivel": "This file doesn't open as a photo. Try a JPEG or PNG.",
+        "nao-configurado": "Photo upload isn't available yet.",
+        "demasiados-envios": "Too many photos in a row. Please wait a moment and try again."
+      }
+    }
   },
   "modoTeste": {
     "etiqueta": "Test mode",

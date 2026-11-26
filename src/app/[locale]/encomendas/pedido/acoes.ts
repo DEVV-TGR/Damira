@@ -4,7 +4,7 @@ import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
 import { getLocale, getTranslations } from "next-intl/server";
 import { cestoEmTexto, estimativa, pessoasSugeridas, tipoSugerido } from "@/lib/cesto";
-import { configuracaoDaCasa, cotarCesto, definicoesLoja, ocupacao, produtoPorId } from "@/lib/dados";
+import { configuracaoDaCasa, cotarCesto, definicoesLoja, ocupacao, opcoesDoBolo, produtoPorId } from "@/lib/dados";
 import { enviarEmailDePedido } from "@/lib/email";
 import { emailDaCompraParaLoja } from "@/lib/emails/compra";
 import { gerarReferencia } from "@/lib/historico";
@@ -30,7 +30,7 @@ export type Resultado =
   | { estado: "erro"; campos: Record<string, string> };
 
 const LISBOA = { in: tz("Europe/Lisbon") };
-const fonte = { configuracaoDaCasa, cotarCesto, ocupacao, produtoPorId };
+const fonte = { configuracaoDaCasa, cotarCesto, ocupacao, opcoesDoBolo, produtoPorId };
 
 /**
  * # Enviar o pedido da página de compra
