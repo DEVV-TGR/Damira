@@ -45,11 +45,7 @@ export function Pao() {
           Com o título em cima, a fotografia fica entre o seu nome e o capítulo
           seguinte, que é o padrão de todos os outros capítulos. A legenda
           pequena continua por baixo da estampa, onde uma legenda vive. */}
-      {/* O `id` não é para o fólio (o marcador do pão continua na estampa):
-          é para o fio do vapor mudar de cor aqui. Ver `cap-pao-titulo` no
-          `cartaz.css`. */}
       <section
-        id="cap-pao-titulo"
         className="cap cap--legenda cap--legenda--antes"
         aria-labelledby="pao"
       >

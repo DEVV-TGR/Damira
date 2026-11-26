@@ -347,24 +347,24 @@ da casa, não há fotografia **por artigo**.
 
 ## A marca
 
-O logótipo e o motivo das ondas saem do PDF do menu de almoço:
+O cabeçalho usa `public/marca/damira-horizontal.png` e o rodapé usa
+`public/marca/damira-branco.png`, entregues pela Damira em novembro de 2026.
+
+Os ficheiros usados pela `Marca` nos restantes sítios e o motivo das ondas
+saem do PDF do menu de almoço:
 
 ```bash
 npm run marca    # public/marca/{logotipo,logotipo-assinado,ondas}.png
 npm run icons    # favicon + ícones, a partir de public/marca/ondas.png
 ```
 
-⚠️ **São PNG rasterizados a 300 dpi, não vetores.** Chegam para cabeçalho,
-rodapé e ícones; não escalam para lá disso. Quando aparecer o vetor, trocar em
-`src/components/Marca.tsx`, correr `npm run icons` **e** `npm run marca:email`, ao
-mesmo tempo — são três sítios e esquecer um deixa o site com duas marcas. O
-terceiro é o logótipo dos emails (`src/lib/emails/logotipo.ts`): uma cópia a
-papel, já pintada, porque um email não tem CSS que pinte uma máscara, e que vai
-dentro do próprio email como anexo embutido (`cid:`).
+Os PNG extraídos do menu são rasterizados a 300 dpi. Uma atualização geral
+da marca revê os PNG do cabeçalho e do rodapé, o componente
+`src/components/Marca.tsx`, os ícones (`npm run icons`) e o logótipo que os
+emails levam embutido (`npm run marca:email`, em `src/lib/emails/logotipo.ts`).
 
-São máscaras de alfa e não imagens: guardam só a forma, e a cor vem do CSS. É o
-que permite o mesmo ficheiro servir o logótipo a tijolo sobre papel e a papel
-sobre tinta.
+Os PNG extraídos para a `Marca` são máscaras de alfa. Guardam a forma e usam
+a cor do texto em CSS.
 
 **O site público usa Caros** nos títulos e no corpo, via `next/font/local` em
 `src/app/[locale]/layout.tsx`. O painel usa Bricolage Grotesque e Instrument
@@ -535,8 +535,7 @@ primeiras sete vieram do Santo Burga e continuam a valer — o motor é o mesmo.
    um `id` a uma categoria, ou em que duas categorias puderem ter o mesmo nome.
 9. **`background: currentColor` resolve para a cor do *próprio* elemento.** Uma
    pastilha com `background: currentColor` e `color: transparent` fica
-   transparente, não fica da cor herdada. Declarar as duas cores. Ver o fólio em
-   `cartaz.css`.
+   transparente, não fica da cor herdada. Declarar as duas cores.
 10. **O enchimento à direita de um contentor flex não entra no `scrollWidth`.**
     Quem conta com ele para dar curso a um carril fica com o último item
     cortado. Usar margem no último filho. Ver `.festa__carril`.

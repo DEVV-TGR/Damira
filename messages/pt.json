@@ -8,13 +8,12 @@
   "nav": {
     "inicio": "Início",
     "encomendas": "Encomendas",
-    "todasEncomendas": "Ver todas as encomendas",
+    "todosProdutos": "Ver todos os produtos",
     "voltarAtras": "Voltar atrás",
     "saltarParaConteudo": "Saltar para o conteúdo",
     "mudarIdioma": "English"
   },
   "cartaz": {
-    "folio": "Capítulos",
     "capa": {
       "olho": "Confeitaria e Pão Quente",
       "lede": "Abre às sete da manhã, todos os dias. Pão quente ao balcão, almoço à mesa, e uma vitrine de doces até às nove da noite.",
@@ -27,7 +26,7 @@
       "numeral": "I",
       "olho": "A porta",
       "titulo": "Fica na Rua Dom António Castro Meireles",
-      "texto": "Por fora, o letreiro diz Pão Quente e a placa mostra um pão com três fios de vapor a sair. Esse vapor é o m de damira, e é ele que desenha esta página à medida que desce.",
+      "texto": "Por fora, o letreiro diz Pão Quente e a placa mostra um pão com três fios de vapor a sair. Esse vapor é o m de damira.",
       "legenda": "A fachada, vista da rua."
     },
     "silencio": "Lá dentro, às sete da manhã, está a sair o pão.",

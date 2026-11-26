@@ -43,26 +43,15 @@
   --suave-sobre-tinta: #d3cec9;
   --suave-sobre-tijolo: #e0dcd8;
 
-  /* A margem que o vapor ocupa. O conteúdo afasta-se dela em vez de lhe passar
-     por baixo: um fio que corta texto é um risco, não uma marca. */
-  --margem-vapor: clamp(3rem, 7vw, 6.5rem);
+  --margem-cartaz: clamp(1.25rem, 5vw, 5rem);
 
   background: var(--sc-canvas);
   color: var(--sc-ink);
   overflow-x: clip;
 }
 
-/* ⚠️ **O cabeçalho do sítio destrava-se aqui.** A gramática de capítulos
-   proíbe barra fixa: a navegação de uma peça impressa é o fólio na margem, e é
-   o que o vapor faz. Uma barra de vidro colada ao topo passaria por cima de
-   cada capítulo e por cima da estampa do pico.
-
-   Não deixa de existir — passa a **cabeçalho de rosto**, que é o que uma peça
-   impressa põe na primeira página. Continua a ser a navegação entre as três
-   páginas do sítio, e continua a apanhar o salto de teclado.
-
-   O `:has()` prende isto à homepage. Nas outras duas páginas a barra continua
-   colada, que é o que lá faz sentido.
+/* Na página inicial o cabeçalho acompanha a capa na rolagem para deixar
+   os capítulos e as fotografias ocuparem o ecrã inteiro.
 
    ⚠️ `relative` e não `static` (#82): o menu do «Encomendas» abre para fora da
    barra, e num elemento estático o `z-50` não conta — o painel ficava por
@@ -87,7 +76,7 @@ body:has(.cartaz) .barra-vidro {
 .cap {
   position: relative;
   padding-block: clamp(4rem, 9vw, 8rem);
-  padding-inline: var(--margem-vapor) clamp(1.25rem, 5vw, 5rem);
+  padding-inline: var(--margem-cartaz);
 }
 .cap__caixa {
   max-width: 46rem;
@@ -325,7 +314,7 @@ body:has(.cartaz) .barra-vidro {
      secção deixou a verificação a medir 3,84:1 outra vez, com o CSS da secção
      já corrigido e aparentemente certo. Duas camadas, uma cor. */
   background: var(--color-verde-forte);
-  padding-inline: var(--margem-vapor) clamp(1.25rem, 5vw, 5rem);
+  padding-inline: var(--margem-cartaz);
 }
 .raro__caixa {
   max-width: 44rem;
@@ -371,7 +360,7 @@ body:has(.cartaz) .barra-vidro {
      `padding-inline-end` o curso acabava cedo e o bloco de fecho ficava
      cortado pela berma — visível na captura, invisível em qualquer leitura do
      CSS. A margem do último filho conta. */
-  padding-inline-start: var(--margem-vapor);
+  padding-inline-start: var(--margem-cartaz);
 
   /* ⚠️ **165vw, e é isto que impede o acto de morrer num monitor largo.**
      Os itens têm larguras fixas em `rem`, portanto o carril tem largura
@@ -461,246 +450,15 @@ body:has(.cartaz) .barra-vidro {
   margin: 0;
 }
 
-/* ===========================================================================
-   O VAPOR — o movimento de assinatura
-
-   As três ondas do logótipo, esticadas à altura do ecrã, fixas na margem, com
-   o traçado conduzido pela posição de rolagem. Ver `Vapor.tsx` para os quatro
-   papéis que desempenha ao longo da página.
-   =========================================================================== */
-.vapor {
-  position: fixed;
-  inset-block: 0;
-  inset-inline-start: 0;
-  width: var(--margem-vapor);
-  z-index: 40;
-  /* ⚠️ O fio não apanha o rato: é desenho, e apanhá-lo roubava o clique a tudo
-     o que estivesse por baixo da margem. Só os botões do fólio o recuperam. */
-  pointer-events: none;
-  --fio: var(--color-tijolo);
-  --chao: var(--color-papel);
-  color: var(--fio);
-  /* Fora de camada é preciso nomear cada propriedade: um `transition: all`
-     está proibido e um atalho aqui não herdaria nada da camada. */
-  transition: color 420ms var(--sc-ease-out, ease-out);
-}
-
-.vapor__fio {
-  width: 100%;
-  height: 100%;
-  /* Discreto por omissão. A 0,85 os três traços liam-se como uma cercadura a
-     competir com o texto; o fio é para se dar por ele, não para tomar conta da
-     margem. O pico é que o acende. */
-  opacity: 0.55;
-  transition: opacity 420ms var(--sc-ease-out, ease-out);
-}
-/* ⚠️ Sem `transition` nos caminhos. Uma transição em `stroke-width` obrigava
-   o browser a redesenhar o SVG inteiro em cada quadro da transição, por cima do
-   redesenho que o traçado já custa. O engrossar no pico passa a ser seco. */
-
-/* ⚠️ **Duas variáveis, e não o `currentColor`.** Aqui esteve
-   `background: currentColor` na pastilha do numeral com `color: transparent`
-   no mesmo elemento — e o `currentColor` resolve para a cor **do próprio
-   elemento**, portanto a pastilha ficava transparente. Na captura leu-se como
-   blocos cinzentos em cima do fio, sem numeral nenhum.
-
-   Agora o capítulo activo declara duas coisas explícitas: `--fio`, a cor do
-   vapor, e `--chao`, a cor do fundo por baixo dele. A pastilha é fio com o
-   numeral em chão, que é legível por construção em vez de por sorte.
-
-   Uma matiz, duas claridades, keyed ao fundo: é a excepção que o `taste.md`
-   abre para páginas que cortam entre claro e escuro. */
-.vapor[data-capitulo-activo="capa"] {
-  --fio: var(--color-papel);
-  --chao: var(--color-tijolo);
-}
-.vapor[data-capitulo-activo="cap-porta"],
-.vapor[data-capitulo-activo="cap-maos"],
-.vapor[data-capitulo-activo="cap-provar"] {
-  --fio: var(--color-tijolo);
-  --chao: var(--color-papel-fundo);
-}
-.vapor[data-capitulo-activo="cap-vitrine"],
-.vapor[data-capitulo-activo="cap-encomendar"] {
-  --fio: var(--color-tijolo);
-  --chao: var(--color-papel);
-}
-/* ⚠️ Os reels vivem no escuro, e o tijolo sobre a tinta dá 2,36:1: o fio
-   desaparecia. Cada chão novo obriga a declarar as duas cores — esquecer-se
-   disto não rebenta nada, só apaga a assinatura durante uma secção inteira. */
-.vapor[data-capitulo-activo="cap-reels"] {
-  --fio: var(--color-papel);
-  --chao: var(--color-tinta);
-}
-.vapor[data-capitulo-activo="cap-raro"] {
-  --fio: var(--color-papel);
-  --chao: var(--color-verde-forte);
-}
-.vapor[data-capitulo-activo="cap-festa"] {
-  --fio: var(--color-papel);
-  --chao: var(--color-tijolo);
-}
-/* ⚠️ **O título do pão é um chão sem marcador, e existe por causa do vegan.**
-   Desde 12/10/2026 o capítulo vegan vem logo antes do pão (#79), e o título
-   do pão é papel: sem esta entrada o fio herdava o papel do vegan e
-   desaparecia em cima do papel durante meio ecrã. Antes da mudança herdava o
-   tijolo da porta e via-se — ninguém tinha de pensar nisto. Ver
-   `marcador: false` em `Vapor.tsx`. */
-.vapor[data-capitulo-activo="cap-pao-titulo"] {
-  --fio: var(--color-tijolo);
-  --chao: var(--color-papel);
-}
-
-/* Durante o silêncio o fio fica em tijolo sobre a tinta, que dá 2,36:1 e
-   portanto quase se apaga. É efeito secundário de o silêncio não ser capítulo
-   e herdar a cor do anterior — mas é o efeito certo, e fica: o fio esmorece na
-   pausa e reacende no ecrã seguinte, que é exactamente o que a pausa existe
-   para preparar. Se algum dia o silêncio ganhar marcador no fólio, isto tem de
-   voltar a ser decidido em vez de herdado.
-
-   **No pico o vapor nasce do pão.** É o único sítio da página onde os traços
-   engrossam, e é o que amarra a assinatura ao momento que o cliente escolheu:
-   o pão enche o ecrã, e o vapor sai dele. */
-.vapor[data-capitulo-activo="cap-pao"] {
-  --fio: var(--color-papel);
-  --chao: var(--color-tinta);
-}
-.vapor[data-capitulo-activo="cap-pao"] .vapor__fio {
-  opacity: 1;
-}
-.vapor[data-capitulo-activo="cap-pao"] .vapor__fio path {
-  stroke-width: 13;
-}
-
-/* ------------------------------------------------------------------ fólio --
-   Os marcadores são a navegação desta página, e não um indicador de posição.
-   O `uniqueness.md` §2.2 exige que a peça em capítulos se navegue por fólio na
-   margem, e um fólio que não se pode clicar não é navegação. */
-.vapor__folio {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-.vapor__folio ol {
-  position: relative;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.vapor__folio li {
-  position: absolute;
-  inset-inline-start: 0;
-  translate: 0 -50%;
-  pointer-events: auto;
-}
-.vapor__folio button {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  /* ⚠️ **0,65 rem e não 0,5.** A pastilha desenhada tem 24 px; com 0,5 rem de
-     enchimento o alvo ficava em 40 px, quatro abaixo do mínimo a que um dedo
-     acerta sem pensar. O enchimento cresce sem a pastilha crescer: o desenho
-     não muda, o alvo muda. Medido, não estimado. */
-  padding: 0.65rem 0.4rem;
-  background: none;
-  border: 0;
-  color: inherit;
-  cursor: pointer;
-  font: inherit;
-  opacity: 0.4;
-  transition: opacity 240ms var(--sc-ease-out, ease-out);
-}
-.vapor__folio li[data-passado] button {
-  opacity: 0.75;
-}
-.vapor__folio li[data-activo] button,
-.vapor__folio button:hover,
-.vapor__folio button:focus-visible {
-  opacity: 1;
-}
-
-.vapor__numeral {
-  font-family: var(--sc-font-display);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  /* A pastilha assenta em cima do fio, que passa exactamente por ali. Por isso
-     é opaca e leva o numeral na cor do chão. */
-  background: var(--fio);
-  color: var(--chao);
-  width: 1.5rem;
-  height: 1.5rem;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-}
-
-/* O título do capítulo só aparece a quem o procura: com o rato em cima, ou com
-   o teclado lá. Sempre visível, seria uma coluna de texto a correr por cima de
-   seis fundos diferentes, e nenhum deles lhe garantia contraste. */
-.vapor__titulo {
-  display: none;
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  padding: 0.25rem 0.6rem;
-  border-radius: 2px;
-  background: var(--fio);
-  color: var(--chao);
-}
-@media (hover: hover) and (pointer: fine) {
-  .vapor__folio button:hover .vapor__titulo,
-  .vapor__folio button:focus-visible .vapor__titulo {
-    display: block;
-  }
-}
-
 /* ⚠️ O botão flutuante das encomendas **esteve escondido nesta página** por a
    gramática de capítulos não admitir chrome a pairar. O cliente pediu-o de
    volta: é o atalho mais directo para a coisa que mais interessa ao negócio, e
    numa página de dezanove ecrãs de altura vale mais do que a pureza da
    gramática. Fica como nas outras duas páginas. */
 
-/* ------------------------------------------------------------ telemóvel --
-   O fólio com títulos não cabe num ecrã de 390 px, e o fio numa margem de
-   6 rem comia um sexto da largura útil. Fica o fio, estreito, e os marcadores
-   como pontos. É navegação a menos, e é por isso que os capítulos levam as
-   suas ligações em texto e o rodapé repete as três páginas, a morada e o
-   horário: **o que carrega o sentido da página não pode viver só onde há
-   rato.** (O colofão, que fazia isto em texto corrido, saiu a 12/10/2026, #81.) */
-@media (max-width: 48rem) {
-  .cartaz {
-    /* Larga o suficiente para o fio não encostar à berma do conteúdo, estreita
-       o suficiente para não comer a largura de leitura de um ecrã de 390 px. */
-    --margem-vapor: 2.75rem;
-  }
-  .vapor__titulo {
-    display: none;
-  }
-  .vapor__numeral {
-    width: 1.1rem;
-    height: 1.1rem;
-    font-size: 0;
-  }
-}
-
-/* --------------------------------------------------------- menos movimento --
-   O `taste.md` é claro: menos movimento é **menos e mais suave, não nenhum**.
-   O que se perde é o avanço da câmara no pico, que é posição. O que fica é o
-   fio a desenhar-se, porque é ele que diz onde a pessoa vai, e o fólio, que é
-   navegação. */
 @media (prefers-reduced-motion: reduce) {
   .pao__estampa {
     transform: none;
-  }
-  .vapor,
-  .vapor__fio,
-  .vapor__fio path,
-  .vapor__folio button {
-    transition: none;
   }
 }
 
@@ -1072,24 +830,6 @@ body:has(.cartaz) .barra-vidro {
    correcções que a verificação a 390×844 obrigou a fazer.
    =========================================================================== */
 @media (max-width: 48rem) {
-  /* ⚠️ **O fólio desaparece, e o fio fica.** Dez pastilhas empilhadas na berma
-     de um ecrã de 390 px não são navegação: são dez alvos de toque de 24 px a
-     um centímetro do polegar que está a rolar a página, e leem-se como sujidade
-     sobre o conteúdo. A navegação no telemóvel é o cabeçalho, que lá está, e
-     os atalhos grandes que a página tem de sobra. O fio continua, porque é
-     desenho e não interface. */
-  .vapor__folio {
-    display: none;
-  }
-  .vapor__fio {
-    opacity: 0.35;
-    /* Estático no telemóvel: desenhado por inteiro, sem trabalho por quadro.
-       Ver `Vapor.tsx`. */
-  }
-  .vapor__fio path {
-    stroke-dashoffset: 0 !important;
-  }
-
   /* A capa deixa de ser meio ecrã de ar. Num telemóvel o primeiro ecrã é o
      ecrã, e gastá-lo em espaço vazio é gastá-lo. */
   .cap--capa {
@@ -1190,7 +930,7 @@ body:has(.cartaz) .barra-vidro {
   align-items: center;
   gap: clamp(1rem, 2.5vw, 2rem);
   height: 100%;
-  padding-inline-start: var(--margem-vapor);
+  padding-inline-start: var(--margem-cartaz);
   /* ⚠️ 165vw: o curso é `scrollWidth - innerWidth`, e um carril de largura
      fixa morre à medida que o monitor cresce. Armadilha 11 do AGENTS.md. */
   min-width: 165vw;
@@ -1246,8 +986,7 @@ body:has(.cartaz) .barra-vidro {
   position: relative;
   z-index: 1;
   grid-row: 2;
-  padding: 0.75rem var(--margem-vapor) 0.9rem clamp(1.25rem, 5vw, 5rem);
-  padding-inline-start: var(--margem-vapor);
+  padding: 0.75rem var(--margem-cartaz) 0.9rem;
   background: var(--color-tinta);
   color: var(--suave-sobre-tinta);
   font-size: 0.85rem;

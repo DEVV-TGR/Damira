@@ -1,46 +1,21 @@
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { marca } from "@/data/marca";
 import {
   casa,
-  horariosAgrupados,
   moradaCompleta,
   urlDirecoes,
   telefoneMarcavel,
 } from "@/data/casa";
 import { URL_ESTUDIO } from "@/lib/site";
-import { Marca } from "@/components/Marca";
 
-/**
- * O rodapé é o chão do site: numa página clara é o que diz que acabou.
- *
- * ## O que aqui vive, e porquê agora é mais
- *
- * A primeira versão tinha três colunas de texto pequeno — morada, contacto,
- * redes — e nada mais, porque o fecho da página inicial mostrava a marca em
- * grande logo acima. Esse fecho já não existe — nem o colofão que o substituiu,
- * que saiu a pedido da casa (#81, 12/10/2026): **a página inicial acaba agora
- * nos reels, e o rodapé é o único sítio dela com morada, horário e mapa**. A
- * ementa e as encomendas nunca tiveram fecho nenhum.
- * O cliente pediu um rodapé melhor, e o que faltava era concreto:
- *
- * - **a marca**, porque é o único sítio das três páginas onde o nome da casa
- *   aparece no fim;
- * - **as três páginas**, porque quem chega ao fundo da ementa e quer encomendar
- *   não devia ter de subir ao cabeçalho;
- * - **o horário**, que não estava em lado nenhum do rodapé e é a segunda coisa
- *   que se procura numa pastelaria, a seguir à morada;
- * - **o telefone em grande**, porque é como a maioria das encomendas chega.
- *
- * ## Tudo o que se toca tem 44 px
- *
- * As ligações são blocos com altura mínima, não palavras sublinhadas num
- * parágrafo. É o mesmo critério do resto do site: um rodapé usa-se com o
- * polegar, no fim de uma página longa, e é onde mais se falha o alvo.
- *
- * ⚠️ **Sem margem por cima.** A margem mostrava o fundo do `body` e abria uma
- * faixa de papel entre dois blocos escuros. O espaço é dado por quem vem antes.
- */
+// Em 25/11 confirmou-se que este horário se aplica só ao rodapé. Os contactos
+// são os do PDF de design e não configuram o envio das encomendas.
+const HORARIO_RODAPE = "07:00–21:00";
+const EMAILS_RODAPE = ["geral@damira.pt", "encomendas@damira.pt"];
+
+/** O rodapé encosta à secção anterior para o fundo do body não abrir uma faixa. */
 export function Rodape() {
   const t = useTranslations("rodape");
   const nav = useTranslations("nav");
@@ -49,14 +24,14 @@ export function Rodape() {
   const tMarca = useTranslations("marca");
   const ano = new Date().getFullYear();
   const telefone = telefoneMarcavel();
-  const grupos = horariosAgrupados();
 
   const redes = [
+    { href: marca.facebook, rotulo: "Facebook", detalhe: null },
     { href: marca.instagram, rotulo: "Instagram", detalhe: marca.instagramUtilizador },
     { href: marca.tiktok, rotulo: "TikTok", detalhe: null },
-    { href: marca.facebook, rotulo: "Facebook", detalhe: null },
   ].filter((r): r is { href: string; rotulo: string; detalhe: string | null } => r.href !== null);
 
+  // A letra do telefone acompanha os emails sem reduzir o alvo de toque.
   const ligacao =
     "alvo-toque inline-flex min-h-11 items-center underline decoration-tijolo decoration-2 underline-offset-4 hover:text-papel";
   const rotulo = "text-xs font-semibold uppercase tracking-[0.2em] text-papel/55";
@@ -67,8 +42,15 @@ export function Rodape() {
         {/* A marca e a assinatura, como no topo dos impressos. */}
         <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 border-b border-papel/15 pb-8">
           <div>
-            <Link href="/" aria-label={nav("inicio")} className="alvo-toque inline-block text-[2rem] text-papel">
-              <Marca />
+            <Link href="/" className="alvo-toque inline-flex min-h-11 items-center">
+              <Image
+                src="/marca/damira-branco.png"
+                alt={marca.nomeCurto}
+                width={1379}
+                height={315}
+                className="h-auto w-28 sm:w-32"
+                unoptimized
+              />
             </Link>
             <p className="mt-2 text-sm text-papel/70">
               {tMarca("nome")} · {tMarca("desde", { ano: casa.desde })}
@@ -91,41 +73,27 @@ export function Rodape() {
 
           <div className="text-sm leading-relaxed">
             <p className={rotulo}>{t("falarConnosco")}</p>
-            {telefone && (
-              <a href={telefone} className="alvo-toque titulo-display mt-2 block text-2xl leading-tight text-papel">
-                {casa.telefone}
-              </a>
-            )}
-            {casa.email && (
-              <a href={`mailto:${casa.email}`} className={`${ligacao} mt-1 break-all`}>
-                {casa.email}
-              </a>
-            )}
+            <ul className="mt-2">
+              {telefone && (
+                <li>
+                  <a href={telefone} className={ligacao}>{casa.telefone}</a>
+                </li>
+              )}
+              {EMAILS_RODAPE.map((email) => (
+                <li key={email}>
+                  <a href={`mailto:${email}`} className={ligacao}>{email}</a>
+                </li>
+              ))}
+            </ul>
           </div>
 
-          {/* O horário sai do casa.json, agrupado: sete dias iguais são uma
-              linha, não sete. Ver horariosAgrupados. */}
-          {grupos && (
-            <div className="text-sm leading-relaxed">
-              <p className={rotulo}>{t("horario")}</p>
-              <ul className="mt-3 space-y-1.5 text-papel/85">
-                {grupos.map((g) => {
-                  const nome =
-                    g.dias.length === 1
-                      ? dias(g.dias[0])
-                      : tCasa("intervaloDias", { primeiro: dias(g.dias[0]), ultimo: dias(g.dias[g.dias.length - 1]) });
-                  return (
-                    <li key={g.dias.join()} className="flex justify-between gap-4">
-                      <span>{nome}</span>
-                      <span className="tabular-nums">
-                        {g.horario ? `${g.horario.abre}–${g.horario.fecha}` : tCasa("encerrado")}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
+          <div className="text-sm leading-relaxed">
+            <p className={rotulo}>{t("horario")}</p>
+            <p className="mt-3 flex flex-wrap justify-between gap-x-4 text-papel/85">
+              <span>{tCasa("intervaloDias", { primeiro: dias("segunda"), ultimo: dias("domingo") })}</span>
+              <span className="tabular-nums">{HORARIO_RODAPE}</span>
+            </p>
+          </div>
 
           {redes.length > 0 && (
             <div className="text-sm">

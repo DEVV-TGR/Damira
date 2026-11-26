@@ -8,13 +8,12 @@
   "nav": {
     "inicio": "Home",
     "encomendas": "Orders",
-    "todasEncomendas": "See all orders",
+    "todosProdutos": "See all products",
     "voltarAtras": "Go back",
     "saltarParaConteudo": "Skip to content",
     "mudarIdioma": "Português"
   },
   "cartaz": {
-    "folio": "Chapters",
     "capa": {
       "olho": "Bakery and pastry shop",
       "lede": "Open at seven every morning, every day. Hot bread at the counter, lunch at the table, and a case of pastries until nine at night.",
@@ -27,7 +26,7 @@
       "numeral": "I",
       "olho": "The door",
       "titulo": "It is on Rua Dom António Castro Meireles",
-      "texto": "Outside, the sign reads Pão Quente and the plate shows a loaf with three ribbons of steam coming off it. That steam is the m in damira, and it is what draws this page as you go down.",
+      "texto": "Outside, the sign reads Pão Quente and the plate shows a loaf with three ribbons of steam coming off it. That steam is the m in damira.",
       "legenda": "The shopfront, from the street."
     },
     "silencio": "Inside, at seven in the morning, the bread is coming out.",

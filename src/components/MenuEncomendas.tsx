@@ -203,7 +203,7 @@ export function MenuEncomendas({ actual }: { actual: boolean }) {
               aria-current={caminho === "/encomendas" ? "page" : undefined}
               className="flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold hover:bg-papel-fundo hover:text-tijolo"
             >
-              {t("todasEncomendas")}
+              {t("todosProdutos")}
             </Link>
           </li>
           {SECCOES.map((seccao) => (
