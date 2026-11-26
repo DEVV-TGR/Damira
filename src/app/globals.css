@@ -249,15 +249,11 @@ body::after {
 
 /* ── Tipografia ───────────────────────────────────────────────────────── */
 
-/**
- * A Bricolage Grotesque tem eixo de largura e de tamanho ótico. É o que permite
- * um título enorme e aberto e uma etiqueta minúscula e apertada **na mesma
- * fonte** — em vez de duas famílias a fingir que combinam.
- *
- * O impresso é caixa alta condensada; aqui a caixa alta fica para as etiquetas e
- * os títulos ficam em caixa normal. Cento e vinte e dois artigos com títulos de
- * secção aos berros é o que separa um menu de um cartaz.
- */
+.site-publico {
+  --fonte-display: var(--fonte-caros);
+  --fonte-corpo: var(--fonte-caros);
+}
+
 /**
  * ⚠️ **O tracking e a entrelinha da base são os do texto pequeno, não os do
  * título grande.**
@@ -350,6 +346,11 @@ body::after {
   font-size: clamp(3rem, 10vw, 7.5rem);
   letter-spacing: -0.04em;
   line-height: 1;
+}
+
+/* A Caros não é condensada. «Encomendas» tem de caber a 320 px. */
+.site-publico .titulo-capa {
+  font-size: clamp(2.125rem, 9vw, 7.5rem);
 }
 
 /**

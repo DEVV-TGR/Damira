@@ -1,6 +1,5 @@
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { setRequestLocale } from "next-intl/server";
 import { Motor } from "@/components/cartaz/Motor";
-import { Vapor, type CapituloDoFolio } from "@/components/cartaz/Vapor";
 import { FolhaDeRosto } from "@/components/cartaz/FolhaDeRosto";
 import { Porta } from "@/components/cartaz/Porta";
 import { Silencio } from "@/components/cartaz/Silencio";
@@ -22,14 +21,8 @@ import "../cartaz.css";
    o «encomendar» saem da página inicial **por agora**. Os componentes, o CSS e
    os textos ficam todos — é para voltarem.
 
-   Mostrar um outra vez é tirá-lo daqui; esconder também os reels é acrescentar
-   `"cap-reels"`. As secções e o fólio saem os dois desta lista, e por isso não
-   se desencontram (o fólio mede pelos `id`).
-
-   ⚠️ **Os numerais não são automáticos**: vêm do `messages/*.json` e seguem a
-   ordem visível. Os três ocultos guardam VII, VIII e IX, que é o que lhes cabe
-   se voltarem os três pela ordem em que estão. Voltar só um deles, ou esconder
-   os reels, obriga a renumerar lá. */
+   Para voltar a mostrar um capítulo, retirá-lo desta lista e ajustar os
+   numerais em `messages/*.json` para seguirem a ordem visível. */
 const OCULTOS: ReadonlySet<string> = new Set(["cap-provar", "cap-festa", "cap-encomendar"]);
 const visivel = (id: string) => !OCULTOS.has(id);
 
@@ -148,38 +141,15 @@ export default async function PaginaInicial({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const t = await getTranslations({ locale, namespace: "cartaz" });
   const [ementa, encomendas, ordem] = await Promise.all([
     listarProdutos({ origem: "ementa" }),
     listarProdutos({ origem: "encomendas" }),
     ordemDaEmenta(),
   ]);
 
-  /* ⚠️ **A lista é uma função dos capítulos e não uma constante**: os títulos
-     são texto traduzido, e uma constante ao lado do componente ficava numa
-     língua só. Os `id` têm de bater certo com os das `<section>` — é por eles
-     que o fólio mede a posição e salta. */
-  const todos: CapituloDoFolio[] = [
-    { id: "cap-porta", numeral: t("porta.numeral"), titulo: t("porta.olho") },
-    { id: "cap-raro", numeral: t("raro.numeral"), titulo: t("raro.olho") },
-    /* Sem marcador: só muda a cor do fio no título do pão, que sem isto
-       herdava o papel do vegan e desaparecia em cima do papel. Ver o
-       `cartaz.css`. */
-    { id: "cap-pao-titulo", numeral: "", titulo: "", marcador: false },
-    { id: "cap-pao", numeral: t("pao.numeral"), titulo: t("pao.olho") },
-    { id: "cap-maos", numeral: t("maos.numeral"), titulo: t("maos.olho") },
-    { id: "cap-vitrine", numeral: t("vitrine.numeral"), titulo: t("vitrine.olho") },
-    { id: "cap-reels", numeral: t("reels.numeral"), titulo: t("reels.olho") },
-    { id: "cap-provar", numeral: t("provar.numeral"), titulo: t("provar.olho") },
-    { id: "cap-festa", numeral: t("festa.numeral"), titulo: t("festa.olho") },
-    { id: "cap-encomendar", numeral: t("encomendar.numeral"), titulo: t("encomendar.olho") },
-  ];
-  const capitulos = todos.filter((c) => visivel(c.id));
-
   return (
     <div id="cartaz" className="cartaz">
       <Motor />
-      <Vapor capitulos={capitulos} rotuloNavegacao={t("folio")} />
 
       <FolhaDeRosto />
       <Porta />
