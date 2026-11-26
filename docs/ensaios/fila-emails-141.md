@@ -38,11 +38,11 @@ Os asserts terminaram sem falhas e o deployment ficou Ready. O comando de ensaio
 
 Comprovado: uma linha válida e persistida foi reservada e enviada pelo emissor do #141, aceite pela API do Resend e marcada enviada na BD. Ao repetir o emissor depois dessa marca, não houve nova tentativa nem nova chamada à API.
 
-**Receção no Gmail: aguarda confirmação do Tomás**, incluindo caixa de entrada/spam e existência de uma só mensagem. HTTP 200 e `enviado_em` comprovam aceitação pela API; não comprovam entrega na caixa de entrada.
+**Receção no Gmail confirmada pelo Tomás a 26/11/2026, com captura às 10:56:** chegou à **caixa de entrada** de `developerplusteam@gmail.com`. A captura mostra a referência `DAM-2211-7Y8T`, o assunto com `[TESTE]` e destino original fictício, o remetente «Confeitaria Damira <encomendas@damira.pt>», o logótipo e o aviso de modo de teste. A imagem ficou na conversa, sem ser publicada no repositório. Esta confirmação humana comprova a receção na caixa, para além da aceitação HTTP 200 e da marca `enviado_em`. A ausência de novo envio na segunda execução foi comprovada pela instrumentação (zero chamadas) e pela linha da BD inalterada; não se fez uma pesquisa completa por duplicados no Gmail.
 
 Não foi ensaiada aqui uma corrida entre emissores, uma falha depois da aceitação pelo Resend mas antes da marca na BD, nem a deduplicação do fornecedor nessa situação. A repetição comprovada é a de uma linha já marcada enviada. Não se testaram os restantes modelos nem o percurso da compra. O editor SQL da Neon ficou em Connecting sem devolver resultado; as leituras de evidência foram feitas pelo driver real na Preview e registadas nos logs.
 
-Produção, compra, cron e polling não foram ativados nem alterados. O PR #141 e a branch anterior `codex/ensaio-resend-preview` ficaram intactos.
+Produção, compra, cron e polling não foram ativados nem alterados. O PR #141 e a branch anterior `codex/ensaio-resend-preview` ficaram intactos pelo ensaio. Na consulta de 26/11, o GitHub já indicava o #141 como integrado, mantendo o mesmo head `15dba60`; essa integração ocorreu fora deste ensaio.
 
 ## Verificações
 
