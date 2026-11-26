@@ -14,4 +14,5 @@ it("mesmo autenticado, desligado não importa o módulo dos dados", async () => 
     headers: { authorization: "Bearer segredo-inventado-exclusivo-dos-testes-123456" },
   }));
   expect(resposta.status).toBe(503);
+  expect(await resposta.json()).toEqual({ ok: false, erro: "recuperacao-desligada" });
 });

@@ -1,6 +1,6 @@
 # Recuperação automática dos emails
 
-Implementação de 26/11/2026, preparada em `codex/repeticao-automatica-emails`.
+Implementação de 26/11/2026, preparada em `feat/recuperacao-emails`.
 **Não ativada em produção nesta tarefa.** A ativação é uma operação separada,
 com revisão do Gonçalo na leitura interna de `src/lib/dados/bd-emails.ts` e na
 exceção operacional à regra 6. Não altera o esquema nem liga a compra/#139.
@@ -19,8 +19,12 @@ configuração. Não aceita filtros, destinatários, horários ou limites do ped
 HTTP. Reutiliza o emissor: reservas de dois minutos, ordem por pedido e
 destinatário, UUID da fila como chave do Resend, cinco tentativas e janela de 24 h.
 
-A expressão em `vercel.json`, `17 * * * *`, chama-a ao minuto 17 de cada hora
-UTC; os intervalos são de uma hora também na mudança de hora de Lisboa.
+A expressão proposta, `17 * * * *`, chama-a ao minuto 17 de cada hora UTC; os
+intervalos são de uma hora também na mudança de hora de Lisboa. ⚠️ **Ainda não
+está no `vercel.json`**: a Vercel cria a tarefa no primeiro deploy de Production
+que a declara, mesmo com a recuperação desligada — seriam 24 chamadas falhadas
+por dia (401 ou 503) a habituar a equipa a ignorar o alerta que mais tarde conta.
+A entrada `crons` entra no PR de ativação, junto com a flag (passo 6).
 Uma falha pode esperar **cerca de uma hora** até à próxima tentativa. Os
 2/4/8/16 minutos são esperas mínimas do emissor, não cadência prometida da tarefa.
 Sem novas falhas da plataforma, as cinco tentativas cabem em cerca de cinco
@@ -87,8 +91,9 @@ acesso a emails falhados do painel: esta tarefa só recebe um sinal booleano.
 - HTTP 200: terminou sem trabalho elegível e sem falhas definitivas detetadas.
   **Não significa entrega no Gmail**, nem ausência de reservas em curso ou
   linhas ainda à espera da tentativa seguinte.
-- HTTP 503: falha, bloqueio, limite de duração/lotes ou
-  `intervencao-necessaria`. O resumo indica contagens e motivo, sem dados pessoais.
+- HTTP 503: falha, bloqueio, limite de duração/lotes, `limite-de-tempo` (o
+  emissor esgotou os 45 s antes de tratar linhas já selecionadas, que ficam
+  contadas em `adiados`) ou `intervencao-necessaria`. O resumo indica contagens e motivo, sem dados pessoais.
 - HTTP 401: segredo ausente/inválido ou bearer errado; não houve consulta.
 - HTTP 404: execução fora de Production; não houve consulta.
 
@@ -120,14 +125,19 @@ contrata esse serviço. Os logs da Vercel duram pouco e não substituem o alerta
    de teste, todos os envios, incluindo avisos à loja, vão para a caixa autorizada.
 5. Configurar e ensaiar o alerta de erro/ausência. Sem ele, a operação não está
    validada para depender dos emails ao cliente.
-6. Só então definir `EMAILS_RECUPERACAO_ATIVA=1` e fazer novo deploy. Validar no
-   painel Vercel a tarefa horária e uma execução; separar esta confirmação de
+6. Só então, num PR próprio, acrescentar ao `vercel.json`
+   `"crons": [{ "path": "/api/tarefas/emails", "schedule": "17 * * * *" }]`,
+   definir `EMAILS_RECUPERACAO_ATIVA=1` e fazer novo deploy. Uma expressão
+   horária exige plano Vercel pago (o Hobby só aceita crons diários e o deploy
+   falha). Validar no painel Vercel a tarefa horária e uma execução; separar esta confirmação de
    plataforma dos testes locais. Não chamar a rota manualmente contra a BD de
    produção como se fosse um ambiente de ensaio.
 7. Antes de ligar a compra, ensaiar ainda o percurso que grava a fila e o helper
    após commit; filas de teste antigas exigem reconciliação, não reenvio em massa.
 
-Para pausar: retirar o valor `1` e fazer deploy; a rota deixa de importar os
+Para pausar: retirar o valor `1` e fazer deploy (a tarefa continua a chamar e
+recebe 503 `recuperacao-desligada`; para a parar de vez, tirar também a entrada
+`crons`); a rota deixa de importar os
 dados. Isso não cancela uma execução já em curso. Não contar com alterações de
 variáveis sem deploy: as versões publicadas têm a sua própria configuração.
 Um rollback pode restaurar flags/segredos antigos; verificar qual deployment
@@ -167,6 +177,11 @@ futuro; regras de reserva e transporte ficam no emissor existente. Quando o
 #139 suportar `resposta-cliente`, rever também a exclusão desse modelo nas
 consultas de seleção e no sinal de intervenção de `bd-emails.ts`.
 
+⚠️ **Antes de ligar `enviarDepois()` à compra ou ao #139:** a regra «`EMAILS_SO_PARA`
+obrigatória em Production com `LOJA_EM_TESTE=1`» só existe nesta rota. O emissor
+só a exige fora de Production, por isso um envio imediato em modo de teste iria
+para os destinatários gravados. A guarda tem de descer para o emissor nesse PR.
+
 ## Fontes verificadas
 
 A documentação Vercel confirma bearer com `CRON_SECRET`, execução Cron só em
@@ -187,4 +202,9 @@ visitas, reserva abandonada, 25 mensagens, chamadas sobrepostas, limite de
 cinco tentativas, mais de 24 h, falhas terminais atrás de 101 transitórias e
 recusas antes da importação dos dados. A revisão independente identificou o
 falso sucesso após falha terminal; a regressão foi acrescentada e corrigida.
+Uma segunda revisão, antes do PR, levou a: tirar a entrada `crons` do
+`vercel.json`; o emissor contar as linhas `adiados` pelo limite de 45 s, para
+que 0/0/0 por falta de tempo não passe por fila vazia; um teste com a sequência
+real de quatro falhas e a quinta reserva (que limpa o erro, logo não dá falso
+alarme); e o teste dos guardas conferir o corpo `recuperacao-desligada`.
 Não houve ensaio real do agendamento nem envios Resend nesta implementação.

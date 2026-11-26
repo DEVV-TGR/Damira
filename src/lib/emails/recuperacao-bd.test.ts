@@ -27,6 +27,17 @@ beforeAll(async () => { base = await baseComPedidos([pedidoDeEmail()]); fonte = 
 afterAll(() => vi.restoreAllMocks());
 
 describe("recuperação horária com Postgres e emissor reais", () => {
+  it("a quinta reserva real limpa a falha anterior e só é terminal se for abandonada", async () => {
+    await preparar();
+    for (const n of [0, 1, 2, 3]) {
+      const reserva = (await fonte.reservarEmail(linhaDeEmail().id, hora(n)))!;
+      await fonte.registarFalhaEmail(reserva, "resend-503", false);
+    }
+    const quinta = (await fonte.reservarEmail(linhaDeEmail().id, hora(4)))!;
+    expect(quinta).toMatchObject({ tentativas: 5, ultimoErro: null });
+    expect(await haEmailsDefinitivamenteFalhados(base.db, hora(4))).toBe(false);
+    expect(await haEmailsDefinitivamenteFalhados(base.db, new Date(+hora(4) + 120_000))).toBe(true);
+  });
   it("uma falha terminal não fica escondida atrás de mais de 100 transitórias", async () => {
     await preparar(102);
     await base.db.update(emailsPorEnviar).set({ tentativas: 1, ultimaTentativaEm: agora, ultimoErro: "resend-503" });

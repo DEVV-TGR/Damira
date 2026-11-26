@@ -5,6 +5,12 @@ const agora = new Date("2026-11-26T11:00:00Z");
 const vazio = { enviados: 0, falhados: 0, saltados: 0 };
 
 describe("recuperação automática da fila", () => {
+  it("um lote que adiou linhas por falta de tempo não anuncia fila sem trabalho", async () => {
+    const resumo = await recuperarEmailsAutomaticamente(agora, {
+      enviar: async () => ({ ...vazio, adiados: 1 }),
+    });
+    expect(resumo).toEqual({ enviados: 0, falhados: 0, saltados: 0, adiados: 1, voltas: 1, paragem: "limite-de-tempo" });
+  });
   it("escoa mais de um lote e usa o instante atualizado sem depender de visitas", async () => {
     let volta = 0;
     const instantes: Date[] = [];

@@ -35,6 +35,9 @@ export async function recuperarEmailsAutomaticamente(
       // Não repetir 401/403/429 nem indisponibilidade da BD num ciclo apertado.
       // Os restantes emails já selecionados continuam a seguir a regra do emissor.
       if (lote.falhados) { resumo.paragem = "falha"; break; }
+      // Uma seleção lenta pode esgotar os 45 s antes da primeira linha: 0/0/0
+      // não é então uma fila sem elegíveis. Dar sinal ao monitor, sem insistir.
+      if (lote.adiados) { resumo.adiados = lote.adiados; resumo.paragem = "limite-de-tempo"; break; }
       if (lote.enviados + lote.saltados === 0) { resumo.paragem = "sem-trabalho"; break; }
     }
   } catch {
