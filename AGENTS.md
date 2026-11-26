@@ -145,8 +145,8 @@ fundo das encomendas saiu.
 `pedidos.md`. A referência, a data e o total da resposta são os gravados, também
 numa repetição — e uma repetição devolve o pedido **como está agora** (se a loja
 já o cancelou, o ecrã diz que já estava registado, não «confirmada»). Os dois
-emails de criação ficam na fila na mesma transação; ⚠️ **o emissor existe mas
-ainda não é chamado pela compra** (ver a secção seguinte). Não se oferece
+emails de criação ficam na fila na mesma transação, e a ação pede o envio
+**depois** dela (`enviarDepois()`, ver a secção seguinte). Não se oferece
 `mailto` de um pedido já registado.
 
 **Sem base de dados, o pedido acaba num email à casa**, por secções e com todos
@@ -169,17 +169,31 @@ alterado. A chave é gerada no primeiro envio e reutilizada nas tentativas segui
 reinício automático do `<form action>` do React 19: um erro do servidor nunca
 apaga o que a pessoa escreveu (`robustez.md` › Erros).
 
-### Os emails dos pedidos — emissor (#119, etapa 1)
+### Os emails dos pedidos — o emissor (#119)
 
 O emissor de `emails_por_enviar` está em `src/lib/emails/enviar.ts`, com reserva
-condicional e idempotência no Resend. **Ainda não está ligado à compra nem às
-ações do #139**: a compra (#126) e as ações já gravam a fila na mesma transação
-que o pedido, mas nenhuma chama `enviarDepois()` — esse é o PR seguinte, que o
-chama depois da escrita, nunca antes da transação terminar. ⚠️ Até lá, com
-`DATABASE_URL`, os emails de um pedido feito no site ficam na fila e não saem.
+condicional e idempotência no Resend. **Desde 26/11 está ligado às ações**: a
+compra (`registar.ts`), o aceite e a recusa da proposta e as decisões do painel
+(responder, reagendar, cancelar) chamam `enviarDepois()` **depois** de a escrita
+ficar gravada, nunca antes, e só se ela correu bem. A fronteira continua a pôr os
+emails na fila na mesma instrução que muda o pedido; a ação só pede o envio.
+
+Três coisas que se desfazem sem querer:
+
+- ⚠️ **Com `LOJA_EM_TESTE=1`, nada sai sem `EMAILS_SO_PARA`, nem em produção**
+  (`executar.ts`): o site no ar grava pedidos de ensaio, e nenhum aviso desses
+  pode chegar a um cliente nem à casa. Fora de produção, `EMAILS_SO_PARA` é
+  sempre obrigatória. Sem ela, o emissor nem consulta a base.
+- ⚠️ **O corte da fila** (`CORTE_DA_FILA`, em `emissor.ts`): o que entrou na fila
+  antes de o emissor ser ligado sai como `saltado: anterior-ao-emissor`, sem
+  tentativa. Não se adianta a data.
+- **A expiração às 48 h e às 24 h** grava o email na limpeza; sai no próximo
+  envio pedido (uma compra cria sempre um, porque a limpeza corre dentro do
+  `criarPedido`) ou na volta horária do #149. Ainda não sai sozinho sem visitas,
+  e o `resposta-cliente` (a proposta) fica na fila até o emissor escrever o link
+  (`fluxo-do-pedido.md` › 6, pontos 3 e 4).
+
 Não se promete entrega de um email só porque entrou na fila.
-Fora de produção, `EMAILS_SO_PARA` é obrigatória; sem ela não há envios nem consultas
-do emissor. Não há polling, cron nem despertadores nesta etapa.
 
 ### A documentação muda no mesmo PR que o código
 

@@ -568,15 +568,25 @@ instrução da tarefa que os decide.
 `enviarEmailsPendentes({ agora, limite })` entrega um email de cada vez ao Resend,
 com o logótipo embutido, até 10 por volta. `enviarDepois()` usa `after()` do Next:
 chama-se **depois da transação bem-sucedida**, na ação que acabou de pôr emails na
-fila. **As chamadas ainda não estão ligadas**: entram com o #139 e a compra.
-Os despertadores, os lembretes e a volta diária são da etapa 2; o ecrã dos falhados
-é do painel. Não há consultas periódicas nesta etapa. **Não ligar os emails da
-compra antes de haver novas tentativas automáticas dentro da janela de 24 h**:
-com um 503 e sem mais ações, a linha pode chegar a `idempotencia-expirada` sem
-ter sido repetida. A etapa 2 tem de resolver este caso sem depender de visitas.
-Antes de ligar o helper, confirmar na Vercel a presença de `RESEND_API_KEY` e
-`EMAIL_REMETENTE` e decidir se Production mantém `EMAILS_SO_PARA` preenchida.
-A existência da integração ou do domínio verificado não confirma estas variáveis.
+fila. **Ligado desde 26/11** na compra, no aceite e na recusa da proposta e nas
+decisões do painel (responder, reagendar, cancelar). Os despertadores, os lembretes
+e a volta horária são da etapa 2 (#149); o ecrã dos falhados é do painel.
+
+⚠️ **Bloqueador do lançamento, já não de ligar:** com um 503 e sem mais ações, a
+linha pode chegar a `idempotencia-expirada` sem ter sido repetida. Enquanto o site
+está em modo de teste, todos os emails vão para a caixa de ensaio, e o risco é só
+de ensaio; **a loja não abre sem as tentativas automáticas do #149**. Antes do
+lançamento, confirmar na Vercel `RESEND_API_KEY`, `EMAIL_REMETENTE` e
+`EMAILS_SO_PARA` (vazia em Production, para os emails chegarem aos destinatários
+gravados). A existência da integração ou do domínio verificado não confirma estas
+variáveis.
+
+**O modo de teste prende os envios** (`executar.ts`): com `LOJA_EM_TESTE=1`, sem
+`EMAILS_SO_PARA` válida o emissor não consulta nem envia, também em produção.
+
+**O corte da fila** (`CORTE_DA_FILA`, `emissor.ts`): o #139 gravou emails na fila
+antes de haver quem os enviasse. As linhas criadas antes do corte ficam
+`saltado: anterior-ao-emissor`, com as tentativas no máximo e sem chegar ao Resend.
 
 Uma reserva condicional incrementa `tentativas` e grava `ultima_tentativa_em`;
 só quem a recebe envia. A conclusão confere a tentativa, para um processo antigo
@@ -617,9 +627,11 @@ emails de reagendamento falham até isso ser ligado. O texto de cancelamento dep
 `canceladoPor`: a recusa pelo link grava `cliente` (#139), e a ação de cancelar do
 painel ainda grava sempre `gerente` (dívida do #133).
 
-Integração a fazer: chamar o helper após criar com sucesso e após cada transição
-que gravar emails (incluindo a limpeza dos expirados). Uma repetição idempotente
-pode chamar o helper para escoar a fila, mas não deve inserir emails outra vez.
+A integração: o helper chama-se depois de criar com sucesso e depois de cada
+decisão que pode gravar emails. Uma repetição idempotente chama-o para escoar a
+fila, sem inserir emails outra vez. A limpeza dos expirados corre à boleia das
+leituras da fronteira e não o chama: o email dela sai no envio seguinte (o próprio
+`criarPedido` limpa antes de criar) ou na volta horária do #149.
 
 ## O levantamento
 

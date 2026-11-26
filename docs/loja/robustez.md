@@ -125,8 +125,8 @@ linhas e espera pela tentativa seguinte. As cinco tentativas também se aplicam
 a quotas esgotadas: se a indisponibilidade durar mais do que as esperas, ficam
 falhadas e exigem revisão, sem desaparecerem.
 O limite de 10 envios e a paragem antes de iniciar outra linha após 45 s limitam
-a duração (um último timeout pode levar mais 10 s); ainda não há rota nem duração Vercel a
-configurar, porque os chamadores entram nos PRs seguintes.
+a duração (um último timeout pode levar mais 10 s). As ações chamam-no pelo `after()`,
+depois de responder; a rota da volta horária é do #149.
 
 Os logs e `ultimo_erro` só recebem códigos controlados: `resend-503`,
 `resend-rede`, `dados-do-modelo`, etc. Nunca o corpo do Resend, a mensagem do
@@ -134,8 +134,8 @@ Postgres nem objetos de erro. No log só referência, modelo e código HTTP ou
 Postgres (`erroDoPostgres`). Uma linha saltada tem o prefixo `saltado: ` e não
 se confunde com uma avaria. A leitura para o futuro ecrã dos falhados exige gerente.
 
-**Local e Preview (`VERCEL_ENV !== production`): `EMAILS_SO_PARA` é obrigatória.**
-Sem um endereço válido, o emissor nem consulta a base. Preenchida, redireciona
+**Local e Preview (`VERCEL_ENV !== production`), e Production com `LOJA_EM_TESTE=1`:
+`EMAILS_SO_PARA` é obrigatória.** Sem um endereço válido, o emissor nem consulta a base. Preenchida, redireciona
 **todos** os emails para essa caixa e acrescenta o destino original ao assunto.
 Também se pode manter preenchida em Production para ensaio autorizado. O Tomás
 configura a caixa na Vercel; este PR não cria variáveis nem envia emails reais.
@@ -145,10 +145,11 @@ Production, exige `LOJA_EM_TESTE=1` e confere o servidor da ligação com o
 hostname do desenvolvimento confirmado pelo utilizador na Neon, antes de
 qualquer consulta. Não carrega `.env`.
 
-**Bloqueador de ligar os emails da compra:** uma falha recuperável ainda só se
-repete quando outra ação chama o emissor. Antes de os emails ao cliente dependerem
-disto, a etapa 2 tem de garantir tentativas automáticas antes das 24 h desde a
-criação da linha, mesmo sem visitas. Uma volta diária só chega se respeitar essa
+**Bloqueador do lançamento:** uma falha recuperável ainda só se repete quando
+outra ação chama o emissor. O emissor está ligado às ações desde 26/11, mas em modo
+de teste tudo vai para a caixa de ensaio; antes de os emails ao cliente dependerem
+disto a sério, a etapa 2 (#149) tem de garantir tentativas automáticas antes das
+24 h desde a criação da linha, mesmo sem visitas. Uma volta diária só chega se respeitar essa
 margem; não se deve assumir que o próximo pedido chega a tempo.
 
 A idempotência do Resend dura 24 horas. Uma linha já tentada que chegue às 24 h

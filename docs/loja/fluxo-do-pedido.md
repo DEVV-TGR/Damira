@@ -42,9 +42,10 @@ a tracejado 💡.
    o `criado-loja`, direto e fora da fila (`:167`). O `criarPedido`
    (`src/lib/dados/bd-pedidos.ts:288`) existe, mas ninguém o chama, e também
    não põe nenhum email na fila. **Sem isto, nada deste fluxo acontece no site.**
-2. **Nenhum email da fila sai.** O `enviarDepois()` (`src/lib/emails/depois.ts:6`)
-   não é chamado em lado nenhum, e as novas tentativas sem visitas (#149) ainda
-   não entraram. Um email «na fila ✅» quer dizer gravado, e não enviado.
+2. **Os emails da fila saem desde o ponto 2 (26/11)**: o `enviarDepois()`
+   (`src/lib/emails/depois.ts`) é chamado depois da compra, do aceite e da recusa
+   da proposta e das decisões do painel. As novas tentativas sem visitas (#149)
+   ainda não entraram, e em modo de teste tudo vai para a caixa de `EMAILS_SO_PARA`.
 3. **A referência.** O diagrama usa `#00001`; o código usa `DAM-2611-HYUS`. Fica
    para a Andreia dizer se aceita a do código.
 
@@ -404,11 +405,11 @@ que o modelo exige. Os textos estão em `src/lib/emails/textos.ts`, e a lista em
 | T01 | `criado-confirmado-cliente` | cliente | compra sem análise | ❌ ninguém | ✅ | ❌ |
 | T02 | `criado-por-confirmar-cliente` | cliente | compra com análise | ❌ ninguém | ✅ | ❌ |
 | — | `criado-loja` | loja | qualquer compra | ❌ (hoje vai direto, `soPorEmail`) | ✅ | 🟡 |
-| T03 | `confirmado-cliente` | cliente | loja confirma | ✅ `bd-painel-pedidos.ts:412` | ✅ | 🟡 envio |
+| T03 | `confirmado-cliente` | cliente | loja confirma | ✅ `bd-painel-pedidos.ts:412` | ✅ | ✅ |
 | T04 | `resposta-cliente` | cliente | loja propõe / revê | ✅ `:436` | ❌ sem `linkAceitar`, excluído em `emissor.ts:20` | 🟡 |
 | T05 | *(não existe)* | cliente | proposta com entrega | ❌ | ❌ | ❌ |
-| T06 | `aceite-cliente` | cliente | cliente aceita | ✅ `bd-pedidos.ts:373` | ✅ | 🟡 envio |
-| — | `aceite-loja` | loja | cliente aceita | ✅ `bd-pedidos.ts:373` | ✅ | 🟡 envio |
+| T06 | `aceite-cliente` | cliente | cliente aceita | ✅ `bd-pedidos.ts:373` | ✅ | ✅ |
+| — | `aceite-loja` | loja | cliente aceita | ✅ `bd-pedidos.ts:373` | ✅ | ✅ |
 | T07 | *(não existe)* | cliente | aceite com entrega: IBAN | ❌ | ❌ | ❌ |
 | T08 | *(não existe)* | cliente | transferência recebida | ❌ | ❌ | ❌ |
 | T09 | `reagendado-cliente` | cliente | loja muda a data | ❌ ninguém | ❌ sem `levantamentoAnteriorEm` | ❌ |
@@ -417,7 +418,7 @@ que o modelo exige. Os textos estão em `src/lib/emails/textos.ts`, e a lista em
 | T10 | `expirado-cliente` | cliente | 48 h sem resposta | ✅ `bd-pedidos.ts:105` | ✅ | 🟡 só com visitas |
 | T11 | `cancelado-cliente` (`canceladoPor=cliente`) | cliente | loja regista o cancelamento pedido pelo cliente | ❌ | ✅ | ❌ |
 | T12 | `cancelado-cliente` (`canceladoPor=gerente`) | cliente | loja cancela | ❌ (`cancelarPedido` não grava email) | ✅ | ❌ |
-| T13 | `proposta-recusada-cliente` | cliente | cliente recusa | ✅ `bd-pedidos.ts:386` | ✅ | 🟡 envio |
+| T13 | `proposta-recusada-cliente` | cliente | cliente recusa | ✅ `bd-pedidos.ts:386` | ✅ | ✅ |
 | T14 | `proposta-expirada-cliente` | cliente | 24 h sem aceite | ✅ `bd-pedidos.ts:105` | ✅ | 🟡 só com visitas |
 | T15 | `cancelado-sem-pagamento-cliente` | cliente | prazo da transferência passou | ❌ | ✅ | ❌ |
 | T16 | `recusado-cliente` | cliente | loja recusa antes de confirmar | ❌ (não há operação) | ✅ | ❌ |
@@ -444,7 +445,13 @@ ninguém.
 - **Pronto quando:** comprar no site deixa um pedido na base com o estado certo, e duas linhas em `emails_por_enviar`. O ecrã de «Pedido enviado» diz «confirmada» ou «em análise» (o `estadoPedido` do resultado, `acoes.ts:33`).
 - **Teste:** os da fronteira, nas duas fontes, com as linhas da fila conferidas, como no #139.
 
-### 2. Os emails saem — Sobral
+### 2. Os emails saem — Sobral ✅ (PR do emissor, 26/11)
+
+Feito como se descreve abaixo, com uma diferença: a expiração não chama o
+`enviarDepois()` (corre à boleia das leituras, dentro da fronteira); o email dela
+sai no envio seguinte — uma compra limpa sempre antes de criar — ou na volta
+horária do ponto 3. O cancelar e o reagendar já pedem o envio, mas só gravam
+emails com o ponto 5.
 
 **Para o Sobral:**
 - `enviarDepois()` (`src/lib/emails/depois.ts:6`) chamado **depois** de cada escrita que grava emails: compra, responder, aceitar, recusar, cancelar, reagendar e expirar.
