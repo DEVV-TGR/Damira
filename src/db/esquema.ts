@@ -411,6 +411,24 @@ export const pedidos = pgTable(
     expiraEm: instante("expira_em"),
     /** Quando o cliente aceitou a resposta da casa, pelo link (`pedidos.md` › O aceite do cliente). */
     aceiteEm: instante("aceite_em"),
+    /**
+     * A versão da proposta da casa (`pedidos.md` › O aceite do cliente): sobe a cada resposta com
+     * preço ou hora que o cliente ainda não viu. O link do email leva-a, assinada pelo servidor; uma
+     * resposta revista sobe a versão, e o link anterior deixa de aceitar — «uma resposta alterada
+     * não pode ser aceite através de uma versão anterior». `0` é «nunca houve proposta».
+     *
+     * Guarda-se a versão e não a credencial: a credencial é uma assinatura (HMAC) da referência e
+     * da versão, refeita no servidor para a comparar. Sem segredo nenhum na base de dados, uma
+     * cópia dela não deixa aceitar nada.
+     */
+    propostaVersao: integer("proposta_versao").notNull().default(0),
+    /** Quando a casa fez a última proposta. */
+    propostaEm: instante("proposta_em"),
+    /**
+     * A hora que o cliente tinha pedido, quando a proposta a mudou: é o «em vez das 10h30» do email
+     * e da página do aceite. `NULL` quando a proposta não mexeu na hora.
+     */
+    levantamentoAnteriorEm: instante("levantamento_anterior_em"),
     /** `sem-resposta-da-casa` ou `sem-pagamento`; só num `expirado`, e sempre nele. */
     causaExpiracao: text("causa_expiracao"),
     impressoEm: instante("impresso_em"),
@@ -509,25 +527,38 @@ export const pedidos = pgTable(
         and (${t.confirmadoEm} is not null or not (${t.estado} = 'confirmado'
           or (${t.estado} = 'entregue' and ${t.modoPagamento} not in (${umDe(MODOS_ONLINE)}))))`,
     ),
+    /* Um `a-aguardar-aceite` também: as 24 horas do cliente para aceitar (decidido a 25/11), que
+       a proposta grava no mesmo `expira_em` — a resposta da casa acaba com as 48 horas dela. */
     /* Um `por-confirmar` sabe até quando espera — é por ele que expira — e o
        prazo é sempre depois de nascer. Só existe fora do Stripe, que tem o seu
        (os 31 minutos da sessão, contados do `criado_em`). */
     check(
       "pedidos_expira_em",
-      sql`(${t.estado} <> 'por-confirmar' or ${t.expiraEm} is not null)
+      sql`(${t.estado} not in ('por-confirmar', 'a-aguardar-aceite') or ${t.expiraEm} is not null)
         and (${t.expiraEm} is null
           or (${t.expiraEm} > ${t.criadoEm} and ${t.modoPagamento} not in (${umDe(MODOS_ONLINE)})))`,
     ),
     /* Aceitar é o que confirma: quem tem `aceite_em` tem `confirmado_em`. */
     check("pedidos_aceite_em", sql`${t.aceiteEm} is null or ${t.confirmadoEm} is not null`),
-    /* Um expirado diz porquê, e só ele: a casa não respondeu (que só acontece a
-       quem tinha prazo), ou o Stripe não recebeu (que só acontece com ele). */
+    /* Uma proposta tem versão e data, as duas ou nenhuma; quem espera o aceite tem uma; e só uma
+       proposta muda a hora pedida. Um `a-aguardar-aceite` sem versão não tinha link que o aceitasse. */
+    check(
+      "pedidos_proposta",
+      sql`${t.propostaVersao} >= 0
+        and (${t.propostaVersao} = 0) = (${t.propostaEm} is null)
+        and (${t.estado} <> 'a-aguardar-aceite' or ${t.propostaVersao} > 0)
+        and (${t.levantamentoAnteriorEm} is null or ${t.propostaVersao} > 0)`,
+    ),
+    /* Um expirado diz porquê, e só ele: a casa não respondeu, ou o cliente não aceitou a proposta
+       (os dois só a quem tinha prazo, e o segundo só a quem teve proposta), ou o Stripe não recebeu
+       (que só acontece com ele). */
     check(
       "pedidos_causa_expiracao",
       sql`(${t.estado} = 'expirado') = (${t.causaExpiracao} is not null)
         and (${t.causaExpiracao} is null or (${t.causaExpiracao} in (${umDe(CAUSAS_EXPIRACAO)})
           and (${t.causaExpiracao} = 'sem-pagamento') = (${t.modoPagamento} in (${umDe(MODOS_ONLINE)}))
-          and (${t.causaExpiracao} <> 'sem-resposta-da-casa' or ${t.expiraEm} is not null)))`,
+          and (${t.causaExpiracao} not in ('sem-resposta-da-casa', 'sem-aceite-do-cliente') or ${t.expiraEm} is not null)
+          and (${t.causaExpiracao} <> 'sem-aceite-do-cliente' or ${t.propostaVersao} > 0)))`,
     ),
     check("pedidos_entregue_em", sql`${t.estado} <> 'entregue' or ${t.entregueEm} is not null`),
     /* Cancelado é final: quando, por quem, e o estado, os três ou nenhum. */
@@ -589,6 +620,11 @@ export const linhasPedido = pgTable(
     precoUnitarioCent: integer("preco_unitario_cent"),
     totalCent: integer("total_cent"),
     notas: text("notas"),
+    /**
+     * O preço foi fixado pela casa numa proposta, e não visto pelo cliente ao pedir: é o que a página
+     * do aceite e o email destacam («Bolo por medida: 45,00 €»).
+     */
+    precoDaProposta: boolean("preco_da_proposta").notNull().default(false),
   },
   (t) => [
     /* É também o índice `linhas_pedido(pedido_id)` do `robustez.md`. */
@@ -602,6 +638,8 @@ export const linhasPedido = pgTable(
       sql`(${t.precoUnitarioCent} is null) = (${t.totalCent} is null)
         and (${t.precoUnitarioCent} is null or (${t.precoUnitarioCent} >= 0 and ${t.totalCent} >= 0))`,
     ),
+    /* Um preço da proposta é um preço: a casa não propõe «sem preço». */
+    check("linhas_pedido_preco_da_proposta", sql`not ${t.precoDaProposta} or ${t.precoUnitarioCent} is not null`),
   ],
 );
 
