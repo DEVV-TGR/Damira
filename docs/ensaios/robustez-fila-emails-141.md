@@ -272,14 +272,18 @@ comandos locais. Não existia `_local/boas-praticas/` neste checkout.
 - ESLint do script: passou novamente após a correção.
 - Validação das cinco fotografias pelo `EsquemaPedido`: passou localmente.
 - Preview real: todos os asserts do ensaio e o `npm run build` passaram.
-- `git diff --check`: sem erros na preparação; conferir também no fecho.
+- `git diff --check`: passou no fecho, depois de remover uma linha vazia extra do relatório.
 
 O produto não foi alterado; não surgiu defeito de produto nestes cenários.
 Não se mexeu em esquema, compra, produção, automações nem configuração de
 segredos. Mantêm-se as limitações já documentadas no produto, incluindo a
 necessidade de tentativas automáticas dentro de 24 h antes de ligar a compra.
 
-Fecho: execução automática removida de `vercel.json`; o comando `build` do
-`package.json` continua `next build`. A confirmar o commit/Preview final sem
-ensaios e o estado final do checkout antes de fechar a conversa.
-
+Fecho: execução automática removida de `vercel.json` no commit
+`24b66002f443a295ad791054168ca368527b7042`; o comando `build` do
+`package.json` continua `next build`. Ambos os ficheiros ficaram iguais ao
+`origin/main`. A [Preview sem ensaio](https://vercel.com/dev-plus1/damira/5BUrohQnqA6VLkEx24ZUtuc1VxAe)
+ficou **Ready**, em 13 s, a 26/11 às 11:16 UTC. Esta última atualização só fecha
+o relatório. Checkout mantido em `codex/robustez-fila-emails`, publicado, sem
+alterações pendentes além dos ficheiros preexistentes não versionados de
+`docs/superpowers/`. Não se abriu PR nem se integrou a preparação no `main`.
