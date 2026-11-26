@@ -47,6 +47,7 @@ dela** — e o `pedidos.md`, que é o contrato de que todos dependem.
 |---|---|
 | **Quem faz o quê, e com quem estás a trabalhar** | `divisao.md` |
 | O pedido: estados, referência, dinheiro, cancelamento | `pedidos.md` |
+| **O fluxo do pedido de ponta a ponta, com os emails, e o que falta** | `fluxo-do-pedido.md` |
 | Calendário, tempos de produção, até quando se cancela | `horarios.md` |
 | Stripe: checkout, webhook, reembolsos | `pagamentos.md` |
 | Painel: entrada, papéis, sessões | `painel.md` |
