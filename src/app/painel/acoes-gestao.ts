@@ -10,6 +10,7 @@ import {
   editarProduto,
   guardarDefinicoes,
   guardarHorarios,
+  guardarOpcoesDoBolo,
   guardarOrdemCategorias,
   listarPedidos,
   pedidoDoPainel,
@@ -151,7 +152,18 @@ export async function gravarProduto(id: string | null, entrada: unknown) {
     revalidatePath("/", "layout");
     /* Depois de gravar, e nunca antes: um produto a apontar para uma foto apagada
        é pior do que uma foto esquecida no Blob. */
-    await apagarFotos(fotosQueSairam(antes?.fotos ?? [], resultado.valor.fotos));
+    const sairam = fotosQueSairam(antes?.fotos ?? [], resultado.valor.fotos);
+    if (sairam.length > 0) {
+      /* ⚠️ Uma foto que uma escolha ainda mostra fica no Blob (#88): a variância
+         pode estar ligada a outro produto, que continua a apontar para ela. Só
+         se lê o catálogo quando há fotos a apagar. */
+      const emUso = new Set(
+        (await dados.listarProdutos({ incluirArquivados: true })).flatMap((p) =>
+          p.variancias.flatMap((v) => v.escolhas.flatMap((e) => (e.foto ? [e.foto] : []))),
+        ),
+      );
+      await apagarFotos(sairam.filter((foto) => !emUso.has(foto)));
+    }
   }
   return resultado;
 }
@@ -172,6 +184,16 @@ export async function arquivar(id: string, arquivado: boolean) {
  */
 export async function gravarOrdemCategorias(categorias: string[]) {
   const resultado = await comSessao((ctx) => guardarOrdemCategorias({ categorias }, ctx));
+  if (resultado.ok) revalidatePath("/", "layout");
+  return resultado;
+}
+
+/**
+ * As opções do bolo personalizado. A página do bolo é estática: sem revalidar,
+ * o site mostrava as opções antigas até ao deploy seguinte.
+ */
+export async function gravarOpcoesDoBolo(opcoes: unknown) {
+  const resultado = await comSessao((ctx) => guardarOpcoesDoBolo(opcoes, ctx));
   if (resultado.ok) revalidatePath("/", "layout");
   return resultado;
 }

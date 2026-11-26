@@ -47,6 +47,7 @@ dela** — e o `pedidos.md`, que é o contrato de que todos dependem.
 |---|---|
 | **Quem faz o quê, e com quem estás a trabalhar** | `divisao.md` |
 | O pedido: estados, referência, dinheiro, cancelamento | `pedidos.md` |
+| **O fluxo do pedido de ponta a ponta, com os emails, e o que falta** | `fluxo-do-pedido.md` |
 | Calendário, tempos de produção, até quando se cancela | `horarios.md` |
 | Stripe: checkout, webhook, reembolsos | `pagamentos.md` |
 | Painel: entrada, papéis, sessões | `painel.md` |
@@ -135,7 +136,8 @@ o calendário de levantamento (sempre embutido, com dia e hora — sem os dados 
 cozinha, as horas são as da loja e a escolhida é **pretendida**, a confirmar; ⚠️
 **com `DATABASE_URL` não**: a fonte recusa uma hora sem tempos, e o checkout diz
 que não se marca online e dá o telefone) e
-os dados da pessoa. O botão do carrinho não aparece nesta página. O formulário que vivia no
+os dados da pessoa. O botão do carrinho não aparece nesta página. «Alterar o pedido» abre o cartão
+do cesto por cima da compra para editar as quantidades e voltar ao formulário. O formulário que vivia no
 fundo das encomendas saiu.
 
 **Com `DATABASE_URL`, a ação cria o pedido na fonte** (`registar.ts` →
@@ -153,7 +155,8 @@ os dados (os opcionais vazios escrevem-se «—»). Desde 25/11 esse email é o
 `src/lib/emails/compra.ts`) com a marca **`soPorEmail`**: sem ela, o modelo
 diria «responde-se no painel» e «o talão sai no balcão», que só são verdade com
 o pedido guardado. Sem hora de levantamento, ou se o modelo falhar, vai o texto
-simples de antes. O Stripe continua adiado.
+simples de antes. O Stripe continua adiado; com ele, o botão do fim passa a «Pagar» e o
+resto da página fica.
 
 **Uma tentativa sem resposta guarda-se temporariamente no `sessionStorage` do
 separador**, com a chave, os dados enviados e o cesto daquele envio. Recarregar
@@ -191,6 +194,8 @@ que as torna falsas:
   base de dados.
 - **«A conta de cliente», regras 2 e 3** — no PR que liga as chaves e no que
   passa o histórico para o servidor.
+- ~~«Os artigos da carta não têm página»~~ — reescrita no PR da #88 que lhes
+  deu página (decidido a 26/11).
 - ~~O `vegan: true` só na carta vegan e os mínimos por categoria em
   `encomendavel.ts`~~ — reescritas no PR da edição de produtos (#40, no #66).
 
@@ -264,6 +269,10 @@ papel:
 | `ementa.json` | 95 artigos com preço, em 4 cartas | pede-se ao balcão e leva-se |
 | `encomendas.json` | kits de festa, kits de bolo, boxes | tem data, antecedência e orçamento |
 | `bolos.json` | catálogo de massas, recheios, coberturas | **não tem preços nenhuns** |
+
+⚠️ O configurador do bolo personalizado **não lê o `bolos.json`**: lê o
+`bolos-personalizados.json` (o PDF da casa de novembro de 2026, #51), pela
+fronteira. O `bolos.json` ficou para os textos da página inicial.
 | `casa.json` | morada, telefone, horário, entregas | é um objeto, não uma lista |
 
 Há ainda `marca.json` (nome e redes, fonte única do cabeçalho e do rodapé) e
@@ -332,66 +341,50 @@ carta vegan é vegan —, que continua a ser verdade no JSON. O que **não** mud
 deduzi-lo ("não tem carne, logo é vegan") era pôr o site a garantir uma coisa
 que a casa não garantiu.
 
-## Fotografia — o buraco fechou-se
+## Fotografia
 
-**Havia aqui um aviso a dizer que este site não tinha fotografia nenhuma.**
-Deixou de ser verdade em duas etapas, e o aviso ficou para trás nas duas: vale
-a pena lembrar que um ficheiro de instruções desactualizado engana com mais
-autoridade do que um ficheiro vazio.
+As imagens da página inicial vêm da Damira. A remessa «Conteúdo Site», de
+26/11/2026, trouxe duas fotografias de capa, novas imagens de pão e de
+decoração de um bolo e o álbum da vitrine. A capa alterna entre a fachada e
+a montra a cada cinco segundos. Com a preferência de movimento reduzido,
+mostra a fachada. As imagens de Natal vêm juntas no fim da vitrine, depois de
+«Ver mais». A galeria abre com seis fotografias (#80).
 
-Hoje há **vinte e uma fotografias**, todas do álbum publicado pela própria casa e
-todas com a marca de água dela — que é o critério de origem, e não a
-composição:
+As fotografias são servidas em WebP. As da vitrine ficam em
+`public/vitrine/`, as dos capítulos em `public/fotos/`. Os originais não são
+versionados e pedem-se ao DevPlus. A fotografia antiga `public/vitrine/09.webp`
+mostra dois clientes reconhecíveis e saiu da galeria quando entrou a nova remessa.
 
-| Onde | Quantas | O que é |
-|---|---|---|
-| `public/fotos/` | 5 | a fachada, a vitrine, as mãos, os bombons, o prato |
-| `public/vitrine/` | 16 | o álbum de gestão, importado inteiro |
-
-Os originais vivem em `originais/fotos`, `originais/heroi` e
-`originais/fotos-gestao`, mas ⚠️ **`originais/` não é versionado** (`.gitignore`):
-um clone novo não os tem, e pedem-se ao DevPlus. Importam-se assim:
-
-```bash
-npm run fotos -- originais/fotos-gestao public/vitrine   # 1600 px, WebP
-```
-
-⚠️ **Continua a valer a proibição de banco de imagens.** O que mudou foi haver
-material da casa; o que não mudou foi a regra. Um croissant genérico ao lado do
-preço de um croissant continua a ser uma promessa que a casa não fez.
-
-⚠️ **A `vitrine/09.webp` mostra dois clientes de frente e reconhecíveis.**
-Levantei o consentimento e o cliente decidiu usá-la. Fica escrito porque é o
-tipo de coisa que ninguém volta a perguntar depois de estar publicada — e
-porque se a autorização não existir, é aquele ficheiro que sai.
+**Não usar fotografias de banco de imagens.** Uma fotografia do produto, ao
+lado de um preço, é uma promessa sobre o que a casa serve.
 
 O campo `artigo.foto` do `ementa.json` continua a `null` nos 95: há fotografia
 da casa, não há fotografia **por artigo**.
 
 ## A marca
 
-O logótipo e o motivo das ondas saem do PDF do menu de almoço:
+O cabeçalho usa `public/marca/damira-horizontal.png` e o rodapé usa
+`public/marca/damira-branco.png`, entregues pela Damira em novembro de 2026.
+
+Os ficheiros usados pela `Marca` nos restantes sítios e o motivo das ondas
+saem do PDF do menu de almoço:
 
 ```bash
 npm run marca    # public/marca/{logotipo,logotipo-assinado,ondas}.png
 npm run icons    # favicon + ícones, a partir de public/marca/ondas.png
 ```
 
-⚠️ **São PNG rasterizados a 300 dpi, não vetores.** Chegam para cabeçalho,
-rodapé e ícones; não escalam para lá disso. Quando aparecer o vetor, trocar em
-`src/components/Marca.tsx`, correr `npm run icons` **e** `npm run marca:email`, ao
-mesmo tempo — são três sítios e esquecer um deixa o site com duas marcas. O
-terceiro é o logótipo dos emails (`src/lib/emails/logotipo.ts`): uma cópia a
-papel, já pintada, porque um email não tem CSS que pinte uma máscara, e que vai
-dentro do próprio email como anexo embutido (`cid:`).
+Os PNG extraídos do menu são rasterizados a 300 dpi. Uma atualização geral
+da marca revê os PNG do cabeçalho e do rodapé, o componente
+`src/components/Marca.tsx`, os ícones (`npm run icons`) e o logótipo que os
+emails levam embutido (`npm run marca:email`, em `src/lib/emails/logotipo.ts`).
 
-São máscaras de alfa e não imagens: guardam só a forma, e a cor vem do CSS. É o
-que permite o mesmo ficheiro servir o logótipo a tijolo sobre papel e a papel
-sobre tinta.
+Os PNG extraídos para a `Marca` são máscaras de alfa. Guardam a forma e usam
+a cor do texto em CSS.
 
-**As duas fontes são aproximações.** A Bricolage Grotesque e a Instrument Sans
-aproximam o impresso; as verdadeiras não se identificam a partir de um PDF
-achatado. Trocam-se em `src/app/[locale]/layout.tsx`.
+**O site público usa Caros** nos títulos e no corpo, via `next/font/local` em
+`src/app/[locale]/layout.tsx`. O painel usa Bricolage Grotesque e Instrument
+Sans, declaradas em `src/lib/fontes.ts`.
 
 ## Cores e contraste
 
@@ -444,11 +437,17 @@ de apresentação, sem dados, estão em `src/lib/vista.ts`.
 
 ⚠️ **As fotografias dos produtos estão vazias em todos, e não se preenchem com o
 que há.**
-Existem vinte e uma fotografias da casa, e **nenhuma é deste kit ou desta box**.
+As fotografias da página inicial mostram a casa, a montra e a pastelaria.
 Numa página de produto qualquer imagem se lê como sendo o produto: pôr ali a
 montra vista da rua é anunciar uma coisa e entregar outra, e é a mesma regra que
 proíbe banco de imagens no resto do site. O `FotoProduto` guarda o espaço e diz
 que a fotografia está por chegar.
+
+**A gerente pode pôr várias por produto**, e a página mostra-as numa galeria
+(`GaleriaProduto`). Cada escolha de uma variância pode ter a sua (o bolo de
+morango, o de chocolate): ao escolhê-la, a galeria mostra-a. ⚠️ Uma foto que
+uma escolha ainda mostra **não se apaga do Blob** quando sai do produto — a
+variância pode estar ligada a outro (`gravarProduto`).
 
 ⚠️ **A `/ementa` saiu a 12/11 (#123)**, com as 95 páginas `/ementa/<id>` e o
 painel que levava lá. O site fica com a página inicial e as encomendas. Saíram
@@ -457,18 +456,30 @@ rodapé, a folha de rosto e o capítulo do vegan, que agora levam a
 `/encomendas#da-ementa`. ⚠️ **Antes de pôr um link para `/ementa` em lado
 nenhum, a página tem de voltar a existir**: um link esquecido é um 404 no menu.
 
-**Os artigos da carta não têm página.** O cartão (`CartaoArtigo`) é tudo:
-nome, preço e o botão compacto, **com a quantidade mínima no cabeçalho da
-categoria**. Um artigo com variantes (o chocolate do Dubai, quatro pesos) tem
-**um botão por variante** no próprio cartão — antes mandava para a página do
-artigo, onde estavam os quatro. O que não se encomenda (`aVendaOnline: false`:
-as bebidas, os pratos, a pausa) não chega à `/encomendas` e não ganha botão em
-lado nenhum: um galão com um botão de encomendar era prometer um serviço que a
-casa não tem.
+**Desde 26/11 os artigos da carta que se encomendam também têm página**
+(`/encomendas/<id>`, `temPagina` em `vista.ts`): é lá que se escolhe o sabor, o
+que se tira e os extras (#88), e que se veem as fotografias todas. O cartão
+(`CartaoArtigo`) continua com nome, preço e o botão compacto, **com a quantidade
+mínima no cabeçalho da categoria**, e o nome leva à página. ⚠️ **O «+» só junta
+logo num artigo sem nada para escolher**; num com variâncias, opções ou extras,
+leva à página — uma janela por cima do cartão foi tentada e desfeita no mesmo
+dia: não cabiam lá as fotografias. Um artigo com variantes (o chocolate do
+Dubai, quatro pesos) tem **um botão por variante** no cartão. ⚠️ **A linha do
+cesto tem o mesmo id no cartão e na página** (`ementa:<id>`): com ids
+diferentes, o mesmo artigo juntado nos dois sítios ficava em duas linhas. O que
+não se encomenda (`aVendaOnline: false`: as bebidas, os pratos, a pausa) não
+chega à `/encomendas`, não tem página e não ganha botão em lado nenhum: um galão
+com um botão de encomendar era prometer um serviço que a casa não tem.
 
 ⚠️ **O bolo por medida não vem do JSON.** Não é um produto de catálogo, é uma
 conversa: não tem preço e o que se escolhe são massas e recheios. Entra na lista
 para ter página e cartão, com `preco: null`, que é *sob orçamento* e não zero.
+Desde 26/11 (#51) chama-se **«Bolo personalizado»** no site (o id continua
+`bolo-por-medida`, que está nos cestos) e a página é o **configurador**
+(`ConfiguradorBolo`): as opções vêm de `bolos-personalizados.json` — o PDF da
+casa — pela fronteira (`opcoesDoBolo`), e as regras de combinação vivem em
+`src/lib/bolo-personalizado.ts`, as mesmas no browser e no servidor. O
+`bolos.json` antigo fica só para os textos da página inicial.
 
 ## A conta de cliente, e as três regras que a seguram
 
@@ -559,8 +570,7 @@ primeiras sete vieram do Santo Burga e continuam a valer — o motor é o mesmo.
    um `id` a uma categoria, ou em que duas categorias puderem ter o mesmo nome.
 9. **`background: currentColor` resolve para a cor do *próprio* elemento.** Uma
    pastilha com `background: currentColor` e `color: transparent` fica
-   transparente, não fica da cor herdada. Declarar as duas cores. Ver o fólio em
-   `cartaz.css`.
+   transparente, não fica da cor herdada. Declarar as duas cores.
 10. **O enchimento à direita de um contentor flex não entra no `scrollWidth`.**
     Quem conta com ele para dar curso a um carril fica com o último item
     cortado. Usar margem no último filho. Ver `.festa__carril`.
@@ -688,3 +698,13 @@ actualizar uma, regenerar o inventário:
 ```bash
 npm run skills:lock
 ```
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

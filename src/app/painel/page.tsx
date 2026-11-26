@@ -8,6 +8,7 @@ import {
   configuracaoDoPainel,
   definicoesLoja,
   listarPedidos,
+  opcoesDoBolo,
   ordemDaEmenta,
   pedidoDoPainel,
   precisaDeAtencao,
@@ -124,6 +125,7 @@ export default async function Painel({ searchParams }: { searchParams: Promise<{
                      o painel não passa pelo `next-intl`, e isto vai para o
                      browser. */
                   nomesCategorias: mensagensPt.ementa.categorias,
+                  opcoesBolo: await opcoesDoBolo(),
                 }
               : null
           }

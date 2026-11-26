@@ -460,10 +460,60 @@ variante e as escolhas em texto, a unidade e o preço unitário **tal como estav
 no momento do pedido**, mais a quantidade e as notas do cliente. Uma linha sem
 preço guarda o preço `null` até a gerente o fixar, e a partir daí guarda esse.
 
-**As escolhas** (sabores, recheios) confirmam-se no servidor: um produto com
-escolhas leva **exatamente uma** por linha, e das dele; um sem escolhas, nenhuma
-(`escolha-invalida`). Para misturar sabores, uma linha por sabor, e cada uma
-conta o seu mínimo — 12 de alheira e 12 de legumes (decidido a 05/10).
+**As escolhas** guardam-se em texto, uma por linha («Sabor: Alheira», «SEM
+fiambre», «+ 1 × Molho», «10 × Cão quente — Americana»): é o que o painel, o
+email e o talão escrevem. Confirmam-se no servidor (› Personalização, abaixo).
+Para misturar sabores, uma linha por sabor, e cada uma conta o seu mínimo — 12
+de alheira e 12 de legumes (decidido a 05/10).
+
+### Personalização (#88)
+
+Decidido a 25/11 (`painel-gerente.md` › Simples e compostos), feito a 26/11
+(`personalizar` e `cotarLinhas`, em `regras.ts`). O browser manda só ids e
+quantidades (regra 1) — as `variancias`, `opcoes` e `extras` da linha do cesto
+—, e o servidor calcula o **preço da unidade**:
+
+- **simples** = preço do tamanho escolhido (ou o preço do produto, se não tiver
+  tamanhos) + variâncias escolhidas + Σ (extra × quantidade). Tirar não
+  desconta;
+- **composto** = preço do grupo escolhido. O que vem dentro não soma.
+
+⚠️ **O bolo personalizado fica de fora** (26/11): manda o `bolo` e nenhuma
+peça da #88; a linha que as traga é recusada (`bolo-invalido`), e o preço dele é
+sempre por saber (ver «O bolo personalizado», em › O que o pedido guarda).
+
+Tudo × quantidade da linha (unidades ou quilos), em cêntimos. E recusa:
+
+- o que não existe no produto ou está desligado;
+- num simples, uma variância sem escolha ou com mais de uma, ou um extra acima
+  do máximo que a gerente definiu;
+- num composto, um grupo que não seja dele, ou uma variância em falta num
+  simples lá dentro.
+
+**Não valida mais nada**: o conteúdo é da gerente. Um preço sob orçamento
+(tamanho ou grupo) põe a linha sob orçamento, com o resto escrito ao lado. A
+linha guarda **uma cópia** do que foi escolhido — variâncias, opções, extras,
+e no composto o nome do grupo e os produtos que levava, com as quantidades —, e
+a regra de baixo vale para ela. A cópia vai em dois sítios da linha: em texto nas
+`escolhas` (o que se lê) e inteira na `personalizacao` (`EsquemaPersonalizacao`,
+coluna `jsonb`), com os preços de cada peça; `null` nas linhas de antes.
+
+⚠️ **Em aberto — o mínimo por linha.** A regra de cima (05/10) faz cada linha
+contar o seu mínimo. Com opções e extras, «6 com queijo e 6 sem» são duas linhas
+de 6, e as duas são recusadas por um mínimo de 12. Ou continua por linha (cada
+lote de 12 sai igual da cozinha), ou passa a contar pela soma do produto no
+pedido. *Decide:* Gonçalo, com a casa.
+
+**O bolo personalizado** (#51) vai na linha como **`bolo`**: os ids do tamanho,
+massa, cobertura, recheio, «à volta», topping e toppings extra, as fotos e a
+autorização — nunca nomes nem preços, e nenhuma peça da #88. O servidor confere-o contra as opções da casa
+(`validarBolo`, em `src/lib/bolo-personalizado.ts`) e recusa a linha com
+`bolo-invalido` se a combinação não existir, se uma opção estiver desligada, se
+faltar a foto para imprimir (ou vier sem o topping que a pede) ou a autorização,
+ou se os toppings extra passarem do máximo. Nenhum outro produto traz `bolo`. A
+linha guardada leva as escolhas em texto («Massa: Red Velvet», uma por escolha,
+em `escolhas`) e as fotos na **`personalizacao`** (`bolo.fotos`), com a de
+imprimir à parte das de referência — o mesmo `jsonb` da #88, sem migração.
 
 ⚠️ **Nunca se recalcula um pedido antigo a partir do produto atual.** A gerente
 muda preços e nomes quando quer; um pedido de ontem tem de continuar a dizer o

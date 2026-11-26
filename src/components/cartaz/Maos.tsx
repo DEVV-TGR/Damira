@@ -10,8 +10,7 @@ import { useTranslations } from "next-intl";
  * escala à frente — se este capítulo tentasse competir com o pão, tinha dois
  * picos, e uma página com dois picos não tem nenhum.
  *
- * É a única fotografia das cinco com uma pessoa dentro, e é a mais difícil de
- * substituir por outra qualquer: mostra que aquilo é feito ali.
+ * A fotografia mostra a decoração do bolo na bancada da casa.
  *
  * A coluna é invertida em relação à do capítulo I — lá a imagem estava à
  * direita, aqui está à esquerda. O `taste.md` proíbe mais de dois ziguezagues
@@ -48,10 +47,10 @@ export function Maos() {
 
         <figure className="cap__estampa" data-sc-reveal="left" data-sc-reveal-at="0.05 0.5">
           <Image
-            src="/fotos/02.webp"
+            src="/fotos/decoracao-bolo.webp"
             alt={t("legenda")}
-            width={1400}
-            height={875}
+            width={900}
+            height={1600}
             sizes="(max-width: 60rem) 100vw, 42rem"
           />
           <figcaption>{t("legenda")}</figcaption>

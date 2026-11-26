@@ -5,6 +5,7 @@ import {
   EsquemaEntradaProduto,
   EsquemaFiltroPedidos,
   EsquemaHorarios,
+  EsquemaOpcoesBolo,
   EsquemaOrdemCategorias,
   EsquemaProduto,
   EsquemaResposta,
@@ -13,13 +14,14 @@ import {
   type ConfiguracaoDaCasa,
   type DefinicoesLoja,
   type FontePainel,
+  type OpcoesBolo,
   type OrdemEmenta,
   type Pedido,
   type Produto,
   type ResultadoPainel,
 } from "./tipos";
 import {
-  comIds,
+  comPecasPartilhadas,
   emId,
   estadoAntesDeEntregue,
   invalido,
@@ -30,6 +32,7 @@ import {
   planearResposta,
   podeCancelar,
   podeResponder,
+  prepararProduto,
   REAGENDAVEIS,
 } from "./regras";
 
@@ -61,6 +64,8 @@ export type EstadoJson = {
   porReferencia: Map<string, string>;
   /** Sobe a cada pedido criado ou alterado (`versaoPedidos`). */
   versao: number;
+  /** As opções do bolo personalizado, como a gerente as deixou. */
+  opcoesBolo: OpcoesBolo;
 };
 
 /* «Márcia», «marcia» e «MARCIA» são a mesma pessoa ao telefone. */
@@ -122,6 +127,16 @@ export function criarPainelJson(
     campos: ["categoria"],
   };
 
+  /* As variâncias e os extras partilhados mudam em todos os que os têm: na base
+     de dados é a mesma linha; aqui são cópias, e atualizam-se à mão. */
+  const partilhar = (gravado: Produto) => {
+    for (const outro of estado.porId.values()) {
+      if (outro.id === gravado.id) continue;
+      const mudado = comPecasPartilhadas(outro, gravado);
+      if (mudado) estado.porId.set(outro.id, mudado);
+    }
+  };
+
   return {
     /* Nos JSON não há nada gravado: a configuração é a do estado em memória
        (com os valores de exemplo dentro, no modo de teste sem base de dados —
@@ -138,16 +153,19 @@ export function criarPainelJson(
       const lido = EsquemaEntradaProduto.safeParse(entrada);
       if (!lido.success) return invalido(lido.error);
       if (foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
+      const preparado = prepararProduto(lido.data, [...estado.porId.values()], null);
+      if (!preparado.ok) return preparado.resultado;
       const id = livre(emId(lido.data.nome.pt) || "produto", (candidato) => estado.porId.has(candidato));
       const produto = EsquemaProduto.parse({
         ...lido.data,
         id,
-        variantes: comIds(lido.data.variantes),
+        ...preparado.campos,
         arquivado: false,
         foraDeVenda: false,
         esgotadoNoDia: null,
       });
       estado.porId.set(id, produto);
+      partilhar(produto);
       return { ok: true, valor: produto };
     },
 
@@ -157,14 +175,11 @@ export function criarPainelJson(
       const lido = EsquemaEntradaProduto.safeParse(entrada);
       if (!lido.success) return invalido(lido.error);
       if (foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
-      /* Um id de variante que o produto não tem não se aceita: era o browser a
-         inventar ids, e são eles que os cestos guardam. Uma variante que falte
-         na entrada sai — um cesto que a tinha passa a «variante desconhecida». */
-      const existentes = new Set(atual.variantes.map((v) => v.id));
-      if (lido.data.variantes.some((v) => v.id !== undefined && !existentes.has(v.id))) {
-        return { ok: false, erro: "dados-invalidos", campos: ["variantes"] };
-      }
-      return alterar(id, { ...lido.data, variantes: comIds(lido.data.variantes) });
+      const preparado = prepararProduto(lido.data, [...estado.porId.values()], atual);
+      if (!preparado.ok) return preparado.resultado;
+      const resultado = alterar(id, { ...lido.data, ...preparado.campos });
+      if (resultado.ok) partilhar(resultado.valor);
+      return resultado;
     },
 
     async arquivarProduto(id, arquivado) {
@@ -191,6 +206,15 @@ export function criarPainelJson(
       if (!lido.success) return invalido(lido.error);
       estado.definicoes = { ...estado.definicoes, ...lido.data };
       return { ok: true, valor: estado.definicoes };
+    },
+
+    async guardarOpcoesDoBolo(entrada) {
+      const lido = EsquemaOpcoesBolo.safeParse(entrada);
+      if (!lido.success) return invalido(lido.error);
+      /* Um objeto novo: quem leu as opções antes (um configurador aberto) fica
+         com as que leu, e o servidor confere o bolo contra as de agora. */
+      estado.opcoesBolo = lido.data;
+      return { ok: true, valor: estado.opcoesBolo };
     },
 
     async guardarOrdemCategorias(entrada) {

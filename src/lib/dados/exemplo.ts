@@ -6,7 +6,9 @@ import type { OpcoesDaFonteBd } from "./bd";
 import { fonteDaNeon } from "./bd-neon";
 import { CATALOGO_JSON, CONFIGURACAO_JSON, criarFonteJson, criarFonteJsonComEstado, type OpcoesFonteJson } from "./json";
 import { diaDeLisboa } from "@/lib/painel";
-import type { ConfiguracaoDaCasa, FonteDeDados, Pedido, Produto } from "./tipos";
+import type { ConfiguracaoDaCasa, EscolhaBolo, FonteDeDados, Pedido, Produto } from "./tipos";
+import { OPCOES_BOLO } from "@/data/bolos-personalizados";
+import { linhasDoBolo, ROTULOS_PT } from "@/lib/bolo-personalizado";
 
 /**
  * # ⚠️ Valores de exemplo — **não são da casa**
@@ -315,6 +317,7 @@ const linhaDoPedido = (
     nome: produto.nome.pt,
     variante: variante.rotulo?.pt ?? null,
     escolhas: [],
+    personalizacao: null,
     unidade: produto.unidade,
     quantidade: qtd,
     precoUnitarioCent: preco,
@@ -503,6 +506,87 @@ export function pedidosDoPainelDeExemplo(
       causaExpiracao: null,
     });
   });
+
+  /* O bolo personalizado (#51): à espera da casa, sem preço e sem talão, com as
+     duas fotos em campos separados — é para isto que o painel tem de as mostrar.
+     Com uma dúzia de natas ao lado, para se ver o total da parte conhecida e o
+     bolo «sob orçamento». As fotos são desenhos gerados (`public/exemplo/`):
+     nunca uma foto de banco de imagens, nem a cara de ninguém. */
+  const medida = catalogo.find((p) => p.familia === "medida" && !p.arquivado);
+  if (medida) {
+    const criadoEm = new Date(agora.getTime() - 3 * 60 * 60_000);
+    const escolha: EscolhaBolo = {
+      tamanhoId: null,
+      massaId: "red-velvet",
+      coberturaId: "butter-cream",
+      recheioId: "cream-cheese",
+      aVoltaId: "migalhas-red-velvet",
+      toppingId: "foto-em-folha-de-hostia",
+      toppingsExtra: [],
+      fotosReferencia: [],
+      fotoImprimir: null,
+      autorizaFoto: true,
+    };
+    const natas = linhaDoPedido(carta);
+    const nome = CLIENTES[10];
+    pedidos.push({
+      id: `exemplo-${hoje}-bolo`,
+      referencia: referenciaUnica(`${hoje} bolo`, criadoEm, (r) => referencias.has(r)),
+      estado: "por-confirmar",
+      criadoEm,
+      levantamentoEm: instante(dataEm(daquiA4), "16:00"),
+      cliente: { nome, email: paraEmail(nome), telefone: "+351910001010", nif: null, contaId: null },
+      linhas: [
+        {
+          produtoId: medida.id,
+          varianteId: medida.variantes[0].id,
+          nome: medida.nome.pt,
+          variante: null,
+          escolhas: linhasDoBolo(OPCOES_BOLO, escolha, ROTULOS_PT),
+          unidade: "un",
+          quantidade: 1,
+          precoUnitarioCent: null,
+          totalCent: null,
+          notas: "Mensagem: Parabéns, Rita! 7 anos",
+          precoDaProposta: false,
+          personalizacao: {
+            variancias: [],
+            opcoes: [],
+            extras: [],
+            leva: [],
+            bolo: {
+              fotos: {
+                referencia: ["/exemplo/bolo-referencia-1.webp", "/exemplo/bolo-referencia-2.webp"],
+                imprimir: "/exemplo/bolo-imprimir.webp",
+              },
+            },
+          },
+        },
+        natas,
+      ],
+      observacoes: "Pode ser com velas? Obrigada!",
+      totalCent: natas.totalCent,
+      modoPagamento: "na-loja",
+      pagoOnlineCent: 0,
+      reembolsadoCent: 0,
+      chegouTarde: false,
+      pagoEm: null,
+      impressoEm: null,
+      entregueEm: null,
+      canceladoEm: null,
+      canceladoPor: null,
+      reembolsos: [],
+      avisosTratados: [],
+      reagendadoEm: null,
+      confirmadoEm: null,
+      expiraEm: new Date(criadoEm.getTime() + 48 * 60 * 60_000),
+      aceiteEm: null,
+      causaExpiracao: null,
+      propostaVersao: 0,
+      propostaEm: null,
+      levantamentoAnteriorEm: null,
+    });
+  }
   return pedidos;
 }
 

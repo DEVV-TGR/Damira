@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cestoEmTexto, estimativa } from "./cesto";
+import { BOLO_DE_TESTE } from "./dados/fontes-de-teste";
 import { criarFonteJson } from "./dados/json";
 import { itensDoServidor } from "./pedido-servidor";
 import { formatarCent } from "./preco";
@@ -12,7 +13,7 @@ const CESTO = [
   { produtoId: "bolo-de-cenoura", varianteId: "unica", quantidade: 18, notas: null },
   { produtoId: "vegan-tarte-de-nata", varianteId: "unica", quantidade: 1.5, notas: null },
   { produtoId: "chocolate-do-dubai", varianteId: "150g", quantidade: 2, notas: null },
-  { produtoId: "bolo-por-medida", varianteId: "unica", quantidade: 1, notas: "Mensagem: Parabéns, Ana" },
+  { produtoId: "bolo-por-medida", varianteId: "unica", quantidade: 1, notas: "Mensagem: Parabéns, Ana", bolo: BOLO_DE_TESTE },
 ];
 
 describe("o cesto refeito no servidor", () => {
@@ -24,7 +25,7 @@ describe("o cesto refeito no servidor", () => {
       ["Bolo de Cenoura", null, 300],
       ["Tarte de Nata", null, 1700],
       ["Chocolate do Dubai", "150g", 1075],
-      ["Bolo por medida", null, null],
+      ["Bolo personalizado", null, null],
     ]);
     expect(estimativa(resultado.itens)).toEqual({ somaCent: 33500 + 5400 + 2550 + 2150, semPreco: 1 });
   });
@@ -39,7 +40,13 @@ describe("o cesto refeito no servidor", () => {
         `- 18× Bolo de Cenoura — ${eur(5400)}`,
         `- 1,5 kg Tarte de Nata — ${eur(2550)}`,
         `- 2× Chocolate do Dubai (150g) — ${eur(2150)}`,
-        `- 1× Bolo por medida — Sob orçamento`,
+        `- 1× Bolo personalizado — Sob orçamento`,
+        /* O bolo, escrito pelo servidor com os nomes da casa, antes da mensagem. */
+        `    Massa: Red Velvet`,
+        `    Cobertura: Butter Cream`,
+        `    Recheio: Cream Cheese`,
+        `    À volta: Migalhas Red Velvet`,
+        `    Topping: Frutos Vermelhos a Decorar`,
         `    Mensagem: Parabéns, Ana`,
         ``,
         `A partir de: ${eur(43600)}`,

@@ -1,0 +1,1203 @@
+{
+  "tamanhos": [],
+  "massas": [
+    {
+      "id": "amendoa-vegan",
+      "nome": "Amêndoa - Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "baby-friendly-banana",
+      "nome": "Baby Friendly - Banana",
+      "ativa": true,
+      "coberturas": [
+        "outras"
+      ]
+    },
+    {
+      "id": "baby-friendly-cenoura",
+      "nome": "Baby Friendly - Cenoura",
+      "ativa": true,
+      "coberturas": [
+        "outras"
+      ]
+    },
+    {
+      "id": "baunilha-caseira-queque",
+      "nome": "Baunilha / Caseira / Queque",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "brigadeiro",
+      "nome": "Brigadeiro",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "brownie",
+      "nome": "Brownie",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "cake-de-noz",
+      "nome": "Cake de Noz",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "cenoura",
+      "nome": "Cenoura",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "cenoura-vegan",
+      "nome": "Cenoura - Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras"
+      ]
+    },
+    {
+      "id": "chocolate-vegan",
+      "nome": "Chocolate - Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras"
+      ]
+    },
+    {
+      "id": "folhada",
+      "nome": "Folhada",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "folhada-vegan",
+      "nome": "Folhada - Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras"
+      ]
+    },
+    {
+      "id": "laranja",
+      "nome": "Laranja",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "laranja-vegan",
+      "nome": "Laranja - Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras"
+      ]
+    },
+    {
+      "id": "limao",
+      "nome": "Limão",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "noz-vegan",
+      "nome": "Noz - Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "pao-de-lo",
+      "nome": "Pão-de-Ló",
+      "ativa": true,
+      "coberturas": [
+        "outras"
+      ]
+    },
+    {
+      "id": "pao-de-lo-vegan",
+      "nome": "Pão-de-Ló - Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras"
+      ]
+    },
+    {
+      "id": "pao-de-lo-de-chocolate",
+      "nome": "Pão-de-Ló de Chocolate",
+      "ativa": true,
+      "coberturas": [
+        "outras"
+      ]
+    },
+    {
+      "id": "pao-de-lo-de-noz",
+      "nome": "Pão-de-Ló de Noz",
+      "ativa": true,
+      "coberturas": [
+        "outras"
+      ]
+    },
+    {
+      "id": "red-velvet",
+      "nome": "Red Velvet",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    }
+  ],
+  "coberturas": [
+    {
+      "id": "outras",
+      "nome": "Outras",
+      "ativa": true
+    },
+    {
+      "id": "pasta-de-acucar",
+      "nome": "Pasta de Açúcar",
+      "ativa": true
+    },
+    {
+      "id": "butter-cream",
+      "nome": "Butter Cream",
+      "ativa": true
+    }
+  ],
+  "recheios": [
+    {
+      "id": "beijinho",
+      "nome": "Beijinho",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "brigadeiro-de-leite-nido",
+      "nome": "Brigadeiro de Leite Nido",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "brigadeiro-tradicional",
+      "nome": "Brigadeiro Tradicional",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "caramelo-salgado",
+      "nome": "Caramelo Salgado",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "caramelo-salgado-crocante",
+      "nome": "Caramelo Salgado Crocante",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "chocolate-crocante-tipo-ferrero",
+      "nome": "Chocolate Crocante tipo Ferrero",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "chocolate-crocante-tipo-ferrero-vegan",
+      "nome": "Chocolate Crocante tipo Ferrero - Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "chocolate-de-leite",
+      "nome": "Chocolate de Leite",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "compota-de-frutos-vermelhos",
+      "nome": "Compota de Frutos Vermelhos",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "compota-de-frutos-vermelhos-vegan",
+      "nome": "Compota de Frutos Vermelhos - Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "compota-de-frutos-vermelhos-sem-acucar",
+      "nome": "Compota de Frutos Vermelhos sem Açúcar",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "creme-pasteleiro",
+      "nome": "Creme Pasteleiro",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "cream-cheese",
+      "nome": "Cream Cheese",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "creme-crocante-de-frutos-vermelhos",
+      "nome": "Creme Crocante de Frutos Vermelhos",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "creme-d-ovos",
+      "nome": "Creme d'Ovos",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "creme-d-ovos-sem-ovo-vegan",
+      "nome": "Creme d'Ovos sem ovo - Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "creme-de-avela-tipo-kinder-bueno",
+      "nome": "Creme de Avelã tipo Kinder Bueno",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "creme-de-avela-tipo-kinder-bueno-vegan",
+      "nome": "Creme de Avelã tipo Kinder Bueno - Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "creme-de-lotus",
+      "nome": "Creme de Lotus",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "creme-de-lotus-vegan",
+      "nome": "Creme de Lotus - Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "creme-de-maracuja",
+      "nome": "Creme de Maracujá",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "creme-de-pistachio",
+      "nome": "Creme de Pistachio",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "creme-dubai",
+      "nome": "Creme Dubai",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "doce-de-leite",
+      "nome": "Doce de Leite",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "doce-de-leite-sem-leite-vegan",
+      "nome": "Doce de Leite sem Leite - Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "geleia-de-morango",
+      "nome": "Geleia de Morango",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "lemon-courd",
+      "nome": "Lemon Courd",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "morangos",
+      "nome": "Morangos",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "mousse-de-frutos-vermelhos",
+      "nome": "Mousse de Frutos Vermelhos",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "mousse-de-frutos-vermelhos-vegan",
+      "nome": "Mousse de Frutos Vermelhos - Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "mousse-de-maracuja-vegan",
+      "nome": "Mousse de Maracujá - Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "mousse-de-morango",
+      "nome": "Mousse de Morango",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "mousse-de-morango-vegan",
+      "nome": "Mousse de Morango - Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "mousse-de-chocolate",
+      "nome": "Mousse de Chocolate",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "mousse-de-chocolate-vegan",
+      "nome": "Mousse de Chocolate - Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "natas",
+      "nome": "Natas",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "natas-vegan",
+      "nome": "Natas - Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "natas-sem-acucar",
+      "nome": "Natas sem Açúcar",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "nutella",
+      "nome": "Nutella",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "nutella-vegan",
+      "nome": "Nutella - Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "raffaello",
+      "nome": "Raffaello",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "sem-recheio",
+      "nome": "Sem Recheio",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    }
+  ],
+  "aVolta": [
+    {
+      "id": "bolacha-lotus",
+      "nome": "Bolacha Lotus",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "coco-ralado",
+      "nome": "Côco Ralado",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "creme-de-ovo",
+      "nome": "Creme de Ovo",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "crocante-de-caju",
+      "nome": "Crocante de Caju",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "crocante-de-caju-vegan",
+      "nome": "Crocante de Caju - Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "kinder-bueno",
+      "nome": "Kinder Bueno",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "kinder-bueno-white",
+      "nome": "Kinder Bueno White",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "kit-kat",
+      "nome": "Kit Kat",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "marshmellow",
+      "nome": "Marshmellow",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "massa-folhada-desfeita",
+      "nome": "Massa Folhada (desfeita)",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "massa-folhada-desfeita-vegan",
+      "nome": "Massa Folhada (desfeita) - Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "migalhas-red-velvet",
+      "nome": "Migalhas Red Velvet",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "morangos",
+      "nome": "Morangos",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "morangos-e-profiteroles",
+      "nome": "Morangos e Profiteroles",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "natas",
+      "nome": "Natas",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "natas-vegan",
+      "nome": "Natas Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "pepitas-de-chocolate",
+      "nome": "Pepitas de chocolate",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "placas-de-chocolate",
+      "nome": "Placas de Chocolate",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "placas-de-chocolate-com-crocante",
+      "nome": "Placas de Chocolate com Crocante",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "placas-de-chocolate-com-crocante-vegan",
+      "nome": "Placas de Chocolate com Crocante Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "placas-de-chocolate-preto",
+      "nome": "Placas de Chocolate Preto",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "placas-de-chocolate-preto-vegan",
+      "nome": "Placas de Chocolate Preto Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "sem-nada-a-volta",
+      "nome": "Sem nada à volta",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "telha-de-amendoa",
+      "nome": "Telha de Amêndoa",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    }
+  ],
+  "toppings": [
+    {
+      "id": "acucar-em-po",
+      "nome": "Açúcar em Pó",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "brigadeiro-a-decorar",
+      "nome": "Brigadeiro a Decorar",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "coco-ralado",
+      "nome": "Côco Ralado",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "chocolate-a-derreter",
+      "nome": "Chocolate a Derreter",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "chocolate-a-escorrer",
+      "nome": "Chocolate a Escorrer",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "chocolates-variados-a-decorar",
+      "nome": "Chocolates Variados a Decorar",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "coberto-a-ananas",
+      "nome": "Coberto a Ananás",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "coberto-a-brigadeiros",
+      "nome": "Coberto a Brigadeiros",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "coberto-a-morangos",
+      "nome": "Coberto a Morangos",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "coberto-a-profiteroles",
+      "nome": "Coberto a Profiteroles",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "coberto-a-profiteroles-vegan",
+      "nome": "Coberto a Profiteroles (Vegan)",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "coberto-frutas-variadas",
+      "nome": "Coberto Frutas Variadas",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "coberto-frutos-vermelhos",
+      "nome": "Coberto Frutos Vermelhos",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "fios-d-ovos",
+      "nome": "Fios d'Ovos",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "foto-em-folha-de-hostia",
+      "nome": "Foto em Folha de Hóstia",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "frutos-vermelhos-a-decorar",
+      "nome": "Frutos Vermelhos a Decorar",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "geleia-de-morango",
+      "nome": "Geleia de Morango",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "gosto-do-pasteleiro",
+      "nome": "Gosto do Pasteleiro",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "granulado-de-pistachio",
+      "nome": "Granulado de Pistachio",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "macarrons-a-decorar",
+      "nome": "Macarrons a Decorar",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "massa-folhada-desfeita",
+      "nome": "Massa Folhada Desfeita",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "migalhas-red-velvet",
+      "nome": "Migalhas Red Velvet",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "morangos-a-decorar",
+      "nome": "Morangos a decorar",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "nozes-a-decorar",
+      "nome": "Nozes a Decorar",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "pintarolas",
+      "nome": "Pintarolas",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "profiteroles-vegan-a-decorar",
+      "nome": "Profiteroles (Vegan) a decorar",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "profiteroles-a-decorar",
+      "nome": "Profiteroles a Decorar",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "raspas-de-chocolate",
+      "nome": "Raspas de Chocolate",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "raspas-de-chocolate-leite",
+      "nome": "Raspas de Chocolate Leite",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "raspas-de-chocolate-preto",
+      "nome": "Raspas de Chocolate Preto",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "raspas-de-chocolate-preto-vegan",
+      "nome": "Raspas de Chocolate Preto Vegan",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ]
+    },
+    {
+      "id": "sem-topping",
+      "nome": "Sem Topping",
+      "ativa": true,
+      "coberturas": [
+        "outras",
+        "pasta-de-acucar",
+        "butter-cream"
+      ],
+      "comoExtra": false
+    }
+  ],
+  "fotos": {
+    "referenciaMaximo": 3,
+    "toppingQueImprime": "foto-em-folha-de-hostia"
+  }
+}

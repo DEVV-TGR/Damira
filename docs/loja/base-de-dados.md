@@ -113,10 +113,16 @@ pela ordem das cartas e, dentro de cada uma, pela ordem que a gerente gravou
 
 **Simples e composto** é a coluna `produtos.tipo`. Composto é o que se descreve
 pelo que leva: os 11 kits e boxes. O bolo por medida é simples — as massas e os
-recheios dele são escolhas, que a #88 passa a grupos de opções. **O que um
-composto leva continua na `composicao` das variantes**, porque muda com o
-tamanho (20 pessoas não levam o mesmo que 70); se passar a um grupo de opções
-«O que leva», decide-se na #88.
+recheios dele são escolhas, que a #88 passa a variâncias. Hoje, **o que um
+composto leva vive na `composicao` das variantes**, em texto.
+
+Com a #88 (decidido a 25/11, `painel-gerente.md` › Simples e compostos), **a
+variante passa a ser o grupo do composto** — já tem nome e preço, e os pedidos
+gravados já guardam o `variante_id` e o nome —, e o que leva deixa de ser
+texto: passa à tabela `variantes_leva`, de **produtos simples** com quantidade
+(opcional). No simples, as variantes são os tamanhos (opcionais); sem tamanhos,
+fica com uma só, a `"unica"`, como hoje. As tabelas estão em › A personalização,
+abaixo (migração `0011`).
 
 #### A passagem, em três tempos
 
@@ -186,7 +192,8 @@ nunca no dia do lançamento.**
 | `descricao_pt`, `descricao_en` | `text` nulo | `descricao` |
 | `carta`, `categoria`, `subcategoria` | `text` nulo | iguais |
 | `unidade` | `text` `CHECK` (`un`, `kg`) | `unidade` |
-| `escolhas` | `text[]` | `escolhas` |
+| `escolhas` | `text[]` | ⚠️ a `0011` passa-as a variâncias, e a fronteira da #88 deixa de a ler; sai numa migração à parte |
+| `opcoes` | `jsonb`, `[]` por defeito | `opcoes` (#88): tirar, «sem queijo» |
 | `tempo_producao_unidade`, `tempo_producao_valor` | `text`, `numeric`, nulos | `tempoProducao` — `NULL` é «por preencher» |
 | `quantidade_minima`, `multiplo` | `numeric` `> 0` | iguais |
 | `a_venda_online`, `aparece_na_ementa` | `boolean` | iguais |
@@ -225,6 +232,7 @@ frente é da gerente. A prova sobre uma base que já tem produtos está em
 | `pessoas` | `integer` nulo | `pessoas` |
 | `preco_cent` | `integer` nulo, `>= 0` | ⚠️ `NULL` é **sob orçamento**, nunca zero |
 | `composicao` | `jsonb` | `composicao`, validada pelo `EsquemaGrupoComposicao` |
+| `ativa` | `boolean`, `true` por defeito | `ativa` (#88): desligada sem se apagar |
 
 Chave primária `(produto_id, id)`: a `unica` repete-se em todos os produtos.
 
@@ -232,6 +240,51 @@ Chave primária `(produto_id, id)`: a `unica` repete-se em todos os produtos.
 pergunta «que kits levam rissóis?» — e o pedido guarda a sua própria cópia em
 texto. Duas tabelas a mais para um dado que se lê inteiro e se escreve inteiro
 eram duas tabelas para manter sem ganho nenhum.
+
+### A personalização (#88, migração `0011`)
+
+As peças de `painel-gerente.md` › Simples e compostos. **O conteúdo é da
+gerente**: o esquema só recusa o que não é conteúdo — um preço negativo, um
+máximo de zero, uma variância sem escolhas, um kit dentro de si próprio.
+
+| Tabela | O que guarda | Chave |
+|---|---|---|
+| `variancias` | `id`, `nome_pt`, `nome_en`, `escolhas` (`jsonb`: `id`, `nome`, `acrescimoCent`, `ativa`) | `id` |
+| `produtos_variancias` | que variâncias tem cada produto, e por que ordem | `(produto_id, variancia_id)` |
+| `extras` | `id`, `nome_pt`, `nome_en`, `preco_cent` `>= 0`, `maximo` `>= 1`, `ativo` | `id` |
+| `produtos_extras` | que extras tem cada produto, e por que ordem | `(produto_id, extra_id)` |
+| `variantes_leva` | o que leva cada grupo de um composto: `simples_id` → `produtos`, `quantidade` nula | `(produto_id, variante_id, posicao)` |
+
+E três colunas: `produtos.opcoes`, `variantes.ativa` e
+`linhas_pedido.personalizacao`.
+
+**As variâncias e os extras não são do produto: ligam-se a ele.** É o «Usar de
+outro produto › ligar»: a mesma variância em dez produtos, e mudar o preço de
+uma escolha muda-o nos dez — e desligar o extra do queijo desliga-o em todos.
+Copiar é criar outra linha. **As opções não se ligam** (são de cada produto), e
+nada aponta para elas: vão em `jsonb` no produto. Pela mesma razão as escolhas
+de uma variância vão em `jsonb` dentro dela.
+
+**O que um grupo leva é tabela, com chave estrangeira para `produtos`**, e não
+`jsonb` como a `composicao`: é por ela que o painel diz «está em 3 kits» antes
+de se arquivar um simples. A chave para `variantes` é **em cascata**, porque as
+variantes de um produto trocam-se inteiras ao gravar (`editarProduto`). Um
+produto entra uma vez por grupo (`variantes_leva_unico`): é por ele que o
+cliente escolhe as variâncias de dentro. ⚠️ Que o `simples_id` seja mesmo
+`simples` (não há kits dentro de kits) **confere-o a fonte ao gravar** — um
+`CHECK` não vê outras tabelas, e um gatilho por isto era pesado demais.
+
+**As `escolhas` de hoje passam a uma variância a 0 €** na própria `0011`: os
+seis artigos da carta com sabores ganham a variância `<produto>-sabor`, com as
+escolhas `s1`, `s2`… pela ordem de lá — os mesmos ids que a fonte dos JSON dá.
+A coluna `escolhas` fica para o código de antes continuar a correr até ao
+deploy da fronteira, e sai depois. A prova está em
+`src/db/migracao-personalizacao.test.ts`.
+
+**A `0011` só acrescenta**: tabelas novas, colunas com valor por defeito ou
+nulas. O código antigo corre sobre ela sem falhar em nada — nem a criar um
+produto, ao contrário da `0008` —, por isso a ordem do deploy é a de sempre
+(› A ordem do deploy) sem janela nenhuma.
 
 ## A casa — uma linha só
 
@@ -391,6 +444,7 @@ de teste — o `LOJA_EM_TESTE` desse momento.
 | `quantidade` | `numeric` `> 0` | `quantidade` |
 | `preco_unitario_cent`, `total_cent` | `integer` nulo, `>= 0` | o preço **desse dia**; `null` os dois numa linha sem preço (migração `0007`) |
 | `notas` | `text` nulo | `notas` |
+| `personalizacao` | `jsonb` nulo | **cópia** do que se escolheu (#88): variâncias, opções, extras, e num composto o grupo e o que levava; `NULL` nas linhas de antes |
 | `preco_da_proposta` | `boolean`, por defeito `false` | o preço foi fixado pela casa numa proposta, e não visto ao pedir; só com preço (migração `0009`) |
 
 **Uma linha sem preço** — o bolo por medida — guarda o preço unitário e o total

@@ -11,6 +11,7 @@ import { PRAZO_DA_RESPOSTA_MS, PRAZO_DO_PEDIDO_MS } from "./regras";
 import type { VagaOcupada } from "@/lib/horarios";
 import { FORMATO_REFERENCIA, type EntradaPedido } from "./tipos";
 import { DESTINO_PEDIDOS } from "@/lib/pedidos";
+import { BOLO_DE_TESTE } from "./fontes-de-teste";
 
 /**
  * # Os pedidos da loja na base de dados (#29, #41)
@@ -263,7 +264,7 @@ describe("criar o pedido", () => {
           /* O bolo por medida leva cinco dias de cozinha: a quarta seguinte chega. */
           levantamentoEm: new TZDate(2026, 9, 14, 7, 30, "Europe/Lisbon").toISOString(),
           linhas: [
-            { produtoId: "bolo-por-medida", varianteId: "unica", quantidade: 1 },
+            { produtoId: "bolo-por-medida", varianteId: "unica", quantidade: 1, bolo: BOLO_DE_TESTE },
             { produtoId: "box-aniversario", varianteId: "unica", quantidade: 1 },
           ],
         }),

@@ -120,7 +120,7 @@ describe("a ordem das categorias, como a gerente a deixa", () => {
       subcategoria: null,
       unidade: "un",
       variantes: [{ rotulo: null, pessoas: null, precoCent: 300, composicao: [] }],
-      escolhas: [],
+      tipo: "simples",
       tempoProducao: { unidade: "horas", valor: 2 },
       quantidadeMinima: 1,
       multiplo: 1,

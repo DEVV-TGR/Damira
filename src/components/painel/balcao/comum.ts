@@ -8,6 +8,7 @@ export const MENSAGENS: Record<ErroPainel, string> = {
   "estado-mudou": "Este pedido mudou entretanto. A lista foi atualizada.",
   "falta-cobrar": "Falta confirmar que o dinheiro em falta foi cobrado.",
   "fora-do-prazo": "Já passaram os 5 minutos. Só a gerente pode desfazer.",
+  indisponivel: "Ainda não é possível gravar isto aqui. Fale com a DevPlus.",
 };
 
 /** «12×» à unidade, «1,5 kg» ao quilo. */

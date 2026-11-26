@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import {
   chaveDoCesto,
   normalizarCesto,
@@ -13,6 +13,8 @@ type Contexto = {
   cesto: ItemCesto[];
   /** `true` só depois de o cesto ter sido lido do armazenamento local. */
   pronto: boolean;
+  cestoAbertoEm: string | null;
+  definirCestoAbertoEm: (caminho: string | null) => void;
   juntar: (item: Omit<ItemCesto, "quantidade">) => void;
   /** Substitui o cesto inteiro. É o que o botão de repetir um pedido usa. */
   repor: (itens: ItemCesto[]) => void;
@@ -54,6 +56,7 @@ const CestoContexto = createContext<Contexto | null>(null);
  * e é a diferença entre uma página que hidrata e uma página que pisca.
  */
 export function CestoProvider({ children }: { children: React.ReactNode }) {
+  const [cestoAbertoEm, definirCestoAbertoEm] = useState<string | null>(null);
   /* Toda a mecânica de ler, escrever e migrar entre chaves vive no
      `usePorPessoa`, que o histórico usa da mesma maneira. Ver lá as três
      armadilhas. */
@@ -121,8 +124,8 @@ export function CestoProvider({ children }: { children: React.ReactNode }) {
   const esvaziar = useCallback(() => setCesto([]), [setCesto]);
 
   const valor = useMemo(
-    () => ({ cesto, pronto, juntar, repor, mudarQuantidade, remover, esvaziar }),
-    [cesto, pronto, juntar, repor, mudarQuantidade, remover, esvaziar],
+    () => ({ cesto, pronto, cestoAbertoEm, definirCestoAbertoEm, juntar, repor, mudarQuantidade, remover, esvaziar }),
+    [cesto, pronto, cestoAbertoEm, juntar, repor, mudarQuantidade, remover, esvaziar],
   );
 
   return (

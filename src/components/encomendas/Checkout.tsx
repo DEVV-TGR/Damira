@@ -2,7 +2,7 @@
 
 import { startTransition, useActionState, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { cotarPedido } from "@/app/[locale]/encomendas/pedido/cotacao";
 import { enviarCompra, type Resultado } from "@/app/[locale]/encomendas/pedido/acoes";
@@ -20,6 +20,7 @@ import { useCesto } from "./CestoProvider";
 import { useHistorico } from "./ProvedorHistorico";
 import { chaveDaCompra, concluirCompra } from "@/lib/chave-compra";
 import { apagarTentativa, guardarTentativa, lerTentativa, podeEsvaziarCesto, type TentativaCompra } from "@/lib/tentativa-compra";
+import { DetalhesDoBolo } from "./DetalhesDoBolo";
 
 /**
  * # A página de compra
@@ -67,6 +68,7 @@ export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale:
   const tcal = useTranslations("encomendas.calendario");
   const id = useId();
   const contexto = useCesto();
+  const caminho = usePathname();
   const historico = useHistorico();
   const { utilizador } = useConta();
   const tentativa = useRef<{ pessoa: string; chave: string } | null>(null);
@@ -250,9 +252,15 @@ export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale:
       <aside className="min-w-0 rounded-2xl border border-tinta/15 p-5 lg:sticky lg:top-24 lg:order-2">
         <div className="flex items-baseline justify-between gap-4">
           <h2 className="titulo-display titulo-gama">{t("resumo")}</h2>
-          <Link href="/encomendas" className="alvo-toque text-xs font-semibold uppercase tracking-widest text-tijolo underline underline-offset-4">
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="cartao-cesto"
+            onClick={() => contexto?.definirCestoAbertoEm(caminho)}
+            className="alvo-toque cursor-pointer text-left text-xs font-semibold uppercase tracking-widest text-tijolo underline underline-offset-4"
+          >
             {t("alterar")}
-          </Link>
+          </button>
         </div>
         <ul className="mt-4 divide-y divide-tinta/10">
           {cesto.map((item, i) => {
@@ -272,6 +280,7 @@ export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale:
                     {agora === null ? tc("semPreco") : formatarCent(totalDaLinha(agora, item.quantidade), locale)}
                   </span>
                 </div>
+                <DetalhesDoBolo item={item} />
                 {item.notas && <p className="mt-1 whitespace-pre-line text-sm text-tinta-suave">{item.notas}</p>}
                 {mudou && (
                   <p className="mt-1 text-sm font-semibold text-tijolo">
@@ -287,9 +296,10 @@ export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale:
           })}
         </ul>
         <p className="mt-2 flex items-baseline justify-between gap-4 border-t border-tinta/15 pt-4 font-semibold">
-          <span>{semPreco > 0 ? tc("aPartirDe") : tc("estimativa")}</span>
+          <span>{totalCent === 0 && semPreco > 0 ? tc("total") : semPreco > 0 ? tc("aPartirDe") : tc("estimativa")}</span>
           <span className="titulo-display text-2xl tabular-nums text-tijolo" aria-live="polite">
-            {totalCent === null ? "…" : formatarCent(totalCent, locale)}
+            {/* Só com artigos sob orçamento, «0,00 €» lia-se como um bolo de graça. */}
+            {totalCent === null ? "…" : totalCent === 0 && semPreco > 0 ? tc("semPreco") : formatarCent(totalCent, locale)}
           </span>
         </p>
         {/* Com BD o pedido nasce confirmado (ou à espera da casa) e paga-se na

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { entregar } from "@/app/painel/acoes-balcao";
 import type { Pedido } from "@/lib/dados/tipos";
+import { caminhoDaFotoDoBolo } from "@/lib/bolo-personalizado";
 import { faltaPagarCent, rotuloPagamento } from "@/lib/painel";
 import { horaDeLisboa } from "@/lib/painel-ligacao";
 import { formatarCent } from "@/lib/preco";
@@ -101,8 +102,27 @@ export function PedidoCartao({
             <li key={`${linha.produtoId}-${linha.varianteId}-${i}`}>
               <strong className="tabular-nums">{quantidade(linha)}</strong> {linha.nome}
               {linha.variante && <span className="text-tinta-suave"> ({linha.variante})</span>}
-              {linha.escolhas.length > 0 && <span className="text-tinta-suave"> · {linha.escolhas.join(", ")}</span>}
+              {/* Uma escolha por linha (#88): o sabor, o que se tira, os extras, o que
+                  o kit leva. O «SEM» a negrito, como no talão — é a linha que a
+                  cozinha não pode falhar (`impressao.md`). */}
+              {linha.escolhas.length > 0 && (
+                <ul className="pl-4 text-sm text-tinta-suave">
+                  {linha.escolhas.map((escolha, k) => (
+                    <li key={k}>
+                      {escolha.startsWith("SEM ") ? (
+                        <>
+                          <strong className="text-tinta">SEM</strong>
+                          {escolha.slice(3)}
+                        </>
+                      ) : (
+                        escolha
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
               {linha.notas && <span className="block text-sm text-tinta-suave">Nota: {linha.notas}</span>}
+              {linha.personalizacao?.bolo && <FotosDoBolo fotos={linha.personalizacao.bolo.fotos} />}
             </li>
           ))}
         </ul>
@@ -157,5 +177,40 @@ export function PedidoCartao({
         </p>
       </div>
     </article>
+  );
+}
+
+/**
+ * As fotos do bolo personalizado, **em dois blocos com o seu título**
+ * (`bolos-personalizados.md` › As duas fotos): a de imprimir em destaque e
+ * primeiro, porque é um passo da produção; as de referência a seguir. Tocar
+ * abre a foto inteira.
+ */
+function FotosDoBolo({ fotos }: { fotos: { referencia: string[]; imprimir: string | null } }) {
+  const miniatura = (foto: string, alt: string) => (
+    <a key={foto} href={caminhoDaFotoDoBolo(foto)} target="_blank" rel="noreferrer" className="block">
+      {/* eslint-disable-next-line @next/next/no-img-element -- fotos do cliente, servidas pela rota do bolo */}
+      <img src={caminhoDaFotoDoBolo(foto)} alt={alt} loading="lazy" className="size-24 rounded-lg object-cover" />
+    </a>
+  );
+  return (
+    <div className="mt-3 grid gap-3">
+      {fotos.imprimir && (
+        <div className="rounded-xl border-2 border-tijolo p-3">
+          <p className="text-xs font-bold uppercase tracking-widest text-tijolo">Foto para imprimir no bolo</p>
+          <div className="mt-2">{miniatura(fotos.imprimir, "Foto para imprimir no bolo")}</div>
+        </div>
+      )}
+      {fotos.referencia.length > 0 && (
+        <div className="rounded-xl bg-tinta/5 p-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-tinta-suave">
+            Fotos de referência · {fotos.referencia.length}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {fotos.referencia.map((foto, i) => miniatura(foto, `Foto de referência ${i + 1}`))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
