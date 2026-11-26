@@ -399,3 +399,19 @@ o ecrã di-lo. A implementação sobre a base de dados é do Sobral (#33).
 Relatórios de vendas (ficam para depois — os dados guardam-se desde o primeiro
 pedido) · editar os textos das outras páginas do site · cupões e campanhas (em
 aberto) · as opções dos bolos personalizados (ver `bolos-personalizados.md`).
+
+## Responder a um pedido que espera pela casa (#126, #119)
+
+No detalhe de um pedido `por-confirmar`, o bloco **«Responder ao pedido»**:
+
+- **Sem nada novo**, o botão é **«Confirmar o pedido»**: o pedido fica
+  `confirmado`, e o cliente recebe a confirmação. O balcão também o pode dar.
+- **Com o preço de uma linha sem preço** (o bolo por medida), **ou com outra
+  hora**, o botão é **«Enviar a proposta · total»**: o pedido fica «À espera do
+  cliente» (`a-aguardar-aceite`), e o cliente aceita ou recusa por um link. Só a
+  gerente: fixa dinheiro.
+- O preço que o cliente viu ao pedir não se muda aqui. Escreve-se o preço
+  unitário; o total da linha e do pedido faz-se no servidor.
+- **À espera do cliente**, o bloco deixa rever a proposta (o link antigo deixa de
+  servir) e mostra **o link para o cliente**, com «Copiar», para o mandar por
+  mensagem enquanto os emails não saem sozinhos.

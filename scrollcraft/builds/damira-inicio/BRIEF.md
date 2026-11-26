@@ -1,5 +1,7 @@
 # BRIEF — Damira, a nova página inicial
 
+> O vapor lateral e os marcadores de capítulo foram removidos a pedido em 25/11/2026. As descrições abaixo registam a versão anterior.
+
 Entrevistado a 2 de setembro de 2026. **Não é auto-escrito**: as oito respostas
 abaixo são escolhas do cliente, não deduções minhas.
 
