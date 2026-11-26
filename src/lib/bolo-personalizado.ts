@@ -110,11 +110,11 @@ export function validarBolo(opcoes: OpcoesBolo, escolha: EntradaBolo): ErroBolo 
   if (referencia.length > opcoes.fotos.referenciaMaximo || new Set(referencia).size !== referencia.length) {
     return "fotos-referencia";
   }
-  /* A foto para imprimir vem com o topping que a imprime, e só com ele: sem esse
-     topping, uma foto ali era a cozinha a imprimir o que não lhe pediram; com
-     ele e sem foto, a cozinha não tem o que imprimir. */
-  const imprime = imprimeFoto(opcoes, escolha.toppingId);
-  if (imprime !== (escolha.fotoImprimir !== null)) return "foto-imprimir";
+  /* A foto para imprimir é **opcional com qualquer topping** (26/11): o campo
+     tem o seu nome, «Foto para imprimir no bolo», e não se confunde com as de
+     referência. Com o topping que a imprime («Foto em folha de hóstia») é
+     obrigatória — a cozinha não tem o que imprimir sem ela. */
+  if (imprimeFoto(opcoes, escolha.toppingId) && escolha.fotoImprimir === null) return "foto-imprimir";
   if (escolha.fotoImprimir !== null && referencia.includes(escolha.fotoImprimir)) return "foto-imprimir";
   /* Sem a autorização, a foto de uma pessoa não se imprime (#52). */
   if (escolha.fotoImprimir !== null && !escolha.autorizaFoto) return "autorizacao";

@@ -551,7 +551,7 @@
       "fotosReferencia": "Reference photos",
       "fotosReferenciaAjuda": "Up to {n, plural, one {# photo} other {# photos}} to show how the cake should look: tiers, covering, decoration. They are for inspiration and are not printed.",
       "fotoImprimir": "Photo to print on the cake",
-      "fotoImprimirAjuda": "This is the photo printed on top of the cake, on wafer paper.",
+      "fotoImprimirAjuda": "If you want a photo printed on top of the cake, on wafer paper, add it here. It is not the same as the reference photos.",
       "fotoPequena": "This photo is small and may print blurry. If you have a larger one, replace it.",
       "juntarFoto": "Add photo",
       "trocarFoto": "Replace photo",
@@ -577,7 +577,9 @@
       },
       "fotosNoCesto": "{n, plural, one {# reference photo} other {# reference photos}}",
       "fotoNoCesto": "photo to print on the cake",
-      "toppingsExtraAjuda": "You can add up to {n, plural, one {# more topping} other {# more toppings}}."
+      "toppingsExtraAjuda": "You can add up to {n, plural, one {# more topping} other {# more toppings}}.",
+      "obrigatoria": "(required)",
+      "opcional": "(optional)"
     }
   },
   "modoTeste": {
