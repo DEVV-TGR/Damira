@@ -99,9 +99,11 @@ só se vê quando o cliente vem buscar o bolo.
   toppings — estes três com todas as coberturas. **A cobertura é o eixo**: a
   massa decide as coberturas possíveis, e a cobertura filtra o resto. Uma regra
   só (`src/lib/bolo-personalizado.ts`), no configurador e no servidor.
-- **A foto para imprimir vem com o topping «Foto em folha de hóstia»** (no
-  painel, Fotos › o topping que pede a foto). Sem esse topping o campo nem
-  aparece; com ele, a foto e a autorização são obrigatórias.
+- **A foto para imprimir está sempre à vista, e é opcional** (26/11): num campo
+  à parte das de referência, com o seu nome. Com o topping «Foto em folha de
+  hóstia» (no painel, Fotos › o topping que torna a foto obrigatória) passa a
+  obrigatória. Com foto, a autorização é sempre obrigatória. Antes o campo só
+  aparecia com esse topping, e na base de dados não se conseguia mudar qual era.
 - **A ordem do configurador:** tamanho (se houver), massa, cobertura, recheio,
   «à volta», topping, **toppings extra** (se a gerente os ligar), fotos de
   referência, foto para imprimir, mensagem e observações.

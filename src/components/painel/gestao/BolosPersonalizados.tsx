@@ -408,13 +408,13 @@ function Fotos({ opcoes, onMudar }: { opcoes: OpcoesBolo; onMudar: (novo: Opcoes
         <span className="text-sm text-tinta-suave">Servem para mostrar o aspeto do bolo. Não se imprimem.</span>
       </label>
       <label className="grid gap-1.5">
-        <span className="text-sm font-semibold">O topping que pede a foto para imprimir</span>
+        <span className="text-sm font-semibold">O topping que torna a foto para imprimir obrigatória</span>
         <select
           value={fotos.toppingQueImprime ?? ""}
           onChange={(e) => onMudar({ ...opcoes, fotos: { ...fotos, toppingQueImprime: e.target.value || null } })}
           className="rounded-lg border border-tinta/20 bg-papel px-3 py-2"
         >
-          <option value="">Nenhum: não se imprimem fotos</option>
+          <option value="">Nenhum: a foto é sempre opcional</option>
           {opcoes.toppings
             .filter((t) => t.id !== NOVA)
             .map((t) => (
@@ -424,7 +424,7 @@ function Fotos({ opcoes, onMudar }: { opcoes: OpcoesBolo; onMudar: (novo: Opcoes
             ))}
         </select>
         <span className="text-sm text-tinta-suave">
-          Quando o cliente escolhe este topping, o site pede-lhe a foto para imprimir e a autorização para a usar.
+          A foto para imprimir é sempre opcional. Com este topping, o cliente tem de a juntar. Com foto, pede-se sempre a autorização para a usar.
         </span>
       </label>
     </div>

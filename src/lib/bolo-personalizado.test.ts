@@ -80,11 +80,14 @@ describe("validarBolo", () => {
     expect(validarBolo(comTamanhos, bolo({ tamanhoId: "1-kg" }))).toBeNull();
   });
 
-  it("a foto para imprimir vem com o topping que a imprime, e só com ele", () => {
+  it("a foto para imprimir é opcional com qualquer topping, e obrigatória com o que a imprime", () => {
     const comFoto = { toppingId: "foto-em-folha-de-hostia" };
     expect(validarBolo(OPCOES_BOLO, bolo(comFoto))).toBe("foto-imprimir");
-    expect(validarBolo(OPCOES_BOLO, bolo({ fotoImprimir: FOTO_A, autorizaFoto: true }))).toBe("foto-imprimir");
     expect(validarBolo(OPCOES_BOLO, bolo({ ...comFoto, fotoImprimir: FOTO_A, autorizaFoto: true }))).toBeNull();
+    /* Com outro topping (o açúcar em pó), pode ter foto, e pode não ter. */
+    expect(validarBolo(OPCOES_BOLO, bolo({ toppingId: "acucar-em-po", fotoImprimir: FOTO_A, autorizaFoto: true }))).toBeNull();
+    expect(validarBolo(OPCOES_BOLO, bolo({ toppingId: "acucar-em-po" }))).toBeNull();
+    expect(validarBolo(OPCOES_BOLO, bolo({ toppingId: "acucar-em-po", fotoImprimir: FOTO_A }))).toBe("autorizacao");
   });
 
   it("sem a autorização, a foto para imprimir é recusada", () => {

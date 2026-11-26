@@ -126,7 +126,6 @@ export function ConfiguradorBolo({
     setAVoltaId((atual) => segue(opcoes.aVolta, atual));
     setToppingId((atual) => {
       const fica = segue(opcoes.toppings, atual);
-      if (!imprimeFoto(opcoes, fica)) setImprimir(null);
       return fica;
     });
     /* Os extras que deixam de ir com a nova cobertura saem. */
@@ -183,8 +182,9 @@ export function ConfiguradorBolo({
       toppingId: toppingId ?? "",
       toppingsExtra: extras,
       fotosReferencia: referencia.map((f) => f.caminho),
-      fotoImprimir: pedeFoto ? imprimir?.caminho ?? null : null,
-      autorizaFoto: pedeFoto && autoriza,
+      fotoImprimir: imprimir?.caminho ?? null,
+      /* A autorização vai com a foto, seja qual for o topping. */
+      autorizaFoto: imprimir !== null && autoriza,
     };
     const problema = validarBolo(opcoes, bolo);
     if (problema) {
@@ -327,7 +327,6 @@ export function ConfiguradorBolo({
           valor={toppingId}
           aoMudar={(id) => {
             setToppingId(id);
-            if (!imprimeFoto(opcoes, id)) setImprimir(null);
             /* O topping principal não se repete nos extras. */
             setExtras((atuais) => atuais.filter((x) => x !== id));
             mudou();
@@ -415,48 +414,61 @@ export function ConfiguradorBolo({
           </fieldset>
         )}
 
-        {/* A foto para imprimir só existe com o topping que a imprime: sem ele,
-            o campo nem aparece — é a forma de a cozinha nunca imprimir uma foto
-            que só servia de inspiração. */}
-        {pedeFoto && (
-          <fieldset className={`rounded-2xl border border-tijolo/40 p-4 ${marcado("foto-imprimir")}`}>
-            <legend className={`${rotuloCampo} px-1 text-tijolo`}>{tb("fotoImprimir")}</legend>
-            <p className="text-sm text-tinta-suave">{tb("fotoImprimirAjuda")}</p>
-            <div className="mt-3 flex flex-wrap items-start gap-3">
-              {imprimir && (
-                <figure className="w-36">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- pré-visualização local (blob:) */}
-                  <img src={imprimir.previa} alt={tb("fotoImprimir")} className="aspect-square w-36 rounded-xl object-cover" />
-                </figure>
-              )}
-              <EscolherFoto
-                rotulo={aEnviar === "imprimir" ? tb("aEnviar") : imprimir ? tb("trocarFoto") : tb("juntarFoto")}
-                ocupado={aEnviar !== null}
-                aoEscolher={(f) => enviar(f, "imprimir")}
-              />
-            </div>
-            {imprimir?.pequena && (
-              <p role="status" className="mt-2 text-sm font-semibold text-tijolo">
-                {tb("fotoPequena")}
-              </p>
-            )}
+        {/* A foto para imprimir está sempre à vista (26/11), num campo à parte
+            das de referência e com o seu nome — é o que impede a cozinha de
+            imprimir uma foto que só servia de inspiração. Com o topping que a
+            imprime, passa a obrigatória. */}
+        <fieldset className={`rounded-2xl border border-tijolo/40 p-4 ${marcado("foto-imprimir")}`}>
+          <legend className={`${rotuloCampo} px-1 text-tijolo`}>
+            {tb("fotoImprimir")} {pedeFoto ? tb("obrigatoria") : tb("opcional")}
+          </legend>
+          <p className="text-sm text-tinta-suave">{tb("fotoImprimirAjuda")}</p>
+          <div className="mt-3 flex flex-wrap items-start gap-3">
             {imprimir && (
-              <label className={`mt-4 flex cursor-pointer items-start gap-3 text-sm ${marcado("autorizacao")}`}>
-                {/* ⚠️ Texto provisório: o definitivo vem da advogada (#52). */}
-                <input
-                  type="checkbox"
-                  checked={autoriza}
-                  onChange={(e) => {
-                    setAutoriza(e.target.checked);
+              <figure className="w-36">
+                {/* eslint-disable-next-line @next/next/no-img-element -- pré-visualização local (blob:) */}
+                <img src={imprimir.previa} alt={tb("fotoImprimir")} className="aspect-square w-36 rounded-xl object-cover" />
+                {/* A foto é opcional: quem mudou de ideias tira-a, e a autorização sai com ela. */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImprimir(null);
+                    setAutoriza(false);
                     mudou();
                   }}
-                  className="mt-0.5 size-5 accent-tijolo"
-                />
-                <span>{tb("autorizacao")}</span>
-              </label>
+                  className="alvo-toque mt-1 text-xs font-semibold uppercase tracking-widest text-tijolo underline underline-offset-4"
+                >
+                  {tb("tirarFoto")}
+                </button>
+              </figure>
             )}
-          </fieldset>
-        )}
+            <EscolherFoto
+              rotulo={aEnviar === "imprimir" ? tb("aEnviar") : imprimir ? tb("trocarFoto") : tb("juntarFoto")}
+              ocupado={aEnviar !== null}
+              aoEscolher={(f) => enviar(f, "imprimir")}
+            />
+          </div>
+          {imprimir?.pequena && (
+            <p role="status" className="mt-2 text-sm font-semibold text-tijolo">
+              {tb("fotoPequena")}
+            </p>
+          )}
+          {imprimir && (
+            <label className={`mt-4 flex cursor-pointer items-start gap-3 text-sm ${marcado("autorizacao")}`}>
+              {/* ⚠️ Texto provisório: o definitivo vem da advogada (#52). */}
+              <input
+                type="checkbox"
+                checked={autoriza}
+                onChange={(e) => {
+                  setAutoriza(e.target.checked);
+                  mudou();
+                }}
+                className="mt-0.5 size-5 accent-tijolo"
+              />
+              <span>{tb("autorizacao")}</span>
+            </label>
+          )}
+        </fieldset>
 
         {erroFoto && (
           <p role="alert" className="text-sm font-semibold text-tijolo">

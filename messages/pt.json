@@ -551,7 +551,7 @@
       "fotosReferencia": "Fotos de referência",
       "fotosReferenciaAjuda": "Até {n, plural, one {# foto} other {# fotos}} para mostrar o aspeto do bolo: os andares, a cobertura, a decoração. Servem de inspiração e não são impressas.",
       "fotoImprimir": "Foto para imprimir no bolo",
-      "fotoImprimirAjuda": "É esta foto que vai impressa em cima do bolo, em folha de hóstia.",
+      "fotoImprimirAjuda": "Se quiser uma foto impressa em cima do bolo, em folha de hóstia, junte-a aqui. Não é a mesma coisa que as fotos de referência.",
       "fotoPequena": "Esta foto é pequena: pode ficar desfocada na impressão. Se tiver uma maior, troque-a.",
       "juntarFoto": "Juntar foto",
       "trocarFoto": "Trocar foto",
@@ -577,7 +577,9 @@
       },
       "fotosNoCesto": "{n, plural, one {# foto de referência} other {# fotos de referência}}",
       "fotoNoCesto": "foto para imprimir no bolo",
-      "toppingsExtraAjuda": "Pode juntar até {n, plural, one {# topping} other {# toppings}} a mais, além do topping."
+      "toppingsExtraAjuda": "Pode juntar até {n, plural, one {# topping} other {# toppings}} a mais, além do topping.",
+      "obrigatoria": "(obrigatória)",
+      "opcional": "(opcional)"
     }
   },
   "modoTeste": {
