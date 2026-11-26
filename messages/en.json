@@ -551,7 +551,9 @@
         "ilegivel": "This file doesn't open as a photo. Try a JPEG or PNG.",
         "nao-configurado": "Photo upload isn't available yet.",
         "demasiados-envios": "Too many photos in a row. Please wait a moment and try again."
-      }
+      },
+      "fotosNoCesto": "{n, plural, one {# reference photo} other {# reference photos}}",
+      "fotoNoCesto": "photo to print on the cake"
     }
   },
   "modoTeste": {

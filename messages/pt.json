@@ -551,7 +551,9 @@
         "ilegivel": "Este ficheiro não abre como foto. Experimente um JPEG ou PNG.",
         "nao-configurado": "O envio de fotos ainda não está disponível.",
         "demasiados-envios": "Enviou muitas fotos seguidas. Espere um pouco e tente outra vez."
-      }
+      },
+      "fotosNoCesto": "{n, plural, one {# foto de referência} other {# fotos de referência}}",
+      "fotoNoCesto": "foto para imprimir no bolo"
     }
   },
   "modoTeste": {

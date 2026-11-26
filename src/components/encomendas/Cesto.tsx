@@ -7,6 +7,7 @@ import type { Locale } from "@/i18n/routing";
 import { estimativa, quantidadeEmTexto, totalArtigos, totalDaLinha } from "@/lib/cesto";
 import { formatarCent } from "@/lib/preco";
 import { useCesto } from "./CestoProvider";
+import { DetalhesDoBolo } from "./DetalhesDoBolo";
 
 /**
  * # O cesto: um botão no canto e um cartão no centro
@@ -77,7 +78,9 @@ export function Cesto({ locale }: { locale: Locale }) {
   const { cesto, mudarQuantidade, remover, esvaziar } = contexto;
   const { somaCent, semPreco } = estimativa(cesto);
   const artigos = totalArtigos(cesto);
-  const valor = formatarCent(somaCent, locale);
+  /* Só com artigos sob orçamento (um bolo personalizado sozinho), «0,00 €» lia-se
+     como de graça. */
+  const valor = somaCent === 0 && semPreco > 0 ? t("semPreco") : formatarCent(somaCent, locale);
 
   return (
     <>
@@ -151,6 +154,7 @@ export function Cesto({ locale }: { locale: Locale }) {
               <li key={item.id} className="flex items-start gap-3 py-3">
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold">{item.nome}</p>
+                  <DetalhesDoBolo item={item} />
                   {(item.variante || item.escolha) && (
                     <p className="text-sm text-tinta-suave">{[item.variante, item.escolha].filter(Boolean).join(" · ")}</p>
                   )}

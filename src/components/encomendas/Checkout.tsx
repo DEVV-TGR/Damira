@@ -18,6 +18,7 @@ import type { ResultadoVagas, VagaDoCalendario } from "@/lib/vagas-servidor";
 import { CalendarioLevantamento } from "./CalendarioLevantamento";
 import { useCesto } from "./CestoProvider";
 import { useHistorico } from "./ProvedorHistorico";
+import { DetalhesDoBolo } from "./DetalhesDoBolo";
 
 /**
  * # A página de compra
@@ -190,6 +191,7 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
                     {agora === null ? tc("semPreco") : formatarCent(totalDaLinha(agora, item.quantidade), locale)}
                   </span>
                 </div>
+                <DetalhesDoBolo item={item} />
                 {item.notas && <p className="mt-1 whitespace-pre-line text-sm text-tinta-suave">{item.notas}</p>}
                 {mudou && (
                   <p className="mt-1 text-sm font-semibold text-tijolo">
@@ -207,7 +209,8 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
         <p className="mt-2 flex items-baseline justify-between gap-4 border-t border-tinta/15 pt-4 font-semibold">
           <span>{semPreco > 0 ? tc("aPartirDe") : tc("estimativa")}</span>
           <span className="titulo-display text-2xl tabular-nums text-tijolo" aria-live="polite">
-            {totalCent === null ? "…" : formatarCent(totalCent, locale)}
+            {/* Só com artigos sob orçamento, «0,00 €» lia-se como um bolo de graça. */}
+            {totalCent === null ? "…" : totalCent === 0 && semPreco > 0 ? tc("semPreco") : formatarCent(totalCent, locale)}
           </span>
         </p>
         <p className="mt-2 text-sm text-tinta-suave">{t("semPagamento")}</p>
