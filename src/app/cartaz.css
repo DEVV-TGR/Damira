@@ -278,6 +278,17 @@ body:has(.cartaz) .barra-vidro {
     order: -1;
   }
 }
+/* ⚠️ **«Comemorativos» é uma palavra de treze letras e não parte.** No
+   tamanho dos outros títulos (até 4,4rem) não cabe na coluna estreita das duas
+   colunas: transbordava pelo espaço entre elas e encostava à fotografia, sem
+   erro nenhum. O título mede-se pela coluna (`cqi`), e não pelo ecrã:
+   13cqi é o que a palavra mais longa ocupa com folga na Caros. */
+.cap--bolos .cap__caixa {
+  container-type: inline-size;
+}
+.cap--bolos .cap__titulo {
+  font-size: min(clamp(2.2rem, 1.4rem + 3.6vw, 4.4rem), 13cqi);
+}
 .cap__estampa {
   margin: 0;
 }

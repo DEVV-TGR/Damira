@@ -7,7 +7,7 @@ export function Bolos() {
   const tVitrine = useTranslations("cartaz.vitrine.legendas");
 
   return (
-    <section id="cap-bolos" className="cap cap--porta" data-capitulo data-sc-act="flow" aria-labelledby="bolos">
+    <section id="cap-bolos" className="cap cap--porta cap--bolos" data-capitulo data-sc-act="flow" aria-labelledby="bolos">
       <div className="cap__duas">
         <div className="cap__caixa" data-sc-in data-sc-stagger="60">
           <h2 id="bolos" className="cap__titulo">{t("titulo")}</h2>
