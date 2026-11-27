@@ -16,7 +16,9 @@ import type { categorias, familias, TipoProduto } from "./esquema";
  * categoria e o tipo no painel.
  */
 
-type LinhaCategoria = typeof categorias.$inferInsert;
+/* A família é obrigatória aqui, apesar do `DEFAULT` da coluna (que é só para o
+   código de antes da `0012`): quem cria uma categoria diz sempre onde ela vive. */
+type LinhaCategoria = typeof categorias.$inferInsert & { familiaId: string };
 type LinhaFamilia = typeof familias.$inferInsert;
 
 /**
