@@ -15,10 +15,12 @@
   },
   "cartaz": {
     "capa": {
-      "olho": "Confeitaria e Pão Quente",
-      "lede": "Abre às sete da manhã, todos os dias. Pão quente ao balcão, almoço à mesa, e uma vitrine de doces até às nove da noite.",
-      "credito": "A frase não é nossa. Está pintada no vidro da montra, ao lado da porta.",
-      "encomendar": "Encomendar"
+      "olho": "Tradição e inovação — ponto de encontro de gerações, há 30 anos.",
+      "lede": "Tudo o que podes encontrar, sem hora marcada",
+      "encomendar": "Encomendar",
+      "refeicoes": "Pequeno-almoço, brunch, almoço, lanches",
+      "padaria": "Pão quente, pastelaria variada",
+      "vegan": "Opções 100% vegan"
     },
     "porta": {
       "numeral": "I",
@@ -43,10 +45,8 @@
       "legenda": "Decoração de um bolo com morangos na bancada."
     },
     "vitrine": {
-      "numeral": "V",
-      "olho": "A vitrine",
-      "titulo": "A casa, fotografada pela casa",
-      "texto": "O que está na montra, o que se prepara na bancada e a sala onde o servimos.",
+      "titulo": "Da nossa família, para a sua.",
+      "texto": "Entre os clássicos de sempre e todas as novidades, há muito para provar.",
       "credito": "Fotografias da Confeitaria e Pão Quente Damira.",
       "verMais": "Ver mais",
       "legendas": {
@@ -67,28 +67,31 @@
         "natalBoloAcucar": "Bolo com fruta e açúcar em pó numa mesa de Natal.",
         "natalBoloCobertura": "Bolo redondo com cobertura branca diante da decoração de Natal.",
         "natalMesa": "Mesa de Natal com bolos e pastelaria.",
-        "natalBoloFatia": "Bolo dourado com uma fatia cortada junto à árvore de Natal."
+        "natalBoloFatia": "Bolo dourado com uma fatia cortada junto à árvore de Natal.",
+        "prateleirasPao": "Prateleiras da padaria com vários tipos de pão.",
+        "decoracaoBolo": "Bolo a ser decorado à mão."
       }
     },
     "reels": {
-      "numeral": "VI",
-      "olho": "Os vídeos",
-      "titulo": "Os reels da casa",
-      "texto": "O que a Damira publica em vídeo, sempre em formato vertical. Toque para abrir no Instagram.",
-      "textoSemConta": "Seis lugares à espera dos vídeos da casa. Estão desenhados e vazios de propósito: enchem-se assim que os endereços dos reels chegarem.",
-      "espaco": "Lugar {n}, por encher",
+      "titulo": "Damira em movimento",
       "verNoInstagram": "Ver no Instagram",
-      "verTudo": "Ver todos no Instagram",
-      "instagram": "Instagram da casa",
-      "seguir": "Seguir {utilizador}"
+      "seguir": "Seguir {utilizador}",
+      "videos": {
+        "natal": "Natal",
+        "cookies": "Receita de cookies",
+        "anaEPai": "Ana e o pai",
+        "brunch": "Brunch",
+        "croissants": "Croissants",
+        "ermesinde": "Ermesinde",
+        "paoRustico": "Pão rústico"
+      }
     },
     "raro": {
-      "numeral": "II",
-      "olho": "O raro",
-      "titulo": "Mais de metade do que a casa faz é vegan",
-      "de": "de {total} artigos",
-      "texto": "Não é um artigo assinalado com uma folha no fim da lista. É uma vitrine inteira, a par da outra: salgados, doces e bolos inteiros, ao quilo.",
-      "ligacao": "Encomendar da carta"
+      "titulo": "Opções 100% vegan",
+      "tituloAnimado": "Opções <percentagem></percentagem> vegan",
+      "texto": "Bolos, salgados, tudo 100% vegan.",
+      "exemplo": "Sim, até um pastel de nata ou lanche misto.",
+      "ligacao": "Ver a carta vegan"
     },
     "provar": {
       "numeral": "VII",
@@ -148,6 +151,19 @@
         "accao": "Abrir o mapa"
       },
       "nota": "As festas e os bolos pedem antecedência. Quanto mais cedo disser a data, mais fácil é acertar o resto."
+    },
+    "natal": {
+      "titulo": "Sabores de Natal",
+      "texto": "que não podem faltar este ano"
+    },
+    "bolos": {
+      "titulo": "Bolos comemorativos",
+      "texto": "O teu bolo, do clássico ao personalizado — <ligacao>pede o orçamento aqui</ligacao>."
+    },
+    "catering": {
+      "titulo": "Festas e eventos",
+      "texto": "O nosso catering, personalizado e ajustado a todos os orçamentos, é criado à tua medida.",
+      "ligacao": "Conhece as nossas opções"
     }
   },
   "casa": {

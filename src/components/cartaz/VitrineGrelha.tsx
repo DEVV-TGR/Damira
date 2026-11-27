@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 export type FotoDaVitrine = {
-  ficheiro: string;
+  src: string;
   /** Já traduzido: quem traduz é a `Vitrine`, que é de servidor. */
   alt: string;
   larga: boolean;
@@ -49,13 +49,15 @@ export type FotoDaVitrine = {
  * ordem de tabulação — e o foco vai lá.
  */
 export function VitrineGrelha({
+  id,
   fotos,
-  visiveis,
+  visiveis = fotos.length,
   rotuloMais,
 }: {
+  id: string;
   fotos: FotoDaVitrine[];
-  visiveis: number;
-  rotuloMais: string;
+  visiveis?: number;
+  rotuloMais?: string;
 }) {
   const [aberta, setAberta] = useState(false);
   const [entraram, setEntraram] = useState(false);
@@ -74,7 +76,7 @@ export function VitrineGrelha({
   return (
     <>
       <ul
-        id="vitrine-grelha"
+        id={id}
         className="vitrine__grelha"
         data-sc-in
         data-sc-stagger="40"
@@ -84,7 +86,7 @@ export function VitrineGrelha({
           const nova = i >= visiveis;
           return (
             <li
-              key={foto.ficheiro}
+              key={foto.src}
               ref={i === visiveis ? primeiraNova : undefined}
               tabIndex={i === visiveis ? -1 : undefined}
               /* ⚠️ As seis primeiras ficam com o `className` de sempre: o
@@ -96,7 +98,7 @@ export function VitrineGrelha({
               suppressHydrationWarning
             >
               <Image
-                src={`/vitrine/${foto.ficheiro}.webp`}
+                src={foto.src}
                 alt={foto.alt}
                 width={1400}
                 height={875}
@@ -119,7 +121,7 @@ export function VitrineGrelha({
           <button
             type="button"
             className="cap__accao"
-            aria-controls="vitrine-grelha"
+            aria-controls={id}
             aria-expanded={false}
             onClick={() => setAberta(true)}
           >

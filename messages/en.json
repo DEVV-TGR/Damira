@@ -15,10 +15,12 @@
   },
   "cartaz": {
     "capa": {
-      "olho": "Bakery and pastry shop",
-      "lede": "Open at seven every morning, every day. Hot bread at the counter, lunch at the table, and a case of pastries until nine at night.",
-      "credito": "The line is not ours. It is painted on the shop window, beside the door.",
-      "encomendar": "Order"
+      "olho": "Tradition and innovation — bringing generations together for 30 years.",
+      "lede": "Drop in for any of these, no booking needed",
+      "encomendar": "Order",
+      "refeicoes": "Breakfast, brunch, lunch and afternoon snacks",
+      "padaria": "Fresh bread and a wide range of pastries",
+      "vegan": "100% vegan options"
     },
     "porta": {
       "numeral": "I",
@@ -43,10 +45,8 @@
       "legenda": "A cake being decorated with strawberries at the workbench."
     },
     "vitrine": {
-      "numeral": "V",
-      "olho": "The counter",
-      "titulo": "The house, photographed by the house",
-      "texto": "What is in the display, what we make at the workbench, and where we serve it.",
+      "titulo": "From our family to yours.",
+      "texto": "From familiar favourites to new creations, there’s plenty to try.",
       "credito": "Photographs by Confeitaria e Pão Quente Damira.",
       "verMais": "See more",
       "legendas": {
@@ -67,28 +67,31 @@
         "natalBoloAcucar": "Cake with fruit and powdered sugar on a Christmas table.",
         "natalBoloCobertura": "Round cake with white icing in front of Christmas decorations.",
         "natalMesa": "Christmas table with cakes and pastries.",
-        "natalBoloFatia": "Golden cake with a slice cut beside the Christmas tree."
+        "natalBoloFatia": "Golden cake with a slice cut beside the Christmas tree.",
+        "prateleirasPao": "Shelves with different kinds of bread at the bakery.",
+        "decoracaoBolo": "A cake being decorated by hand."
       }
     },
     "reels": {
-      "numeral": "VI",
-      "olho": "The videos",
-      "titulo": "The house's reels",
-      "texto": "What Damira posts on video, always shot upright. Tap to open on Instagram.",
-      "textoSemConta": "Six places waiting for the house's videos. They are drawn and empty on purpose: they fill in as soon as the reel links arrive.",
-      "espaco": "Place {n}, still empty",
+      "titulo": "Damira in motion",
       "verNoInstagram": "Watch on Instagram",
-      "verTudo": "See them all on Instagram",
-      "instagram": "The house on Instagram",
-      "seguir": "Follow {utilizador}"
+      "seguir": "Follow {utilizador}",
+      "videos": {
+        "natal": "Christmas",
+        "cookies": "Cookie recipe",
+        "anaEPai": "Ana and her dad",
+        "brunch": "Brunch",
+        "croissants": "Croissants",
+        "ermesinde": "Ermesinde",
+        "paoRustico": "Rustic bread"
+      }
     },
     "raro": {
-      "numeral": "II",
-      "olho": "The rare thing",
-      "titulo": "More than half of what we make is vegan",
-      "de": "of {total} items",
-      "texto": "Not one item marked with a leaf at the end of a list. A whole counter alongside the other one: savouries, pastries, and whole cakes sold by the kilo.",
-      "ligacao": "Order from the menu"
+      "titulo": "100% vegan options",
+      "tituloAnimado": "<percentagem></percentagem> vegan options",
+      "texto": "Cakes and savouries, all 100% vegan.",
+      "exemplo": "Yes, even a custard tart or a ham and cheese roll.",
+      "ligacao": "See the vegan menu"
     },
     "provar": {
       "numeral": "VII",
@@ -148,6 +151,19 @@
         "accao": "Open the map"
       },
       "nota": "Parties and cakes need notice. The sooner you give the date, the easier everything else is."
+    },
+    "natal": {
+      "titulo": "Christmas flavours",
+      "texto": "you won’t want to miss this year"
+    },
+    "bolos": {
+      "titulo": "Celebration cakes",
+      "texto": "Your cake, from classic to custom — <ligacao>ask for a quote here</ligacao>."
+    },
+    "catering": {
+      "titulo": "Parties and events",
+      "texto": "We tailor our catering to your event and your budget.",
+      "ligacao": "Explore our options"
     }
   },
   "casa": {

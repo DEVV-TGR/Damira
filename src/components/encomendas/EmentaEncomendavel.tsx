@@ -87,7 +87,7 @@ export function EmentaEncomendavel({
 
           <div className="mt-12 space-y-14">
             {cartasComArtigos(artigos, ordem).map((carta) => (
-              <div key={carta} data-grupo-procura>
+              <div key={carta} id={`carta-${carta}`} className="ancora-carta" data-grupo-procura>
                 <h3 className="titulo-display titulo-gama text-tijolo">
                   {te(`cartas.${carta}.curto`)}
                 </h3>

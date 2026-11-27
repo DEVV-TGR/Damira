@@ -218,6 +218,11 @@ body:has(.cartaz) .barra-vidro {
   margin: 1.75rem 0 0;
   text-wrap: pretty;
 }
+.capa__oferta {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
 .cap__texto {
   max-width: 56ch;
   line-height: 1.62;
@@ -244,6 +249,10 @@ body:has(.cartaz) .barra-vidro {
   text-underline-offset: 0.28em;
   text-decoration-thickness: 1px;
   transition: text-decoration-thickness 160ms var(--sc-ease-out, ease-out);
+}
+.cap__ligacao.cap__ligacao--em-linha {
+  display: inline;
+  margin: 0;
 }
 .cap__ligacao:hover {
   text-decoration-thickness: 3px;
@@ -334,22 +343,10 @@ body:has(.cartaz) .barra-vidro {
   max-width: 44rem;
 }
 .raro__conta {
-  display: flex;
-  align-items: baseline;
-  gap: 0.6rem;
-  margin: 1rem 0 0;
-  flex-wrap: wrap;
-}
-.raro__numero {
-  font-family: var(--sc-font-display);
-  font-size: clamp(4rem, 2rem + 12vw, 11rem);
-  line-height: 0.86;
-  letter-spacing: -0.04em;
-  color: var(--color-papel);
-}
-.raro__de {
-  font-size: clamp(1rem, 0.9rem + 0.5vw, 1.3rem);
-  color: var(--color-papel);
+  display: inline-block;
+  min-inline-size: 3ch;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 /* Com o chão já em `verde-forte`, o corpo e a ligação são papel liso: 4,67:1,
    sem pastilha nenhuma por baixo. A pastilha que aqui esteve era o
@@ -489,6 +486,12 @@ body:has(.cartaz) .barra-vidro {
    na parte de que ele não se vai lembrar.
    =========================================================================== */
 
+.cap--natal {
+  background: var(--color-tinta);
+  --sc-ink: var(--color-papel);
+  --sc-ink-soft: var(--suave-sobre-tinta);
+  color: var(--sc-ink);
+}
 .cap--vitrine {
   background: var(--color-papel);
   --sc-ink: var(--color-tinta);
@@ -598,54 +601,36 @@ body:has(.cartaz) .barra-vidro {
   border-radius: 3px;
   overflow: hidden;
 }
-.reels__cela a,
-.reels__espaco {
+.reels__cela a {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
+  justify-content: end;
+  gap: 0.5rem;
   width: 100%;
   height: 100%;
-  text-align: center;
+  padding: clamp(0.75rem, 2.5vw, 1.75rem);
+  border: 1px solid color-mix(in oklab, var(--color-papel) 26%, transparent);
+  border-radius: inherit;
+  background: color-mix(in oklab, var(--color-papel) 6%, var(--color-tinta));
+  transition: background-color 160ms ease;
 }
-.reels__cela a {
-  position: relative;
+.reels__cela a:hover,
+.reels__cela a:focus-visible {
+  background: var(--color-tijolo);
 }
-.reels__cela img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.reels__cela a:focus-visible {
+  outline: 2px solid var(--color-papel);
+  outline-offset: -4px;
 }
-.reels__cela a .reels__rotulo {
-  position: relative;
-  align-self: end;
-  width: 100%;
-  padding: 0.75rem;
-  background: linear-gradient(to top, rgb(31 29 27 / 0.85), transparent);
+.reels__play {
+  font-size: 0.8rem;
 }
-/* Um lugar por encher **diz que está por encher**. O tracejado e o vapor
-   apagado são a diferença entre um espaço reservado e um vídeo que não
-   carregou. */
-.reels__espaco {
-  border: 2px dashed color-mix(in oklab, var(--color-papel) 26%, transparent);
-  border-radius: 3px;
-}
-.reels__marca {
-  width: 1.75rem;
-  height: auto;
-  color: color-mix(in oklab, var(--color-papel) 40%, transparent);
-}
-.reels__marca path {
-  stroke-dasharray: none;
-  stroke-dashoffset: 0;
+.reels__titulo {
+  font-size: clamp(1.1rem, 2vw, 1.4rem);
+  font-weight: 600;
 }
 .reels__rotulo {
-  font-size: 0.78rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-size: 0.8rem;
   color: var(--sc-ink-soft);
 }
 
