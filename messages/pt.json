@@ -582,6 +582,11 @@
       "opcional": "(opcional)"
     }
   },
+  "desconto": {
+    "faixa": "Aproveita <destaque>{n}% de desconto</destaque> nas primeiras encomendas",
+    "subtotal": "Subtotal",
+    "linha": "Desconto de boas-vindas ({n}%)"
+  },
   "modoTeste": {
     "etiqueta": "Modo de teste",
     "aviso": "Não se cobra nada, e os prazos e as vagas ocupadas são de exemplo."

@@ -7,6 +7,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { Cabecalho } from "@/components/Cabecalho";
 import { Rodape } from "@/components/Rodape";
 import { BotaoEncomendar } from "@/components/BotaoEncomendar";
+import { FaixaDesconto } from "@/components/FaixaDesconto";
 import { FaixaModoTeste } from "@/components/FaixaModoTeste";
 import { DadosEstruturados } from "@/components/DadosEstruturados";
 import { ProvedorConta } from "@/components/conta/ProvedorConta";
@@ -128,6 +129,9 @@ export default async function LayoutIdioma({
               Ver `src/lib/modo-teste.ts`. */}
           <FaixaModoTeste />
           <Cabecalho locale={locale as Locale} />
+          {/* O desconto de boas-vindas, logo por baixo do cabeçalho: o aviso do
+              modo de teste fica no topo, sem lhe tirar o lugar. */}
+          <FaixaDesconto />
           <main id="conteudo">{children}</main>
           <Rodape />
           {/* Fica fora do `<main>`: é navegação persistente, não conteúdo da

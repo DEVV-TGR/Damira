@@ -147,6 +147,17 @@ página fica. ⚠️ Os campos são controlados e o envio é feito à mão, sem 
 reinício automático do `<form action>` do React 19: um erro do servidor nunca
 apaga o que a pessoa escreveu (`robustez.md` › Erros).
 
+### O desconto de boas-vindas — por agora só à vista
+
+A faixa «Aproveita 10% de desconto nas primeiras encomendas» fica logo por
+baixo do cabeçalho (`FaixaDesconto`). Passa a tinta quando a página abre com um
+herói a tijolo (`.faixa-desconto`, em `globals.css`). O cesto e o resumo da
+compra mostram Subtotal, Desconto de boas-vindas e o total com o desconto
+(`src/lib/desconto.ts`). ⚠️ **O servidor ainda não o aplica:** o email à casa
+leva o total sem desconto, e quem conta como «primeira encomenda» ainda não
+está decidido. Até o backend o aplicar, este código não entra no `main` sozinho.
+A faixa de teste mantém o seu lugar no topo.
+
 ### Os emails dos pedidos — emissor (#119, etapa 1)
 
 O emissor de `emails_por_enviar` está em `src/lib/emails/enviar.ts`, com reserva

@@ -13,6 +13,7 @@ import { CampoTelefone } from "./CampoTelefone";
 import { linhasDoCesto, quantidadeEmTexto, totalDaLinha, type ItemCesto } from "@/lib/cesto";
 import type { ResultadoCotacao } from "@/lib/dados/tipos";
 import { itensGuardados } from "@/lib/historico";
+import { comDesconto, DESCONTO_PERCENTAGEM } from "@/lib/desconto";
 import { formatarCent } from "@/lib/preco";
 import type { ResultadoVagas, VagaDoCalendario } from "@/lib/vagas-servidor";
 import { CalendarioLevantamento } from "./CalendarioLevantamento";
@@ -63,6 +64,7 @@ function useDoServidor<T>(chave: string, ativo: boolean, pedir: (linhas: unknown
 export function Checkout({ locale, telefone }: { locale: Locale; telefone: string | null }) {
   const t = useTranslations("encomendas.compra");
   const tf = useTranslations("encomendas.formulario");
+  const td = useTranslations("desconto");
   const tc = useTranslations("encomendas.cesto");
   const tcal = useTranslations("encomendas.calendario");
   const id = useId();
@@ -156,6 +158,7 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
 
   const cotadas = cotacao?.ok ? cotacao.cotacao.linhas : null;
   const totalCent = cotacao?.ok ? cotacao.cotacao.totalCent : null;
+  const desconto = totalCent !== null && totalCent > 0 ? comDesconto(totalCent) : null;
   const semPreco = cotacao?.ok ? cotacao.cotacao.semPreco : cesto.filter((i) => i.precoCent === null).length;
 
   return (
@@ -213,11 +216,25 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
             );
           })}
         </ul>
+        {/* O desconto de boas-vindas desconta-se do total que o servidor cotou.
+            ⚠️ Só à vista, por agora: ver `src/lib/desconto.ts`. */}
+        {desconto && (
+          <div className="mt-2 grid gap-1 border-t border-tinta/15 pt-4 text-sm">
+            <p className="flex items-baseline justify-between gap-4">
+              <span>{td("subtotal")}</span>
+              <span className="tabular-nums">{formatarCent(totalCent!, locale)}</span>
+            </p>
+            <p className="flex items-baseline justify-between gap-4 font-semibold text-tijolo">
+              <span>{td("linha", { n: DESCONTO_PERCENTAGEM })}</span>
+              <span className="tabular-nums">−{formatarCent(desconto.descontoCent, locale)}</span>
+            </p>
+          </div>
+        )}
         <p className="mt-2 flex items-baseline justify-between gap-4 border-t border-tinta/15 pt-4 font-semibold">
           <span>{totalCent === 0 && semPreco > 0 ? tc("total") : semPreco > 0 ? tc("aPartirDe") : tc("estimativa")}</span>
           <span className="titulo-display text-2xl tabular-nums text-tijolo" aria-live="polite">
             {/* Só com artigos sob orçamento, «0,00 €» lia-se como um bolo de graça. */}
-            {totalCent === null ? "…" : totalCent === 0 && semPreco > 0 ? tc("semPreco") : formatarCent(totalCent, locale)}
+            {totalCent === null ? "…" : totalCent === 0 && semPreco > 0 ? tc("semPreco") : formatarCent(desconto ? desconto.totalCent : totalCent, locale)}
           </span>
         </p>
         <p className="mt-2 text-sm text-tinta-suave">{t("semPagamento")}</p>
