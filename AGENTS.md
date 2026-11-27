@@ -310,10 +310,8 @@ com o cliente à frente. O `superRefine` obriga `bolos-inteiros` a ser `kg`.
 ### O que a casa não afirma, o site não afirma
 
 ⚠️ **Não há *best sellers*.** O Santo Burga tinha doze artigos com selo no
-impresso; **os impressos da Damira não marcam nada**. A homepage destaca em vez
-disso as *combinações perfeitas*, que estão escritas no menu — é a diferença
-entre mostrar o que a casa recomenda e escolher seis artigos porque a grelha
-precisava de seis.
+impresso; **os impressos da Damira não marcam nada**. As combinações recomendadas
+pela casa estão no menu impresso.
 
 ⚠️ **Os alergénios estão vazios nos 95 e ficam assim** até a pastelaria os
 preencher. É informação com peso legal e clínico, e uma lista deduzida da
@@ -334,8 +332,9 @@ As imagens da página inicial vêm da Damira. A remessa «Conteúdo Site», de
 26/11/2026, trouxe duas fotografias de capa, novas imagens de pão e de
 decoração de um bolo e o álbum da vitrine. A capa alterna entre a fachada e
 a montra a cada cinco segundos. Com a preferência de movimento reduzido,
-mostra a fachada. As imagens de Natal vêm juntas no fim da vitrine, depois de
-«Ver mais». A galeria abre com seis fotografias (#80).
+mostra a fachada. As seis fotografias de Natal abrem uma secção própria, logo
+depois da capa. A galeria da casa abre com seis fotografias (#80) e o botão
+«Ver mais» mostra as restantes.
 
 As fotografias são servidas em WebP. As da vitrine ficam em
 `public/vitrine/`, as dos capítulos em `public/fotos/`. Os originais não são
