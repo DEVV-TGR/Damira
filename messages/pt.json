@@ -88,7 +88,7 @@
     },
     "raro": {
       "titulo": "Opções 100% vegan",
-      "tituloAnimado": "Opções <percentagem></percentagem> vegan",
+      "tituloAnimado": "<antes>Opções</antes> <cem></cem> <depois>vegan</depois>",
       "texto": "Bolos, salgados, tudo 100% vegan.",
       "exemplo": "Sim, até um pastel de nata ou lanche misto.",
       "ligacao": "Ver a carta vegan"

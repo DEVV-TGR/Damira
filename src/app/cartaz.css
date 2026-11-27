@@ -169,6 +169,9 @@ body:has(.cartaz) .barra-vidro {
      como se fazia antes de haver cinzentos. */
   --sc-ink-soft: var(--color-papel);
   color: var(--sc-ink);
+  /* O motor escreve o `--sc-p` (0 → 1) nesta secção. O «100%» enche entre
+     0,04 e 0,38; sem JavaScript o `--sc-p` não existe e o número sai cheio. */
+  --raro-enche: clamp(0, (var(--sc-p, 1) - 0.04) / 0.34, 1);
 }
 .cap--festa {
   background: var(--color-tijolo);
@@ -342,25 +345,56 @@ body:has(.cartaz) .barra-vidro {
 .raro__caixa {
   max-width: 44rem;
 }
-.raro__conta {
-  display: inline-block;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+/* O título é um cartaz em três linhas: «Opções», o número, «vegan». As
+   palavras ficam no tamanho dos outros títulos; o número é o que pesa. */
+.raro__titulo {
+  font-family: var(--sc-font-display);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 0.94;
+  margin: 0;
 }
-.raro__conta [data-sc-count] {
-  display: inline-block;
-  min-inline-size: 3ch;
-  text-align: end;
+.raro__linha {
+  display: block;
+  font-size: clamp(2.2rem, 1.4rem + 3.6vw, 4.4rem);
 }
-.raro__valor-final {
-  display: none;
+/* ⚠️ **O mínimo do `clamp` foi medido a 320 px**: com a margem do cartaz, o
+   «100%» cabe com folga até 1,5rem + 22vw; acima disso a página ganha rolagem
+   horizontal só no telemóvel mais estreito (armadilha 15). */
+.raro__cem {
+  display: block;
+  position: relative;
+  width: max-content;
+  font-size: clamp(5rem, 1.5rem + 22vw, 15rem);
+  line-height: 0.86;
+  letter-spacing: -0.05em;
+  margin-block: 0.06em 0.1em;
+}
+/* O contorno é o chão: está lá antes de o progresso sair do zero, por isso o
+   palco nunca aparece vazio. É decorativo (o `<h2>` tem `aria-label`), e a
+   frase lê-se também nas duas linhas de papel liso à volta dele. */
+.raro__cem-contorno {
+  color: transparent;
+  -webkit-text-stroke: max(1.5px, 0.012em) var(--color-papel);
+}
+/* ⚠️ **O enchimento é um recorte, não uma opacidade.** Papel a meia opacidade
+   sobre este verde cai abaixo de 4,5:1 (armadilha 5); recortado, cada píxel
+   pintado é papel a 100 %. */
+.raro__cem-cheio {
+  position: absolute;
+  inset: 0;
+  color: var(--color-papel);
+  clip-path: inset(calc((1 - var(--raro-enche)) * 100%) 0 0 0);
+}
+.raro__texto {
+  margin-top: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+}
+.raro__acao {
+  margin-top: 1.75rem;
 }
 @media (prefers-reduced-motion: reduce) {
-  .raro__conta [data-sc-count] {
-    display: none;
-  }
-  .raro__valor-final {
-    display: inline;
+  .cap--raro {
+    --raro-enche: 1;
   }
 }
 /* Com o chão já em `verde-forte`, o corpo e a ligação são papel liso: 4,67:1,

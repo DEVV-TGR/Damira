@@ -88,7 +88,7 @@
     },
     "raro": {
       "titulo": "100% vegan options",
-      "tituloAnimado": "<percentagem></percentagem> vegan options",
+      "tituloAnimado": "<cem></cem> <depois>vegan options</depois>",
       "texto": "Cakes and savouries, all 100% vegan.",
       "exemplo": "Yes, even a custard tart or a ham and cheese roll.",
       "ligacao": "See the vegan menu"
