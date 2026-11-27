@@ -1,7 +1,9 @@
 import "server-only";
+import { cache } from "react";
 import { fonteDoAmbiente, type FonteDeExemplo } from "./exemplo";
 import { listarPelaOrdem } from "@/lib/ordenar";
 import { protegerPainel } from "./papeis";
+import { familiasComProdutos, type FamiliaComProdutos } from "@/lib/vista";
 import type { FonteDeDados } from "./tipos";
 
 /**
@@ -40,6 +42,30 @@ export const produtoPorId: FonteDeDados["produtoPorId"] = (id) => fonte.produtoP
 
 export const ordemDaEmenta: FonteDeDados["ordemDaEmenta"] = () => fonte.ordemDaEmenta();
 
+/** As famílias e as categorias, pela ordem da gerente (26/11). */
+export const familias: FonteDeDados["familias"] = () => fonte.familias();
+
+/**
+ * O que a loja vende, arrumado pelas famílias e categorias da gerente, só com o
+ * que tem produtos (`familiasComProdutos`): tudo o que se encomenda — os kits,
+ * os bolos, as boxes e a carta que está à venda online. É o que desenha a
+ * `/encomendas` e o menu «Encomendas» do cabeçalho: os dois leem a mesma coisa,
+ * e um link do menu nunca aponta para uma secção que a página não tem.
+ */
+/* ⚠️ **Em `cache()`**: o layout (o menu) e a `/encomendas` pedem-no na mesma
+   página, e cada chamada são três consultas. Com o `cache()` é uma vez por
+   render, no build e em cada revalidação (revisão do Sobral ao #162). Não
+   guarda nada entre pedidos: é a memória de um render, e o que a gerente grava
+   entra no seguinte. */
+export const familiasDaLoja = cache(async (): Promise<FamiliaComProdutos[]> => {
+  const [arvore, encomendas, daCarta] = await Promise.all([
+    fonte.familias(),
+    listarProdutos({ origem: "encomendas" }),
+    listarProdutos({ origem: "ementa", aVendaOnline: true }),
+  ]);
+  return familiasComProdutos(arvore, [...encomendas, ...daCarta]);
+});
+
 export const configuracaoDaCasa: FonteDeDados["configuracaoDaCasa"] = () =>
   fonte.configuracaoDaCasa();
 
@@ -60,6 +86,9 @@ export const criarPedido: FonteDeDados["criarPedido"] = (entrada, contexto) =>
 
 export const pedidoPorReferencia: FonteDeDados["pedidoPorReferencia"] = (referencia) =>
   fonte.pedidoPorReferencia(referencia);
+
+/** As opções do bolo personalizado (`bolos-personalizados.md`), desligadas incluídas. */
+export const opcoesDoBolo: FonteDeDados["opcoesDoBolo"] = () => fonte.opcoesDoBolo();
 
 /**
  * O aceite e a recusa da proposta pelo link do email. ⚠️ Quem chama verifica primeiro a credencial
@@ -100,6 +129,10 @@ export const guardarDefinicoes = painel.guardarDefinicoes;
 export const pausarLoja = painel.pausarLoja;
 /** A ordem das categorias da ementa (#87). Só a gerente. Lê-se pelo `ordemDaEmenta`. */
 export const guardarOrdemCategorias = painel.guardarOrdemCategorias;
+/** As famílias e as categorias, a árvore inteira (26/11). Só a gerente. Lê-se pelo `familias`. */
+export const guardarFamilias = painel.guardarFamilias;
+/** As opções do bolo personalizado. Só a gerente. Lê-se pelo `opcoesDoBolo`. */
+export const guardarOpcoesDoBolo = painel.guardarOpcoesDoBolo;
 export const listarPedidos = painel.listarPedidos;
 export const pedidoDoPainel = painel.pedidoDoPainel;
 /** `pago → entregue`, condicional. Com dinheiro em falta, só com `faltaCobrada`. */

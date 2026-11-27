@@ -5,6 +5,7 @@ import {
   colunasDasDefinicoes,
   colunasDosHorarios,
   colunasEditaveis,
+  gravarPecas,
   lerCasa,
   lerProdutos,
   linhaParaCasa,
@@ -12,13 +13,15 @@ import {
   type BaseDeDados,
   type DadosDaCasa,
 } from "@/db/catalogo";
-import { casa as tabelaCasa, produtos, variantes } from "@/db/esquema";
-import { violouChave } from "@/db/erros";
+import { OPCOES_BOLO } from "@/data/bolos-personalizados";
+import { casa as tabelaCasa, categorias, familias as tabelaFamilias, produtos, seccoes, variantes } from "@/db/esquema";
+import { erroDoPostgres, violouChave } from "@/db/erros";
+import { arvoreDaLoja, planearFamilias, type ArvoreGravada } from "./familias";
 import type { ExecutarLote } from "@/db/lote";
 import { diaDeLisboa } from "@/lib/painel";
 import { criarPedidosDoPainelBd } from "./bd-painel-pedidos";
 import { criarPedidosBd, type LeituraDoPedido, type OpcoesDosPedidos } from "./bd-pedidos";
-import { comIds, cotarLinhas, emId, invalido, livre, naoExiste } from "./regras";
+import { cotarLinhas, emId, invalido, livre, naoExiste, prepararProduto, simplesLevados } from "./regras";
 import {
   EsquemaDefinicoes,
   EsquemaEntradaProduto,
@@ -55,6 +58,7 @@ export type FonteBd = Pick<
   | "listarProdutos"
   | "produtoPorId"
   | "ordemDaEmenta"
+  | "familias"
   | "configuracaoDaCasa"
   | "definicoesLoja"
   | "cotarCesto"
@@ -71,6 +75,10 @@ export type FonteBd = Pick<
   | "guardarDefinicoes"
   | "pausarLoja"
   | "guardarOrdemCategorias"
+  | "guardarFamilias"
+  // Os bolos personalizados.
+  | "opcoesDoBolo"
+  | "guardarOpcoesDoBolo"
 >;
 
 /**
@@ -129,6 +137,63 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
     campos: ["categoria"],
   };
 
+  /* A árvore como está gravada, arquivadas incluídas: é o que a gravação confere. */
+  const lerArvore = async (): Promise<ArvoreGravada> => {
+    const [fs, cs, ss] = await Promise.all([
+      db.select().from(tabelaFamilias),
+      db.select().from(categorias),
+      db.select().from(seccoes),
+    ]);
+    const nome = (l: { nomePt: string; nomeEn: string | null }) => ({ pt: l.nomePt, en: l.nomeEn });
+    return {
+      familias: fs.map((f) => ({ id: f.id, nome: nome(f), posicao: f.posicao, arquivada: f.arquivada })),
+      categorias: cs.map((c) => ({
+        id: c.id,
+        nome: nome(c),
+        posicao: c.posicao,
+        arquivada: c.arquivada,
+        familiaId: c.familiaId,
+      })),
+      seccoes: ss.map((x) => ({
+        id: x.id,
+        nome: nome(x),
+        posicao: x.posicao,
+        arquivada: x.arquivada,
+        categoriaId: x.categoriaId,
+      })),
+    };
+  };
+
+  /* ⚠️ Escolher a categoria no editor (26/11) é escolher uma que existe e está
+     em uso. Sem isto, a chave estrangeira recusava a que não existe, mas uma
+     arquivada passava — e o produto desaparecia da loja sem aviso. */
+  const categoriaEscolhidaInvalida = async (categoriaId: string | undefined) => {
+    if (categoriaId === undefined) return false;
+    const [linha] = await db
+      .select({ id: categorias.id })
+      .from(categorias)
+      .where(and(eq(categorias.id, categoriaId), eq(categorias.arquivada, false)));
+    return !linha;
+  };
+  const categoriaEscolhidaRecusada: ResultadoPainel<never> = {
+    ok: false,
+    erro: "dados-invalidos",
+    campos: ["categoriaId"],
+  };
+  /* A secção (27/11) tem de ser da categoria escolhida e estar em uso. A chave
+     composta recusava a de outra categoria, mas com um erro de base de dados em
+     vez do campo certo — e uma arquivada passava. */
+  const seccaoEscolhidaInvalida = async (categoriaId: string | undefined, seccaoId: string | null | undefined) => {
+    if (seccaoId === undefined || seccaoId === null) return false;
+    if (categoriaId === undefined) return true;
+    const [linha] = await db
+      .select({ id: seccoes.id })
+      .from(seccoes)
+      .where(and(eq(seccoes.id, seccaoId), eq(seccoes.categoriaId, categoriaId), eq(seccoes.arquivada, false)));
+    return !linha;
+  };
+  const seccaoEscolhidaRecusada: ResultadoPainel<never> = { ok: false, erro: "dados-invalidos", campos: ["seccaoId"] };
+
   return {
     async listarProdutos(filtro = {}) {
       /* O `and` ignora os `undefined`: um filtro que não vem não filtra. */
@@ -153,6 +218,10 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
       return (await casa()).ordem;
     },
 
+    async familias() {
+      return arvoreDaLoja(await lerArvore());
+    },
+
     async configuracaoDaCasa() {
       return (await casa()).configuracao;
     },
@@ -170,8 +239,12 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
          «produto desconhecido». */
       const ids = [...new Set(lido.data.map((linha) => linha.produtoId))];
       const doCesto = await lerProdutos(db, inArray(produtos.id, ids));
-      const porId = new Map(doCesto.map((produto) => [produto.id, produto]));
-      return { ok: true, cotacao: cotarLinhas(lido.data, (id) => porId.get(id)) };
+      /* Os simples que os compostos levam, para as variâncias deles: mais uma
+         consulta, e só se houver compostos. */
+      const levados = simplesLevados(doCesto).filter((id) => !ids.includes(id));
+      const dentro = levados.length > 0 ? await lerProdutos(db, inArray(produtos.id, levados)) : [];
+      const porId = new Map([...doCesto, ...dentro].map((produto) => [produto.id, produto]));
+      return { ok: true, cotacao: cotarLinhas(lido.data, (id) => porId.get(id), OPCOES_BOLO) };
     },
 
     // ——— O painel: os produtos ———
@@ -190,6 +263,8 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
       const lido = EsquemaEntradaProduto.safeParse(entrada);
       if (!lido.success) return invalido(lido.error);
       if (await foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
+      if (await categoriaEscolhidaInvalida(lido.data.categoriaId)) return categoriaEscolhidaRecusada;
+      if (await seccaoEscolhidaInvalida(lido.data.categoriaId, lido.data.seccaoId)) return seccaoEscolhidaRecusada;
       const base = emId(lido.data.nome.pt) || "produto";
 
       /* O id é o primeiro livre de `base`, `base-2`… Entre ler os ocupados e
@@ -204,10 +279,12 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
               .where(or(eq(produtos.id, base), like(produtos.id, `${base}-%`)))
           ).map((linha) => linha.id),
         );
+        const preparado = prepararProduto(lido.data, await lerProdutos(db), null);
+        if (!preparado.ok) return preparado.resultado;
         const produto = EsquemaProduto.parse({
           ...lido.data,
           id: livre(base, (candidato) => ocupados.has(candidato)),
-          variantes: comIds(lido.data.variantes),
+          ...preparado.campos,
           arquivado: false,
           foraDeVenda: false,
           esgotadoNoDia: null,
@@ -215,13 +292,14 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
         const linhas = produtoParaLinhas(produto, 0);
         try {
           await emLote((d) => [
-            categoriaNova(d, linhas.categoria),
+            ...(linhas.categoria ? [categoriaNova(d, linhas.categoria)] : []),
             /* Para o fim do catálogo, contado na própria instrução. */
             d.insert(produtos).values({
               ...linhas.produto,
               posicao: sql`(select coalesce(max(${produtos.posicao}), -1) + 1 from ${produtos})`,
             }),
             d.insert(variantes).values(linhas.variantes),
+            ...gravarPecas(d, linhas),
           ]);
           return { ok: true, valor: (await lerUm(produto.id))! };
         } catch (erro) {
@@ -237,18 +315,26 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
       const lido = EsquemaEntradaProduto.safeParse(entrada);
       if (!lido.success) return invalido(lido.error);
       if (await foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
-      /* Um id de variante que o produto não tem não se aceita: era o browser a
-         inventar ids, e são eles que os cestos guardam. Uma variante que falte
-         na entrada sai. (A mesma regra do `json-painel.ts`.) */
-      const existentes = new Set(atual.variantes.map((v) => v.id));
-      if (lido.data.variantes.some((v) => v.id !== undefined && !existentes.has(v.id))) {
-        return { ok: false, erro: "dados-invalidos", campos: ["variantes"] };
-      }
+      if (await categoriaEscolhidaInvalida(lido.data.categoriaId)) return categoriaEscolhidaRecusada;
+      if (await seccaoEscolhidaInvalida(lido.data.categoriaId, lido.data.seccaoId)) return seccaoEscolhidaRecusada;
+      /* As variantes, as peças partilhadas e o que os grupos levam conferem-se
+         contra o catálogo inteiro: a mesma regra do `json-painel.ts`. */
+      const preparado = prepararProduto(lido.data, await lerProdutos(db), atual);
+      if (!preparado.ok) return preparado.resultado;
 
-      const produto = EsquemaProduto.parse({ ...atual, ...lido.data, variantes: comIds(lido.data.variantes) });
+      /* A categoria é a que vem; sem ela, sai outra vez da família, da carta e
+         da categoria (`categoriaDoProduto`) — e não fica a gravada, senão mudar
+         a carta num editor antigo deixava o produto onde estava. */
+      const produto = EsquemaProduto.parse({
+        ...atual,
+        ...lido.data,
+        categoriaId: lido.data.categoriaId,
+        seccaoId: lido.data.seccaoId ?? null,
+        ...preparado.campos,
+      });
       const linhas = produtoParaLinhas(produto, 0);
       await emLote((d) => [
-        categoriaNova(d, linhas.categoria),
+        ...(linhas.categoria ? [categoriaNova(d, linhas.categoria)] : []),
         /* ⚠️ Só as colunas que a entrada traz: sem os interruptores do balcão,
            que a gerente não pode desfazer por gravar um preço. */
         d.update(produtos).set(colunasEditaveis(produto)).where(eq(produtos.id, id)),
@@ -256,6 +342,7 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
            não apontam para estas linhas (`pedidos.md` › fotografia do momento). */
         d.delete(variantes).where(eq(variantes.produtoId, id)),
         d.insert(variantes).values(linhas.variantes),
+        ...gravarPecas(d, linhas),
       ]);
       return { ok: true, valor: (await lerUm(id))! };
     },
@@ -294,6 +381,121 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
         return { ok: false, erro: "dados-invalidos", campos: ["pausaAte"] };
       }
       return { ok: true, valor: (await mudarCasa({ pausaAte: ate })).definicoes };
+    },
+
+    /* ⚠️ **Até ao PR de esquema, as opções do bolo leem-se dos JSON** (o PDF da
+       casa), e gravar responde `indisponivel`: não há tabela onde as pôr, e
+       fingir que gravou era a gerente a perder o que mudou no deploy seguinte. */
+    async opcoesDoBolo() {
+      return OPCOES_BOLO;
+    },
+
+    async guardarOpcoesDoBolo() {
+      return { ok: false, erro: "indisponivel" };
+    },
+
+    async guardarFamilias(entrada) {
+      const atual = await lerArvore();
+      const usadas = await db.selectDistinct({ id: produtos.categoriaId }).from(produtos);
+      const planeado = planearFamilias(entrada, atual, new Set(usadas.map((u) => u.id)));
+      if (!planeado.ok) return planeado;
+      const { plano } = planeado;
+
+      const linhaFamilia = (f: (typeof plano.familias)[number]) => ({
+        id: f.id,
+        nomePt: f.nome.pt,
+        nomeEn: f.nome.en,
+        posicao: f.posicao,
+        arquivada: false,
+      });
+      const substituir = <T extends Record<string, unknown>>(colunas: T) =>
+        Object.fromEntries(Object.entries(colunas).map(([chave, nome]) => [chave, sql.raw(`excluded."${nome}"`)]));
+
+      try {
+        await emLote((d) => [
+          /* As famílias primeiro: as categorias novas apontam para elas. E as
+             categorias que saem antes das famílias que saem, pela mesma razão. */
+          d
+            .insert(tabelaFamilias)
+            .values(plano.familias.map(linhaFamilia))
+            .onConflictDoUpdate({
+              target: tabelaFamilias.id,
+              set: substituir({ nomePt: "nome_pt", nomeEn: "nome_en", posicao: "posicao", arquivada: "arquivada" }),
+            }),
+          ...(plano.categorias.length > 0
+            ? [
+                d
+                  .insert(categorias)
+                  .values(
+                    plano.categorias.map((c) => ({ ...linhaFamilia(c), familiaId: c.familiaId })),
+                  )
+                  .onConflictDoUpdate({
+                    target: categorias.id,
+                    set: substituir({
+                      nomePt: "nome_pt",
+                      nomeEn: "nome_en",
+                      posicao: "posicao",
+                      familiaId: "familia_id",
+                    }),
+                  }),
+              ]
+            : []),
+          ...(plano.seccoes.length > 0
+            ? [
+                d
+                  .insert(seccoes)
+                  .values(plano.seccoes.map((x) => ({ ...linhaFamilia(x), categoriaId: x.categoriaId })))
+                  .onConflictDoUpdate({
+                    target: seccoes.id,
+                    set: substituir({ nomePt: "nome_pt", nomeEn: "nome_en", posicao: "posicao" }),
+                  }),
+              ]
+            : []),
+          /* Os produtos das secções que saem ficam na categoria, sem secção. */
+          ...(plano.apagarSeccoes.length > 0
+            ? [d.update(produtos).set({ seccaoId: null }).where(inArray(produtos.seccaoId, plano.apagarSeccoes))]
+            : []),
+          /* Os produtos das que saem passam para o destino **antes** de elas
+             saírem, arquivados incluídos, e sem secção — a do destino é outra
+             conversa: senão a chave estrangeira recusava. */
+          ...plano.moverProdutos.map(({ de, para }) =>
+            d.update(produtos).set({ categoriaId: para, seccaoId: null }).where(eq(produtos.categoriaId, de)),
+          ),
+          ...(plano.apagarSeccoes.length > 0
+            ? [d.delete(seccoes).where(inArray(seccoes.id, plano.apagarSeccoes))]
+            : []),
+          ...(plano.apagarCategorias.length > 0
+            ? [d.delete(categorias).where(inArray(categorias.id, plano.apagarCategorias))]
+            : []),
+          ...(plano.arquivarFamilias.length > 0
+            ? [
+                d
+                  .update(tabelaFamilias)
+                  .set({ arquivada: true })
+                  .where(inArray(tabelaFamilias.id, plano.arquivarFamilias)),
+              ]
+            : []),
+          ...(plano.apagarFamilias.length > 0
+            ? [d.delete(tabelaFamilias).where(inArray(tabelaFamilias.id, plano.apagarFamilias))]
+            : []),
+        ]);
+      } catch (erro) {
+        /* Um nome que a base recusou (dois trocados entre si, que a regra de
+           unicidade confere linha a linha) ou um produto que entrou numa
+           categoria a apagar entre a leitura e a gravação: não grava nada, e a
+           gerente tenta outra vez. */
+        const { code, constraint } = erroDoPostgres(erro);
+        if (code === "23505" || code === "23503") {
+          const campo = constraint?.startsWith("familias")
+            ? "familias"
+            : constraint?.startsWith("seccoes")
+              ? "seccoes"
+              : "categorias";
+          return { ok: false, erro: "dados-invalidos", campos: [campo] };
+        }
+        throw erro;
+      }
+      return { ok: true, valor: arvoreDaLoja(await lerArvore()) };
     },
 
     async guardarOrdemCategorias(entrada) {

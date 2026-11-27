@@ -47,6 +47,7 @@ dela** — e o `pedidos.md`, que é o contrato de que todos dependem.
 |---|---|
 | **Quem faz o quê, e com quem estás a trabalhar** | `divisao.md` |
 | O pedido: estados, referência, dinheiro, cancelamento | `pedidos.md` |
+| **O fluxo do pedido de ponta a ponta, com os emails, e o que falta** | `fluxo-do-pedido.md` |
 | Calendário, tempos de produção, até quando se cancela | `horarios.md` |
 | Stripe: checkout, webhook, reembolsos | `pagamentos.md` |
 | Painel: entrada, papéis, sessões | `painel.md` |
@@ -133,7 +134,8 @@ a um novo deploy.
 O cesto leva a **`/encomendas/pedido`** (#37): o resumo com o total do servidor,
 o calendário de levantamento (sempre embutido, com dia e hora — sem os dados da
 cozinha, as horas são as da loja e a escolhida é **pretendida**, a confirmar) e
-os dados da pessoa. O botão do carrinho não aparece nesta página. O formulário que vivia no
+os dados da pessoa. O botão do carrinho não aparece nesta página. «Alterar o pedido» abre o cartão
+do cesto por cima da compra para editar as quantidades e voltar ao formulário. O formulário que vivia no
 fundo das encomendas saiu. ⚠️ **Até ao pagamento online (#38) o pedido acaba num
 email à casa**, por secções e com todos os dados (os opcionais vazios
 escrevem-se «—»). Desde 25/11 esse email é o **modelo `criado-loja`** (moldura,
@@ -172,6 +174,8 @@ que as torna falsas:
   base de dados.
 - **«A conta de cliente», regras 2 e 3** — no PR que liga as chaves e no que
   passa o histórico para o servidor.
+- ~~«Os artigos da carta não têm página»~~ — reescrita no PR da #88 que lhes
+  deu página (decidido a 26/11).
 - ~~O `vegan: true` só na carta vegan e os mínimos por categoria em
   `encomendavel.ts`~~ — reescritas no PR da edição de produtos (#40, no #66).
 
@@ -245,6 +249,10 @@ papel:
 | `ementa.json` | 95 artigos com preço, em 4 cartas | pede-se ao balcão e leva-se |
 | `encomendas.json` | kits de festa, kits de bolo, boxes | tem data, antecedência e orçamento |
 | `bolos.json` | catálogo de massas, recheios, coberturas | **não tem preços nenhuns** |
+
+⚠️ O configurador do bolo personalizado **não lê o `bolos.json`**: lê o
+`bolos-personalizados.json` (o PDF da casa de novembro de 2026, #51), pela
+fronteira. O `bolos.json` ficou para os textos da página inicial.
 | `casa.json` | morada, telefone, horário, entregas | é um objeto, não uma lista |
 
 Há ainda `marca.json` (nome e redes, fonte única do cabeçalho e do rodapé) e
@@ -257,11 +265,21 @@ a chamar-se «Carta»** (decidido a 25/11: a troca para «Dia a dia» de 15/11 f
 desfeita), e o que dela se encomenda vive na `/encomendas`, na secção
 **«Da carta»**: 70 dos 95 artigos.
 
+**As secções da `/encomendas` são as famílias da gerente** (pedido de 26/11):
+Kit Festas, Bolo e mesa decorada, Boxes, Da carta (e o Natal, que a gerente cria) — criadas, renomeadas
+e ordenadas por ela em **Produtos › Famílias, categorias e secções**, em três
+níveis: **Família › Categoria › Secção** (`painel-gerente.md`, tabelas
+`familias` e `seccoes`, migração `0012`). **Cada produto vive numa categoria só,
+e numa secção dela ou em nenhuma** (`categoriaId` e `seccaoId`, os dois campos
+de sítio do editor). As âncoras de partida ficaram as de antes (`#festas`,
+`#da-ementa`…). ⚠️ **Não confundir com a `familia` do produto**, que decide o
+cartão e a página e no editor é o «Tipo de cartão».
+
 **Na `/encomendas`, todos os produtos têm o mesmo cartão e a mesma grelha**
 (`GRELHA_CARTOES`, em `vista.ts`) — kits, bolos, boxes e carta —, **todos por
 ordem alfabética** (`porOrdemAlfabetica`), e há uma pesquisa por cima deles
 (`PesquisaProdutos`). Decidido a 25/11. A lista de produtos do painel segue a
-mesma ordem; só as categorias da carta seguem a ordem da gerente (#87). Os dois ficheiros continuam separados
+mesma ordem; as famílias e as categorias seguem a ordem da gerente (26/11). Os dois ficheiros continuam separados
 (`ementa.json` e `encomendas.json`) até o catálogo passar a categorias (#124).
 
 O que evita alguém aparecer ao sábado à espera de levar um kit debaixo do braço
@@ -282,9 +300,10 @@ fora (`aVendaOnline: false`): não se encomenda um galão para sexta-feira.
 Porque as categorias **repetem-se entre cartas**: há `doces` na carta da casa e
 `doces` na vegan, `salgados` nas duas. Na `/ementa`, que saiu a 12/11, a âncora
 de uma secção era por isso `{carta}-{categoria}` e não só a categoria — duas
-âncoras iguais deixavam uma delas inalcançável, sem aviso nenhum. Na «Da carta» é
-o título colado que leva a carta à frente («Vegan, Doces»). Revê-se com
-as categorias da gerente (#124).
+âncoras iguais deixavam uma delas inalcançável, sem aviso nenhum. Desde 26/11
+a `/encomendas` já não lê a carta para desenhar: as categorias são as da
+gerente («Doces vegan»), e o título colado leva a **família** à frente («Da
+carta · Doces vegan»), pela mesma razão.
 
 ### `unidade` decide se o preço está certo ou errado
 
@@ -295,10 +314,8 @@ com o cliente à frente. O `superRefine` obriga `bolos-inteiros` a ser `kg`.
 ### O que a casa não afirma, o site não afirma
 
 ⚠️ **Não há *best sellers*.** O Santo Burga tinha doze artigos com selo no
-impresso; **os impressos da Damira não marcam nada**. A homepage destaca em vez
-disso as *combinações perfeitas*, que estão escritas no menu — é a diferença
-entre mostrar o que a casa recomenda e escolher seis artigos porque a grelha
-precisava de seis.
+impresso; **os impressos da Damira não marcam nada**. As combinações recomendadas
+pela casa estão no menu impresso.
 
 ⚠️ **Os alergénios estão vazios nos 95 e ficam assim** até a pastelaria os
 preencher. É informação com peso legal e clínico, e uma lista deduzida da
@@ -313,38 +330,23 @@ carta vegan é vegan —, que continua a ser verdade no JSON. O que **não** mud
 deduzi-lo ("não tem carne, logo é vegan") era pôr o site a garantir uma coisa
 que a casa não garantiu.
 
-## Fotografia — o buraco fechou-se
+## Fotografia
 
-**Havia aqui um aviso a dizer que este site não tinha fotografia nenhuma.**
-Deixou de ser verdade em duas etapas, e o aviso ficou para trás nas duas: vale
-a pena lembrar que um ficheiro de instruções desactualizado engana com mais
-autoridade do que um ficheiro vazio.
+As imagens da página inicial vêm da Damira. A remessa «Conteúdo Site», de
+26/11/2026, trouxe duas fotografias de capa, novas imagens de pão e de
+decoração de um bolo e o álbum da vitrine. A capa alterna entre a fachada e
+a montra a cada cinco segundos. Com a preferência de movimento reduzido,
+mostra a fachada. As seis fotografias de Natal abrem uma secção própria, logo
+depois da capa. A galeria da casa abre com seis fotografias (#80) e o botão
+«Ver mais» mostra as restantes.
 
-Hoje há **vinte e uma fotografias**, todas do álbum publicado pela própria casa e
-todas com a marca de água dela — que é o critério de origem, e não a
-composição:
+As fotografias são servidas em WebP. As da vitrine ficam em
+`public/vitrine/`, as dos capítulos em `public/fotos/`. Os originais não são
+versionados e pedem-se ao DevPlus. A fotografia antiga `public/vitrine/09.webp`
+mostra dois clientes reconhecíveis e saiu da galeria quando entrou a nova remessa.
 
-| Onde | Quantas | O que é |
-|---|---|---|
-| `public/fotos/` | 5 | a fachada, a vitrine, as mãos, os bombons, o prato |
-| `public/vitrine/` | 16 | o álbum de gestão, importado inteiro |
-
-Os originais vivem em `originais/fotos`, `originais/heroi` e
-`originais/fotos-gestao`, mas ⚠️ **`originais/` não é versionado** (`.gitignore`):
-um clone novo não os tem, e pedem-se ao DevPlus. Importam-se assim:
-
-```bash
-npm run fotos -- originais/fotos-gestao public/vitrine   # 1600 px, WebP
-```
-
-⚠️ **Continua a valer a proibição de banco de imagens.** O que mudou foi haver
-material da casa; o que não mudou foi a regra. Um croissant genérico ao lado do
-preço de um croissant continua a ser uma promessa que a casa não fez.
-
-⚠️ **A `vitrine/09.webp` mostra dois clientes de frente e reconhecíveis.**
-Levantei o consentimento e o cliente decidiu usá-la. Fica escrito porque é o
-tipo de coisa que ninguém volta a perguntar depois de estar publicada — e
-porque se a autorização não existir, é aquele ficheiro que sai.
+**Não usar fotografias de banco de imagens.** Uma fotografia do produto, ao
+lado de um preço, é uma promessa sobre o que a casa serve.
 
 O campo `artigo.foto` do `ementa.json` continua a `null` nos 95: há fotografia
 da casa, não há fotografia **por artigo**.
@@ -425,11 +427,17 @@ de apresentação, sem dados, estão em `src/lib/vista.ts`.
 
 ⚠️ **As fotografias dos produtos estão vazias em todos, e não se preenchem com o
 que há.**
-Existem vinte e uma fotografias da casa, e **nenhuma é deste kit ou desta box**.
+As fotografias da página inicial mostram a casa, a montra e a pastelaria.
 Numa página de produto qualquer imagem se lê como sendo o produto: pôr ali a
 montra vista da rua é anunciar uma coisa e entregar outra, e é a mesma regra que
 proíbe banco de imagens no resto do site. O `FotoProduto` guarda o espaço e diz
 que a fotografia está por chegar.
+
+**A gerente pode pôr várias por produto**, e a página mostra-as numa galeria
+(`GaleriaProduto`). Cada escolha de uma variância pode ter a sua (o bolo de
+morango, o de chocolate): ao escolhê-la, a galeria mostra-a. ⚠️ Uma foto que
+uma escolha ainda mostra **não se apaga do Blob** quando sai do produto — a
+variância pode estar ligada a outro (`gravarProduto`).
 
 ⚠️ **A `/ementa` saiu a 12/11 (#123)**, com as 95 páginas `/ementa/<id>` e o
 painel que levava lá. O site fica com a página inicial e as encomendas. Saíram
@@ -438,18 +446,30 @@ rodapé, a folha de rosto e o capítulo do vegan, que agora levam a
 `/encomendas#da-ementa`. ⚠️ **Antes de pôr um link para `/ementa` em lado
 nenhum, a página tem de voltar a existir**: um link esquecido é um 404 no menu.
 
-**Os artigos da carta não têm página.** O cartão (`CartaoArtigo`) é tudo:
-nome, preço e o botão compacto, **com a quantidade mínima no cabeçalho da
-categoria**. Um artigo com variantes (o chocolate do Dubai, quatro pesos) tem
-**um botão por variante** no próprio cartão — antes mandava para a página do
-artigo, onde estavam os quatro. O que não se encomenda (`aVendaOnline: false`:
-as bebidas, os pratos, a pausa) não chega à `/encomendas` e não ganha botão em
-lado nenhum: um galão com um botão de encomendar era prometer um serviço que a
-casa não tem.
+**Desde 26/11 os artigos da carta que se encomendam também têm página**
+(`/encomendas/<id>`, `temPagina` em `vista.ts`): é lá que se escolhe o sabor, o
+que se tira e os extras (#88), e que se veem as fotografias todas. O cartão
+(`CartaoArtigo`) continua com nome, preço e o botão compacto, **com a quantidade
+mínima no cabeçalho da categoria**, e o nome leva à página. ⚠️ **O «+» só junta
+logo num artigo sem nada para escolher**; num com variâncias, opções ou extras,
+leva à página — uma janela por cima do cartão foi tentada e desfeita no mesmo
+dia: não cabiam lá as fotografias. Um artigo com variantes (o chocolate do
+Dubai, quatro pesos) tem **um botão por variante** no cartão. ⚠️ **A linha do
+cesto tem o mesmo id no cartão e na página** (`ementa:<id>`): com ids
+diferentes, o mesmo artigo juntado nos dois sítios ficava em duas linhas. O que
+não se encomenda (`aVendaOnline: false`: as bebidas, os pratos, a pausa) não
+chega à `/encomendas`, não tem página e não ganha botão em lado nenhum: um galão
+com um botão de encomendar era prometer um serviço que a casa não tem.
 
 ⚠️ **O bolo por medida não vem do JSON.** Não é um produto de catálogo, é uma
 conversa: não tem preço e o que se escolhe são massas e recheios. Entra na lista
 para ter página e cartão, com `preco: null`, que é *sob orçamento* e não zero.
+Desde 26/11 (#51) chama-se **«Bolo personalizado»** no site (o id continua
+`bolo-por-medida`, que está nos cestos) e a página é o **configurador**
+(`ConfiguradorBolo`): as opções vêm de `bolos-personalizados.json` — o PDF da
+casa — pela fronteira (`opcoesDoBolo`), e as regras de combinação vivem em
+`src/lib/bolo-personalizado.ts`, as mesmas no browser e no servidor. O
+`bolos.json` antigo fica só para os textos da página inicial.
 
 ## A conta de cliente, e as três regras que a seguram
 
@@ -533,10 +553,11 @@ primeiras sete vieram do Santo Burga e continuam a valer — o motor é o mesmo.
    acumulador em vírgula flutuante, à parte do DOM.
 8. **Uma categoria em duas cartas dá duas âncoras iguais.** É a armadilha nova
    deste site, e foi a razão de a âncora da `/ementa` ser `{carta}-{categoria}`.
-   A página saiu (#123), e com ela o `SeccaoEmenta.tsx`; na «Da carta» a
-   categoria não tem âncora, e o título colado leva o nome da carta à frente
-   («Vegan, Doces») pela mesma razão. Volta a morder no dia em que alguém der
-   um `id` a uma categoria, ou em que duas categorias puderem ter o mesmo nome.
+   A página saiu (#123), e com ela o `SeccaoEmenta.tsx`; na `/encomendas` a
+   categoria não tem âncora — só a família —, e o título colado leva o nome da
+   família à frente («Da carta · Doces vegan») pela mesma razão. Desde 26/11
+   **duas categorias podem ter o mesmo nome em famílias diferentes**: volta a
+   morder no dia em que alguém der um `id` de DOM a uma categoria.
 9. **`background: currentColor` resolve para a cor do *próprio* elemento.** Uma
    pastilha com `background: currentColor` e `color: transparent` fica
    transparente, não fica da cor herdada. Declarar as duas cores.
@@ -667,3 +688,13 @@ actualizar uma, regenerar o inventário:
 ```bash
 npm run skills:lock
 ```
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

@@ -5,7 +5,7 @@ import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import ementaJson from "@/data/ementa.json";
 import encomendasJson from "@/data/encomendas.json";
 import { fonteDeExemplo, fonteDoAmbiente } from "./exemplo";
-import { fonteDaLoja, NA_BASE_DE_DADOS } from "./fontes-de-teste";
+import { fonteDaLoja, NA_BASE_DE_DADOS, BOLO_DE_TESTE } from "./fontes-de-teste";
 import { CATALOGO_JSON, CONFIGURACAO_JSON, criarFonteJson } from "./json";
 import { FORMATO_REFERENCIA, type EntradaPedido, type FonteDeDados } from "./tipos";
 
@@ -113,9 +113,9 @@ describe.skipIf(NA_BASE_DE_DADOS)("o catálogo, tal como sai dos JSON", () => {
     });
     const medida = CATALOGO_JSON.find((p) => p.id === "bolo-por-medida")!;
     expect(medida.variantes).toEqual([
-      { id: "unica", rotulo: null, pessoas: null, precoCent: null, composicao: [] },
+      { id: "unica", rotulo: null, pessoas: null, precoCent: null, composicao: [], leva: [], ativa: true },
     ]);
-    expect(medida.nome.pt).toBe("Bolo por medida");
+    expect(medida.nome.pt).toBe("Bolo personalizado");
   });
 
   it("o que a casa não deu fica por preencher, e não se inventa", () => {
@@ -227,7 +227,7 @@ describe("cotar o cesto: o preço calcula-se no servidor", () => {
 
   it("sob orçamento conta-se à parte, e nunca como zero no total", async () => {
     const resultado = await fonte.cotarCesto([
-      { produtoId: "bolo-por-medida", varianteId: "unica", quantidade: 1 },
+      { produtoId: "bolo-por-medida", varianteId: "unica", quantidade: 1, bolo: BOLO_DE_TESTE },
       { produtoId: "box-aniversario", varianteId: "unica", quantidade: 1 },
     ]);
     expect(resultado.ok && resultado.cotacao).toMatchObject({ totalCent: 3500, semPreco: 1, valida: true });
@@ -312,7 +312,7 @@ describe.skipIf(NA_BASE_DE_DADOS)("criar o pedido", () => {
       entrada({
         levantamentoEm: QUARTA_SEGUINTE_7H30,
         linhas: [
-          { produtoId: "bolo-por-medida", varianteId: "unica", quantidade: 1 },
+          { produtoId: "bolo-por-medida", varianteId: "unica", quantidade: 1, bolo: BOLO_DE_TESTE },
           { produtoId: "box-aniversario", varianteId: "unica", quantidade: 1 },
         ],
       }),
@@ -338,7 +338,7 @@ describe.skipIf(NA_BASE_DE_DADOS)("criar o pedido", () => {
     });
     const box = { produtoId: "box-aniversario", varianteId: "unica", quantidade: 1 };
     const comBolo = await fonte.criarPedido(
-      entrada({ levantamentoEm: QUARTA_SEGUINTE_7H30, linhas: [{ produtoId: "bolo-por-medida", varianteId: "unica", quantidade: 1 }, box] }),
+      entrada({ levantamentoEm: QUARTA_SEGUINTE_7H30, linhas: [{ produtoId: "bolo-por-medida", varianteId: "unica", quantidade: 1, bolo: BOLO_DE_TESTE }, box] }),
       CONTEXTO,
     );
     expect(comBolo.ok && comBolo.pedido.estado).toBe("por-confirmar");

@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { cestoEmTexto, estimativa, idComEscolha, idsDoItem, linhasDoCesto, normalizarCesto } from "./cesto";
+import {
+  cestoEmTexto,
+  estimativa,
+  idComEscolha,
+  idComPersonalizacao,
+  idsDoItem,
+  linhasDoCesto,
+  NADA_ESCOLHIDO,
+  normalizarCesto,
+} from "./cesto";
 import { gerarReferencia, normalizarHistorico } from "./historico";
 
 /* O cesto e o histórico vivem no `localStorage` de quem já usou o site, e o
@@ -149,3 +158,53 @@ describe("o sabor escolhido", () => {
   });
 });
 
+
+describe("a personalização (#88)", () => {
+  const escolhido = {
+    variancias: [{ produtoId: null, varianciaId: "salsicha", escolhaId: "alema" }],
+    opcoes: ["fiambre"],
+    extras: [{ id: "queijo", quantidade: 2 }],
+  };
+
+  it("faz parte da identidade da linha, e a mesma escolha dá a mesma linha", () => {
+    const a = idComPersonalizacao("cao-quente", escolhido);
+    expect(a).not.toBe("cao-quente");
+    expect(idComPersonalizacao("cao-quente", { ...escolhido, opcoes: [] })).not.toBe(a);
+    /* A ordem por que se tocou não muda a linha. */
+    expect(idComPersonalizacao("cao-quente", { ...escolhido, extras: [...escolhido.extras] })).toBe(a);
+    expect(idComPersonalizacao("cao-quente", NADA_ESCOLHIDO)).toBe("cao-quente");
+  });
+
+  it("vai para o servidor por ids, e sem o sabor pelo nome", () => {
+    const item = {
+      id: "x",
+      produtoId: "cao-quente",
+      varianteId: "unica",
+      tipo: "ementa" as const,
+      nome: "Cão quente",
+      variante: null,
+      precoCent: 999,
+      pessoas: null,
+      quantidade: 1,
+      unidade: "un" as const,
+      minimo: 1,
+      passo: 1,
+      notas: null,
+      escolha: "Salsicha: Alemã · SEM fiambre",
+      personalizacao: escolhido,
+    };
+    expect(linhasDoCesto([item])[0]).toEqual({
+      produtoId: "cao-quente",
+      varianteId: "unica",
+      quantidade: 1,
+      notas: null,
+      escolhas: [],
+      variancias: escolhido.variancias,
+      opcoes: ["fiambre"],
+      extras: escolhido.extras,
+    });
+    /* E sobrevive ao `localStorage`, que qualquer pessoa edita. */
+    expect(normalizarCesto(JSON.parse(JSON.stringify([item])))[0].personalizacao).toEqual(escolhido);
+    expect(normalizarCesto([{ ...item, personalizacao: { variancias: "x" } }])[0].personalizacao).toBeNull();
+  });
+});

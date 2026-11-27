@@ -5,6 +5,8 @@ import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Analytics } from "@vercel/analytics/next";
 import { Cabecalho } from "@/components/Cabecalho";
+import { familiasDaLoja } from "@/lib/dados";
+import { emLingua } from "@/lib/vista";
 import { Rodape } from "@/components/Rodape";
 import { BotaoEncomendar } from "@/components/BotaoEncomendar";
 import { FaixaModoTeste } from "@/components/FaixaModoTeste";
@@ -98,6 +100,15 @@ export default async function LayoutIdioma({
      dinâmica — e perde-se a geração estática das duas línguas. */
   setRequestLocale(locale);
 
+  /* O menu «Encomendas» do cabeçalho mostra as famílias da gerente (26/11).
+     Lê-se aqui, no servidor e uma vez por página gerada: o cabeçalho é de
+     cliente e não pode ir à fronteira. Gravar no painel revalida o layout
+     (`revalidatePath("/", "layout")`), e o menu muda com a página. */
+  const seccoesDoMenu = (await familiasDaLoja()).map(({ familia }) => ({
+    id: familia.id,
+    nome: emLingua(familia.nome, locale as Locale),
+  }));
+
   const t = await getTranslations({ locale, namespace: "metadata.inicio" });
   const nav = await getTranslations({ locale, namespace: "nav" });
 
@@ -127,7 +138,7 @@ export default async function LayoutIdioma({
           {/* O modo de teste diz-se em voz alta, no topo de todas as páginas.
               Ver `src/lib/modo-teste.ts`. */}
           <FaixaModoTeste />
-          <Cabecalho locale={locale as Locale} />
+          <Cabecalho locale={locale as Locale} seccoes={seccoesDoMenu} />
           <main id="conteudo">{children}</main>
           <Rodape />
           {/* Fica fora do `<main>`: é navegação persistente, não conteúdo da

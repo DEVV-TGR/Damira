@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { BotaoConta } from "./conta/BotaoConta";
-import { MenuEncomendas } from "./MenuEncomendas";
+import { MenuEncomendas, type SeccaoDoMenu } from "./MenuEncomendas";
 
 /* ⚠️ **A barra tem uma secção só, as encomendas.** Até 12/11 havia também a
    ementa, numa lista com as duas; a `/ementa` saiu (#123) e a lista com ela.
@@ -18,7 +18,7 @@ import { MenuEncomendas } from "./MenuEncomendas";
  * está para trocar de língua **sem sair dela** — mandar sempre para a homepage é
  * o erro clássico, e faz o visitante perder o sítio onde ia.
  */
-export function Cabecalho({ locale }: { locale: Locale }) {
+export function Cabecalho({ locale, seccoes }: { locale: Locale; seccoes: SeccaoDoMenu[] }) {
   const t = useTranslations("nav");
   const marca = useTranslations("marca");
   /**
@@ -86,7 +86,7 @@ export function Cabecalho({ locale }: { locale: Locale }) {
               não traz desenho novo, usa o que a casa tem. */}
           {/* As encomendas abrem um menu com as secções da página (#82). Ver
               `MenuEncomendas.tsx`. */}
-          <MenuEncomendas actual={caminho === "/encomendas"} />
+          <MenuEncomendas actual={caminho === "/encomendas"} seccoes={seccoes} />
           {/* ⚠️ **A conta fica antes do idioma e depois das secções.** É
               navegação pessoal e não navegação do site: pô-la antes das
               encomendas dava-lhe o mesmo peso que à página que a casa quer que
@@ -97,27 +97,21 @@ export function Cabecalho({ locale }: { locale: Locale }) {
           <Link
             href={caminho}
             locale={outra}
-            className="alvo-toque rounded-full border border-tinta/25 px-2.5 py-2 transition-colors hover:bg-tinta hover:text-papel sm:px-3.5"
+            className="alvo-toque controlo-cabecalho inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-tinta/25 transition-colors hover:bg-tinta"
             /* `lang` no link diz aos leitores de ecrã para pronunciar "English"
                à inglesa, em vez de o lerem com fonética portuguesa. */
             lang={outra}
-            /* ⚠️ **O nome acessível vem daqui e não do que está escrito.** Num
-               telemóvel o botão mostra só «EN», que poupa a largura que a
-               entrada das encomendas passou a ocupar; sem este `aria-label`,
-               quem ouve a página passava a ouvir duas letras em vez da palavra.
-               A abreviatura é para os olhos, não para os ouvidos. */
+            hrefLang={outra}
             aria-label={t("mudarIdioma")}
           >
-            {/* Duas caixas e não uma cadeia cortada: o código do idioma **é**
-                o idioma (`outra` vale "pt" ou "en"), e escrevê-lo à mão era
-                mais um sítio para desirmanar quando aparecer uma terceira
-                língua. */}
-            <span aria-hidden className="sm:hidden">
-              {outra}
-            </span>
-            <span aria-hidden className="hidden sm:inline">
-              {t("mudarIdioma")}
-            </span>
+            <Image
+              src={`/idiomas/${outra}.png`}
+              alt=""
+              width={96}
+              height={outra === "pt" ? 64 : 58}
+              className="h-auto w-6 rounded-[2px]"
+              unoptimized
+            />
           </Link>
         </nav>
       </div>

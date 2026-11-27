@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { OrdemEmenta, Produto } from "@/lib/dados/tipos";
+import type { Familia, OrdemEmenta, Produto } from "@/lib/dados/tipos";
 import { contarPorPreencher, filtrarProdutos, type VistaProdutos } from "@/lib/painel";
 import { formatarCent } from "@/lib/preco";
 import { porOrdemAlfabetica } from "@/lib/vista";
@@ -28,12 +28,15 @@ const VISTAS: { id: VistaProdutos; rotulo: string }[] = [
 ];
 
 const FAMILIAS: { id: Produto["familia"] | "todas"; rotulo: string }[] = [
-  { id: "todas", rotulo: "Todas as famílias" },
+  /* É o tipo de cartão (a `familia` do produto), e não as famílias da loja
+     (26/11): chamava-se «Todas as famílias», e com as famílias da gerente ao
+     lado era o mesmo nome para duas coisas. */
+  { id: "todas", rotulo: "Todos os tipos" },
   { id: "ementa", rotulo: "Carta" },
   { id: "festa", rotulo: "Kits de festa" },
   { id: "bolo", rotulo: "Kits de bolo" },
   { id: "box", rotulo: "Boxes" },
-  { id: "medida", rotulo: "Bolo por medida" },
+  { id: "medida", rotulo: "Os nossos Bolos" },
 ];
 
 const precoDe = (p: Produto) => {
@@ -46,12 +49,14 @@ const precoDe = (p: Produto) => {
 export function Produtos({
   produtos: doServidor,
   ordem,
+  familias,
   vistaInicial,
   procura,
   onRascunho,
 }: {
   produtos: Produto[];
   ordem: OrdemEmenta;
+  familias: Familia[];
   vistaInicial: VistaProdutos;
   /** A pesquisa de cima do painel. */
   procura: string;
@@ -96,6 +101,16 @@ export function Produtos({
   /* Por ordem alfabética, como nas encomendas (decidido a 25/11): um produto
      novo aparece logo no sítio dele, aqui e no site. */
   const lista = porOrdemAlfabetica(filtrarProdutos(produtos, { procura, vista, familia }), "pt");
+  /* «Da carta · Doces · Vegan»: onde a gerente o arrumou (famílias, categorias e secções). */
+  const ondeAparece = new Map(
+    familias.flatMap((f) => f.categorias.map((c) => [c.id, { rotulo: `${f.nome.pt} · ${c.nome.pt}`, seccoes: c.seccoes }] as const)),
+  );
+  const ondeEsta = (p: Produto) => {
+    const sitio = ondeAparece.get(p.categoriaId ?? "");
+    if (!sitio) return undefined;
+    const seccao = sitio.seccoes.find((x) => x.id === p.seccaoId);
+    return seccao ? `${sitio.rotulo} · ${seccao.nome.pt}` : sitio.rotulo;
+  };
 
   const ficha =
     aEditar !== null ? (
@@ -103,6 +118,8 @@ export function Produtos({
         key={`${aEditar}-${versao}`}
         produto={produtoAberto}
         ordem={ordem}
+        familias={familias}
+        catalogo={produtos}
         onSujo={marcarSujo}
         onFechar={(mensagem, gravado) => {
           marcarSujo(false);
@@ -177,7 +194,7 @@ export function Produtos({
             <select
               value={familia}
               onChange={(e) => setFamilia(e.target.value as typeof familia)}
-              aria-label="Família"
+              aria-label="Tipo"
               className="min-h-12 min-w-0 rounded-xl border border-tinta/20 bg-papel px-3"
             >
               {FAMILIAS.map((f) => (
@@ -205,7 +222,10 @@ export function Produtos({
                   <span className="mr-auto min-w-0">
                     <strong className="block">{p.nome.pt}</strong>
                     <span className="block text-sm text-tinta-suave">
-                      {p.familia === "ementa" ? `${p.carta} · ${p.categoria}` : FAMILIAS.find((f) => f.id === p.familia)?.rotulo} ·{" "}
+                      {/* Onde aparece na loja (26/11): é o que a gerente arruma. */}
+                      {ondeEsta(p) ??
+                        (p.familia === "ementa" ? `${p.carta} · ${p.categoria}` : FAMILIAS.find((f) => f.id === p.familia)?.rotulo)}{" "}
+                      ·{" "}
                       {precoDe(p)}
                     </span>
                   </span>

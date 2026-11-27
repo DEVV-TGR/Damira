@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 export type FotoDaVitrine = {
-  ficheiro: string;
+  src: string;
   /** Já traduzido: quem traduz é a `Vitrine`, que é de servidor. */
   alt: string;
   larga: boolean;
@@ -49,13 +49,17 @@ export type FotoDaVitrine = {
  * ordem de tabulação — e o foco vai lá.
  */
 export function VitrineGrelha({
+  id,
   fotos,
-  visiveis,
+  visiveis = fotos.length,
   rotuloMais,
+  aoAbrirFoto,
 }: {
+  id: string;
   fotos: FotoDaVitrine[];
-  visiveis: number;
-  rotuloMais: string;
+  visiveis?: number;
+  rotuloMais?: string;
+  aoAbrirFoto?: (indice: number) => void;
 }) {
   const [aberta, setAberta] = useState(false);
   const [entraram, setEntraram] = useState(false);
@@ -74,7 +78,7 @@ export function VitrineGrelha({
   return (
     <>
       <ul
-        id="vitrine-grelha"
+        id={id}
         className="vitrine__grelha"
         data-sc-in
         data-sc-stagger="40"
@@ -84,7 +88,7 @@ export function VitrineGrelha({
           const nova = i >= visiveis;
           return (
             <li
-              key={foto.ficheiro}
+              key={foto.src}
               ref={i === visiveis ? primeiraNova : undefined}
               tabIndex={i === visiveis ? -1 : undefined}
               /* ⚠️ As seis primeiras ficam com o `className` de sempre: o
@@ -96,8 +100,8 @@ export function VitrineGrelha({
               suppressHydrationWarning
             >
               <Image
-                src={`/vitrine/${foto.ficheiro}.webp`}
-                alt={foto.alt}
+                src={foto.src}
+                alt={aoAbrirFoto ? "" : foto.alt}
                 width={1400}
                 height={875}
                 loading="lazy"
@@ -109,6 +113,15 @@ export function VitrineGrelha({
                    nesta página. */
                 sizes="(max-width: 48rem) 46vw, (max-width: 72rem) 45vw, 30vw"
               />
+              {aoAbrirFoto && (
+                <button
+                  type="button"
+                  className="natal__ampliar"
+                  aria-label={foto.alt}
+                  aria-haspopup="dialog"
+                  onClick={() => aoAbrirFoto(i)}
+                />
+              )}
             </li>
           );
         })}
@@ -119,7 +132,7 @@ export function VitrineGrelha({
           <button
             type="button"
             className="cap__accao"
-            aria-controls="vitrine-grelha"
+            aria-controls={id}
             aria-expanded={false}
             onClick={() => setAberta(true)}
           >

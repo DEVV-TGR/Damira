@@ -78,6 +78,20 @@
       "when": 1795635861947,
       "tag": "0010_aceite_em_24_horas",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1795651027493,
+      "tag": "0011_personalizacao",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1795728948171,
+      "tag": "0012_familias",
+      "breakpoints": true
     }
   ]
 }

@@ -1,14 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import type { AvisoAtencao, ConfiguracaoDaCasa, DefinicoesLoja, OrdemEmenta, Pedido, Produto } from "@/lib/dados/tipos";
+import type {
+  AvisoAtencao,
+  ConfiguracaoDaCasa,
+  DefinicoesLoja,
+  Familia,
+  OpcoesBolo,
+  OrdemEmenta,
+  Pedido,
+  Produto,
+} from "@/lib/dados/tipos";
 import type { contarPorPreencher } from "@/lib/painel";
 import { Atencao } from "./Atencao";
+import { BolosPersonalizados } from "./BolosPersonalizados";
 import { Definicoes } from "./Definicoes";
 import { DetalhePedido } from "./DetalhePedido";
 import { Equipa } from "./Equipa";
 import { Horarios } from "./Horarios";
-import { OrdemCategorias } from "./OrdemCategorias";
+import { FamiliasCategorias } from "./FamiliasCategorias";
 import { PedidosGestao } from "./PedidosGestao";
 import { Produtos } from "./Produtos";
 
@@ -34,8 +44,10 @@ export type DadosGestao = {
   /** Todos, arquivados incluídos, para a edição de produtos. */
   produtos: Produto[];
   ordem: OrdemEmenta;
-  /** Os nomes das categorias como o site os escreve, para a ordem (#87). */
-  nomesCategorias: Record<string, string>;
+  /** As famílias e as categorias da loja (26/11), para as arrumar e para o editor. */
+  familias: Familia[];
+  /** As opções do bolo personalizado, desligadas incluídas. */
+  opcoesBolo: OpcoesBolo;
 };
 
 export type VistaGestao =
@@ -44,6 +56,7 @@ export type VistaGestao =
   | "produtos"
   | "por-preencher"
   | "categorias"
+  | "bolos"
   | "horarios"
   | "definicoes"
   | "equipa";
@@ -77,13 +90,16 @@ export function Gestao({
         <Produtos
           produtos={dados.produtos}
           ordem={dados.ordem}
+          familias={dados.familias}
           vistaInicial={vista === "por-preencher" ? "por-preencher" : "todos"}
           procura={procura}
           onRascunho={onRascunho}
         />
       );
     case "categorias":
-      return <OrdemCategorias ordem={dados.ordem} produtos={dados.produtos} nomes={dados.nomesCategorias} />;
+      return <FamiliasCategorias familias={dados.familias} produtos={dados.produtos} />;
+    case "bolos":
+      return <BolosPersonalizados opcoes={dados.opcoesBolo} />;
     case "horarios":
       return <Horarios casa={dados.casa} />;
     case "definicoes":

@@ -10,7 +10,8 @@ import {
   editarProduto,
   guardarDefinicoes,
   guardarHorarios,
-  guardarOrdemCategorias,
+  guardarOpcoesDoBolo,
+  guardarFamilias,
   listarPedidos,
   pedidoDoPainel,
   reagendarPedido,
@@ -151,7 +152,18 @@ export async function gravarProduto(id: string | null, entrada: unknown) {
     revalidatePath("/", "layout");
     /* Depois de gravar, e nunca antes: um produto a apontar para uma foto apagada
        é pior do que uma foto esquecida no Blob. */
-    await apagarFotos(fotosQueSairam(antes?.fotos ?? [], resultado.valor.fotos));
+    const sairam = fotosQueSairam(antes?.fotos ?? [], resultado.valor.fotos);
+    if (sairam.length > 0) {
+      /* ⚠️ Uma foto que uma escolha ainda mostra fica no Blob (#88): a variância
+         pode estar ligada a outro produto, que continua a apontar para ela. Só
+         se lê o catálogo quando há fotos a apagar. */
+      const emUso = new Set(
+        (await dados.listarProdutos({ incluirArquivados: true })).flatMap((p) =>
+          p.variancias.flatMap((v) => v.escolhas.flatMap((e) => (e.foto ? [e.foto] : []))),
+        ),
+      );
+      await apagarFotos(sairam.filter((foto) => !emUso.has(foto)));
+    }
   }
   return resultado;
 }
@@ -163,15 +175,25 @@ export async function arquivar(id: string, arquivado: boolean) {
   return resultado;
 }
 
-// ——— A ordem das categorias (#87) ———
+// ——— As famílias e as categorias (26/11) ———
 
 /**
- * A ordem por que as categorias aparecem na ementa e nas encomendas. Como um
- * produto, muda páginas estáticas: sem revalidar, o site continuava na ordem
- * antiga até ao próximo deploy.
+ * A árvore inteira, como a gerente a deixou. Muda a `/encomendas` e o menu do
+ * cabeçalho, que são estáticos: sem revalidar, o site ficava como estava até ao
+ * deploy seguinte.
  */
-export async function gravarOrdemCategorias(categorias: string[]) {
-  const resultado = await comSessao((ctx) => guardarOrdemCategorias({ categorias }, ctx));
+export async function gravarFamilias(entrada: unknown) {
+  const resultado = await comSessao((ctx) => guardarFamilias(entrada, ctx));
+  if (resultado.ok) revalidatePath("/", "layout");
+  return resultado;
+}
+
+/**
+ * As opções do bolo personalizado. A página do bolo é estática: sem revalidar,
+ * o site mostrava as opções antigas até ao deploy seguinte.
+ */
+export async function gravarOpcoesDoBolo(opcoes: unknown) {
+  const resultado = await comSessao((ctx) => guardarOpcoesDoBolo(opcoes, ctx));
   if (resultado.ok) revalidatePath("/", "layout");
   return resultado;
 }

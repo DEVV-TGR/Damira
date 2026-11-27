@@ -3,12 +3,29 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { arquivar, gravarProduto } from "@/app/painel/acoes-gestao";
-import type { EntradaProduto, OrdemEmenta, Produto } from "@/lib/dados/tipos";
+import type { EntradaProduto, Familia, OrdemEmenta, Produto } from "@/lib/dados/tipos";
 import { ALERGENIOS_UE, entradaDoProduto, paraCent } from "@/lib/painel";
 import { Ajuda, Rotulo } from "../Ajuda";
+import { ExemploLoja } from "../ExemploLoja";
 import { BOTAO, BOTAO_PRINCIPAL, BOTAO_SECUNDARIO, MENSAGENS } from "../balcao/comum";
 import { usePainel } from "../PainelAberto";
 import { FotosProduto } from "./FotosProduto";
+import {
+  bloco,
+  campo,
+  ComoOClienteVe,
+  emEuros,
+  kitsQueLevam as compostosQueLevam,
+  LevaDoGrupo,
+  ListaExtras,
+  ListaOpcoes,
+  ListaVariancias,
+  pecasDoForm,
+  pecasParaForm,
+  quantidadeDoForm,
+  type LevaForm,
+  type PecasForm,
+} from "./PecasProduto";
 
 /**
  * # Um produto, como a gerente o edita (`painel-gerente.md` › O que cada produto tem)
@@ -26,21 +43,39 @@ import { FotosProduto } from "./FotosProduto";
  * não errar. As explicações estão no «?» de cada campo (`Ajuda.tsx`); fica à
  * vista só o que é preciso para não errar.
  *
- * ⚠️ **Os nomes mudaram na interface, não no modelo.** «Tamanho» é a
- * `variante` (muda o preço) e «Opção» é a `escolha` (não muda). Os tamanhos e
- * grupos de opções do #88 pedem contrato novo; até lá é isto que se grava.
+ * ⚠️ **Simples e composto têm fichas diferentes** (#88, `painel-gerente.md` ›
+ * Simples e compostos). No simples: Preço e tamanhos, Variâncias, Opções e
+ * Extras. No composto: Grupos, cada um com o seu preço e os produtos simples
+ * que leva. Os dois são a `variante` do modelo — o tamanho e o grupo —, e as
+ * peças estão em `PecasProduto.tsx`.
  *
  * ⚠️ **Sem alergénios respondidos, não vai à venda online.** «Por responder» não
  * é «sem alergénios»: confundi-los é dizer a um alérgico que não há nada quando
  * ninguém verificou.
  */
 
-type Separador = "geral" | "precos" | "opcoes" | "encomenda" | "alergenios" | "fotos";
+type Separador = "geral" | "precos" | "variancias" | "opcoes" | "extras" | "encomenda" | "alergenios" | "fotos";
 
-const SEPARADORES: { id: Separador; rotulo: string }[] = [
+/* O composto não tem variâncias, opções nem extras: escolhe-se pelo grupo, e as
+   variâncias que mostra são as dos simples lá dentro. ⚠️ **O bolo personalizado
+   também não** (#51, decidido a 26/11): tamanhos, massas, coberturas, toppings e
+   fotos são todos de «Bolos personalizados», e o preço final é da gerente — um
+   «Preço e tamanhos» aqui cobrava um preço que ninguém deu. */
+const separadoresDe = (
+  tipo: EntradaProduto["tipo"],
+  familia: EntradaProduto["familia"],
+): { id: Separador; rotulo: string }[] => [
   { id: "geral", rotulo: "Geral" },
-  { id: "precos", rotulo: "Tamanhos e preços" },
-  { id: "opcoes", rotulo: "Opções" },
+  ...(familia === "medida"
+    ? []
+    : tipo === "simples"
+    ? ([
+        { id: "precos", rotulo: "Preço e tamanhos" },
+        { id: "variancias", rotulo: "Variâncias" },
+        { id: "opcoes", rotulo: "Opções" },
+        { id: "extras", rotulo: "Extras" },
+      ] as const)
+    : ([{ id: "precos", rotulo: "Grupos" }] as const)),
   { id: "encomenda", rotulo: "Encomenda" },
   { id: "alergenios", rotulo: "Alergénios" },
   { id: "fotos", rotulo: "Fotografias" },
@@ -50,10 +85,16 @@ const SEPARADORES: { id: Separador; rotulo: string }[] = [
 const CAMPOS: Record<string, { nome: string; em: Separador }> = {
   nome: { nome: "o nome", em: "geral" },
   descricao: { nome: "a descrição", em: "geral" },
-  carta: { nome: "a secção", em: "geral" },
-  categoria: { nome: "a categoria", em: "geral" },
-  familia: { nome: "a família", em: "geral" },
-  variantes: { nome: "os tamanhos e os preços", em: "precos" },
+  carta: { nome: "a carta do impresso", em: "geral" },
+  categoria: { nome: "a categoria do impresso", em: "geral" },
+  categoriaId: { nome: "a categoria", em: "geral" },
+  seccaoId: { nome: "a secção", em: "geral" },
+  familia: { nome: "o tipo de cartão", em: "geral" },
+  variantes: { nome: "os tamanhos, os grupos e os preços", em: "precos" },
+  tipo: { nome: "o tipo de produto", em: "geral" },
+  variancias: { nome: "as variâncias", em: "variancias" },
+  opcoes: { nome: "as opções", em: "opcoes" },
+  extras: { nome: "os extras", em: "extras" },
   tempoProducao: { nome: "o tempo de produção", em: "encomenda" },
   quantidadeMinima: { nome: "a quantidade mínima", em: "encomenda" },
   multiplo: { nome: "o «de quanto em quanto»", em: "encomenda" },
@@ -62,17 +103,19 @@ const CAMPOS: Record<string, { nome: string; em: Separador }> = {
   limite: { nome: "o limite de quantidade", em: "encomenda" },
 };
 
-const FAMILIAS: Record<EntradaProduto["familia"], string> = {
-  ementa: "Carta",
+/* O «Tipo de cartão»: a `familia` do produto, com a `origem` que lhe corresponde. */
+const CARTOES: Record<EntradaProduto["familia"], string> = {
+  ementa: "Artigo da carta",
   festa: "Kit de festa",
   bolo: "Kit de bolo",
   box: "Box",
-  medida: "Bolo por medida",
+  medida: "Os nossos Bolos",
 };
 
 const NOVO: EntradaProduto = {
   origem: "encomendas",
   familia: "bolo",
+  tipo: "simples",
   nome: { pt: "", en: null },
   descricao: null,
   carta: null,
@@ -80,7 +123,9 @@ const NOVO: EntradaProduto = {
   subcategoria: null,
   unidade: "un",
   variantes: [{ rotulo: null, pessoas: null, precoCent: null, composicao: [] }],
-  escolhas: [],
+  variancias: [],
+  opcoes: [],
+  extras: [],
   tempoProducao: null,
   quantidadeMinima: 1,
   multiplo: 1,
@@ -104,14 +149,14 @@ type VarianteForm = {
   preco: string;
   sobOrcamento: boolean;
   composicao: EntradaProduto["variantes"][number]["composicao"];
+  /** Desligado sem se apagar: «este mês não fazemos o de 70». */
+  ativa: boolean;
+  /** Só num composto: os produtos simples que o grupo leva. */
+  leva: LevaForm[];
 };
 type ModoAlergenios = "por-responder" | "nenhum" | "lista";
 
-const emEuros = (cent: number | null) => (cent === null ? "" : (cent / 100).toFixed(2).replace(".", ","));
-
-const campo =
-  "mt-1.5 block w-full min-w-0 rounded-xl border border-tinta/20 bg-papel px-3 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tijolo disabled:opacity-50";
-const bloco = "border-t border-tinta/10 pt-5";
+const varianteVazia = (): VarianteForm => ({ rotulo: "", pessoas: "", preco: "", sobOrcamento: false, composicao: [], ativa: true, leva: [] });
 
 function estadoInicial(produto: Produto | null) {
   const e = produto ? entradaDoProduto(produto) : NOVO;
@@ -122,22 +167,31 @@ function estadoInicial(produto: Produto | null) {
     preco: emEuros(v.precoCent),
     sobOrcamento: v.precoCent === null && produto !== null,
     composicao: v.composicao,
+    ativa: v.ativa ?? true,
+    leva: (v.leva ?? []).map((l) => ({ produtoId: l.produtoId, quantidade: l.quantidade === null ? "" : String(l.quantidade).replace(".", ",") })),
   }));
+  const pecas: PecasForm = pecasParaForm(e);
   /* O modo à parte da lista: «tem alergénios» com nenhum marcado ainda não é
      «sem alergénios» — e nunca se marca um por defeito (seria o site a
      inventar um alergénio). */
   const modo: ModoAlergenios = e.alergenios === null ? "por-responder" : e.alergenios.length === 0 ? "nenhum" : "lista";
-  return { e, variantes, modo };
+  return { e, variantes, modo, pecas };
 }
 
 export function EditorProduto({
   produto,
   ordem,
+  familias,
+  catalogo,
   onFechar,
   onSujo,
 }: {
   produto: Produto | null;
   ordem: OrdemEmenta;
+  /** As famílias e as categorias da loja (26/11), para «Onde aparece na loja». */
+  familias: Familia[];
+  /** O catálogo inteiro: para ligar peças de outros produtos e escolher o que um grupo leva. */
+  catalogo: readonly Produto[];
   /** Sem argumentos, só fecha. Com o produto como ficou no servidor, para a lista o mostrar já. */
   onFechar: (mensagem?: string, gravado?: Produto) => void;
   /** Diz à lista se há alterações por guardar. */
@@ -150,7 +204,7 @@ export function EditorProduto({
   const [variantes, setVariantes] = useState<VarianteForm[]>(inicial.variantes);
   const [modoAlergenios, setModoAlergenios] = useState<ModoAlergenios>(inicial.modo);
   const [separador, setSeparador] = useState<Separador>("geral");
-  const [novaEscolha, setNovaEscolha] = useState("");
+  const [pecas, setPecas] = useState<PecasForm>(inicial.pecas);
   const [erro, setErro] = useState<{ texto: string; em: Separador[] } | null>(null);
   const [aGravar, iniciar] = useTransition();
   const [confirmarArquivo, setConfirmarArquivo] = useState(false);
@@ -160,7 +214,11 @@ export function EditorProduto({
   /* Sujo é diferente do que se abriu — e não «mexeu em alguma coisa»: quem
      escreve e apaga a mesma letra não tem nada por guardar. */
   const sujo =
-    JSON.stringify([e, variantes, modoAlergenios]) !== JSON.stringify([inicial.e, inicial.variantes, inicial.modo]);
+    JSON.stringify([e, variantes, modoAlergenios, pecas]) !==
+    JSON.stringify([inicial.e, inicial.variantes, inicial.modo, inicial.pecas]);
+  const SEPARADORES = separadoresDe(e.tipo, e.familia);
+  const composto = e.tipo === "composto";
+  const kitsQueLevam = produto && !composto ? compostosQueLevam(produto.id, catalogo) : [];
 
   const avisar = useRef(onSujo);
   useEffect(() => {
@@ -195,22 +253,52 @@ export function EditorProduto({
     if (em.length > 0 && !em.includes(separador)) setSeparador(em[0]);
   };
   const alergenios = e.alergenios;
+  const mudarPecas = (parcial: Partial<PecasForm>) => {
+    setErro(null);
+    setPecas((atuais) => ({ ...atuais, ...parcial }));
+  };
 
   const cancelar = () => {
     setE(inicial.e);
     setVariantes(inicial.variantes);
     setModoAlergenios(inicial.modo);
+    setPecas(inicial.pecas);
     setErro(null);
   };
 
   const gravar = () =>
     iniciar(async () => {
       setErro(null);
+      /* Sem categoria, o produto não tinha sítio na loja: escolhe-se antes de gravar. */
+      if (!e.categoriaId) return falhar("Escolha a categoria onde o produto aparece na loja.", ["geral"]);
       /* Os preços escrevem-se em euros e guardam-se em cêntimos inteiros (regra 2). */
       const lidas = variantes.map((v) => ({ v, cent: v.sobOrcamento ? null : paraCent(v.preco) }));
       if (lidas.some(({ v, cent }) => !v.sobOrcamento && cent === null)) {
         return falhar("Confira os preços: em euros, como 12 ou 12,50 — ou marque «sob orçamento».", ["precos"]);
       }
+      if (lidas.every(({ v }) => !v.ativa)) {
+        return falhar(`Deixe pelo menos ${composto ? "um grupo disponível" : "um tamanho disponível"}.`, ["precos"]);
+      }
+      const leva = variantes.map((v) => v.leva.map((l) => ({ produtoId: l.produtoId, quantidade: quantidadeDoForm(l.quantidade) })));
+      if (composto && leva.flat().some((l) => l.quantidade === "invalida")) {
+        return falhar("Confira as quantidades dos grupos: um número, ou vazio para «sem quantidade».", ["precos"]);
+      }
+      /* O composto não leva variâncias, opções nem extras: o que ficou no rascunho
+         de quando era simples não se grava. */
+      /* Uma fotografia tirada deste produto deixa de ser a de uma escolha: senão a
+         página mostrava uma imagem que já saiu. As que vêm de outro produto
+         ligado ficam, que são dele. */
+      const semFotosTiradas: PecasForm = {
+        ...pecas,
+        variancias: pecas.variancias.map((v) => ({
+          ...v,
+          escolhas: v.escolhas.map((x) =>
+            x.foto && !e.fotos.includes(x.foto) && inicial.e.fotos.includes(x.foto) ? { ...x, foto: null } : x,
+          ),
+        })),
+      };
+      const lidasPecas = composto ? null : pecasDoForm(semFotosTiradas);
+      if (lidasPecas && !lidasPecas.ok) return falhar(lidasPecas.texto, [lidasPecas.em]);
       if (modoAlergenios === "lista" && (e.alergenios ?? []).length === 0) {
         return falhar("Marque pelo menos um alergénio, ou escolha «sem alergénios».", ["alergenios"]);
       }
@@ -227,7 +315,10 @@ export function EditorProduto({
           pessoas: e.familia === "festa" && v.pessoas ? Number(v.pessoas) : null,
           precoCent: cent,
           composicao: v.composicao,
+          ativa: v.ativa,
+          leva: composto ? (leva[variantes.indexOf(v)] as { produtoId: string; quantidade: number | null }[]) : [],
         })),
+        ...(lidasPecas?.ok ? lidasPecas.pecas : { variancias: [], opcoes: [], extras: [] }),
       };
       const resultado = await gravarProduto(produto?.id ?? null, entrada);
       if (!resultado.ok) {
@@ -262,10 +353,21 @@ export function EditorProduto({
     document.getElementById(`${ids}-sep-${proximo}`)?.focus();
   };
 
-  const subtitulo =
-    e.origem === "ementa"
-      ? ["Carta", e.carta, e.categoria].filter(Boolean).join(" · ")
-      : `Encomendas · ${FAMILIAS[e.familia]}`;
+  /* Para o «Como o cliente vê»: só os tamanhos disponíveis, com o preço que se
+     está a escrever. */
+  const tamanhosParaVer = variantes
+    .filter((v) => v.ativa)
+    .map((v) => ({ nome: v.rotulo, cent: v.sobOrcamento ? null : paraCent(v.preco) }));
+
+  /* Onde aparece, como a gerente o arrumou: «Da carta · Doces · Vegan». */
+  const familiaEscolhida = familias.find((f) => f.categorias.some((c) => c.id === e.categoriaId));
+  const categoriaEscolhida = familiaEscolhida?.categorias.find((c) => c.id === e.categoriaId);
+  const seccoesDaCategoria = categoriaEscolhida?.seccoes ?? [];
+  const subtitulo = categoriaEscolhida
+    ? [familiaEscolhida?.nome.pt, categoriaEscolhida.nome.pt, seccoesDaCategoria.find((x) => x.id === e.seccaoId)?.nome.pt]
+        .filter(Boolean)
+        .join(" · ")
+    : `${CARTOES[e.familia]} · sem categoria`;
   const estado = produto?.arquivado
     ? "Arquivado"
     : e.aVendaOnline && !produto?.foraDeVenda
@@ -336,6 +438,12 @@ export function EditorProduto({
       >
         {separador === "geral" && (
           <>
+            {e.familia === "medida" && (
+              <p className="rounded-xl bg-tinta/5 px-4 py-3 text-sm">
+                Os tamanhos, as massas, as coberturas, os recheios, os toppings e as fotos deste bolo mudam-se em{" "}
+                <strong>Produtos › Bolos personalizados</strong>. O preço é sempre o que der a cada pedido.
+              </p>
+            )}
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <Rotulo
@@ -353,99 +461,217 @@ export function EditorProduto({
                 />
               </div>
               <div>
+                {/* ⚠️ **Um campo só para o que eram dois** (27/11): «Como se vende»
+                    (a `origem`) e «Cartão» (a `familia`). Os dois juntos decidem o
+                    cartão e a página; onde o produto aparece é a Categoria, mais
+                    abaixo. */}
                 <Rotulo
-                  htmlFor={`${ids}-origem`}
+                  htmlFor={`${ids}-cartao`}
                   ajuda={
                     <>
-                      <strong>Carta:</strong> o que se pede ao balcão, encomendado com um mínimo (ex.: à dúzia).{" "}
-                      <strong>Encomendas:</strong> kits, bolos e boxes, com data e antecedência.
+                      O que o cartão e a página do produto fazem. <strong>Artigo da carta:</strong> tem o botão «+» e
+                      encomenda-se com um mínimo (ex.: à dúzia). <strong>Kit de festa:</strong> pergunta para quantas
+                      pessoas. <strong>Os nossos Bolos:</strong> abre o configurador do bolo personalizado. Não decide onde aparece: isso é a
+                      Categoria.
+                      <ExemploLoja realce="cartao" />
                     </>
                   }
                 >
-                  Onde aparece
+                  Tipo de cartão
                 </Rotulo>
                 <select
-                  id={`${ids}-origem`}
-                  value={e.origem}
-                  onChange={(ev) =>
-                    mudar(
-                      ev.target.value === "ementa"
-                        ? { origem: "ementa", familia: "ementa" }
-                        : { origem: "encomendas", familia: "bolo", carta: null, categoria: null, subcategoria: null },
-                    )
-                  }
-                  className={campo}
-                >
-                  <option value="ementa">Carta</option>
-                  <option value="encomendas">Encomendas</option>
-                </select>
-              </div>
-            </div>
-
-            {e.origem === "ementa" ? (
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div>
-                  <Rotulo htmlFor={`${ids}-carta`} ajuda="A carta onde o produto aparece, como no impresso da casa.">
-                    Secção
-                  </Rotulo>
-                  <select id={`${ids}-carta`} value={e.carta ?? ""} onChange={(ev) => mudar({ carta: ev.target.value || null })} className={campo}>
-                    <option value="">—</option>
-                    {ordem.cartas.map((c) => (
-                      <option key={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <Rotulo htmlFor={`${ids}-categoria`} ajuda="Agrupa os produtos dentro da secção. A ordem muda-se em «Ordem das categorias».">
-                    Categoria
-                  </Rotulo>
-                  <select
-                    id={`${ids}-categoria`}
-                    value={e.categoria ?? ""}
-                    onChange={(ev) => mudar({ categoria: ev.target.value || null })}
-                    className={campo}
-                  >
-                    <option value="">—</option>
-                    {ordem.categorias.map((c) => (
-                      <option key={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <Rotulo htmlFor={`${ids}-grupo`} opcional ajuda="Só nas bebidas: quentes, frias, sumos.">
-                    Grupo
-                  </Rotulo>
-                  <select
-                    id={`${ids}-grupo`}
-                    value={e.subcategoria ?? ""}
-                    onChange={(ev) => mudar({ subcategoria: ev.target.value || null })}
-                    className={campo}
-                  >
-                    <option value="">—</option>
-                    {ordem.subcategorias.map((c) => (
-                      <option key={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            ) : (
-              <div className="sm:max-w-xs">
-                <Rotulo htmlFor={`${ids}-familia`} ajuda="Decide o cartão e a página onde o produto aparece nas encomendas.">
-                  Família
-                </Rotulo>
-                <select
-                  id={`${ids}-familia`}
+                  id={`${ids}-cartao`}
                   value={e.familia}
-                  onChange={(ev) => mudar({ familia: ev.target.value as EntradaProduto["familia"] })}
+                  onChange={(ev) => {
+                    const familia = ev.target.value as EntradaProduto["familia"];
+                    mudar(
+                      familia === "ementa"
+                        ? /* A carta e a categoria do impresso são obrigatórias num
+                             artigo da carta; começam nas primeiras, e mudam-se em
+                             «Do impresso». Não decidem nada à vista. */
+                          {
+                            origem: "ementa",
+                            familia,
+                            carta: e.carta ?? ordem.cartas[0] ?? null,
+                            categoria: e.categoria ?? ordem.categorias[0] ?? null,
+                          }
+                        : { origem: "encomendas", familia, carta: null, categoria: null, subcategoria: null },
+                    );
+                  }}
                   className={campo}
                 >
-                  {(["festa", "bolo", "box", "medida"] as const).map((f) => (
+                  {(["ementa", "festa", "bolo", "box", "medida"] as const).map((f) => (
                     <option key={f} value={f}>
-                      {FAMILIAS[f]}
+                      {CARTOES[f]}
                     </option>
                   ))}
                 </select>
               </div>
+            </div>
+
+            <fieldset>
+              <legend className="flex items-center gap-1.5 text-sm font-semibold">
+                Tipo de produto
+                <Ajuda titulo="Tipo de produto">
+                  <strong>Simples:</strong> um produto só — um cachorro, um bolo ao quilo —, com tamanhos, variâncias, opções e extras.{" "}
+                  <strong>Composto:</strong> é feito de produtos simples — um kit, uma box —, e o cliente escolhe um grupo.
+                </Ajuda>
+              </legend>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {(
+                  [
+                    ["simples", "Simples"],
+                    ["composto", "Composto"],
+                  ] as const
+                ).map(([tipo, rotulo]) => (
+                  <label
+                    key={tipo}
+                    className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-4 text-sm has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-tijolo ${
+                      e.tipo === tipo ? "border-tijolo bg-tijolo/5 font-semibold" : "border-tinta/20"
+                    }`}
+                  >
+                    <input type="radio" checked={e.tipo === tipo} onChange={() => mudar({ tipo })} className="size-4 accent-tijolo" />
+                    {rotulo}
+                  </label>
+                ))}
+              </div>
+              {composto && (pecas.variancias.length > 0 || pecas.opcoes.length > 0 || pecas.extras.length > 0) && (
+                <p className="mt-2 text-sm text-tijolo">
+                  Um composto não tem variâncias, opções nem extras: as deste produto saem ao guardar.
+                </p>
+              )}
+              {!composto && variantes.some((v) => v.leva.length > 0) && (
+                <p className="mt-2 text-sm text-tijolo">Um simples não leva produtos: o que os grupos levam sai ao guardar.</p>
+              )}
+            </fieldset>
+
+            {/* ⚠️ **Onde o produto aparece na loja: Categoria e Secção, e mais
+                nada** (27/11). Antes eram cinco campos (Como se vende, Secção,
+                Categoria, Grupo, Onde aparece). As famílias, as categorias e as
+                secções criam-se e ordenam-se em «Famílias e categorias». */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Rotulo
+                  htmlFor={`${ids}-onde`}
+                  ajuda={
+                    <>
+                      A família e a categoria onde o produto aparece nas encomendas. Criam-se e ordenam-se em «Famílias e
+                      categorias».
+                      <ExemploLoja realce="categoria" />
+                    </>
+                  }
+                >
+                  Categoria
+                </Rotulo>
+                <select
+                  id={`${ids}-onde`}
+                  value={e.categoriaId ?? ""}
+                  onChange={(ev) => mudar({ categoriaId: ev.target.value || undefined, seccaoId: null })}
+                  className={campo}
+                >
+                  {/* Só para um produto que ainda não tem: os de antes do painel
+                      novo vêm todos com a sua. */}
+                  {!e.categoriaId && <option value="">Escolha…</option>}
+                  {familias
+                    .filter((f) => f.categorias.length > 0)
+                    .map((f) => (
+                      <optgroup key={f.id} label={f.nome.pt}>
+                        {f.categorias.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {f.nome.pt} · {c.nome.pt}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                </select>
+              </div>
+              <div>
+                <Rotulo
+                  htmlFor={`${ids}-seccao`}
+                  opcional
+                  ajuda={
+                    <>
+                      Um título dentro da categoria, para a dividir (ex.: em «Doces», «Da casa» e «Vegan»). Só aparecem as
+                      secções da categoria escolhida.
+                      <ExemploLoja realce="seccao" />
+                    </>
+                  }
+                >
+                  Secção
+                </Rotulo>
+                <select
+                  id={`${ids}-seccao`}
+                  value={e.seccaoId ?? ""}
+                  disabled={seccoesDaCategoria.length === 0}
+                  onChange={(ev) => mudar({ seccaoId: ev.target.value || null })}
+                  className={`${campo} disabled:opacity-60`}
+                >
+                  <option value="">{seccoesDaCategoria.length === 0 ? "Esta categoria não tem secções" : "Sem secção"}</option>
+                  {seccoesDaCategoria.map((x) => (
+                    <option key={x.id} value={x.id}>
+                      {x.nome.pt}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* A carta e a categoria do impresso: obrigatórias num artigo da carta
+                (o contrato e a base de dados pedem-nas), mas já não decidem onde
+                ele aparece. Ficam fechadas, para não parecerem outra escolha de
+                sítio — que era a confusão de ter cinco campos. */}
+            {e.origem === "ementa" && (
+              <details className="group rounded-xl border border-tinta/10 px-3">
+                <summary className="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-semibold text-tinta-suave">
+                  <span aria-hidden className="transition-transform group-open:rotate-90">
+                    ▸
+                  </span>
+                  Do impresso <span className="font-normal">· não muda onde aparece no site</span>
+                </summary>
+                <div className="grid gap-4 pb-3 sm:grid-cols-3">
+                  <div>
+                    <Rotulo htmlFor={`${ids}-carta`} ajuda="A carta do impresso da casa (casa, vegan…). Só para arquivo.">
+                      Carta
+                    </Rotulo>
+                    <select id={`${ids}-carta`} value={e.carta ?? ""} onChange={(ev) => mudar({ carta: ev.target.value || null })} className={campo}>
+                      {ordem.cartas.map((c) => (
+                        <option key={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Rotulo htmlFor={`${ids}-categoria`} ajuda="A categoria do impresso (doces, salgados…). Só para arquivo.">
+                      Categoria do impresso
+                    </Rotulo>
+                    <select
+                      id={`${ids}-categoria`}
+                      value={e.categoria ?? ""}
+                      onChange={(ev) => mudar({ categoria: ev.target.value || null })}
+                      className={campo}
+                    >
+                      {ordem.categorias.map((c) => (
+                        <option key={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Rotulo htmlFor={`${ids}-grupo`} opcional ajuda="Só nas bebidas do impresso: quentes, frias, sumos.">
+                      Grupo
+                    </Rotulo>
+                    <select
+                      id={`${ids}-grupo`}
+                      value={e.subcategoria ?? ""}
+                      onChange={(ev) => mudar({ subcategoria: ev.target.value || null })}
+                      className={campo}
+                    >
+                      <option value="">—</option>
+                      {ordem.subcategorias.map((c) => (
+                        <option key={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </details>
             )}
 
             <div>
@@ -499,6 +725,12 @@ export function EditorProduto({
               <div className={`${bloco} flex flex-wrap items-center gap-3`}>
                 <p className="mr-auto text-sm text-tinta-suave">
                   {produto.arquivado ? "Arquivado: fora do site, com os pedidos antigos guardados." : "Arquivar tira do site e guarda os pedidos antigos."}
+                  {!produto.arquivado && kitsQueLevam.length > 0 && (
+                    <strong className="mt-1 block text-tijolo">
+                      Está em {kitsQueLevam.length === 1 ? "1 kit" : `${kitsQueLevam.length} kits`} ({kitsQueLevam.map((k) => k.nome.pt).join(", ")}).
+                      Arquivar não o tira de lá: é no kit que se tira.
+                    </strong>
+                  )}
                 </p>
                 {confirmarArquivo || produto.arquivado ? (
                   <button
@@ -548,22 +780,29 @@ export function EditorProduto({
 
             <div className={bloco}>
               <h4 className="flex items-center gap-1.5 font-semibold">
-                Tamanhos · {variantes.length}
-                <Ajuda titulo="Tamanhos">
-                  Cada tamanho tem o seu preço: «20 pessoas», «2 kg», «Caixa de 6». Com um só, deixe o nome vazio. Sabores e cores
-                  não são tamanhos: vão em Opções.
-                </Ajuda>
+                {composto ? "Grupos" : "Tamanhos"} · {variantes.length}
+                {composto ? (
+                  <Ajuda titulo="Grupos">
+                    O cliente escolhe um grupo: «20 pessoas» e «40 pessoas», ou «Kit bolo-rei» e «Kit pão de ló». Cada grupo tem o seu preço e
+                    leva os produtos simples que quiser. Um kit de um tamanho só tem um grupo.
+                  </Ajuda>
+                ) : (
+                  <Ajuda titulo="Tamanhos">
+                    Cada tamanho tem o seu preço: «390 g» e «470 g», «Caixa de 6» e «de 12». Sem tamanhos, deixe um só, sem nome. Sabores e cores
+                    não são tamanhos: vão em Variâncias.
+                  </Ajuda>
+                )}
               </h4>
               <ul className="mt-3 space-y-3">
                 {variantes.map((v, i) => (
                   <li key={v.id ?? `nova-${i}`} className="rounded-xl border border-tinta/10 p-3 sm:p-4">
                     <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-end">
                       <div>
-                        <Rotulo htmlFor={`${ids}-v${i}-nome`}>Nome do tamanho</Rotulo>
+                        <Rotulo htmlFor={`${ids}-v${i}-nome`}>{composto ? "Nome do grupo" : "Nome do tamanho"}</Rotulo>
                         <input
                           id={`${ids}-v${i}-nome`}
                           value={v.rotulo}
-                          placeholder={variantes.length === 1 ? "(sem nome)" : "ex.: 2 kg"}
+                          placeholder={variantes.length === 1 ? "(sem nome)" : composto ? "ex.: 20 pessoas" : "ex.: 470 g"}
                           onChange={(ev) => mudarVariante(i, { rotulo: ev.target.value })}
                           className={campo}
                         />
@@ -606,6 +845,15 @@ export function EditorProduto({
                         Sob orçamento
                       </label>
                       <Ajuda titulo="Sob orçamento">Sem preço no site. A casa diz o valor depois do pedido, e o cliente aceita.</Ajuda>
+                      <label className="flex min-h-11 items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={v.ativa}
+                          onChange={(ev) => mudarVariante(i, { ativa: ev.target.checked })}
+                          className="size-5 accent-tijolo"
+                        />
+                        Disponível
+                      </label>
                       {variantes.length > 1 && (
                         <button
                           type="button"
@@ -615,94 +863,95 @@ export function EditorProduto({
                           }}
                           className="ml-auto min-h-11 text-sm text-tijolo underline underline-offset-4"
                         >
-                          Remover tamanho
+                          Remover {composto ? "grupo" : "tamanho"}
                         </button>
                       )}
                     </div>
+                    {composto && (
+                      <LevaDoGrupo
+                        ids={`${ids}-v${i}-leva`}
+                        valor={v.leva}
+                        onMudar={(leva) => mudarVariante(i, { leva })}
+                        catalogo={catalogo}
+                        produtoId={produto?.id ?? null}
+                      />
+                    )}
+                    {/* Os kits de antes da #88 descrevem o que levam em texto. Passa-se à
+                        mão a produtos simples (não há conversão que acerte em «1 unidade
+                        (800gr)»), e o texto continua a aparecer no site até lá. */}
                     {v.composicao.length > 0 && (
-                      <p className="mt-1 text-xs text-tinta-suave">
-                        Leva {v.composicao.flatMap((g) => g.linhas).length} artigos · a composição ainda não se edita aqui.
-                      </p>
+                      <details className="mt-2 text-sm">
+                        <summary className="min-h-11 cursor-pointer text-tinta-suave">
+                          {v.leva.length === 0 ? "Hoje leva, em texto" : "O texto antigo"} · {v.composicao.flatMap((g) => g.linhas).length} linhas
+                        </summary>
+                        <ul className="mt-1 list-disc pl-5 text-tinta-suave">
+                          {v.composicao.flatMap((g) => g.linhas).map((l, k) => (
+                            <li key={k}>
+                              {l.quantidade ? `${l.quantidade.pt} · ` : ""}
+                              {l.nome.pt}
+                            </li>
+                          ))}
+                        </ul>
+                        <p className="mt-1 text-xs text-tinta-suave">
+                          {v.leva.length === 0
+                            ? "Junte os produtos acima para o substituir. Até lá, o site mostra este texto."
+                            : "Já não aparece no site: vale o que está acima."}
+                        </p>
+                      </details>
                     )}
                   </li>
                 ))}
               </ul>
               <button
                 type="button"
-                onClick={() => setVariantes([...variantes, { rotulo: "", pessoas: "", preco: "", sobOrcamento: false, composicao: [] }])}
+                onClick={() => setVariantes([...variantes, varianteVazia()])}
                 className={`${BOTAO_SECUNDARIO} mt-3`}
               >
-                + Tamanho
+                {composto ? "+ Juntar grupo" : "+ Tamanho"}
               </button>
               {produto && (
-                <p className="mt-2 text-xs text-tinta-suave">Remover um tamanho que alguém tem no cesto mostra-lhe «já não existe».</p>
+                <p className="mt-2 text-xs text-tinta-suave">
+                  Remover {composto ? "um grupo" : "um tamanho"} que alguém tem no cesto mostra-lhe «já não existe». Para o tirar só por uns
+                  tempos, desligue «Disponível».
+                </p>
               )}
             </div>
+            {!composto && <ComoOClienteVe tamanhos={tamanhosParaVer} pecas={pecas} unidade={e.unidade} />}
+          </>
+        )}
+
+        {separador === "variancias" && (
+          <>
+            <ListaVariancias
+              ids={`${ids}-variancias`}
+              valor={pecas.variancias}
+              onMudar={(variancias) => mudarPecas({ variancias })}
+              fotos={e.fotos}
+              catalogo={catalogo}
+              produtoId={produto?.id ?? null}
+            />
+            <ComoOClienteVe tamanhos={tamanhosParaVer} pecas={pecas} unidade={e.unidade} />
           </>
         )}
 
         {separador === "opcoes" && (
-          <div>
-            <h4 className="flex items-center gap-1.5 font-semibold">
-              Opções · {e.escolhas.length}
-              <Ajuda titulo="Opções">
-                Sabores, cores, recheios — o que o cliente escolhe ao encomendar. Não mudam o preço: se mudar, é um tamanho.
-              </Ajuda>
-            </h4>
-            <p className="mt-1 text-sm text-tinta-suave">Não mudam o preço.</p>
-            {e.escolhas.length > 0 ? (
-              <ul className="mt-3 flex flex-wrap gap-2">
-                {e.escolhas.map((escolha) => (
-                  <li key={escolha} className="flex items-center gap-1 rounded-full bg-tinta/10 py-1 pl-3 pr-1">
-                    {escolha}
-                    <button
-                      type="button"
-                      aria-label={`Remover ${escolha}`}
-                      onClick={() => mudar({ escolhas: e.escolhas.filter((x) => x !== escolha) })}
-                      className="min-h-9 min-w-9 rounded-full hover:bg-tinta/10"
-                    >
-                      ×
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-3 text-sm text-tinta-suave">Sem opções: o cliente não escolhe nada.</p>
-            )}
-            <div className="mt-4 flex gap-2 sm:max-w-md">
-              <label htmlFor={`${ids}-escolha`} className="sr-only">
-                Nova opção
-              </label>
-              <input
-                id={`${ids}-escolha`}
-                value={novaEscolha}
-                onChange={(ev) => setNovaEscolha(ev.target.value)}
-                onKeyDown={(ev) => {
-                  /* Enter junta a opção, e não grava o produto inteiro. */
-                  if (ev.key !== "Enter") return;
-                  ev.preventDefault();
-                  const nova = novaEscolha.trim();
-                  if (nova && !e.escolhas.includes(nova)) {
-                    mudar({ escolhas: [...e.escolhas, nova] });
-                    setNovaEscolha("");
-                  }
-                }}
-                placeholder="ex.: chocolate"
-                className={`${campo} mt-0`}
-              />
-              <button
-                type="button"
-                disabled={!novaEscolha.trim() || e.escolhas.includes(novaEscolha.trim())}
-                onClick={() => {
-                  mudar({ escolhas: [...e.escolhas, novaEscolha.trim()] });
-                  setNovaEscolha("");
-                }}
-                className={BOTAO_SECUNDARIO}
-              >
-                + Opção
-              </button>
-            </div>
-          </div>
+          <>
+            <ListaOpcoes ids={`${ids}-opcoes`} valor={pecas.opcoes} onMudar={(opcoes) => mudarPecas({ opcoes })} />
+            <ComoOClienteVe tamanhos={tamanhosParaVer} pecas={pecas} unidade={e.unidade} />
+          </>
+        )}
+
+        {separador === "extras" && (
+          <>
+            <ListaExtras
+              ids={`${ids}-extras`}
+              valor={pecas.extras}
+              onMudar={(extras) => mudarPecas({ extras })}
+              catalogo={catalogo}
+              produtoId={produto?.id ?? null}
+            />
+            <ComoOClienteVe tamanhos={tamanhosParaVer} pecas={pecas} unidade={e.unidade} />
+          </>
         )}
 
         {separador === "encomenda" && (

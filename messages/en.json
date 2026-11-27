@@ -15,12 +15,12 @@
   },
   "cartaz": {
     "capa": {
-      "olho": "Bakery and pastry shop",
-      "lede": "Open at seven every morning, every day. Hot bread at the counter, lunch at the table, and a case of pastries until nine at night.",
-      "credito": "The line is not ours. It is painted on the shop window, beside the door.",
-      "verEmenta": "From the menu",
+      "olho": "Tradition and innovation — bringing generations together for 30 years.",
+      "lede": "Drop in for any of these, no booking needed",
       "encomendar": "Order",
-      "atalhos": "Shortcuts"
+      "refeicoes": "Breakfast, brunch, lunch and afternoon snacks",
+      "padaria": "Fresh bread and a wide range of pastries",
+      "vegan": "100% vegan options"
     },
     "porta": {
       "numeral": "I",
@@ -34,59 +34,64 @@
       "numeral": "III",
       "olho": "The bread",
       "titulo": "Village loaves",
-      "legenda": "Freshly baked village loaves in the shop counter.",
+      "legenda": "Bread on the shelves at Damira.",
       "nota": "It is the trade the house is named for, and the drawing on the plate by the door."
     },
     "maos": {
       "numeral": "IV",
       "olho": "The hands",
       "titulo": "Made here, by hand, one at a time",
-      "texto": "The strawberry tartlets are glazed with a brush, one tartlet at a time, on the bench in the shop. Nothing arrives in a box to be opened at the counter.",
-      "legenda": "Strawberry tartlets being assembled on a tray."
+      "texto": "At Damira, the house cake is decorated by hand at the workbench.",
+      "legenda": "A cake being decorated with strawberries at the workbench."
     },
     "vitrine": {
-      "numeral": "V",
-      "olho": "The counter",
-      "titulo": "The house, photographed by the house",
-      "texto": "Fourteen photographs from Damira's own album. What is in the counter, what comes out of the kitchen, and the room at lunchtime.",
+      "titulo": "From our family to yours.",
+      "texto": "From familiar favourites to new creations, there’s plenty to try.",
       "credito": "Photographs by Confeitaria e Pão Quente Damira.",
       "verMais": "See more",
       "legendas": {
-        "montra": "Carob bread and other loaves in the shop counter.",
-        "folhados": "Savoury puff pastries on a tray, freshly baked.",
-        "fabrico": "Chocolates made in the house, lined up on a tray.",
-        "caramelo": "Caramel chocolates.",
-        "bombons": "Assorted chocolates on a tray.",
-        "castanhas": "Castanhas de ovos, an egg-yolk sweet.",
-        "duchesse": "Duchesse with fios de ovos.",
-        "hungaros": "Chocolate-covered pastries on a tray.",
-        "boloRei": "Traditional bolo-rei.",
-        "boloReiChila": "Bolo-rei with chila jam.",
-        "boloReiChocolate": "Chocolate bolo-rei.",
-        "peixe": "Grilled fish with cabbage and potato.",
-        "frango": "Grilled chicken with salad.",
-        "sala": "The dining room at lunchtime, soup being served at a table."
+        "montra": "Cakes and pastries lined up in the display.",
+        "boloFrutosVermelhos": "Layer cake decorated with berries.",
+        "sortidoLaminado": "Assorted puff pastries with different toppings.",
+        "bolachas": "Assorted cookies, some with chocolate chips.",
+        "montraInterior": "The pastry display seen from the dining room.",
+        "boloCobertura": "Cake with light icing and pieces of red cake.",
+        "paoSementes": "Small breads topped with different seeds.",
+        "balcaoPao": "Bread shelves by the counter.",
+        "sortidoPastelaria": "Assorted small cakes and pastries.",
+        "tartelete": "Tartlet topped with fruit.",
+        "tabuleiro": "Tray of golden pastries.",
+        "sala": "Tables and chairs in the Damira dining room.",
+        "natalBoloFrutas": "Cake with candied fruit on a table decorated for Christmas.",
+        "natalDoces": "Wrapped sweets among Christmas lights.",
+        "natalBoloAcucar": "Cake with fruit and powdered sugar on a Christmas table.",
+        "natalBoloCobertura": "Round cake with white icing in front of Christmas decorations.",
+        "natalMesa": "Christmas table with cakes and pastries.",
+        "natalBoloFatia": "Golden cake with a slice cut beside the Christmas tree.",
+        "prateleirasPao": "Shelves with different kinds of bread at the bakery.",
+        "decoracaoBolo": "A cake being decorated by hand."
       }
     },
     "reels": {
-      "numeral": "VI",
-      "olho": "The videos",
-      "titulo": "The house's reels",
-      "texto": "What Damira posts on video, always shot upright. Tap to open on Instagram.",
-      "textoSemConta": "Six places waiting for the house's videos. They are drawn and empty on purpose: they fill in as soon as the reel links arrive.",
-      "espaco": "Place {n}, still empty",
+      "titulo": "Damira in motion",
       "verNoInstagram": "Watch on Instagram",
-      "verTudo": "See them all on Instagram",
-      "instagram": "The house on Instagram",
-      "seguir": "Follow {utilizador}"
+      "seguir": "Follow {utilizador}",
+      "videos": {
+        "natal": "Christmas",
+        "cookies": "Cookie recipe",
+        "anaEPai": "Ana and her dad",
+        "brunch": "Brunch",
+        "croissants": "Croissants",
+        "ermesinde": "Ermesinde",
+        "paoRustico": "Rustic bread"
+      }
     },
     "raro": {
-      "numeral": "II",
-      "olho": "The rare thing",
-      "titulo": "More than half of what we make is vegan",
-      "de": "of {total} items",
-      "texto": "Not one item marked with a leaf at the end of a list. A whole counter alongside the other one: savouries, pastries, and whole cakes sold by the kilo.",
-      "ligacao": "Order from the menu"
+      "titulo": "100% vegan options",
+      "tituloAnimado": "<cem></cem> <depois>vegan options</depois>",
+      "texto": "Cakes and savouries, all 100% vegan.",
+      "exemplo": "Yes, even a custard tart or a ham and cheese roll.",
+      "ligacao": "See the vegan menu"
     },
     "provar": {
       "numeral": "VII",
@@ -146,6 +151,25 @@
         "accao": "Open the map"
       },
       "nota": "Parties and cakes need notice. The sooner you give the date, the easier everything else is."
+    },
+    "natal": {
+      "titulo": "Christmas flavours",
+      "texto": "you won’t want to miss this year",
+      "fechar": "Close",
+      "anterior": "Previous photo",
+      "seguinte": "Next photo",
+      "pausar": "Pause",
+      "reproduzir": "Play",
+      "encomendar": "Order for Christmas"
+    },
+    "bolos": {
+      "titulo": "Celebration cakes",
+      "texto": "Your cake, from classic to custom — <ligacao>ask for a quote here</ligacao>."
+    },
+    "catering": {
+      "titulo": "Parties and events",
+      "texto": "We tailor our catering to your event and your budget.",
+      "ligacao": "Explore our options"
     }
   },
   "casa": {
@@ -307,6 +331,7 @@
       "verPedido": "View order",
       "fechar": "Close",
       "irParaPedido": "Continue",
+      "voltarAoPedido": "Back to checkout",
       "esvaziar": "Empty",
       "remover": "Remove {nome} from the order",
       "mais": "One more",
@@ -331,12 +356,14 @@
       "tipoDoCesto": "Comes from what you added. To change it, edit the order.",
       "juntarArtigo": "Add {nome} to your order",
       "escolha": {
-        "titulo": "Which flavour?",
-        "ajuda": "Each flavour goes in as its own line, with its own minimum quantity.",
+        "titulo": "How would you like it?",
+        "ajuda": "Each combination is a separate line, with its own minimum quantity.",
         "cancelar": "Cancel",
         "rotulo": "Flavour",
         "falta": "Choose the flavour first."
-      }
+      },
+      "escolherArtigo": "Choose {nome}",
+      "total": "Total"
     },
     "procura": {
       "rotulo": "Search products",
@@ -363,6 +390,9 @@
     },
     "calendario": {
       "titulo": "When would you like to collect?",
+      "periodo": "Time of day",
+      "manha": "Morning",
+      "tarde": "Afternoon",
       "escolha": "Choose the day and the time.",
       "escolhido": "Collect at the shop: {quando}.",
       "horaDeLisboa": "Times are Portugal time.",
@@ -496,11 +526,12 @@
       "festa": "Party kit",
       "bolo": "Cake kit",
       "box": "Box",
-      "medida": "Made-to-order cake"
+      "medida": "Custom cake",
+      "ementa": "From the menu"
     },
     "medida": {
-      "nome": "Made-to-order cake",
-      "resumo": "A cake made your way: pick the sponge, the filling and the coating, and we will quote it."
+      "nome": "Custom cake",
+      "resumo": "Your cake, your way: choose the sponge, covering, filling and decoration, add inspiration photos, and we tell you the price."
     },
     "ver": "View product",
     "desde": "from",
@@ -520,7 +551,58 @@
     "avisoPreco": "This is the list price, not a bill. Delivery is not included and the final amount comes in our reply.",
     "descricaoGenerica": "{nome}, made to order at Confeitaria e Pão Quente Damira, in Ermesinde.",
     "porQuilo": " /kg",
-    "cadaCurto": "ea."
+    "cadaCurto": "ea.",
+    "escolher": "Choose",
+    "fotografias": "Product photos",
+    "verFotografia": "Show photo {n} of {total}",
+    "bolo": {
+      "passos": {
+        "tamanho": "Size",
+        "massa": "Sponge",
+        "cobertura": "Covering",
+        "recheio": "Filling",
+        "aVolta": "Around the sides",
+        "topping": "Topping",
+        "toppingsExtra": "Extra toppings"
+      },
+      "escolher": "Choose…",
+      "primeiroMassa": "Choose the sponge first.",
+      "primeiroCobertura": "Choose the covering first.",
+      "quantasCoberturas": "With this sponge, we make {n, plural, one {# covering} other {# coverings}}.",
+      "aPartirDe": "from {preco}",
+      "fotosReferencia": "Reference photos",
+      "fotosReferenciaAjuda": "Up to {n, plural, one {# photo} other {# photos}} to show how the cake should look: tiers, covering, decoration. They are for inspiration and are not printed.",
+      "fotoImprimir": "Photo to print on the cake",
+      "fotoImprimirAjuda": "If you want a photo printed on top of the cake, on wafer paper, add it here. It is not the same as the reference photos.",
+      "fotoPequena": "This photo is small and may print blurry. If you have a larger one, replace it.",
+      "juntarFoto": "Add photo",
+      "trocarFoto": "Replace photo",
+      "tirarFoto": "Remove",
+      "aEnviar": "Uploading…",
+      "autorizacao": "I confirm the people in this photo have allowed me to have it printed on the cake.",
+      "notaPreco": "The final price is set by the shop: you get it by email, and the order is only confirmed once you accept it. You pay in store when you collect.",
+      "erros": {
+        "tamanho": "Choose the size.",
+        "massa": "Choose the sponge.",
+        "cobertura": "Choose the covering.",
+        "recheio": "Choose the filling.",
+        "a-volta": "Choose what goes around the sides.",
+        "topping": "Choose the topping.",
+        "fotos-referencia": "Check the reference photos.",
+        "foto-imprimir": "Add the photo to print on the cake.",
+        "autorizacao": "Confirm you may use this photo.",
+        "envio": "The photo could not be uploaded. Please try again.",
+        "ilegivel": "This file doesn't open as a photo. Try a JPEG or PNG.",
+        "nao-configurado": "Photo upload isn't available yet.",
+        "demasiados-envios": "Too many photos in a row. Please wait a moment and try again.",
+        "toppings-extra": "Check the extra toppings."
+      },
+      "fotosNoCesto": "{n, plural, one {# reference photo} other {# reference photos}}",
+      "fotoNoCesto": "photo to print on the cake",
+      "toppingsExtraAjuda": "You can add up to {n, plural, one {# more topping} other {# more toppings}}.",
+      "obrigatoria": "(required)",
+      "opcional": "(optional)"
+    }
   },
   "modoTeste": {
     "etiqueta": "Test mode",
@@ -584,5 +666,19 @@
       "titulo": "We could not open the proposal.",
       "texto": "The error is ours, not yours. Please try again later, or contact us on {telefone}."
     }
+  },
+  "personalizar": {
+    "falta": "Choose an option here.",
+    "tirar": "Leave out",
+    "sem": "No {nome}",
+    "extras": "Extras",
+    "porUnidade": "For each unit.",
+    "semCusto": "No charge",
+    "cada": "{preco} each",
+    "ate": "up to {n}",
+    "menos": "Fewer {nome}",
+    "mais": "More {nome}",
+    "leva": "Includes",
+    "juntar": "Customise"
   }
 }

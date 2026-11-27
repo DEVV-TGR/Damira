@@ -6,36 +6,38 @@ import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { URL_SITE, caminhoLocalizado, urlLocalizado } from "@/lib/site";
 import { imagensDePartilha } from "@/lib/metadata";
-import { GRUPOS, opcoesDe, quantasOpcoes } from "@/data/bolos";
-import { listarProdutos, produtoPorId } from "@/lib/dados";
-import type { GrupoComposicao, Produto } from "@/lib/dados/tipos";
+import { listarProdutos, opcoesDoBolo, produtoPorId } from "@/lib/dados";
+import type { GrupoComposicao, OpcoesBolo, Produto } from "@/lib/dados/tipos";
 import { formatarCent } from "@/lib/preco";
 import {
   caminhoDoProduto,
   descricaoDe,
   emLingua,
-  fotoDe,
   nomeDe,
+  paraPersonalizar,
+  temPagina,
   precoUnicoCent,
   tipoDoPedido,
+  type DadosPersonalizacao,
 } from "@/lib/vista";
-import { FotoProduto } from "@/components/encomendas/FotoProduto";
 import { ComprarProduto } from "@/components/encomendas/ComprarProduto";
+import { ConfiguradorBolo } from "@/components/encomendas/ConfiguradorBolo";
+import { ComFotoEscolhida, GaleriaProduto } from "@/components/encomendas/GaleriaProduto";
 import { VoltarAtras } from "@/components/VoltarAtras";
 
 /** Uma página por produto e por língua, todas geradas no `build`. */
 export async function generateStaticParams() {
-  const produtos = await listarProdutos({ origem: "encomendas" });
+  const produtos = (await listarProdutos()).filter(temPagina);
   return routing.locales.flatMap((locale) =>
     produtos.map((produto) => ({ locale, produto: produto.id })),
   );
 }
 
-/* Um artigo da ementa também é um produto, mas não é desta página: a carta e a
-   encomenda continuam separadas (AGENTS.md). */
+/* Desde 26/11 os artigos da carta que se encomendam também têm página
+   (`temPagina`): é onde se personalizam e onde estão as fotografias todas. */
 const produtoDeEncomenda = async (id: string): Promise<Produto | null> => {
   const produto = await produtoPorId(id);
-  return produto?.origem === "encomendas" ? produto : null;
+  return produto && temPagina(produto) ? produto : null;
 };
 
 type Linha = GrupoComposicao["linhas"][number];
@@ -50,7 +52,7 @@ const grupoDe = (composicao: GrupoComposicao[], grupo: GrupoComposicao["grupo"])
    o que leva. */
 const escaloesDe = (produto: Produto): Escalao[] =>
   produto.familia === "festa"
-    ? produto.variantes.map((variante) => ({
+    ? produto.variantes.filter((v) => v.ativa && v.pessoas !== null).map((variante) => ({
         pessoas: variante.pessoas!,
         precoCent: variante.precoCent,
         salgados: grupoDe(variante.composicao, "salgados"),
@@ -110,7 +112,18 @@ export default async function PaginaProduto({
   const produto = await produtoDeEncomenda(id);
   if (!produto) notFound();
 
-  return <Detalhe produto={produto} locale={locale as Locale} />;
+  /* Os simples que um composto leva, para as variâncias deles (#88). Com os
+     arquivados: arquivar um simples não o tira de um kit, e o servidor pede as
+     variâncias dele na mesma (`cotarLinhas`). Uma leitura só, e só num composto. */
+  const levados = new Set(produto.variantes.flatMap((v) => v.leva.map((l) => l.produtoId)));
+  const simples = levados.size > 0 ? (await listarProdutos({ incluirArquivados: true })).filter((p) => levados.has(p.id)) : [];
+
+  /* Só o bolo personalizado precisa delas, e só ele as lê. */
+  const opcoes = produto.familia === "medida" ? await opcoesDoBolo() : null;
+
+  return (
+    <Detalhe produto={produto} personalizavel={paraPersonalizar(produto, simples)} opcoes={opcoes} locale={locale as Locale} />
+  );
 }
 
 /**
@@ -135,21 +148,32 @@ export default async function PaginaProduto({
  * ao pedido*, o preço é uma estimativa e o aviso está ao lado dele. Ver
  * `cesto.ts`.
  */
-function Detalhe({ produto, locale }: { produto: Produto; locale: Locale }) {
+function Detalhe({
+  produto,
+  personalizavel,
+  opcoes,
+  locale,
+}: {
+  produto: Produto;
+  personalizavel: DadosPersonalizacao;
+  /** As opções do bolo personalizado; `null` nos outros produtos. */
+  opcoes: OpcoesBolo | null;
+  locale: Locale;
+}) {
   const t = useTranslations("produto");
   const te = useTranslations("encomendas");
 
   const nome = nomeDe(produto, locale);
   const resumo = descricaoDe(produto, locale);
 
-  const escaloes = escaloesDe(produto).map((e) => ({
-    pessoas: e.pessoas,
-    precoCent: e.precoCent!,
-  }));
+  /* Os tamanhos ou os grupos que se escolhem: os disponíveis. */
+  const variantes = produto.variantes
+    .filter((v) => v.ativa)
+    .map((v) => ({ id: v.id, rotulo: v.rotulo ? emLingua(v.rotulo, locale) : null, pessoas: v.pessoas, precoCent: v.precoCent }));
 
   return (
     <>
-      <div className="seccao">
+      <div className="seccao ficha-produto">
         <div className="envolvente">
           {/* ⚠️ **O caminho de volta é a primeira coisa da página.** Quem chega
               aqui de uma pesquisa cai num produto sem ter passado pelas
@@ -172,6 +196,7 @@ function Detalhe({ produto, locale }: { produto: Produto; locale: Locale }) {
               horizontal a 320 px, apesar de a tabela já viver dentro de um
               `overflow-x-auto` que era suposto tratar disso. Só na página dos
               kits de festa; as outras não têm tabela e davam verde. */}
+          <ComFotoEscolhida>
           <div className="mt-8 grid gap-10 lg:grid-cols-2 lg:gap-16">
             <div className="min-w-0">
               {/* ⚠️ **Colada ao topo enquanto se rola.** A tabela de um kit de
@@ -180,7 +205,7 @@ function Detalhe({ produto, locale }: { produto: Produto; locale: Locale }) {
                   baixo, e quem chegasse ao preço já não via o produto. Só a
                   partir do `lg`, que é onde há duas colunas. */}
               <div className="lg:sticky lg:top-20">
-                <FotoProduto foto={fotoDe(produto)} alt={nome} proporcao="3 / 2" />
+                <GaleriaProduto fotos={produto.fotos} alt={nome} />
               </div>
             </div>
 
@@ -196,32 +221,52 @@ function Detalhe({ produto, locale }: { produto: Produto; locale: Locale }) {
               )}
               {resumo && <p className="mt-5 text-lg text-tinta-suave">{resumo}</p>}
 
-              <Conteudo produto={produto} locale={locale} />
+              {/* O que leva em texto, dos kits de antes da #88. Um grupo que já
+                  passou a produtos mostra-os ao escolher (`LevaDoGrupo`). */}
+              {produto.variantes.every((v) => v.leva.length === 0) && <Conteudo produto={produto} locale={locale} />}
 
-              <ComprarProduto
-                escolhas={produto.escolhas}
-                id={produto.id}
-                produtoId={produto.id}
-                tipo={tipoDoPedido(produto)}
-                nome={nome}
-                precoCent={precoUnicoCent(produto)}
-                escaloes={escaloes}
-                locale={locale}
-                /* Mensagem por cima só faz sentido onde há bolo. Numa box de
-                   pequeno-almoço é um campo a mais, e cada campo a mais é gente
-                   que hesita sem razão. */
-                comMensagem={produto.familia === "bolo" || produto.familia === "medida"}
-              />
+              {/* O bolo personalizado monta-se no configurador (#51), sem as peças da
+                  #88; o resto escolhe-se e junta-se. */}
+              {opcoes ? (
+                <ConfiguradorBolo opcoes={opcoes} produtoId={produto.id} nome={nome} locale={locale} />
+              ) : (
+                <ComprarProduto
+                  personalizavel={personalizavel}
+                  composto={produto.tipo === "composto"}
+                  /* O mesmo id que o cartão da carta dá (`ementa:<id>`): juntar
+                     aqui e lá soma na mesma linha. */
+                  id={produto.origem === "ementa" ? `ementa:${produto.id}` : produto.id}
+                  produtoId={produto.id}
+                  tipo={tipoDoPedido(produto)}
+                  nome={nome}
+                  precoCent={precoUnicoCent(produto)}
+                  variantes={variantes}
+                  locale={locale}
+                  /* Mensagem por cima só faz sentido onde há bolo. Numa box de
+                     pequeno-almoço é um campo a mais, e cada campo a mais é gente
+                     que hesita sem razão. */
+                  comMensagem={produto.familia === "bolo" || produto.familia === "medida"}
+                  /* O mínimo e o passo são do produto (#40): uma dúzia de natas de
+                     6 em 6, um bolo ao quilo. Nos kits é «um de cada vez». */
+                  regra={{ unidade: produto.unidade, minimo: produto.quantidadeMinima, passo: produto.multiplo }}
+                  notaDaRegra={
+                    produto.unidade === "kg"
+                      ? te("daEmenta.regraKg", { minimo: produto.quantidadeMinima })
+                      : produto.quantidadeMinima > 1
+                        ? te("daEmenta.regraUn", { minimo: produto.quantidadeMinima, passo: produto.multiplo })
+                        : undefined
+                  }
+                />
+              )}
 
               {/* O prazo é a informação mais importante desta página, e continua
                   por confirmar pela casa. Ver a #3. */}
               <p className="mt-6 text-sm text-tinta-suave">{te("como.prazo")}</p>
             </div>
           </div>
+          </ComFotoEscolhida>
         </div>
       </div>
-
-      {produto.familia === "medida" && <CatalogoDoBolo locale={locale} />}
 
       {/* O «voltar» fixo (#86), no fim do documento de propósito: no teclado o
           link do topo já é o primeiro, e este fica para quem chegou ao fim. */}
@@ -417,89 +462,5 @@ function Grupo({
         </tr>
       ))}
     </>
-  );
-}
-
-/**
- * O catálogo do bolo por medida.
- *
- * ⚠️ **Estava no meio da `/encomendas` e ocupava meia página.** Noventa e nove
- * opções entre a linha clássica e a vegan, entre as boxes e o formulário, a
- * separar duas coisas que se compram e que passavam a estar a cinco ecrãs uma da
- * outra. Aqui é o conteúdo principal da página de quem veio ver o bolo — e não
- * aparece a quem veio ver uma box.
- */
-function CatalogoDoBolo({ locale }: { locale: Locale }) {
-  const bolos = useTranslations("bolos");
-
-  return (
-    <section aria-labelledby="catalogo" className="seccao bg-papel-fundo">
-      <div className="envolvente">
-        <h2 id="catalogo" className="titulo-display titulo-gama">
-          {bolos("titulo")}
-        </h2>
-        <p className="mt-3 max-w-[52ch] text-tinta-suave">
-          {bolos("texto", {
-            classica: quantasOpcoes("classica"),
-            vegan: quantasOpcoes("vegan"),
-          })}
-        </p>
-
-        <div className="mt-10 grid gap-x-12 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-          {GRUPOS.map((grupo) => {
-            const classicas = opcoesDe(grupo, "classica");
-            const veganas = opcoesDe(grupo, "vegan");
-            const soVeganas = veganas.filter(
-              (v) => !classicas.some((c) => c.nome.pt === v.nome.pt),
-            );
-
-            return (
-              <div key={grupo}>
-                <h3 className="titulo-display text-sm uppercase tracking-[0.2em] text-tijolo">
-                  {bolos(`grupos.${grupo}`)}
-                </h3>
-                <ul className="mt-3 space-y-1 text-sm">
-                  {classicas.map((opcao) => (
-                    <li key={opcao.nome.pt}>
-                      {opcao.nome[locale]}
-                      {opcao.nota && (
-                        <span className="text-tinta-suave"> {opcao.nota[locale]}</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-
-                {/* As opções vegan que a linha clássica não tem. Repetir as que
-                    são iguais nas duas listas dava uma coluna que ninguém lê e
-                    uma correção que só entra numa delas. */}
-                {soVeganas.length > 0 && (
-                  <>
-                    <p className="mt-4 text-xs font-semibold uppercase tracking-widest text-verde-forte">
-                      {bolos("soVegan")}
-                    </p>
-                    <ul className="mt-2 space-y-1 text-sm">
-                      {soVeganas.map((opcao) => (
-                        <li key={opcao.nome.pt}>
-                          {opcao.nome[locale]}
-                          {opcao.nota && (
-                            <span className="text-tinta-suave"> {opcao.nota[locale]}</span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* ⚠️ Nenhuma destas escolhas tem preço no impresso, e não se inventa um.
-            Ver o cabeçalho de `bolos.ts`. */}
-        <p className="mt-10 max-w-[60ch] text-sm text-tinta-suave">
-          {bolos("semPrecos")}
-        </p>
-      </div>
-    </section>
   );
 }

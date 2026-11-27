@@ -1,6 +1,12 @@
 # BRIEF — Damira, a nova página inicial
 
 > O vapor lateral e os marcadores de capítulo foram removidos a pedido em 25/11/2026. As descrições abaixo registam a versão anterior.
+>
+> A ordem em vigor segue o comentário da Damira de 25/11/2026: Capa → Natal →
+> Bolos → Vegan → Catering → Galeria → Reels. A secção de cookies aguarda
+> conteúdo. As duas fotos de capa alternam a cada cinco segundos, as seis
+> fotos de Natal têm galeria própria e os sete Reels abrem no Instagram.
+> A entrevista abaixo regista a versão anterior.
 
 Entrevistado a 2 de setembro de 2026. **Não é auto-escrito**: as oito respostas
 abaixo são escolhas do cliente, não deduções minhas.

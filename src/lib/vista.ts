@@ -1,5 +1,5 @@
 import type { Locale } from "@/i18n/routing";
-import type { OrdemEmenta, Produto, Variante } from "@/lib/dados/tipos";
+import type { Categoria, Extra, Familia, Opcao, OrdemEmenta, Produto, Seccao, Variancia, Variante } from "@/lib/dados/tipos";
 import type { TipoPedido } from "@/lib/pedidos";
 
 /**
@@ -41,13 +41,14 @@ const unica = (produto: Produto): Variante | null =>
 export const precoUnicoCent = (produto: Produto): number | null =>
   unica(produto)?.precoCent ?? null;
 
-/** As variantes que se mostram ao cliente: todas, menos a «única». */
+/** As variantes que se mostram ao cliente: as disponíveis, menos a «única». */
 export const variantesVisiveis = (produto: Produto): Variante[] =>
-  unica(produto) ? [] : produto.variantes;
+  unica(produto) ? [] : produto.variantes.filter((v) => v.ativa);
 
-/** O «desde»: o mais barato das variantes com preço. */
+/** O «desde»: o mais barato das variantes disponíveis com preço. */
 export const precoMinimoCent = (produto: Produto): number | null => {
   const precos = produto.variantes
+    .filter((variante) => variante.ativa)
     .map((variante) => variante.precoCent)
     .filter((preco): preco is number => preco !== null);
   return precos.length > 0 ? Math.min(...precos) : null;
@@ -64,6 +65,15 @@ export const tipoDoPedido = (produto: Produto): TipoPedido =>
 export const caminhoDoProduto = (id: string): string => `/encomendas/${id}`;
 
 /**
+ * Quem tem página própria (decidido a 26/11): os produtos das encomendas, como
+ * sempre, e **os da carta que se encomendam** — é na página que se escolhe o
+ * sabor, o que se tira e os extras, e que se veem as fotografias todas. Um
+ * galão (`aVendaOnline: false`) continua sem página: não se encomenda.
+ */
+export const temPagina = (produto: Produto): boolean =>
+  !produto.arquivado && (produto.origem === "encomendas" || produto.aVendaOnline);
+
+/**
  * As secções da `/encomendas`, pela ordem da página: os `id` das `<section>`, e
  * por onde navegam o índice do herói e o menu do «Encomendas» do cabeçalho
  * (#82). ⚠️ **Uma lista só para os dois**: o menu tinha uma cópia, e mudar um
@@ -71,7 +81,58 @@ export const caminhoDoProduto = (id: string): string => `/encomendas/${id}`;
  * nenhum. O «pedido» é a última: o índice mostra-a, o menu não (ver
  * `MenuEncomendas`).
  */
-export const SECCOES_ENCOMENDAS = ["festas", "kits-bolo", "boxes", "da-ementa", "pedido"] as const;
+
+// ——— As famílias da gerente (26/11) ———
+
+export type CategoriaComProdutos = { categoria: Categoria; produtos: Produto[] };
+export type FamiliaComProdutos = { familia: Familia; categorias: CategoriaComProdutos[] };
+
+/**
+ * A `/encomendas` por famílias e categorias, pela ordem da gerente, **só com o
+ * que tem produtos**: uma família ou uma categoria vazia não desenha nada — nem
+ * secção, nem link no índice (armadilha 19: uma secção vazia ocupa o ecrã na
+ * mesma). O Natal aparece no dia em que tiver o primeiro produto.
+ *
+ * Os produtos ficam pela ordem em que chegam; quem desenha ordena-os pela
+ * língua da página. Um produto numa categoria que não está na árvore (uma
+ * arquivada) não aparece — e a gravação já recusa apagar uma com produtos.
+ */
+/**
+ * Os produtos de uma categoria pelas secções dela (27/11), pela ordem da
+ * gerente: **primeiro os que não têm secção**, sem título, e depois cada secção
+ * com os seus. Uma secção vazia não aparece; uma que não é desta categoria (não
+ * devia acontecer: a base de dados recusa-a) conta como sem secção, para o
+ * produto nunca desaparecer.
+ */
+export function porSeccao(
+  categoria: Categoria,
+  produtos: readonly Produto[],
+): { seccao: Seccao | null; produtos: Produto[] }[] {
+  const daCategoria = new Set(categoria.seccoes.map((x) => x.id));
+  const semSeccao = produtos.filter((p) => !p.seccaoId || !daCategoria.has(p.seccaoId));
+  return [
+    { seccao: null, produtos: semSeccao },
+    ...categoria.seccoes.map((seccao) => ({ seccao, produtos: produtos.filter((p) => p.seccaoId === seccao.id) })),
+  ].filter((grupo) => grupo.produtos.length > 0);
+}
+
+export function familiasComProdutos(arvore: readonly Familia[], produtos: readonly Produto[]): FamiliaComProdutos[] {
+  const porCategoria = new Map<string, Produto[]>();
+  for (const produto of produtos) {
+    if (produto.categoriaId === undefined) continue;
+    const lista = porCategoria.get(produto.categoriaId) ?? [];
+    lista.push(produto);
+    porCategoria.set(produto.categoriaId, lista);
+  }
+  return arvore
+    .map((familia) => ({
+      familia,
+      categorias: familia.categorias
+        .map((categoria) => ({ categoria, produtos: porCategoria.get(categoria.id) ?? [] }))
+        .filter((c) => c.produtos.length > 0),
+    }))
+    .filter((f) => f.categorias.length > 0);
+}
 
 // ——— A ementa, por carta e categoria ———
 
@@ -132,3 +193,49 @@ export const categoriasDaCarta = (
   carta: string,
 ): string[] =>
   ordem.categorias.filter((categoria) => porCategoria(artigos, carta, categoria).length > 0);
+
+// ——— A personalização (#88) ———
+
+/**
+ * O que a página e o botão de juntar precisam para o cliente personalizar: as
+ * peças **disponíveis** do produto e, num composto, os simples que cada grupo
+ * leva, com as variâncias deles. Sem funções, para atravessar para o cliente.
+ * Os simples vêm de quem chama (o servidor), que é quem lê o catálogo.
+ */
+export type DadosPersonalizacao = {
+  variancias: Variancia[];
+  opcoes: Opcao[];
+  extras: Extra[];
+  /** Por grupo (`varianteId`): o que leva. */
+  dentro: Record<string, { produtoId: string; nome: Texto; quantidade: number | null; variancias: Variancia[] }[]>;
+};
+
+const soAtivas = (variancias: readonly Variancia[]): Variancia[] =>
+  variancias
+    .map((v) => ({ ...v, escolhas: v.escolhas.filter((e) => e.ativa) }))
+    .filter((v) => v.escolhas.length > 0);
+
+export function paraPersonalizar(produto: Produto, simples: readonly Produto[]): DadosPersonalizacao {
+  const porId = new Map(simples.map((p) => [p.id, p]));
+  return {
+    variancias: soAtivas(produto.variancias),
+    opcoes: produto.opcoes.filter((o) => o.ativa),
+    extras: produto.extras.filter((e) => e.ativo),
+    dentro: Object.fromEntries(
+      produto.variantes.map((v) => [
+        v.id,
+        v.leva.flatMap((l) => {
+          const p = porId.get(l.produtoId);
+          return p ? [{ produtoId: p.id, nome: p.nome, quantidade: l.quantidade, variancias: soAtivas(p.variancias) }] : [];
+        }),
+      ]),
+    ),
+  };
+}
+
+/** Se há alguma coisa a perguntar ou a oferecer — e com isso, se o botão rápido chega. */
+export const temPersonalizacao = (dados: DadosPersonalizacao): boolean =>
+  dados.variancias.length > 0 ||
+  dados.opcoes.length > 0 ||
+  dados.extras.length > 0 ||
+  Object.values(dados.dentro).some((d) => d.some((l) => l.variancias.length > 0));

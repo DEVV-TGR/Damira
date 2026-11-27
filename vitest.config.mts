@@ -38,6 +38,8 @@ export default defineConfig({
             "src/lib/dados/dados.test.ts",
             "src/lib/dados/painel.test.ts",
             "src/lib/dados/ordem.test.ts",
+            "src/lib/dados/familias.test.ts",
+            "src/lib/dados/personalizacao.test.ts",
             "src/lib/dados/pedidos-painel.test.ts",
           ],
           env: { TZ: "Pacific/Kiritimati", FONTE_DOS_TESTES: "bd" },

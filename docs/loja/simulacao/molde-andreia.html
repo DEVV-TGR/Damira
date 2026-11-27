@@ -1,0 +1,143 @@
+<meta charset="utf-8">
+<title>Percurso do pedido Damira</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: uma coluna de leitura; cada passo é uma linha do tempo com quem o faz, onde, o estado no código, a captura e o email real. */
+:root {
+  --papel: #fafbfb; --superficie: #ffffff; --tinta: #1f1d1b; --tinta-suave: #5c5650; --linha: #e4e0dc; --fundo-codigo: #f2efec;
+  --tijolo: #923d38; --cliente: #2c5d8f; --cliente-fundo: #e9f0f7; --loja: #923d38; --loja-fundo: #f7e9e8; --sistema: #5c5650; --sistema-fundo: #efedeb;
+  --ok: #2e7d32; --ok-fundo: #e6f4ea; --parcial: #8a6a00; --parcial-fundo: #fff4d6; --falta: #c62828; --falta-fundo: #fde8e8; --proposta: #1a5fb4; --proposta-fundo: #e8f0fe;
+  --f-titulo: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-texto: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --papel: #1a1817; --superficie: #232020; --tinta: #efeae5; --tinta-suave: #b3aaa2; --linha: #39332f; --fundo-codigo: #2a2624;
+    --tijolo: #e08a82; --cliente: #8db8e3; --cliente-fundo: #1d2a38; --loja: #e08a82; --loja-fundo: #3a2220; --sistema: #b3aaa2; --sistema-fundo: #2c2927;
+    --ok: #81c784; --ok-fundo: #1d3320; --parcial: #e6c35c; --parcial-fundo: #3a3016; --falta: #ef8a8a; --falta-fundo: #3d1d1d; --proposta: #8ab4f8; --proposta-fundo: #1c2a40;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --papel: #1a1817; --superficie: #232020; --tinta: #efeae5; --tinta-suave: #b3aaa2; --linha: #39332f; --fundo-codigo: #2a2624;
+  --tijolo: #e08a82; --cliente: #8db8e3; --cliente-fundo: #1d2a38; --loja: #e08a82; --loja-fundo: #3a2220; --sistema: #b3aaa2; --sistema-fundo: #2c2927;
+  --ok: #81c784; --ok-fundo: #1d3320; --parcial: #e6c35c; --parcial-fundo: #3a3016; --falta: #ef8a8a; --falta-fundo: #3d1d1d; --proposta: #8ab4f8; --proposta-fundo: #1c2a40;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--papel); color: var(--tinta); font: 16px/1.6 var(--f-texto);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.envolvente { max-width: 920px; margin: 0 auto; padding-block: 40px 80px; }
+.marca-casa { font: 600 13px/1 var(--f-texto); letter-spacing: .1em; text-transform: uppercase; color: var(--tijolo); }
+h1 { font: 700 clamp(30px, 5vw, 44px)/1.08 var(--f-titulo); margin: 10px 0 12px; text-wrap: balance; }
+h2 { font: 700 26px/1.2 var(--f-titulo); margin: 56px 0 8px; text-wrap: balance; }
+h3 { font: 600 21px/1.25 var(--f-titulo); margin: 8px 0 4px; }
+h4 { font: 600 18px/1.3 var(--f-titulo); margin: 6px 0 2px; }
+p { margin: 8px 0; max-width: 70ch; }
+code { font: 13px var(--f-mono); background: var(--fundo-codigo); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+.intro { border-bottom: 1px solid var(--linha); padding-bottom: 20px; }
+.legenda { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.chip, .quem { font-size: 12.5px; font-weight: 600; padding: 2px 10px; border-radius: 999px; white-space: nowrap; }
+.chip.ok { color: var(--ok); background: var(--ok-fundo); }
+.chip.parcial { color: var(--parcial); background: var(--parcial-fundo); }
+.chip.falta { color: var(--falta); background: var(--falta-fundo); }
+.chip.proposta { color: var(--proposta); background: var(--proposta-fundo); outline: 1px dashed var(--proposta); }
+.quem.cliente { color: var(--cliente); background: var(--cliente-fundo); }
+.quem.loja { color: var(--loja); background: var(--loja-fundo); }
+.quem.sistema { color: var(--sistema); background: var(--sistema-fundo); }
+.aviso { background: var(--fundo-codigo); border-radius: 10px; padding: 12px 16px; font-size: 14.5px; margin-top: 16px; }
+ol.passos { list-style: none; padding: 0; margin: 20px 0 0; display: flex; flex-direction: column; }
+.passo { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 14px; position: relative; padding-bottom: 26px; }
+.passo .marca { position: relative; display: flex; justify-content: center; }
+.passo .marca::after { content: ""; position: absolute; top: 34px; bottom: -6px; width: 2px; background: var(--linha); }
+.passo:last-child .marca::after { display: none; }
+.num { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font: 600 14px var(--f-texto); font-variant-numeric: tabular-nums; position: relative; z-index: 1; }
+.passo.cliente .num { background: var(--cliente-fundo); color: var(--cliente); border: 1.5px solid var(--cliente); }
+.passo.loja .num { background: var(--loja-fundo); color: var(--loja); border: 1.5px solid var(--loja); }
+.passo.sistema .num { background: var(--sistema-fundo); color: var(--sistema); border: 1.5px solid var(--sistema); }
+.conteudo { min-width: 0; }
+.cab { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.onde { font: 13px var(--f-mono); color: var(--tinta-suave); margin: 2px 0 6px; }
+.nota { font-size: 14.5px; color: var(--tinta); background: var(--falta-fundo); border-radius: 8px; padding: 8px 12px; margin: 8px 0; }
+.nota p { margin: 0; }
+.nota .donos { margin-top: 6px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.dono { font-size: 12.5px; font-weight: 600; padding: 1px 9px; border-radius: 999px; background: var(--superficie); border: 1px solid var(--linha); }
+.dono.decide { border-style: dashed; color: var(--proposta); }
+.capturas { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 10px; }
+.capturas img { display: block; width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--linha); background: var(--superficie); }
+.capturas a:focus-visible img { outline: 2px solid var(--tijolo); outline-offset: 2px; }
+details.email { margin-top: 10px; border: 1px solid var(--linha); border-radius: 10px; background: var(--superficie); overflow: hidden; }
+details.email summary { cursor: pointer; padding: 10px 14px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 12px; align-items: baseline; }
+details.email summary::-webkit-details-marker { display: none; }
+details.email summary .t { grid-row: span 2; font: 700 14px var(--f-titulo); color: var(--tijolo); background: var(--loja-fundo); border-radius: 6px; padding: 3px 8px; align-self: center; }
+details.email summary .assunto { font-weight: 600; overflow-wrap: anywhere; }
+details.email summary .meta { font-size: 13px; color: var(--tinta-suave); }
+details.email summary::after { content: "Ver o email ▾"; grid-column: 2; font-size: 13px; color: var(--tijolo); font-weight: 600; }
+details.email[open] summary::after { content: "Fechar ▴"; }
+details.email summary:focus-visible { outline: 2px solid var(--tijolo); outline-offset: -2px; }
+details.email iframe { display: block; width: 100%; height: 600px; border: 0; border-top: 1px solid var(--linha); background: #fff; }
+.abas { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 8px; }
+.abas button { font: 500 14px var(--f-texto); padding: 6px 14px; border-radius: 999px; border: 1px solid var(--linha); background: var(--superficie); color: var(--tinta); cursor: pointer; }
+.abas button[aria-selected="true"] { background: var(--tinta); color: var(--papel); border-color: var(--tinta); }
+.abas button:focus-visible { outline: 2px solid var(--tijolo); outline-offset: 2px; }
+.caminho { border-top: 1px solid var(--linha); padding-top: 14px; }
+.caminho .sub { color: var(--tinta-suave); }
+footer { margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--linha); font-size: 13.5px; color: var(--tinta-suave); }
+footer a, .intro a { color: var(--tijolo); }
+</style>
+
+<div class="envolvente">
+  <header class="intro">
+    <span class="marca-casa">Confeitaria Damira · Loja online</span>
+    <h1>Um pedido, do princípio ao fim</h1>
+    <p>O percurso de um pedido feito no site: o que o cliente vê e recebe, e o que a loja recebe e faz no painel, passo a passo. Primeiro um pedido completo; depois, cada outro tipo de pedido e cada resposta da loja. Serve para confirmarmos juntos que o percurso e os emails estão certos.</p>
+    <div class="legenda">
+      <span class="quem cliente">Cliente</span><span class="quem loja">Loja</span><span class="quem sistema">Automático</span>
+    </div>
+    <p class="aviso">Os <strong>emails</strong> são os textos do diagrama de 24/11, com um pedido de exemplo (Maria). As <strong>imagens</strong> são do site e do painel em modo de teste, com outro pedido de exemplo (Marco). Carregue numa imagem para a ver em tamanho real, e em «Ver o email» para ler cada email.</p>
+  </header>
+
+  <h2>Um pedido completo: bolo por medida, com proposta da loja</h2>
+  <p>Um pedido que precisa de análise (o bolo não tem preço), a loja propõe 45 €, o cliente aceita e levanta.</p>
+  <ol class="passos">{{PRINCIPAL}}</ol>
+
+  <h2>Os outros caminhos</h2>
+  <p>Escolha um tipo de pedido ou uma resposta da loja.</p>
+  <div class="abas" role="tablist" aria-label="Caminhos do pedido">{{ABAS}}</div>
+  {{CAMINHOS}}
+
+  <footer>Confeitaria Damira · percurso do pedido na loja online, 26/11/2026.</footer>
+</div>
+
+<script id="dados-emails" type="application/json">{{EMAILS}}</script>
+<script>
+(function () {
+  var emails = {};
+  try { emails = JSON.parse(document.getElementById("dados-emails").textContent); } catch (e) {}
+  document.querySelectorAll("details.email").forEach(function (d) {
+    d.addEventListener("toggle", function () {
+      if (!d.open) return;
+      var f = d.querySelector("iframe");
+      if (f.dataset.cheio) return;
+      f.dataset.cheio = "1";
+      f.addEventListener("load", function () {
+        try { f.style.height = Math.max(300, f.contentDocument.documentElement.scrollHeight + 8) + "px"; } catch (e) {}
+      });
+      f.srcdoc = emails[d.getAttribute("data-email")] || "<p>Email em falta.</p>";
+    });
+  });
+  var abas = document.querySelectorAll(".abas [role=tab]");
+  abas.forEach(function (b) {
+    b.addEventListener("click", function () {
+      abas.forEach(function (x) {
+        var sel = x === b;
+        x.setAttribute("aria-selected", sel ? "true" : "false");
+        document.getElementById(x.getAttribute("aria-controls")).hidden = !sel;
+      });
+    });
+  });
+})();
+</script>
