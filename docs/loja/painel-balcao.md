@@ -60,7 +60,8 @@ porta da gerente (`responderPedido`) com a resposta vazia. Com uma linha sem
 preço não há botão: o cartão diz que é a gerente a responder, porque fixar
 dinheiro é dela. Propor outra hora ou um preço continua na gestão («Todos os
 pedidos» › Responder). A confirmação é condicional: dois tablets confirmam uma
-vez.
+vez. O email ao cliente (`confirmado-cliente`) fica na fila na mesma instrução, e
+a ação pede o envio depois de gravar (`enviarDepois()`).
 
 Os `a-aguardar-aceite` aparecem por baixo, em «À espera do cliente», com o prazo
 do cliente: o balcão não pode fazer nada por eles, mas quem atende o telefone

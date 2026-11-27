@@ -13,7 +13,7 @@ um estado que os pagamentos não sabem que existe.
 > criação de pedidos. Os dois emails de criação ficam na fila, no mesmo lote
 > que o pedido, as linhas e a vaga, e o emissor (#141) envia-os depois de a
 > escrita ficar gravada: a compra, o aceite e a recusa da proposta e as decisões
-> do painel chamam o `enviarDepois()` (#119).
+> do painel e do balcão chamam o `enviarDepois()` (#119).
 > **Com `DATABASE_URL`, a compra já chama essa fonte** e devolve a referência e
 > o total gravados. Sem base de dados, mantém o percurso provisório por email.
 > A fonte do painel já entrega, desfaz, cancela e muda a hora

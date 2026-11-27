@@ -174,7 +174,7 @@ apaga o que a pessoa escreveu (`robustez.md` › Erros).
 O emissor de `emails_por_enviar` está em `src/lib/emails/enviar.ts`, com reserva
 condicional e idempotência no Resend. **Desde 26/11 está ligado às ações**: a
 compra (`registar.ts`), o aceite e a recusa da proposta e as decisões do painel
-(responder, reagendar, cancelar) chamam `enviarDepois()` **depois** de a escrita
+(responder, reagendar, cancelar), e o «Confirmar» do balcão, chamam `enviarDepois()` **depois** de a escrita
 ficar gravada, nunca antes, e só se ela correu bem. A fronteira continua a pôr os
 emails na fila na mesma instrução que muda o pedido; a ação só pede o envio.
 

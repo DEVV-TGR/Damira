@@ -44,7 +44,7 @@ a tracejado 💡.
    não põe nenhum email na fila. **Sem isto, nada deste fluxo acontece no site.**
 2. **Os emails da fila saem desde o ponto 2 (26/11)**: o `enviarDepois()`
    (`src/lib/emails/depois.ts`) é chamado depois da compra, do aceite e da recusa
-   da proposta e das decisões do painel. As novas tentativas sem visitas (#149)
+   da proposta e das decisões do painel, incluindo o «Confirmar» do balcão. As novas tentativas sem visitas (#149)
    ainda não entraram, e em modo de teste tudo vai para a caixa de `EMAILS_SO_PARA`.
 3. **A referência.** O diagrama usa `#00001`; o código usa `DAM-2611-HYUS`. Fica
    para a Andreia dizer se aceita a do código.

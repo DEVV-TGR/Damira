@@ -11,6 +11,7 @@ import {
   simularPedidoDeTeste,
   tirarDeVenda,
 } from "@/lib/dados";
+import { enviarDepois } from "@/lib/emails/depois";
 import { fimDaPausa, OPCOES_PAUSA, type OpcaoPausa } from "@/lib/painel";
 import { comSessao } from "@/lib/painel-servidor";
 
@@ -33,7 +34,13 @@ export async function entregar(id: string, faltaCobrada: boolean) {
  * tablets a confirmar ao mesmo tempo confirmam uma vez.
  */
 export async function confirmar(id: string) {
-  return comSessao((ctx) => responderPedido(id, { precos: [], levantamentoEm: null }, ctx), true);
+  const resultado = await comSessao((ctx) => responderPedido(id, { precos: [], levantamentoEm: null }, ctx), true);
+  /* A fronteira pôs o `confirmado-cliente` na fila na mesma instrução que confirmou;
+     pede-se o envio só depois, e só se ficou gravado — como as decisões da gerente
+     (`eEnviaEmails`, em `acoes-gestao.ts`). Sem isto o email ficava na fila até ao
+     envio seguinte de outra ação. */
+  if (resultado.ok) enviarDepois();
+  return resultado;
 }
 
 export async function desfazer(id: string) {
