@@ -678,8 +678,9 @@ o contador bate sempre com a soma dos reembolsos `pendente` e `concluido`.
   um `por-confirmar`, um `a-aguardar-aceite` ou um `confirmado`, sem reembolso,
   e a vaga liberta-se; e reagenda um `confirmado`. As listas de estados vivem no
   `regras.ts` (`podeCancelar`, `REAGENDAVEIS`, `estadoAntesDeEntregue`), para as
-  duas fontes decidirem igual. ⚠️ Confirmar, responder e aceitar ainda não
-  existem na `FontePainel`: chegam com o contrato do balcão (#125).
+  duas fontes decidirem igual. Responder e confirmar são o
+  `responderPedido` (#139), que o balcão também usa para o «sim» tal como está
+  (#125); o aceite é o `aceitarProposta`, pelo link.
 - **Cancelar não ultrapassa a expiração:** um `por-confirmar` só se cancela
   com `expira_em > agora`, tanto na regra partilhada como no `WHERE`. Se o prazo
   já passou, devolve `estado-mudou`; a limpeza grava a expiração e liberta a vaga.

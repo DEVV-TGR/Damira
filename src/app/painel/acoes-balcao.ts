@@ -7,6 +7,7 @@ import {
   marcarEntregue,
   marcarEsgotadoHoje,
   pausarLoja,
+  responderPedido,
   simularPedidoDeTeste,
   tirarDeVenda,
 } from "@/lib/dados";
@@ -22,6 +23,17 @@ import { comSessao } from "@/lib/painel-servidor";
 
 export async function entregar(id: string, faltaCobrada: boolean) {
   return comSessao((ctx) => marcarEntregue(id, faltaCobrada, ctx), true);
+}
+
+/**
+ * O «sim» do balcão a um pedido que espera pela casa: confirma-o **tal como
+ * está**, sem preço nem hora nova (`pedidos.md` › Quem confirma). É a mesma
+ * porta da gerente (`responderPedido`), com a resposta vazia; a fronteira deixa
+ * a equipa confirmar e recusa-lhe propor, e a passagem é condicional — dois
+ * tablets a confirmar ao mesmo tempo confirmam uma vez.
+ */
+export async function confirmar(id: string) {
+  return comSessao((ctx) => responderPedido(id, { precos: [], levantamentoEm: null }, ctx), true);
 }
 
 export async function desfazer(id: string) {
@@ -51,7 +63,17 @@ export async function pausar(opcao: OpcaoPausa | null) {
 /** A pesquisa do balcão: referência ou nome, os mais recentes primeiro. */
 export async function procurar(texto: string) {
   return comSessao((ctx) =>
-    listarPedidos({ texto, estados: ["pago", "entregue", "cancelado"], ordem: "recentes", limite: 30 }, ctx),
+    listarPedidos(
+      {
+        texto,
+        /* Quem liga a perguntar pelo pedido pode estar à espera de resposta — ou
+           o pedido pode ter expirado, e é isso que se lhe tem de dizer. */
+        estados: ["confirmado", "pago", "por-confirmar", "a-aguardar-aceite", "entregue", "cancelado", "expirado"],
+        ordem: "recentes",
+        limite: 30,
+      },
+      ctx,
+    ),
   );
 }
 

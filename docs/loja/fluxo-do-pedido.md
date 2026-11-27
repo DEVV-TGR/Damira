@@ -483,9 +483,11 @@ ninguém.
 
 ### 6. O balcão com os pedidos pagos na loja — Gonçalo (#125)
 
-**Para o Gonçalo:**
-- «Levantam hoje», «Produzir hoje», o som e o «✓ Entregue» aceitam `confirmado`, e não só `pago`.
-- Onde mexer: `src/lib/painel.ts:190-191` e `:359-360`, e `src/components/painel/balcao/PedidoCartao.tsx:122`.
+✅ **Feito no PR da #125.** «Levantam hoje», «Produzir hoje», «Próximos», o som e
+o «✓ Entregue» aceitam `confirmado` (`aFazer`, em `src/lib/painel.ts`). Há um
+separador «Por confirmar», com o prazo e a urgência de cada pedido, onde o
+balcão confirma tal como está. O «transferência recebida» fica com as entregas
+(ponto 8). Ver `painel-balcao.md`.
 
 ### 7. A loja chega ao pedido a partir do email — Gonçalo
 
