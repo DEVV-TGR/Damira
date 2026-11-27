@@ -453,7 +453,8 @@ ordem — ficava órfã, fora da «Da carta» (e, até 12/11, da `/ementa`).
 | `cliente_nome`, `cliente_email`, `cliente_telefone` | `text` | `cliente` — o telefone é obrigatório, em E.164 (`CHECK ^\+[1-9][0-9]{6,14}$`), como no `EsquemaCliente` |
 | `cliente_nif`, `conta_id` | `text` nulo | `cliente` |
 | `observacoes` | `text` nulo | `observacoes` |
-| `total_cent`, `pago_online_cent` | `integer` `>= 0` | iguais |
+| `total_cent`, `pago_online_cent` | `integer` `>= 0` | iguais — o `total_cent` é o que o cliente paga, **já com o desconto** |
+| `desconto_percentagem`, `desconto_cent` | `integer`, `0` por defeito, `CHECK pedidos_desconto` | o desconto da loja que o pedido teve (migração `0013`, 27/11) — ver abaixo |
 | `modo_pagamento` | `text` `CHECK` (`na-loja`, `total`, `sinal`) | `modoPagamento` — o `total` e o `sinal` são do Stripe, e dormem |
 | `chegou_tarde` | `boolean` | `chegouTarde` |
 | `cancelado_por` | `text` nulo `CHECK` (`cliente`, `gerente`) | `canceladoPor` |
@@ -470,6 +471,18 @@ ordem — ficava órfã, fora da «Da carta» (e, até 12/11, da `/ementa`).
 reembolsos `concluido`, e o `pedidos.md` avisa que um campo derivado guardado é um
 campo que um dia não bate certo. A fonte soma-o ao ler; o `Pedido` que o painel
 recebe traz-o na mesma.
+
+**O desconto fica no pedido, com a percentagem** (`0013`, decidido a 27/11: 10 %
+em toda a loja até a casa dizer que acabou). O `total_cent` é o que se paga, e o
+subtotal é `total_cent + desconto_cent`. Guarda-se a percentagem, e não só o valor,
+porque o preço de uma linha sob orçamento só se fixa na resposta da casa: a
+proposta reaplica a percentagem com que o pedido nasceu, mesmo que a loja já
+tenha desligado o desconto. O `pedidos_desconto` obriga o desconto a ser sempre a
+conta da percentagem sobre o subtotal, arredondada ao cêntimo com o meio cêntimo
+para cima — `(subtotal × percentagem + 50) / 100`, em inteiros e em `bigint`, a
+mesma conta de `src/lib/desconto.ts`. Quem muda o total sem refazer o desconto é
+recusado pela base, em vez de gravar um email e um talão com contas que não
+batem. Os pedidos de antes ficam com `0` e `0`.
 
 **O cliente vive no pedido** e não numa tabela `clientes`. É a fotografia do
 momento: quem muda de telefone não muda o pedido de ontem. E a conta de cliente

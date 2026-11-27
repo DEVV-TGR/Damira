@@ -714,7 +714,18 @@ export const pedidos = pgTable(
     /** O id da conta Google, se o cliente tinha sessão. Sai da sessão, nunca do formulário. */
     contaId: text("conta_id"),
     observacoes: text("observacoes"),
+    /** O que o cliente paga: **já com o desconto** (o subtotal é `total_cent + desconto_cent`). */
     totalCent: integer("total_cent").notNull(),
+    /**
+     * O desconto da loja que este pedido teve, em percentagem (os 10 % de boas-vindas
+     * de 27/11; `0` sem desconto). Fica gravado no pedido, e não se lê do código ao
+     * mostrar, porque o preço de uma linha sob orçamento só se fixa na resposta da
+     * casa: a proposta reaplica a percentagem com que o pedido nasceu, mesmo que a
+     * loja já tenha deixado de fazer desconto.
+     */
+    descontoPercentagem: integer("desconto_percentagem").notNull().default(0),
+    /** O desconto em cêntimos: a percentagem sobre o subtotal, arredondada ao cêntimo. */
+    descontoCent: integer("desconto_cent").notNull().default(0),
     modoPagamento: text("modo_pagamento").notNull(),
     pagoOnlineCent: integer("pago_online_cent").notNull().default(0),
     chegouTarde: boolean("chegou_tarde").notNull().default(false),
@@ -777,6 +788,16 @@ export const pedidos = pgTable(
        ainda não tem regra (`pagamentos.md` › Em aberto, 8), e um `CHECK` que
        recusasse um pagamento recebido perdia um pedido pago. */
     check("pedidos_valores", sql`${t.totalCent} >= 0 and ${t.pagoOnlineCent} >= 0`),
+    /* O desconto é sempre a conta da percentagem sobre o subtotal, arredondada ao
+       cêntimo (meio cêntimo para cima) — a mesma de `src/lib/desconto.ts`. Quem muda
+       o total sem refazer o desconto (uma proposta que fixa um preço) é recusado aqui,
+       em vez de gravar um email e um talão com contas que não batem. O `bigint` é
+       para a multiplicação não transbordar num total grande. */
+    check(
+      "pedidos_desconto",
+      sql`${t.descontoPercentagem} between 0 and 100 and ${t.descontoCent} >= 0
+        and ${t.descontoCent} = ((${t.totalCent} + ${t.descontoCent})::bigint * ${t.descontoPercentagem} + 50) / 100`,
+    ),
     check(
       "pedidos_reembolso_reservado",
       sql`${t.reembolsoReservadoCent} >= 0 and ${t.reembolsoReservadoCent} <= ${t.pagoOnlineCent}`,
