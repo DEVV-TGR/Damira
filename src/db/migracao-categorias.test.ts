@@ -11,7 +11,7 @@ import { criarFonteBd } from "@/lib/dados/bd";
 import { EsquemaProduto, type OrdemEmenta } from "@/lib/dados/tipos";
 import { casaParaLinha, lerCatalogo, produtoParaLinhas } from "./catalogo";
 import { categoriasDoCatalogo } from "./categorias";
-import { casa, categorias, produtos, variantes } from "./esquema";
+import { casa, categorias, familias, produtos, seccoes, variantes } from "./esquema";
 import { importarCatalogo, origemDosJson, type OrigemDoCatalogo } from "./importar-catalogo";
 import { loteEmTransacao } from "./lote";
 import { baseDeTeste, catalogoDeTeste, recusado } from "./teste";
@@ -52,8 +52,8 @@ const ORIGEM = await origemDosJson();
  */
 async function inserirComoAntes(cliente: PGlite, tabela: Table, linha: Record<string, unknown>) {
   const colunas = getTableColumns(tabela);
-  /* As da `0008` e as da `0011` (#88), que a base parada na `0007` ainda não tem. */
-  const pares = Object.entries(linha).filter(([chave]) => !["categoriaId", "tipo", "opcoes", "ativa"].includes(chave));
+  /* As da `0008`, da `0011` (#88) e da `0012`, que a base parada na `0007` ainda não tem. */
+  const pares = Object.entries(linha).filter(([chave]) => !["categoriaId", "seccaoId", "tipo", "opcoes", "ativa"].includes(chave));
   const nomes = pares.map(([chave]) => `"${colunas[chave].name}"`).join(", ");
   const marcas = pares.map((_, i) => `$${i + 1}`).join(", ");
   /* Os `jsonb` vão em texto: é como o Postgres os recebe. */
@@ -174,7 +174,7 @@ describe("a 0008 sobre os 107 produtos", () => {
 });
 
 describe("as regras da tabela", () => {
-  const categoria = { id: "natal", nomePt: "Natal", nomeEn: null, posicao: 20 };
+  const categoria = { id: "natal", nomePt: "Natal", nomeEn: null, posicao: 20, familiaId: "da-ementa" };
 
   it("recusa um nome em branco, comprido demais, ou igual ao de outra em uso", async () => {
     const { db, cliente } = await pelaImportacao(ORIGEM);
@@ -189,6 +189,13 @@ describe("as regras da tabela", () => {
       /* «doces» é o «Doces» da carta da casa, sem distinguir maiúsculas. */
       expect(await recusado(db.insert(categorias).values({ ...categoria, nomePt: "doces" }))).toBe(
         "categorias_nome_unico",
+      );
+      /* Noutra família, o mesmo nome entra (26/11): uns «Doces» no Natal, que
+         a gerente cria no painel. */
+      await db.insert(familias).values({ id: "natal", nomePt: "Natal", nomeEn: null, posicao: 4 });
+      await db.insert(categorias).values({ ...categoria, nomePt: "Doces", familiaId: "natal" });
+      expect(await recusado(db.insert(categorias).values({ ...categoria, id: "outra", familiaId: "nao-existe" }))).toBe(
+        "categorias_familia_id_familias_id_fk",
       );
     } finally {
       await cliente.close();
@@ -225,21 +232,140 @@ describe("as regras da tabela", () => {
   });
 });
 
+describe("a 0012 e as famílias (26/11)", () => {
+  it("dá as mesmas famílias que a importação, com as âncoras de hoje e sem o Natal", async () => {
+    const migrada = await pelaMigracao(ORIGEM);
+    const importada = await pelaImportacao(ORIGEM);
+    try {
+      const ler = async (cliente: PGlite) => ({
+        familias: (await cliente.query("select * from familias order by posicao, id")).rows,
+        categorias: (await cliente.query("select id, familia_id from categorias order by id")).rows,
+      });
+      const daMigracao = await ler(migrada.cliente);
+      expect(daMigracao).toEqual(await ler(importada.cliente));
+
+      expect(daMigracao.familias.map((f) => (f as { id: string }).id)).toEqual([
+        "festas",
+        "kits-bolo",
+        "boxes",
+        "da-ementa",
+      ]);
+      const familiaDe = new Map(
+        daMigracao.categorias.map((c) => [(c as { id: string }).id, (c as { familia_id: string }).familia_id]),
+      );
+      expect(familiaDe.get("festas")).toBe("festas");
+      expect(familiaDe.get("kits-bolo")).toBe("kits-bolo");
+      expect(familiaDe.get("boxes")).toBe("boxes");
+      expect(familiaDe.get("vegan-doces")).toBe("da-ementa");
+    } finally {
+      await migrada.cliente.close();
+      await importada.cliente.close();
+    }
+  });
+
+  it("não mexe no nome nem na posição de nenhuma categoria", async () => {
+    /* O que a `0008` deixou é o que fica: a `0012` só acrescenta a família. */
+    const { categorias: lidas } = await osDoisCaminhos(ORIGEM);
+    expect(lidas.map((c) => c.posicao)).toEqual([...lidas.keys()]);
+  });
+
+  it("recusa um nome de família em branco ou repetido, e uma família com categorias não se apaga", async () => {
+    const { db, cliente } = await pelaImportacao(ORIGEM);
+    const familia = { id: "pascoa", nomePt: "Páscoa", nomeEn: null, posicao: 5 };
+    try {
+      expect(await recusado(db.insert(familias).values({ ...familia, nomePt: " " }))).toBe("familias_nome_pt");
+      expect(await recusado(db.insert(familias).values({ ...familia, nomePt: "DA CARTA" }))).toBe(
+        "familias_nome_unico",
+      );
+      expect(await recusado(db.insert(familias).values({ ...familia, id: "Páscoa" }))).toBe("familias_id_formato");
+      expect(await recusado(db.delete(familias).where(eq(familias.id, "festas")))).toBe(
+        "categorias_familia_id_familias_id_fk",
+      );
+      /* Uma sem categorias apaga-se. */
+      await db.insert(familias).values(familia);
+      await db.delete(familias).where(eq(familias.id, "pascoa"));
+    } finally {
+      await cliente.close();
+    }
+  });
+
+  it("o código de antes da 0012 ainda grava uma categoria da carta, que vai para a da-ementa", async () => {
+    /* Entre a migração no production e o deploy, o `categoriaNova` antigo
+       insere sem `familia_id` (revisão do Sobral ao #161). SQL e não o
+       `db.insert`: o Drizzle de hoje já conhece a coluna e escrevia-a. */
+    const { db, cliente } = await pelaImportacao(ORIGEM);
+    try {
+      await cliente.query(
+        `insert into categorias (id, nome_pt, nome_en, posicao) values ('casa-bolos-inteiros', 'Bolos inteiros', 'Whole cakes', 12)
+         on conflict (id) do nothing`,
+      );
+      const [lida] = await db.select().from(categorias).where(eq(categorias.id, "casa-bolos-inteiros"));
+      expect(lida.familiaId).toBe("da-ementa");
+    } finally {
+      await cliente.close();
+    }
+  });
+});
+
+describe("as secções (27/11)", () => {
+  it("nascem vazias, e nenhum produto tem secção", async () => {
+    const migrada = await pelaMigracao(ORIGEM);
+    try {
+      expect((await migrada.cliente.query("select count(*)::int as n from seccoes")).rows).toEqual([{ n: 0 }]);
+      expect(
+        (await migrada.cliente.query("select count(*)::int as n from produtos where seccao_id is not null")).rows,
+      ).toEqual([{ n: 0 }]);
+    } finally {
+      await migrada.cliente.close();
+    }
+  });
+
+  it("a secção de um produto é sempre da categoria dele", async () => {
+    const { db, cliente } = await pelaImportacao(ORIGEM);
+    const veganas = { id: "vegan", categoriaId: "casa-doces", nomePt: "Vegan", nomeEn: null, posicao: 0 };
+    try {
+      await db.insert(seccoes).values(veganas);
+      /* Na categoria dele, entra. */
+      await db.update(produtos).set({ seccaoId: "vegan" }).where(eq(produtos.id, "bolo-de-cenoura"));
+      /* Num produto de outra categoria, a chave composta recusa. */
+      const [box] = await db.select({ id: produtos.id }).from(produtos).where(eq(produtos.categoriaId, "boxes"));
+      expect(await recusado(db.update(produtos).set({ seccaoId: "vegan" }).where(eq(produtos.id, box.id)))).toBe(
+        "produtos_seccao_da_categoria",
+      );
+      /* Mudar de categoria sem largar a secção também. */
+      expect(
+        await recusado(db.update(produtos).set({ categoriaId: "boxes" }).where(eq(produtos.id, "bolo-de-cenoura"))),
+      ).toBe("produtos_seccao_da_categoria");
+      /* Uma secção com produtos não se apaga; o nome repete-se só noutra categoria. */
+      expect(await recusado(db.delete(seccoes).where(eq(seccoes.id, "vegan")))).toBe("produtos_seccao_da_categoria");
+      expect(await recusado(db.insert(seccoes).values({ ...veganas, id: "vegan-2", nomePt: "VEGAN" }))).toBe(
+        "seccoes_nome_unico",
+      );
+      await db.insert(seccoes).values({ ...veganas, id: "vegan-3", categoriaId: "casa-salgados" });
+    } finally {
+      await cliente.close();
+    }
+  });
+});
+
 const modelo = await catalogoDeTeste();
 afterAll(() => modelo.fechar());
 
-describe("o painel, até a fronteira ler as categorias", () => {
+describe("o painel, sem a categoria escolhida", () => {
   it("pôr um artigo numa carta e categoria nova cria a categoria, no fim", async () => {
     const { db, cliente } = await modelo.copia();
     try {
       const fonte = criarFonteBd(db, loteEmTransacao(db));
       const atual = (await lerCatalogo(db)).find((p) => p.id === "bolo-de-cenoura")!;
-      /* O que a gerente vê ao abrir o produto: sem o id e os interruptores do balcão. */
+      /* O que a gerente vê ao abrir o produto: sem o id e os interruptores do
+         balcão — e sem a categoria escolhida (26/11), que é o editor de antes:
+         sem ela, a categoria sai da carta e da categoria. */
       const entrada = EsquemaProduto.omit({
         id: true,
         arquivado: true,
         foraDeVenda: true,
         esgotadoNoDia: true,
+        categoriaId: true,
       }).parse(atual);
       const editado = await fonte.editarProduto(
         "bolo-de-cenoura",

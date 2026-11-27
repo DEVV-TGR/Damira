@@ -64,10 +64,75 @@ o código que os testes provam é o mesmo que corre no site.
 
 ## O catálogo
 
+### `familias` — o nível de cima (pedido de 26/11, migração `0012`)
+
+A 26/11 a casa pediu as famílias de volta, **dela**: a gerente ordena as
+famílias da `/encomendas` e, dentro de cada uma, as categorias, num sítio só do
+painel, e cria famílias novas — a primeira é o **Natal**. Desfaz a parte
+«acabam as famílias» da decisão de 15/11; o resto (as categorias são dela,
+todas) fica. **Cada produto vive numa categoria só, e cada categoria numa
+família só** (decidido a 26/11): para pôr um produto no Natal, muda-se de
+categoria.
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| `id` | `text` chave primária, `[a-z0-9-]` | a âncora da secção na `/encomendas`; nunca muda |
+| `nome_pt`, `nome_en` | `text`, `text` nulo | as mesmas regras das categorias |
+| `posicao` | `integer >= 0` | a ordem da loja; sem `UNIQUE`, como nas categorias |
+| `arquivada` | `boolean`, `false` por defeito | |
+
+- ⚠️ **Não é a `produtos.familia`**, que decide o cartão e a página (pessoas
+  num kit de festa, o configurador no bolo por medida). Essa fica.
+- **O nome é único entre as que estão em uso** (`familias_nome_unico`).
+- **Uma família com categorias não se apaga** (a chave estrangeira de
+  `categorias.familia_id`).
+- ⚠️ **`categorias.familia_id` tem `DEFAULT 'da-ementa'`, só por causa do
+  deploy.** Entre aplicar a `0012` e o deploy do código novo, o código antigo
+  continua a criar categorias da carta sem família a cada produto gravado
+  (`categoriaNova`); sem o `DEFAULT`, o `NOT NULL` recusava-as e o painel dava
+  erro nesses minutos. O código novo escreve sempre a família. Sai numa
+  limpeza, quando já não correr código de antes da `0012`.
+- **A ordem no production:** ramo `antes-0012`, aplicar a `0012`, merge do
+  esquema e só depois o da funcionalidade (#162), que lê a tabela no build — ao
+  contrário, o build falha (`relation "familias" does not exist`). O mesmo no
+  `desenvolvimento` antes da Preview do #162.
+- As de partida são as secções da `/encomendas` de hoje, **com as âncoras de
+  hoje**: `festas`, `kits-bolo`, `boxes`, `da-ementa` (o cabeçalho e o rodapé
+  levam lá). ⚠️ **O Natal não vem da migração** (decidido a 27/11): cria-o a
+  gerente em «Famílias e categorias», para a `0012` não escrever nada que não
+  saia da base (a regra 1 de cima). A `0012` dá a cada categoria a sua: as três das
+  encomendas a do mesmo nome, as da carta a `da-ementa`. Não muda o nome nem a
+  posição de nenhuma categoria (as regras do catálogo do `production`).
+
+### `seccoes` — o nível de baixo (pedido de 27/11, migração `0012`)
+
+A `/encomendas` tem três níveis: **Família › Categoria › Secção** («Da carta ›
+Doces › Vegan»). **Cada secção é de uma categoria só**, pela ordem da gerente,
+e uma categoria sem secções mostra os produtos diretamente.
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| `id` | `text` chave primária, `[a-z0-9-]` | não vai em âncora nenhuma |
+| `categoria_id` | `text` → `categorias` | as secções andam com a categoria quando ela muda de família |
+| `nome_pt`, `nome_en` | `text`, `text` nulo | as mesmas regras das categorias; único dentro da categoria |
+| `posicao` | `integer >= 0` | a ordem dentro da categoria |
+| `arquivada` | `boolean` | |
+
+- **`produtos.seccao_id`**, nulo = sem secção. ⚠️ **A secção de um produto é
+  sempre da categoria dele**, e quem o garante é a chave estrangeira composta
+  `produtos_seccao_da_categoria` (`(categoria_id, seccao_id)` →
+  `seccoes(categoria_id, id)`, sobre o `UNIQUE` `seccoes_categoria_id_unico`).
+  Com `seccao_id` nulo não se confere. Mudar um produto de categoria obriga a
+  largar ou mudar a secção na mesma instrução.
+- **Nascem vazias** (decidido a 27/11): nenhuma migração as tira da carta. É a
+  gerente quem as cria e arruma os produtos.
+
 ### `categorias` — as da gerente (#124, migração `0008`)
 
 Decidido a 15/11: acabam as famílias e a gerente cria, renomeia e ordena as
 categorias — **todas**, kits e boxes incluídos (`painel-gerente.md` › Produtos).
+Desde 26/11 cada uma vive numa família (`familia_id`, migração `0012`), e a
+`posicao` conta dentro da família.
 
 | Coluna | Tipo | Notas |
 |---|---|---|
@@ -76,9 +141,11 @@ categorias — **todas**, kits e boxes incluídos (`painel-gerente.md` › Produ
 | `posicao` | `integer >= 0` | a ordem da loja |
 | `arquivada` | `boolean`, `false` por defeito | uma que já teve produtos não se apaga, arquiva-se |
 
-- **O nome é único entre as que estão em uso, sem distinguir maiúsculas**
-  (`categorias_nome_unico`, um índice parcial sobre `lower(nome_pt)`). Dois
-  «Doces» eram a armadilha 8 de volta: duas secções iguais na loja, e a gerente
+- **O nome é único entre as que estão em uso na mesma família, sem distinguir
+  maiúsculas** (`categorias_nome_unico`, um índice parcial sobre `familia_id` e
+  `lower(nome_pt)`; até à `0012` era sobre o catálogo todo). Uns «Doces» no
+  Natal e outros na carta lêem-se cada um debaixo da sua família. Dois na mesma
+  família eram a armadilha 8 de volta: duas secções iguais na loja, e a gerente
   sem saber em qual pôs o produto. Uma arquivada não ocupa o nome — a do Natal
   deste ano não impede a do próximo.
 - **A `posicao` não é única, de propósito.** Reordenar troca posições, e uma

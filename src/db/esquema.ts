@@ -14,6 +14,7 @@ import {
   smallint,
   text,
   timestamp,
+  unique,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
@@ -67,6 +68,46 @@ export { TIPOS_PRODUTO, type TipoProduto };
 // ——— O catálogo ———
 
 /**
+ * As famílias (pedido de 26/11): o nível de cima da `/encomendas` — Kit Festas,
+ * Bolo e mesa decorada, Boxes, Da carta, Natal. **Cada categoria vive numa
+ * família, e cada produto numa categoria**: a gerente ordena as famílias, e
+ * dentro de cada uma as categorias, num sítio só do painel. Desfaz a parte
+ * «acabam as famílias» da decisão de 15/11: a casa quer as secções de volta,
+ * mas agora dela — criadas, renomeadas e ordenadas no painel, e não escritas
+ * no código.
+ *
+ * ⚠️ **Não é a `produtos.familia`**, que decide o cartão e a página do produto
+ * (um kit de festa tem pessoas, o bolo por medida tem configurador). Essa fica
+ * como está: um bolo de Natal pode ser um `bolo` na família «Natal».
+ */
+export const familias = pgTable(
+  "familias",
+  {
+    /**
+     * Vai na âncora da secção (`/encomendas#festas`) e nunca muda. As de partida
+     * ficam com as âncoras de hoje, `da-ementa` incluída: o cabeçalho, o rodapé
+     * e a página inicial já levam lá.
+     */
+    id: text("id").primaryKey(),
+    nomePt: text("nome_pt").notNull(),
+    nomeEn: text("nome_en"),
+    /** A ordem da loja. Sem `UNIQUE`, pela mesma razão das categorias. */
+    posicao: integer("posicao").notNull(),
+    arquivada: boolean("arquivada").notNull().default(false),
+  },
+  (t) => [
+    check("familias_id_formato", sql`${t.id} ~ '^[a-z0-9-]+$'`),
+    check("familias_nome_pt", sql`btrim(${t.nomePt}) <> '' and char_length(${t.nomePt}) <= 60`),
+    check("familias_nome_en", sql`btrim(${t.nomeEn}) <> '' and char_length(${t.nomeEn}) <= 60`),
+    check("familias_posicao", sql`${t.posicao} >= 0`),
+    /* Duas famílias com o mesmo nome eram duas secções iguais na loja. */
+    uniqueIndex("familias_nome_unico")
+      .on(sql`lower(${t.nomePt})`)
+      .where(sql`not ${t.arquivada}`),
+  ],
+);
+
+/**
  * As categorias da gerente (#124, decidido a 15/11): **todas** as do catálogo,
  * kits e boxes incluídos, criadas, renomeadas e ordenadas por ela. Substituem a
  * `familia`, a `carta` e a `categoria` dos produtos e a ordem gravada na `casa`
@@ -85,7 +126,22 @@ export const categorias = pgTable(
     nomePt: text("nome_pt").notNull(),
     nomeEn: text("nome_en"),
     /**
-     * A ordem da loja. ⚠️ **Sem `UNIQUE`, de propósito**: reordenar é trocar
+     * A família onde a categoria aparece (26/11). Uma categoria com produtos
+     * muda de família sem os produtos saberem: vão com ela.
+     */
+    familiaId: text("familia_id")
+      .notNull()
+      /* ⚠️ **O `DEFAULT` é para o deploy, e não para o código novo**, que
+         escreve sempre a família. Entre aplicar a `0012` no production e o
+         deploy deste código, o código antigo ainda grava categorias sem
+         `familia_id` (o `categoriaNova`, a cada produto gravado) — e só as da
+         carta, que é a `da-ementa`. Sem isto, o `NOT NULL` recusava-as e
+         gravar um produto no painel dava erro durante esses minutos (revisão do
+         Sobral ao #161). Sai numa limpeza, quando nenhum código antigo correr. */
+      .default("da-ementa")
+      .references(() => familias.id),
+    /**
+     * A ordem **dentro da família**. ⚠️ **Sem `UNIQUE`, de propósito**: reordenar é trocar
      * posições, e uma regra de unicidade recusava a troca a meio da instrução.
      * Quem lê desempata pelo `id`.
      */
@@ -104,13 +160,52 @@ export const categorias = pgTable(
     check("categorias_nome_pt", sql`btrim(${t.nomePt}) <> '' and char_length(${t.nomePt}) <= 60`),
     check("categorias_nome_en", sql`btrim(${t.nomeEn}) <> '' and char_length(${t.nomeEn}) <= 60`),
     check("categorias_posicao", sql`${t.posicao} >= 0`),
-    /* ⚠️ **Duas categorias com o mesmo nome são a armadilha 8 de volta**: duas
-       secções iguais na loja, e a gerente sem saber em qual pôs o produto.
-       Sem distinguir maiúsculas, e só entre as que estão em uso — a do Natal
-       arquivada não impede a do Natal seguinte. */
+    /* ⚠️ **Duas categorias com o mesmo nome na mesma família são a armadilha 8
+       de volta**: duas secções iguais, e a gerente sem saber em qual pôs o
+       produto. Sem distinguir maiúsculas, e só entre as que estão em uso — a
+       do Natal arquivada não impede a do Natal seguinte. **Em famílias
+       diferentes podem repetir-se** (26/11): uns «Doces» no Natal e outros na
+       carta lêem-se cada um debaixo da sua família, na loja e no painel. */
     uniqueIndex("categorias_nome_unico")
-      .on(sql`lower(${t.nomePt})`)
+      .on(t.familiaId, sql`lower(${t.nomePt})`)
       .where(sql`not ${t.arquivada}`),
+  ],
+);
+
+/**
+ * As secções de uma categoria (pedido de 27/11): o terceiro nível da
+ * `/encomendas` — «Da carta › Doces › Vegan». **Cada uma é de uma categoria só**,
+ * pela ordem da gerente, e uma categoria sem secções mostra os produtos
+ * diretamente. Nascem vazias: é ela quem as cria e arruma os produtos
+ * (decidido a 27/11 — nenhuma migração as tira da carta).
+ */
+export const seccoes = pgTable(
+  "seccoes",
+  {
+    /** Nunca muda, mesmo quando o nome muda. Não vai em âncora nenhuma. */
+    id: text("id").primaryKey(),
+    /** Ao mudar a categoria de família, as secções vão com ela. */
+    categoriaId: text("categoria_id")
+      .notNull()
+      .references(() => categorias.id),
+    nomePt: text("nome_pt").notNull(),
+    nomeEn: text("nome_en"),
+    /** A ordem dentro da categoria. Sem `UNIQUE`, pela mesma razão das categorias. */
+    posicao: integer("posicao").notNull(),
+    arquivada: boolean("arquivada").notNull().default(false),
+  },
+  (t) => [
+    check("seccoes_id_formato", sql`${t.id} ~ '^[a-z0-9-]+$'`),
+    check("seccoes_nome_pt", sql`btrim(${t.nomePt}) <> '' and char_length(${t.nomePt}) <= 60`),
+    check("seccoes_nome_en", sql`btrim(${t.nomeEn}) <> '' and char_length(${t.nomeEn}) <= 60`),
+    check("seccoes_posicao", sql`${t.posicao} >= 0`),
+    /* Duas «Vegan» na mesma categoria eram dois títulos iguais seguidos. */
+    uniqueIndex("seccoes_nome_unico")
+      .on(t.categoriaId, sql`lower(${t.nomePt})`)
+      .where(sql`not ${t.arquivada}`),
+    /* O alvo da chave estrangeira composta dos produtos: é ela que garante que a
+       secção de um produto é da categoria dele. */
+    unique("seccoes_categoria_id_unico").on(t.categoriaId, t.id),
   ],
 );
 
@@ -130,6 +225,14 @@ export const produtos = pgTable(
     categoriaId: text("categoria_id")
       .notNull()
       .references(() => categorias.id),
+    /**
+     * A secção dentro da categoria (27/11), ou `NULL` — sem secção, o produto
+     * aparece diretamente na categoria. ⚠️ **Tem de ser da categoria do
+     * produto**, e quem o garante é a chave estrangeira composta
+     * (`produtos_seccao_da_categoria`, mais abaixo): mudar o produto de
+     * categoria obriga a mudar ou largar a secção na mesma instrução.
+     */
+    seccaoId: text("seccao_id"),
     /**
      * `simples` — um artigo, com preço — ou `composto` — um kit, com o que leva
      * (#124). O que leva continua na `composicao` das variantes, porque muda com
@@ -198,6 +301,12 @@ export const produtos = pgTable(
       sql`${t.familia} <> 'ementa' or (${t.carta} is not null and ${t.categoria} is not null)`,
     ),
     check("produtos_tipo", sql`${t.tipo} in (${umDe(TIPOS_PRODUTO)})`),
+    /* Com `seccao_id` nulo não se confere (MATCH SIMPLE): sem secção é válido. */
+    foreignKey({
+      name: "produtos_seccao_da_categoria",
+      columns: [t.categoriaId, t.seccaoId],
+      foreignColumns: [seccoes.categoriaId, seccoes.id],
+    }),
     check("produtos_unidade", sql`${t.unidade} in (${umDe(["un", "kg"])})`),
     /* O inglês pode faltar; o português não, se houver descrição. */
     check("produtos_descricao_pt", sql`${t.descricaoEn} is null or ${t.descricaoPt} is not null`),
