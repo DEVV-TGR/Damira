@@ -49,6 +49,12 @@ FROM (VALUES
 ) AS f("id", "nome_pt", "nome_en", "ordem")
 WHERE f."id" = 'natal' OR EXISTS (SELECT 1 FROM "categorias" c WHERE c."familia_id" = f."id");--> statement-breakpoint
 ALTER TABLE "categorias" ALTER COLUMN "familia_id" SET NOT NULL;--> statement-breakpoint
+-- ⚠️ O `DEFAULT` é para o deploy: entre esta migração e o deploy do código
+-- novo, o código antigo continua a criar categorias da carta sem família (o
+-- `categoriaNova`, a cada produto gravado no painel). Sem ele, o `NOT NULL`
+-- recusava-as e o painel dava erro nesses minutos. Vem depois do `UPDATE`, que
+-- já deu a cada categoria a sua: não enche nada. Ver o `esquema.ts`.
+ALTER TABLE "categorias" ALTER COLUMN "familia_id" SET DEFAULT 'da-ementa';--> statement-breakpoint
 ALTER TABLE "categorias" ADD CONSTRAINT "categorias_familia_id_familias_id_fk" FOREIGN KEY ("familia_id") REFERENCES "public"."familias"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 -- Os nomes repetem-se agora entre famílias (uns «Doces» no Natal e outros na
 -- carta), mas nunca dentro da mesma.

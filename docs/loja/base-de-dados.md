@@ -86,6 +86,16 @@ categoria.
 - **O nome é único entre as que estão em uso** (`familias_nome_unico`).
 - **Uma família com categorias não se apaga** (a chave estrangeira de
   `categorias.familia_id`).
+- ⚠️ **`categorias.familia_id` tem `DEFAULT 'da-ementa'`, só por causa do
+  deploy.** Entre aplicar a `0012` e o deploy do código novo, o código antigo
+  continua a criar categorias da carta sem família a cada produto gravado
+  (`categoriaNova`); sem o `DEFAULT`, o `NOT NULL` recusava-as e o painel dava
+  erro nesses minutos. O código novo escreve sempre a família. Sai numa
+  limpeza, quando já não correr código de antes da `0012`.
+- **A ordem no production:** ramo `antes-0012`, aplicar a `0012`, merge do
+  esquema e só depois o da funcionalidade (#162), que lê a tabela no build — ao
+  contrário, o build falha (`relation "familias" does not exist`). O mesmo no
+  `desenvolvimento` antes da Preview do #162.
 - As de partida são as secções da `/encomendas` de hoje, **com as âncoras de
   hoje**: `festas`, `kits-bolo`, `boxes`, `da-ementa` (o cabeçalho e o rodapé
   levam lá) — e `natal`, vazia. A `0012` dá a cada categoria a sua: as três das
