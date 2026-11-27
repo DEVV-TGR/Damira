@@ -99,15 +99,6 @@ body:has(.cartaz) .barra-vidro {
   object-position: 70% center;
 }
 
-.capa__foto--alternativa {
-  opacity: 0;
-  transition: opacity 600ms ease-in-out;
-}
-
-.capa__foto--alternativa[data-visivel] {
-  opacity: 1;
-}
-
 /* A sombra acompanha a coluna de texto e deixa o letreiro visível à direita. */
 .cap--capa::before {
   content: "";
@@ -534,10 +525,6 @@ body:has(.cartaz) .barra-vidro {
    gramática. Fica como nas outras duas páginas. */
 
 @media (prefers-reduced-motion: reduce) {
-  .capa__foto--alternativa {
-    display: none;
-  }
-
   .pao__estampa {
     transform: none;
   }

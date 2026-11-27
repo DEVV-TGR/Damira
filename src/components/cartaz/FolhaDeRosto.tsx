@@ -1,15 +1,27 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { CarrosselCapa } from "./CarrosselCapa";
+import Image from "next/image";
 
-/** A capa alterna duas fotografias: no Natal, o boneco de gengibre e a montra. */
+/**
+ * A capa tem uma fotografia só. ⚠️ **No Natal é o boneco de gengibre**, e só ele
+ * (pedido do Gonçalo, 27/11): a troca a cada cinco segundos com a montra saiu,
+ * e com ela o `CarrosselCapa`. A fachada e a montra (`capa-fachada.webp`,
+ * `capa-montra.webp`) ficam em `public/fotos/` para voltarem depois das festas.
+ */
 export function FolhaDeRosto() {
   const t = useTranslations("cartaz.capa");
   const marca = useTranslations("marca");
 
   return (
     <section className="cap cap--capa" data-sc-act="flow" aria-labelledby="capa">
-      <CarrosselCapa />
+      <Image
+        src="/fotos/capa-natal.webp"
+        alt=""
+        fill
+        sizes="100vw"
+        preload
+        className="capa__foto capa__foto--natal"
+      />
       <div className="cap__caixa" data-sc-in data-sc-stagger="70">
         <p className="cap__olho">
           {t("olho")}
