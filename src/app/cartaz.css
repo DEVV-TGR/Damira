@@ -377,6 +377,9 @@ body:has(.cartaz) .barra-vidro {
   line-height: 0.86;
   letter-spacing: -0.05em;
   margin-block: 0.06em 0.1em;
+  /* O «1» traz espaço lateral próprio, e a 15rem lia-se como um recuo em
+     relação a «Opções» e «vegan». Puxa-se para a mesma linha de partida. */
+  margin-inline-start: -0.05em;
 }
 /* O contorno é o chão: está lá antes de o progresso sair do zero, por isso o
    palco nunca aparece vazio. É decorativo (o `<h2>` tem `aria-label`), e a
@@ -392,10 +395,21 @@ body:has(.cartaz) .barra-vidro {
   position: absolute;
   inset: 0;
   color: var(--color-papel);
-  clip-path: inset(calc((1 - var(--raro-enche)) * 100%) 0 0 0);
+  /* ⚠️ **Os lados do recorte saem da caixa.** Com `letter-spacing` negativo o
+     «%» passa a margem da caixa, e um recorte rente cortava-lhe o círculo da
+     direita (a captura de 27/11 mostrou-o). Só o topo é que se move. */
+  clip-path: inset(calc((1 - var(--raro-enche)) * 100%) -0.15em -0.1em -0.15em);
 }
 .raro__texto {
   margin-top: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+}
+/* Cada linha entra quando o progresso passa o seu `--raro-a` e leva 0,1 de
+   curso a chegar; depois fica, porque o `--sc-p` pára em 1. Sem JavaScript o
+   `--sc-p` não existe e o texto está lá. */
+.raro__entra {
+  --raro-v: clamp(0, (var(--sc-p, 1) - var(--raro-a, 0)) / 0.1, 1);
+  opacity: var(--raro-v);
+  transform: translate3d(0, calc((1 - var(--raro-v)) * 0.9rem), 0);
 }
 .raro__acao {
   margin-top: 1.75rem;
@@ -403,6 +417,9 @@ body:has(.cartaz) .barra-vidro {
 @media (prefers-reduced-motion: reduce) {
   .cap--raro {
     --raro-enche: 1;
+  }
+  .raro__entra {
+    --raro-v: 1;
   }
 }
 /* Com o chão já em `verde-forte`, o corpo e a ligação são papel liso: 4,67:1,
@@ -556,6 +573,12 @@ body:has(.cartaz) .barra-vidro {
   --sc-ink: var(--color-papel);
   --sc-ink-soft: var(--suave-sobre-tinta);
   color: var(--sc-ink);
+  /* ⚠️ **De ponta a ponta, sem a margem do cartaz.** O palco preso corta o que
+     lhe sai fora, e dentro da margem cortava a 100 px da borda: o «Damira em
+     movimento» aparecia amputado a meio das letras ainda à vista, e o último
+     cartão cortado à direita. A margem passa para dentro do carril
+     (`padding-inline-start` e a margem do último filho) e do botão. */
+  padding-inline: 0;
 }
 .cap--provar {
   background: var(--color-papel-fundo);
@@ -574,28 +597,33 @@ body:has(.cartaz) .barra-vidro {
    ⚠️ Três larguras e não uma. Catorze células iguais são uma folha de contacto,
    que é o que o `taste.md` chama grelha de cartões como estrutura de página. */
 .vitrine__grelha {
+  /* ⚠️ **A altura é da fila, e não de cada célula** (27/11). A célula larga
+     tinha `aspect-ratio: 8 / 3`, que conta duas colunas e esquece a goteira
+     entre elas: saía sempre `3/8` da goteira mais alta do que as vizinhas, e as
+     filas do Natal e da vitrine ficavam desalinhadas em baixo. Agora a fila mede
+     `largura da coluna × 3/4` (4:3, como antes), tirada da largura da grelha
+     (`cqi`), e cada célula enche a fila que lhe calha, larga ou não. */
+  --vitrine-goteira: clamp(0.5rem, 1.2vw, 1rem);
+  --vitrine-colunas: 2;
+  container-type: inline-size;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(0.5rem, 1.2vw, 1rem);
+  grid-template-columns: repeat(var(--vitrine-colunas), minmax(0, 1fr));
+  grid-auto-rows: calc(
+    (100cqi - (var(--vitrine-colunas) - 1) * var(--vitrine-goteira)) / var(--vitrine-colunas) * 3 / 4
+  );
+  gap: var(--vitrine-goteira);
   margin: clamp(2.5rem, 5vw, 4rem) 0 0;
   padding: 0;
   list-style: none;
 }
 @media (min-width: 48rem) {
   .vitrine__grelha {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    --vitrine-colunas: 4;
   }
-  /* ⚠️ **A célula larga também muda de proporção, e tem de mudar.** Ocupar duas
-     colunas com a mesma proporção 4:3 duplica a largura **e** a altura: a
-     captura mostrou uma fotografia com o dobro da altura das vizinhas, um
-     buraco branco ao lado dela, e — o pior — a maior imagem da página a não ser
-     a estampa do pão. Uma página com dois picos não tem nenhum.
-
-     8:3 é duas colunas mais a goteira, à altura de uma linha de 4:3. As linhas
-     ficam direitas e nenhuma célula passa à frente do pico. */
+  /* A célula larga ocupa duas colunas à altura de uma fila: nunca passa à
+     frente do pico da página com o dobro da altura das vizinhas. */
   .vitrine__celula[data-larga] {
     grid-column: span 2;
-    aspect-ratio: 8 / 3;
   }
 }
 .vitrine__celula {
@@ -603,7 +631,6 @@ body:has(.cartaz) .barra-vidro {
   overflow: hidden;
   border-radius: 2px;
   background: var(--color-papel-fundo);
-  aspect-ratio: 4 / 3;
 }
 /* A primeira fotografia que o «Ver mais» revela recebe o foco (ver
    `VitrineGrelha.tsx`). O contorno fica por fora: o `overflow: hidden` da
@@ -980,11 +1007,21 @@ body:has(.cartaz) .barra-vidro {
 /* ------------------------------------------------------------ V · os reels --
    Um `pan`, como o da festa: o palco prende-se e a rolagem faz o carril
    atravessar. Ver `Reels.tsx` e `.festa__carril`. */
+.reels__palco {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(1.5rem, 4vh, 2.75rem);
+}
+.reels__abertura {
+  padding-inline: var(--margem-cartaz);
+}
+.reels__abertura .cap__titulo {
+  margin: 0;
+}
 .reels__carril {
   display: flex;
   align-items: center;
-  gap: clamp(1rem, 2.5vw, 2rem);
-  height: 100%;
   padding-inline-start: var(--margem-cartaz);
   /* ⚠️ 165vw: o curso é `scrollWidth - innerWidth`, e um carril de largura
      fixa morre à medida que o monitor cresce. Armadilha 11 do AGENTS.md. */
@@ -993,9 +1030,6 @@ body:has(.cartaz) .barra-vidro {
 .reels__carril > * {
   flex: 0 0 auto;
 }
-.reels__abertura {
-  width: min(28rem, 78vw);
-}
 .reels__fila {
   display: flex;
   gap: clamp(0.75rem, 2vw, 1.25rem);
@@ -1003,11 +1037,14 @@ body:has(.cartaz) .barra-vidro {
   padding: 0;
   list-style: none;
 }
+/* Com o título por cima, a cela tem de caber no que sobra do ecrã: 58svh de
+   altura no máximo, e a largura sobe com o ecrã (até 20rem) para o carril
+   continuar a ter curso num monitor largo. */
 .reels__cela {
   flex: 0 0 auto;
-  width: clamp(11rem, 22vw, 15rem);
+  width: clamp(11rem, 19vw, 20rem);
   aspect-ratio: 9 / 16;
-  max-height: 72svh;
+  max-height: 58svh;
 }
 .reels__instagram {
   display: flex;
