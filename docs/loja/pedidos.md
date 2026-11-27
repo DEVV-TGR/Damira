@@ -21,7 +21,9 @@ um estado que os pagamentos não sabem que existe.
 > contrato para distinguir a iniciativa do cliente. O reagendamento ainda só
 > grava a nova hora e `reagendadoEm`: faltam o registo do acordo, o aviso ao
 > cliente e o talão de alteração. Estas peças continuam necessárias antes do
-> uso real destes fluxos. Faltam os ecrãs do balcão para estes estados (#125), o aceite por
+> uso real destes fluxos. O balcão já mostra os `confirmado` e confirma os
+> `por-confirmar` tal como estão (#125); faltam a transferência recebida e o
+> cancelar por falta de pagamento das entregas, o aceite por
 > link, as entregas e os emails automáticos; a expiração sem visitas e os
 > lembretes também precisam de implementação. Os pontos marcados «(em aberto:
 > ver n.º X)» continuam por decidir — estão no fim, com a proposta e quem decide.

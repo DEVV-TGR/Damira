@@ -16,7 +16,7 @@ import {
   produtosDoPainel,
   simularPedidoDeTeste,
 } from "@/lib/dados";
-import type { ContextoPainel, Pedido } from "@/lib/dados/tipos";
+import type { ContextoPainel, EstadoPedido, Pedido } from "@/lib/dados/tipos";
 import { FUSO } from "@/lib/horarios";
 import { contarPorPreencher, esgotadoHoje, organizarBalcao } from "@/lib/painel";
 import { VERSAO_DO_SITE, versaoEmCache } from "@/lib/painel-versao";
@@ -140,6 +140,11 @@ export default async function Painel({ searchParams }: { searchParams: Promise<{
  * com um teto: a casa não tem mil pedidos à frente, e um ciclo sem fim é pior
  * do que uma lista cortada.
  */
+/* Os que esperam pela casa e pelo cliente vêm também (#125): sem eles, um pedido
+   do site com um produto a confirmar não aparecia ao balcão, e expirava às 48 h
+   sem ninguém o ter visto. */
+const ESTADOS_DO_BALCAO: EstadoPedido[] = ["confirmado", "pago", "por-confirmar", "a-aguardar-aceite", "cancelado", "entregue"];
+
 async function pedidosDoBalcao(ctx: ContextoPainel): Promise<Pedido[]> {
   const casa = await configuracaoDaCasa();
   const desde = startOfDay(ctx.agora, { in: tz(FUSO) });
@@ -148,7 +153,7 @@ async function pedidosDoBalcao(ctx: ContextoPainel): Promise<Pedido[]> {
   let cursor: string | null = null;
   for (let pagina = 0; pagina < 10; pagina++) {
     const resultado = await listarPedidos(
-      { estados: ["pago", "cancelado", "entregue"], levantamentoDesde: desde, levantamentoAte: ate, cursor, limite: 100 },
+      { estados: ESTADOS_DO_BALCAO, levantamentoDesde: desde, levantamentoAte: ate, cursor, limite: 100 },
       ctx,
     );
     if (!resultado.ok) break;

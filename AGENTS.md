@@ -212,6 +212,13 @@ que as torna falsas:
   contra a de produção — com uma exceção: o site no ar em modo de teste, até ao
   lançamento, compra com cartões de teste contra ela (`pagamentos.md` ›
   Ambientes). Os pedidos que isso deixa lá saem das contas no lançamento.
+- ⚠️ **Desde 27/11/2026 o catálogo do `production` é trabalho da casa**: a
+  gerente preenche-o no painel, e não há outra cópia. Uma migração só preenche
+  o que ela própria cria, a partir do que já está na base, e nunca altera um
+  valor que a gerente edita. Antes de cada migração no `production` cria-se um
+  ramo de segurança na Neon. O `production` nunca se repõe a partir do
+  `desenvolvimento` nem dos JSON. As quatro regras inteiras estão em
+  `base-de-dados.md` › O catálogo do `production` é da casa.
 
 ### Revisão
 
