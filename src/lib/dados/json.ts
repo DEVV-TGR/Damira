@@ -10,6 +10,8 @@ import { PRODUTOS, type Produto as ProdutoDasEncomendas } from "@/lib/produtos";
 import mensagensEn from "../../../messages/en.json";
 import mensagensPt from "../../../messages/pt.json";
 import { criarPainelJson, type EstadoJson } from "./json-painel";
+import { categoriasDoCatalogo, FAMILIAS_DE_PARTIDA } from "@/db/categorias";
+import { arvoreDaLoja, categoriaDe, type ArvoreGravada } from "./familias";
 import { conferirPedido, cotarLinhas, gerarReferencia, pedeConfirmacaoInicial, pedidoNaLoja, propostaEmAberto } from "./regras";
 import {
   EsquemaEntradaPedido,
@@ -351,6 +353,31 @@ export type OpcoesFonteJson = {
  * A fonte sobre os JSON. Cada chamada tem os seus próprios pedidos em memória —
  * é o que deixa os testes não se pisarem uns aos outros.
  */
+/**
+ * As famílias e as categorias de partida, sem base de dados: as mesmas que a
+ * migração `0012` e a importação deixam numa base nova — as famílias de
+ * `FAMILIAS_DE_PARTIDA` e uma categoria por cada uma que o catálogo usa.
+ */
+function arvoreDePartida(catalogo: readonly Produto[], ordem: OrdemEmenta): ArvoreGravada {
+  return {
+    familias: FAMILIAS_DE_PARTIDA.map((f) => ({
+      id: f.id,
+      nome: { pt: f.nomePt, en: f.nomeEn ?? null },
+      posicao: f.posicao,
+      arquivada: false,
+    })),
+    categorias: categoriasDoCatalogo(catalogo, ordem).map((c) => ({
+      id: c.id,
+      nome: { pt: c.nomePt, en: c.nomeEn ?? null },
+      posicao: c.posicao,
+      familiaId: c.familiaId,
+      arquivada: false,
+    })),
+    /* As secções nascem vazias (27/11): é a gerente quem as cria. */
+    seccoes: [],
+  };
+}
+
 export function criarFonteJson(opcoes: OpcoesFonteJson = {}): FonteDeDados {
   return criarFonteJsonComEstado(opcoes).fonte;
 }
@@ -364,15 +391,20 @@ export function criarFonteJsonComEstado(opcoes: OpcoesFonteJson = {}): { fonte: 
   /* O catálogo, a configuração e as definições num estado que o painel
      (`json-painel.ts`) também escreve: o que a gerente grava é o que a loja lê
      a seguir. A ordem do `Map` é a do catálogo, com os produtos novos no fim. */
+  const catalogo = opcoes.catalogo ?? CATALOGO_JSON;
+  const ordem = opcoes.ordem ?? ORDEM_JSON;
   const estado: EstadoJson = {
-    porId: new Map((opcoes.catalogo ?? CATALOGO_JSON).map((produto) => [produto.id, produto])),
+    /* Cada produto já com a categoria onde aparece (26/11), como os da base de
+       dados: a que trouxer, ou a que sai da família, da carta e da categoria. */
+    porId: new Map(catalogo.map((produto) => [produto.id, { ...produto, categoriaId: categoriaDe(produto) }])),
     configuracao: opcoes.configuracao ?? CONFIGURACAO_JSON,
     definicoes: opcoes.definicoes ?? DEFINICOES_JSON,
-    ordem: opcoes.ordem ?? ORDEM_JSON,
+    ordem,
     pedidos: new Map((opcoes.pedidos ?? []).map((pedido) => [pedido.id, pedido])),
     porReferencia: new Map((opcoes.pedidos ?? []).map((pedido) => [pedido.referencia, pedido.id])),
     versao: 0,
     opcoesBolo: opcoes.opcoesBolo ?? OPCOES_BOLO,
+    arvore: arvoreDePartida(catalogo, ordem),
   };
   const { porId, pedidos, porReferencia } = estado;
 
@@ -421,6 +453,10 @@ export function criarFonteJsonComEstado(opcoes: OpcoesFonteJson = {}): { fonte: 
     async produtoPorId(id) {
       const produto = porId.get(id);
       return produto && !produto.arquivado ? produto : null;
+    },
+
+    async familias() {
+      return arvoreDaLoja(estado.arvore);
     },
 
     async ordemDaEmenta() {
