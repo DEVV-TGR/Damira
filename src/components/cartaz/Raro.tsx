@@ -38,8 +38,8 @@ export function Raro() {
       className="cap cap--raro"
       data-capitulo
       data-sc-act="pin"
-      /* 2,2 ecrãs: 1,2 de curso. Chega para o número encher (0,04 → 0,38) e
-         o texto entrar (0,3 → 0,6) com o `dwell` a assentar a meio; com 2,5 e
+      /* 2,2 ecrãs: 1,2 de curso. Chega para o número encher (0,12 → 0,46) e
+         o texto entrar (0,46 → 0,68) com o `dwell` a assentar a meio; com 2,5 e
          nada a acontecer depois do contador, sobrava um ecrã de verde parado. */
       data-sc-span="2.2"
       data-sc-dwell="0.3"
@@ -62,13 +62,13 @@ export function Raro() {
             })}
           </h2>
 
-          <p className="cap__texto raro__texto raro__entra" style={{ "--raro-a": 0.3 } as CSSProperties}>
+          <p className="cap__texto raro__texto raro__entra" style={{ "--raro-a": 0.46 } as CSSProperties}>
             {t("texto")}
           </p>
-          <p className="cap__texto raro__entra" style={{ "--raro-a": 0.36 } as CSSProperties}>
+          <p className="cap__texto raro__entra" style={{ "--raro-a": 0.52 } as CSSProperties}>
             {t("exemplo")}
           </p>
-          <p className="raro__acao raro__entra" style={{ "--raro-a": 0.42 } as CSSProperties}>
+          <p className="raro__acao raro__entra" style={{ "--raro-a": 0.58 } as CSSProperties}>
             {/* ⚠️ **`#da-ementa`, e não uma âncora da carta vegan.** Desde as
                 famílias da gerente (#162) só as famílias têm `id`; as
                 categorias não, de propósito (armadilha 8). Um `#carta-vegan`

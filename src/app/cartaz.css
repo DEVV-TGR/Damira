@@ -167,8 +167,10 @@ body:has(.cartaz) .barra-vidro {
   --sc-ink-soft: var(--color-papel);
   color: var(--sc-ink);
   /* O motor escreve o `--sc-p` (0 → 1) nesta secção. O «100%» enche entre
-     0,04 e 0,38; sem JavaScript o `--sc-p` não existe e o número sai cheio. */
-  --raro-enche: clamp(0, (var(--sc-p, 1) - 0.04) / 0.34, 1);
+     0,12 e 0,46 — não logo à entrada, que era cedo de mais (27/11): o palco
+     prende-se e só depois o número enche. Sem JavaScript o `--sc-p` não existe
+     e o número sai cheio. */
+  --raro-enche: clamp(0, (var(--sc-p, 1) - 0.12) / 0.34, 1);
 }
 .cap--festa {
   background: var(--color-tijolo);
@@ -1167,4 +1169,46 @@ body:has(.natal__previa[open]) {
 .natal__painel button:focus-visible {
   background: var(--color-papel);
   color: var(--color-tinta);
+}
+
+/* ===========================================================================
+   AS ENTRADAS PRESAS À ROLAGEM (27/11)
+   ===========================================================================
+   ⚠️ **O motor dispara o `data-sc-in` cedo de mais para esta página.** Faz um
+   `IntersectionObserver` a 12 % do fundo do ecrã e depois corre 620 ms sozinho:
+   o bloco acabava de entrar enquanto estava no rodapé do ecrã, e quando o olho
+   lá chegava já não havia animação nenhuma — «as animações acontecem muito
+   cedo», disse o Gonçalo duas vezes. O motor é da skill e não se edita, por isso
+   a correcção vive aqui e só na página inicial.
+
+   Cada bloco passa a entrar **com a rolagem** (`animation-timeline: view()`),
+   entre `cover 6 %` e `cover 34 %` do percurso dele pelo ecrã: começa quando
+   entra pelo fundo e acaba com o topo a ~65 % da altura (medido a 1440×900 e
+   375×812), onde já se está a ler. `cover` e não `entry`: o
+   `entry` de um título de 60 px dura 60 px de rolagem e acabava outra vez no
+   fundo. Parado a meio, fica a meio — é a rolagem que manda.
+
+   - **Escalonados (`data-sc-stagger`), só os filhos.** O contentor fica quieto:
+     uma lista mais alta do que o ecrã (a vitrine aberta, no telemóvel) nunca
+     acabava o seu percurso e ficava meio transparente para sempre (a armadilha
+     2, vista de outro lado).
+   - **A capa fica de fora**: já está no ecrã quando a página abre, e com a
+     rolagem nunca chegaria a entrar. Fica com a entrada do motor.
+   - Sem `view()` (o Firefox, hoje) e com movimento reduzido, nada muda: vale a
+     entrada do motor. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .cartaz .cap:not(.cap--capa) [data-sc-in][data-sc-stagger] {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+    .cartaz .cap:not(.cap--capa) [data-sc-in]:not([data-sc-stagger]),
+    .cartaz .cap:not(.cap--capa) [data-sc-stagger] > * {
+      transition: none;
+      animation: surgir linear both;
+      animation-timeline: view();
+      animation-range: cover 6% cover 34%;
+    }
+  }
 }
