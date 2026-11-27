@@ -622,8 +622,9 @@
       "obrigatoria": "(obrigatória)",
       "opcional": "(opcional)"
     },
-    "diasSemEncomendaIntervalo": "Não se encomenda para levantar {dias}.",
-    "diasSemEncomenda": "Não se encomenda para levantar {dias}."
+    "diasSemEncomendaIntervalo": "de {de} a {ate}",
+    "diasSemEncomenda": "Não se encomenda para levantar {dias}.",
+    "diasSemEncomendaDias": "a {dias}"
   },
   "desconto": {
     "faixa": "Aproveita <destaque>{n}% de desconto</destaque> em todas as encomendas",

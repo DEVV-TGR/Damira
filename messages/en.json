@@ -622,8 +622,9 @@
       "obrigatoria": "(required)",
       "opcional": "(optional)"
     },
-    "diasSemEncomendaIntervalo": "Not available for collection {dias}.",
-    "diasSemEncomenda": "Not available for collection on {dias}."
+    "diasSemEncomendaIntervalo": "from {de} to {ate}",
+    "diasSemEncomenda": "Not available for collection {dias}.",
+    "diasSemEncomendaDias": "on {dias}"
   },
   "desconto": {
     "faixa": "Enjoy <destaque>{n}% off</destaque> every order",

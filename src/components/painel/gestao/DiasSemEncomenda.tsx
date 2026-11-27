@@ -5,6 +5,8 @@ import type { DiasSemEncomenda as Intervalo } from "@/lib/horarios";
 import { diaDeLisboa } from "@/lib/painel";
 import { BOTAO_SECUNDARIO } from "../balcao/comum";
 
+const dataLegivel = (data: string) => data.split("-").reverse().join("/");
+
 export function DiasSemEncomenda({ dias, aoMudar }: { dias: readonly Intervalo[]; aoMudar: (dias: Intervalo[]) => void }) {
   const [novo, setNovo] = useState({ de: "", ate: "" });
   const [hoje] = useState(() => diaDeLisboa(new Date()));
@@ -16,7 +18,7 @@ export function DiasSemEncomenda({ dias, aoMudar }: { dias: readonly Intervalo[]
       <ul className="mt-3 space-y-2">
         {dias.map((dia, i) => (
           <li key={i} className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="tabular-nums">{dia.de}{dia.ate !== dia.de ? ` → ${dia.ate}` : ""}</span>
+            <span className="tabular-nums">{dataLegivel(dia.de)}{dia.ate !== dia.de ? ` a ${dataLegivel(dia.ate)}` : ""}</span>
             {dia.ate < hoje && <span className="text-tinta-suave">já passou</span>}
             <button type="button" onClick={() => aoMudar(dias.filter((_, j) => j !== i))} className="min-h-12 px-3 underline underline-offset-4">Tirar</button>
           </li>
