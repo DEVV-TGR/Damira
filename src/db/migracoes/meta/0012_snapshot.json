@@ -1283,6 +1283,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "seccao_id": {
+          "name": "seccao_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "tipo": {
           "name": "tipo",
           "type": "text",
@@ -1470,6 +1476,21 @@
             "categoria_id"
           ],
           "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "produtos_seccao_da_categoria": {
+          "name": "produtos_seccao_da_categoria",
+          "tableFrom": "produtos",
+          "tableTo": "seccoes",
+          "columnsFrom": [
+            "categoria_id",
+            "seccao_id"
+          ],
+          "columnsTo": [
+            "categoria_id",
             "id"
           ],
           "onDelete": "no action",
@@ -1931,6 +1952,119 @@
         "reembolsos_falha_tratada": {
           "name": "reembolsos_falha_tratada",
           "value": "\"reembolsos\".\"falha_tratada_em\" is null or \"reembolsos\".\"estado\" = 'falhado'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.seccoes": {
+      "name": "seccoes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "categoria_id": {
+          "name": "categoria_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nome_pt": {
+          "name": "nome_pt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nome_en": {
+          "name": "nome_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "posicao": {
+          "name": "posicao",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "arquivada": {
+          "name": "arquivada",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {
+        "seccoes_nome_unico": {
+          "name": "seccoes_nome_unico",
+          "columns": [
+            {
+              "expression": "categoria_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "lower(\"nome_pt\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "not \"seccoes\".\"arquivada\"",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "seccoes_categoria_id_categorias_id_fk": {
+          "name": "seccoes_categoria_id_categorias_id_fk",
+          "tableFrom": "seccoes",
+          "tableTo": "categorias",
+          "columnsFrom": [
+            "categoria_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "seccoes_categoria_id_unico": {
+          "name": "seccoes_categoria_id_unico",
+          "nullsNotDistinct": false,
+          "columns": [
+            "categoria_id",
+            "id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "seccoes_id_formato": {
+          "name": "seccoes_id_formato",
+          "value": "\"seccoes\".\"id\" ~ '^[a-z0-9-]+$'"
+        },
+        "seccoes_nome_pt": {
+          "name": "seccoes_nome_pt",
+          "value": "btrim(\"seccoes\".\"nome_pt\") <> '' and char_length(\"seccoes\".\"nome_pt\") <= 60"
+        },
+        "seccoes_nome_en": {
+          "name": "seccoes_nome_en",
+          "value": "btrim(\"seccoes\".\"nome_en\") <> '' and char_length(\"seccoes\".\"nome_en\") <= 60"
+        },
+        "seccoes_posicao": {
+          "name": "seccoes_posicao",
+          "value": "\"seccoes\".\"posicao\" >= 0"
         }
       },
       "isRLSEnabled": false

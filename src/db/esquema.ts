@@ -14,6 +14,7 @@ import {
   smallint,
   text,
   timestamp,
+  unique,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
@@ -171,6 +172,43 @@ export const categorias = pgTable(
   ],
 );
 
+/**
+ * As secções de uma categoria (pedido de 27/11): o terceiro nível da
+ * `/encomendas` — «Da carta › Doces › Vegan». **Cada uma é de uma categoria só**,
+ * pela ordem da gerente, e uma categoria sem secções mostra os produtos
+ * diretamente. Nascem vazias: é ela quem as cria e arruma os produtos
+ * (decidido a 27/11 — nenhuma migração as tira da carta).
+ */
+export const seccoes = pgTable(
+  "seccoes",
+  {
+    /** Nunca muda, mesmo quando o nome muda. Não vai em âncora nenhuma. */
+    id: text("id").primaryKey(),
+    /** Ao mudar a categoria de família, as secções vão com ela. */
+    categoriaId: text("categoria_id")
+      .notNull()
+      .references(() => categorias.id),
+    nomePt: text("nome_pt").notNull(),
+    nomeEn: text("nome_en"),
+    /** A ordem dentro da categoria. Sem `UNIQUE`, pela mesma razão das categorias. */
+    posicao: integer("posicao").notNull(),
+    arquivada: boolean("arquivada").notNull().default(false),
+  },
+  (t) => [
+    check("seccoes_id_formato", sql`${t.id} ~ '^[a-z0-9-]+$'`),
+    check("seccoes_nome_pt", sql`btrim(${t.nomePt}) <> '' and char_length(${t.nomePt}) <= 60`),
+    check("seccoes_nome_en", sql`btrim(${t.nomeEn}) <> '' and char_length(${t.nomeEn}) <= 60`),
+    check("seccoes_posicao", sql`${t.posicao} >= 0`),
+    /* Duas «Vegan» na mesma categoria eram dois títulos iguais seguidos. */
+    uniqueIndex("seccoes_nome_unico")
+      .on(t.categoriaId, sql`lower(${t.nomePt})`)
+      .where(sql`not ${t.arquivada}`),
+    /* O alvo da chave estrangeira composta dos produtos: é ela que garante que a
+       secção de um produto é da categoria dele. */
+    unique("seccoes_categoria_id_unico").on(t.categoriaId, t.id),
+  ],
+);
+
 export const produtos = pgTable(
   "produtos",
   {
@@ -187,6 +225,14 @@ export const produtos = pgTable(
     categoriaId: text("categoria_id")
       .notNull()
       .references(() => categorias.id),
+    /**
+     * A secção dentro da categoria (27/11), ou `NULL` — sem secção, o produto
+     * aparece diretamente na categoria. ⚠️ **Tem de ser da categoria do
+     * produto**, e quem o garante é a chave estrangeira composta
+     * (`produtos_seccao_da_categoria`, mais abaixo): mudar o produto de
+     * categoria obriga a mudar ou largar a secção na mesma instrução.
+     */
+    seccaoId: text("seccao_id"),
     /**
      * `simples` — um artigo, com preço — ou `composto` — um kit, com o que leva
      * (#124). O que leva continua na `composicao` das variantes, porque muda com
@@ -255,6 +301,12 @@ export const produtos = pgTable(
       sql`${t.familia} <> 'ementa' or (${t.carta} is not null and ${t.categoria} is not null)`,
     ),
     check("produtos_tipo", sql`${t.tipo} in (${umDe(TIPOS_PRODUTO)})`),
+    /* Com `seccao_id` nulo não se confere (MATCH SIMPLE): sem secção é válido. */
+    foreignKey({
+      name: "produtos_seccao_da_categoria",
+      columns: [t.categoriaId, t.seccaoId],
+      foreignColumns: [seccoes.categoriaId, seccoes.id],
+    }),
     check("produtos_unidade", sql`${t.unidade} in (${umDe(["un", "kg"])})`),
     /* O inglês pode faltar; o português não, se houver descrição. */
     check("produtos_descricao_pt", sql`${t.descricaoEn} is null or ${t.descricaoPt} is not null`),
