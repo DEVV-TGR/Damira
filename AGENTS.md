@@ -129,33 +129,78 @@ calendário volta a «indisponível», nunca a um prazo inventado, e o painel di
 que a entrada ainda não está ligada. Lê-se no build: mudar o interruptor obriga
 a um novo deploy.
 
-### A página de compra — e, até ao Stripe, acaba num email
+### A página de compra — pedidos guardados e pagamento na loja
 
 O cesto leva a **`/encomendas/pedido`** (#37): o resumo com o total do servidor,
 o calendário de levantamento (sempre embutido, com dia e hora — sem os dados da
-cozinha, as horas são as da loja e a escolhida é **pretendida**, a confirmar) e
+cozinha, as horas são as da loja e a escolhida é **pretendida**, a confirmar; ⚠️
+**com `DATABASE_URL` não**: a fonte recusa uma hora sem tempos, e o checkout diz
+que não se marca online e dá o telefone) e
 os dados da pessoa. O botão do carrinho não aparece nesta página. «Alterar o pedido» abre o cartão
 do cesto por cima da compra para editar as quantidades e voltar ao formulário. O formulário que vivia no
-fundo das encomendas saiu. ⚠️ **Até ao pagamento online (#38) o pedido acaba num
-email à casa**, por secções e com todos os dados (os opcionais vazios
-escrevem-se «—»). Desde 25/11 esse email é o **modelo `criado-loja`** (moldura,
-logótipo, assunto que começa pelo estado — `src/lib/emails/compra.ts`) com a
-marca **`soPorEmail`**: sem ela, o modelo diria «responde-se no painel» e «o
-talão sai no balcão», que só são verdade quando o pedido ficar guardado (#126).
-Sem hora de levantamento, ou se o modelo falhar, vai o texto simples de antes; com o Stripe, o botão do fim passa a «Pagar» e o resto da
-página fica. ⚠️ Os campos são controlados e o envio é feito à mão, sem o
+fundo das encomendas saiu.
+
+**Com `DATABASE_URL`, a ação cria o pedido na fonte** (`registar.ts` →
+`criarPedido`): `confirmado` ou `por-confirmar`, a pagar na loja, como manda
+`pedidos.md`. A referência, a data e o total da resposta são os gravados, também
+numa repetição — e uma repetição devolve o pedido **como está agora** (se a loja
+já o cancelou, o ecrã diz que já estava registado, não «confirmada»). Os dois
+emails de criação ficam na fila na mesma transação, e a ação pede o envio
+**depois** dela (`enviarDepois()`, ver a secção seguinte). Não se oferece
+`mailto` de um pedido já registado.
+
+**Sem base de dados, o pedido acaba num email à casa**, por secções e com todos
+os dados (os opcionais vazios escrevem-se «—»). Desde 25/11 esse email é o
+**modelo `criado-loja`** (moldura, logótipo, assunto que começa pelo estado —
+`src/lib/emails/compra.ts`) com a marca **`soPorEmail`**: sem ela, o modelo
+diria «responde-se no painel» e «o talão sai no balcão», que só são verdade com
+o pedido guardado. Sem hora de levantamento, ou se o modelo falhar, vai o texto
+simples de antes. O Stripe continua adiado; com ele, o botão do fim passa a «Pagar» e o
+resto da página fica.
+
+**Uma tentativa sem resposta guarda-se temporariamente no `sessionStorage` do
+separador**, com a chave, os dados enviados e o cesto daquele envio. Recarregar
+ou entrar na conta não cria outra tentativa: aparece «Verificar envio anterior».
+Uma resposta definitiva remove esses dados; se o armazenamento estiver bloqueado,
+só sobrevivem em memória. Recuperar um envio antigo não apaga um cesto entretanto
+alterado. A chave é gerada no primeiro envio e reutilizada nas tentativas seguintes.
+
+⚠️ Os campos são controlados e o envio é feito à mão, sem o
 reinício automático do `<form action>` do React 19: um erro do servidor nunca
 apaga o que a pessoa escreveu (`robustez.md` › Erros).
 
-### Os emails dos pedidos — emissor (#119, etapa 1)
+### Os emails dos pedidos — o emissor (#119)
 
 O emissor de `emails_por_enviar` está em `src/lib/emails/enviar.ts`, com reserva
-condicional e idempotência no Resend. **Ainda não está ligado à compra nem às
-ações do #139**: esses PRs chamam `enviarDepois()` depois da escrita que grava a
-fila, nunca antes da transação terminar. A compra do `main` mantém o percurso
-provisório por email. Não se promete entrega de um email só porque entrou na fila.
-Fora de produção, `EMAILS_SO_PARA` é obrigatória; sem ela não há envios nem consultas
-do emissor. Não há polling, cron nem despertadores nesta etapa.
+condicional e idempotência no Resend. **Desde 26/11 está ligado às ações**: a
+compra (`registar.ts`), o aceite e a recusa da proposta e as decisões do painel
+(responder, reagendar, cancelar), e o «Confirmar» do balcão, chamam `enviarDepois()` **depois** de a escrita
+ficar gravada, nunca antes, e só se ela correu bem. A fronteira continua a pôr os
+emails na fila na mesma instrução que muda o pedido; a ação só pede o envio.
+
+Três coisas que se desfazem sem querer:
+
+- ⚠️ **Com `LOJA_EM_TESTE=1`, nada sai sem `EMAILS_SO_PARA`, nem em produção**
+  (`executar.ts`): o site no ar grava pedidos de ensaio, e nenhum aviso desses
+  pode chegar a um cliente nem à casa. Fora de produção, `EMAILS_SO_PARA` é
+  sempre obrigatória. Sem ela, o emissor nem consulta a base.
+- ⚠️ **O corte da fila** (`CORTE_DA_FILA`, em `emissor.ts`): o que entrou na fila
+  antes de o emissor ser ligado sai como `saltado: anterior-ao-emissor`, sem
+  tentativa. Não se adianta a data.
+- **A expiração às 48 h e às 24 h** grava o email na limpeza; sai no próximo
+  envio pedido (uma compra cria sempre um, porque a limpeza corre dentro do
+  `criarPedido`) ou na volta horária do #149. Ainda não sai sozinho sem visitas
+  (`fluxo-do-pedido.md` › 6, ponto 3).
+- ⚠️ **A proposta (`resposta-cliente`) escreve-se com o pedido como está
+  agora**, com o link assinado da versão em vigor. Por isso só sai a proposta
+  em vigor: a que outra mais nova substituiu sai como
+  `saltado: proposta-substituida`, e a de um pedido que já não espera o aceite
+  como `saltado: proposta-fechada`. Sem `PROPOSTA_SEGREDO` falha
+  (`dados-do-modelo`) em vez de sair sem botão. A hora pedida
+  (`levantamentoAnteriorEm`) **só vai na proposta**: não é a hora de antes de
+  um reagendamento.
+
+Não se promete entrega de um email só porque entrou na fila.
 
 ### A documentação muda no mesmo PR que o código
 
@@ -204,6 +249,12 @@ o resto: merge pelo próprio, depois de `lint`, `build` e `test`.
 
 Antes de abrir qualquer PR, revê o diff com o Claude. Não substitui a revisão do
 outro onde ela é obrigatória; apanha o básico onde não é.
+
+⚠️ **Suspensa até à abertura da loja** (decidido pelo Tomás a 27/11): o
+«Require review from Code Owners» do `main` foi desligado para os merges não
+esperarem pela aprovação do outro. O PR continua obrigatório, e quem faz o
+merge deixa no PR o que mudou, para o outro rever depois. **Volta a ligar-se
+depois da abertura**, e esta nota sai no mesmo PR.
 
 ### O repositório é público
 
@@ -495,8 +546,9 @@ em `src/lib/autenticacao.ts`). Três decisões que se desfazem sem querer:
    **nunca importar o `autenticacao.ts` num componente de cliente** — o
    `conta.ts` existe para ser o lado seguro dessa fronteira.
 3. ⚠️ **O histórico é do browser e não da casa, e a lista diz isso por cima de
-   si própria.** Não há base de dados: a sessão é um JWT num cookie e nada nosso
-   guarda o que foi pedido. Quem pediu no telemóvel não vê esse pedido no
+   si própria.** Os pedidos feitos com `DATABASE_URL` ficam na base de dados,
+   mas esta lista ainda lê o armazenamento do browser; a sessão continua num
+   JWT. Quem pediu no telemóvel não vê esse pedido no
    computador. **Essa ressalva não se apaga** enquanto o histórico não for do
    servidor — um histórico que parece completo e não é vale menos do que nenhum,
    porque quem não encontra lá o pedido conclui que ele se perdeu. Ver

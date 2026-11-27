@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useActionState, useEffect, useId, useMemo, useState } from "react";
+import { startTransition, useActionState, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
@@ -18,6 +18,8 @@ import type { ResultadoVagas, VagaDoCalendario } from "@/lib/vagas-servidor";
 import { CalendarioLevantamento } from "./CalendarioLevantamento";
 import { useCesto } from "./CestoProvider";
 import { useHistorico } from "./ProvedorHistorico";
+import { chaveDaCompra, concluirCompra } from "@/lib/chave-compra";
+import { apagarTentativa, guardarTentativa, lerTentativa, podeEsvaziarCesto, type TentativaCompra } from "@/lib/tentativa-compra";
 import { DetalhesDoBolo } from "./DetalhesDoBolo";
 
 /**
@@ -32,9 +34,8 @@ import { DetalhesDoBolo } from "./DetalhesDoBolo";
  *   linha a linha com o que o cesto guardou: se mudou, diz-se antes de enviar;
  * - **as vagas** — o calendário pede-as ao servidor (`consultarVagas`) sempre
  *   que o cesto muda, e nunca vão para cache;
- * - **o pedido** — `enviarCompra` refaz o cesto, confirma a hora e escreve o
- *   email. Até ao Stripe (#38) o pedido acaba num email; com ele, o botão passa
- *   a «Pagar».
+ * - **o pedido** — com BD, a fonte reserva a vaga e grava o pedido e os emails
+ *   por enviar; sem ela mantém-se o percurso provisório por email.
  *
  * ⚠️ **Um erro nunca esvazia o cesto nem apaga o que se escreveu**
  * (`robustez.md` › Erros): os campos guardam o que a pessoa escreveu entre
@@ -45,22 +46,22 @@ const INICIAL: Resultado = { estado: "inicial" };
 const SEM_CESTO: ItemCesto[] = [];
 
 /** Pede ao servidor, de novo, sempre que a chave muda; esquece a resposta antiga. */
-function useDoServidor<T>(chave: string, ativo: boolean, pedir: (linhas: unknown) => Promise<T>) {
-  const [resposta, setResposta] = useState<{ chave: string; valor: T } | null>(null);
+function useDoServidor<T>(chave: string, ativo: boolean, pedir: (linhas: unknown) => Promise<T>, revisao = 0) {
+  const [resposta, setResposta] = useState<{ chave: string; revisao: number; valor: T } | null>(null);
   useEffect(() => {
     if (!ativo) return;
     let actual = true;
     pedir(JSON.parse(chave)).then((valor) => {
-      if (actual) setResposta({ chave, valor });
+      if (actual) setResposta({ chave, revisao, valor });
     });
     return () => {
       actual = false;
     };
-  }, [chave, ativo, pedir]);
-  return resposta?.chave === chave ? resposta.valor : null;
+  }, [chave, ativo, pedir, revisao]);
+  return resposta?.chave === chave && resposta.revisao === revisao ? resposta.valor : null;
 }
 
-export function Checkout({ locale, telefone }: { locale: Locale; telefone: string | null }) {
+export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale: Locale; telefone: string | null; comBaseDeDados?: boolean }) {
   const t = useTranslations("encomendas.compra");
   const tf = useTranslations("encomendas.formulario");
   const tc = useTranslations("encomendas.cesto");
@@ -70,15 +71,51 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
   const caminho = usePathname();
   const historico = useHistorico();
   const { utilizador } = useConta();
-  const [resultado, agir, aPendente] = useActionState(enviarCompra, INICIAL);
+  const tentativa = useRef<{ pessoa: string; chave: string } | null>(null);
+  const [envioPendente, setEnvioPendente] = useState<TentativaCompra | null>(null);
+  /* O envio em curso fica guardado logo no clique, mas o cartão de recuperação
+     só aparece quando a resposta se perdeu (ou depois de recarregar): durante um
+     envio normal a pessoa continua a ver o formulário, com o botão a enviar. */
+  const [aRecuperar, setARecuperar] = useState(false);
+  const [tentativaLida, setTentativaLida] = useState(false);
+  const [revisaoVagas, setRevisaoVagas] = useState(0);
+  const [resultado, agir, aPendente] = useActionState(async (anterior: Resultado, dados: FormData): Promise<Resultado> => {
+    try {
+      const resposta = await enviarCompra(anterior, dados);
+      const final = resposta.estado === "enviado" || (resposta.estado === "erro" && !resposta.repetirEnvio);
+      if (tentativa.current && final) {
+        try {
+          apagarTentativa(window.sessionStorage, tentativa.current.chave);
+          if (resposta.estado !== "erro") concluirCompra(window.sessionStorage, tentativa.current.pessoa, tentativa.current.chave);
+        } catch { /* O armazenamento pode estar bloqueado. */ }
+        /* Um pedido concluído não empresta a chave ao seguinte: reutilizá-la
+           devolvia este mesmo pedido em vez de criar o novo. */
+        if (resposta.estado !== "erro") tentativa.current = null;
+        if (resposta.estado === "erro") setEnvioPendente(null);
+      }
+      setARecuperar(!final && comBaseDeDados);
+      if (resposta.estado === "erro" && resposta.campos.data) setRevisaoVagas((antes) => antes + 1);
+      return resposta;
+    } catch {
+      // Uma resposta perdida preserva os campos e a chave para recuperar o mesmo pedido.
+      if (comBaseDeDados) setARecuperar(true);
+      return { estado: "erro", campos: { geral: tf("erros.falha-registo") }, repetirEnvio: true };
+    }
+  }, INICIAL);
 
   const cesto = contexto?.cesto ?? SEM_CESTO;
   const pronto = contexto?.pronto ?? false;
   const comCesto = pronto && cesto.length > 0;
   const linhas = useMemo(() => JSON.stringify(linhasDoCesto(cesto)), [cesto]);
 
-  const vagas = useDoServidor<ResultadoVagas>(linhas, comCesto, consultarVagas);
+  const vagas = useDoServidor<ResultadoVagas>(linhas, comCesto, consultarVagas, revisaoVagas);
   const cotacao = useDoServidor<ResultadoCotacao>(linhas, comCesto, cotarPedido);
+  /* ⚠️ **Com BD, uma hora «pretendida» não se pode gravar.** Sem a cozinha ou sem
+     o tempo de um produto, o calendário oferece as horas da loja a confirmar,
+     mas o `criarPedido` recusa-as (`indisponivel`): a pessoa escolhia, enviava e
+     ouvia sempre «essa hora já não está disponível». Diz-se logo que não se
+     marca online, com o telefone, e o botão fica desligado. */
+  const semHorasNaBd = comBaseDeDados && vagas?.ok === true && vagas.aConfirmar;
   const [escolhida, setEscolhida] = useState<VagaDoCalendario | null>(null);
   /* A loja em pausa (o balcão com a cozinha cheia): diz-se até quando, e o botão
      fica desligado. O servidor confirma outra vez ao enviar. */
@@ -105,6 +142,24 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
   const mudar = (nome: string) => (evento: { target: { value: string } }) =>
     setCampos((antes) => ({ ...antes, [nome]: evento.target.value }));
   const [autorizado, setAutorizado] = useState(false);
+  useEffect(() => {
+    if (!comBaseDeDados) return;
+    // Como no usePorPessoa: ler armazenamento depois da primeira pintura evita diferenças na hidratação.
+    const quadro = requestAnimationFrame(() => {
+      try {
+        const guardada = lerTentativa(window.sessionStorage);
+        if (guardada) {
+          tentativa.current = guardada;
+          setEnvioPendente(guardada);
+          setARecuperar(true);
+          setCampos(guardada.dados);
+          setAutorizado(guardada.dados.consentimento === "sim");
+        }
+      } catch { /* No modo privado a tentativa continua apenas em memória. */ }
+      setTentativaLida(true);
+    });
+    return () => cancelAnimationFrame(quadro);
+  }, [comBaseDeDados]);
   const escolhidaValida =
     escolhida && vagas?.ok && vagas.vagas.some((v) => v.inicio === escolhida.inicio && v.livre) ? escolhida : null;
 
@@ -122,12 +177,12 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
       tipo: registo.tipo,
       data: registo.data,
       pessoas: registo.pessoas,
-      itens: itensGuardados(cesto),
+      itens: itensGuardados(envioPendente?.itens ?? cesto),
       estimativaCent: registo.totalCent,
       semPreco: registo.semPreco,
     });
-    if (enviado) contexto?.esvaziar();
-  }, [registo, enviado, historico, cesto, contexto]);
+    if (enviado && (!envioPendente || podeEsvaziarCesto(envioPendente, cesto, utilizador?.id ?? "visitante"))) contexto?.esvaziar();
+  }, [registo, enviado, historico, cesto, contexto, envioPendente, utilizador?.id]);
 
   const erros = resultado.estado === "erro" ? resultado.campos : {};
 
@@ -135,7 +190,23 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
     return <Enviado resultado={resultado} />;
   }
 
-  if (!pronto) {
+  if (envioPendente && aRecuperar) {
+    return (
+      <div className="max-w-[40rem] rounded-2xl border border-tinta/15 p-8">
+        <h2 className="titulo-display titulo-gama">{tf("recuperar.titulo")}</h2>
+        <p className="mt-3 text-tinta-suave">{tf("recuperar.texto")}</p>
+        {erros.geral && <Erro>{erros.geral}</Erro>}
+        <button type="button" disabled={aPendente} className="premivel mt-6 min-h-14 rounded-full bg-tijolo px-7 text-sm font-semibold text-papel disabled:opacity-60" onClick={() => {
+          const dados = new FormData();
+          for (const [campo, valor] of Object.entries(envioPendente.dados)) dados.set(campo, valor);
+          dados.set("chaveIdempotencia", envioPendente.chave);
+          startTransition(() => agir(dados));
+        }}>{aPendente ? tf("aEnviar") : tf("recuperar.botao")}</button>
+      </div>
+    );
+  }
+
+  if (!pronto || (comBaseDeDados && !tentativaLida)) {
     return <div aria-busy className="h-96 animate-pulse rounded-2xl bg-tinta/5" />;
   }
 
@@ -163,6 +234,17 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
       onSubmit={(evento) => {
         evento.preventDefault();
         const dados = new FormData(evento.currentTarget);
+        const pessoa = utilizador?.id ?? "visitante";
+        let armazenamento: Storage | null = null;
+        try { armazenamento = window.sessionStorage; } catch { /* Pode estar bloqueado. */ }
+        const chave = chaveDaCompra(armazenamento, pessoa, tentativa.current?.pessoa === pessoa ? tentativa.current.chave : null);
+        tentativa.current = { pessoa, chave };
+        dados.set("chaveIdempotencia", chave);
+        if (comBaseDeDados) {
+          const pendente = { pessoa, chave, dados: Object.fromEntries(Array.from(dados.entries(), ([campo, valor]) => [campo, String(valor)])), itens: cesto };
+          setEnvioPendente(pendente);
+          guardarTentativa(armazenamento, pendente);
+        }
         startTransition(() => agir(dados));
       }}
       className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:items-start lg:gap-14">
@@ -220,7 +302,9 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
             {totalCent === null ? "…" : totalCent === 0 && semPreco > 0 ? tc("semPreco") : formatarCent(totalCent, locale)}
           </span>
         </p>
-        <p className="mt-2 text-sm text-tinta-suave">{t("semPagamento")}</p>
+        {/* Com BD o pedido nasce confirmado (ou à espera da casa) e paga-se na
+            loja; o «confirmamos consigo o valor e a hora» só vale para o email. */}
+        <p className="mt-2 text-sm text-tinta-suave">{t(comBaseDeDados ? "semPagamentoBd" : "semPagamento")}</p>
         {erros.cesto && <Erro>{erros.cesto}</Erro>}
       </aside>
 
@@ -239,6 +323,15 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
           {vagas === null ? (
             <p className="text-sm text-tinta-suave" aria-live="polite">
               {tcal("aCarregar")}
+            </p>
+          ) : semHorasNaBd ? (
+            <p className="rounded-2xl bg-papel px-5 py-4 text-sm text-tinta">
+              {t("semHorasBd")}{" "}
+              {telefone && (
+                <a href={`tel:${telefone.replace(/\s/g, "")}`} className="font-semibold underline underline-offset-4">
+                  {telefone}
+                </a>
+              )}
             </p>
           ) : vagas.ok ? (
             <div className="rounded-2xl border border-tinta/15">
@@ -357,7 +450,7 @@ export function Checkout({ locale, telefone }: { locale: Locale; telefone: strin
         {erros.geral && <Erro>{erros.geral}</Erro>}
         <button
           type="submit"
-          disabled={aPendente || pausa !== null}
+          disabled={aPendente || pausa !== null || semHorasNaBd}
           className="premivel flex min-h-14 items-center justify-center rounded-full bg-tijolo px-8 text-sm font-semibold uppercase tracking-widest text-papel disabled:opacity-60"
         >
           {aPendente ? tf("aEnviar") : tf("enviar")}
@@ -372,9 +465,13 @@ function Enviado({ resultado }: { resultado: Extract<Resultado, { estado: "envia
   const tf = useTranslations("encomendas.formulario");
   const referencia = resultado.registo?.referencia;
   /* Com o pedido guardado, o ecrã diz em que ficou, com as palavras da Andreia (24/11): confirmado
-     logo, ou em análise. Sem ele (o pedido ainda acaba num email), diz só que foi enviado. */
+     logo, ou em análise. Sem ele (o pedido ainda acaba num email), diz só que foi enviado.
+     ⚠️ Um envio repetido (a resposta perdeu-se) devolve o pedido como está agora: se a loja já o
+     cancelou ou propôs outra hora, dizer «confirmada» seria mentir — diz que já estava registado. */
   const estadoPedido = resultado.estado === "enviado" ? resultado.estadoPedido : undefined;
-  const chave = estadoPedido === "confirmado" ? "recebido.confirmado" : estadoPedido === "por-confirmar" ? "recebido.porConfirmar" : null;
+  const chave = estadoPedido === "confirmado" ? "recebido.confirmado"
+    : estadoPedido === "por-confirmar" ? "recebido.porConfirmar"
+    : estadoPedido ? "recebido.existente" : null;
 
   return (
     <div className="max-w-[40rem] rounded-2xl border border-tinta/15 p-8">

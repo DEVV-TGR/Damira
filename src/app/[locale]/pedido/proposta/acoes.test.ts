@@ -4,9 +4,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
    browser (`robustez.md` › Erros), falhe a base de dados ou falte a chave. */
 const aceitarProposta = vi.fn();
 const recusarProposta = vi.fn();
+const enviarDepois = vi.fn();
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/dados", () => ({ aceitarProposta, recusarProposta }));
 vi.mock("@/lib/painel-versao", () => ({ avisarQuePedidosMudaram: vi.fn() }));
+vi.mock("@/lib/emails/depois", () => ({ enviarDepois }));
 const { caminhoDaProposta } = await import("@/lib/proposta");
 const { aceitar, recusar } = await import("./acoes");
 
@@ -18,6 +20,7 @@ describe("as ações do link da proposta", () => {
     vi.stubEnv("PROPOSTA_SEGREDO", "uma-chave-de-teste-com-mais-de-32-caracteres");
     aceitarProposta.mockReset();
     recusarProposta.mockReset();
+    enviarDepois.mockReset();
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
@@ -25,6 +28,16 @@ describe("as ações do link da proposta", () => {
     aceitarProposta.mockResolvedValue({ ok: true, pedido: {} });
     expect(await aceitar(REF, credencial())).toEqual({ ok: true });
     expect(aceitarProposta).toHaveBeenCalledWith(REF, 1, expect.any(Date));
+    expect(enviarDepois).toHaveBeenCalledTimes(1);
+  });
+
+  it("os emails só se pedem quando a decisão ficou gravada", async () => {
+    recusarProposta.mockResolvedValue({ ok: true, pedido: {} });
+    expect(await recusar(REF, credencial())).toEqual({ ok: true });
+    expect(enviarDepois).toHaveBeenCalledTimes(1);
+    recusarProposta.mockResolvedValue({ ok: false, erro: "estado-mudou" });
+    expect(await recusar(REF, credencial())).toEqual({ ok: false, erro: "estado-mudou" });
+    expect(enviarDepois).toHaveBeenCalledTimes(1);
   });
 
   it("um link adulterado não chega à fronteira", async () => {
@@ -36,6 +49,7 @@ describe("as ações do link da proposta", () => {
     recusarProposta.mockRejectedValue(new Error("ligação recusada: cliente@example.com"));
     expect(await recusar(REF, credencial())).toEqual({ ok: false, erro: "falhou" });
     expect(JSON.stringify(vi.mocked(console.error).mock.calls)).not.toContain("example.com");
+    expect(enviarDepois).not.toHaveBeenCalled();
   });
 
   it("sem a PROPOSTA_SEGREDO, devolve «falhou»", async () => {

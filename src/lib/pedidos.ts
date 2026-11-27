@@ -9,9 +9,9 @@ import { telefoneArrumado } from "@/lib/telefone";
  * O pedido que sai da página de compra (`/encomendas/pedido`): o que se valida
  * e como se escreve o email que a casa recebe.
  *
- * ⚠️ **Até haver pagamento online (#38), o pedido acaba num email** — a casa
- * confirma o valor e a hora com o cliente. A página de compra já é a final; o
- * que muda com o Stripe é o botão do fim, que passa a «Pagar».
+ * Com BD, a página cria o pedido a pagar na loja pela fonte (`pedidos.md`).
+ * O corpo do email abaixo serve o percurso provisório sem BD; os modelos dos
+ * emails persistidos e o seu envio pertencem à #119. O Stripe está adiado.
  */
 
 /**
