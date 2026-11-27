@@ -621,6 +621,11 @@
       "opcional": "(optional)"
     }
   },
+  "desconto": {
+    "faixa": "Enjoy <destaque>{n}% off</destaque> your first orders",
+    "subtotal": "Subtotal",
+    "linha": "Welcome discount ({n}%)"
+  },
   "modoTeste": {
     "etiqueta": "Test mode",
     "aviso": "Nothing is charged, and the pick-up times and booked slots are examples."

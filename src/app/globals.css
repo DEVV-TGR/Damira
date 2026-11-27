@@ -157,6 +157,27 @@
  * utilitários (`hover:bg-tijolo hover:text-papel`).
  */
 @layer components {
+  /* A faixa do desconto (`FaixaDesconto`): tijolo com o texto a papel, e o
+     número numa pastilha a papel com o texto a tijolo. ⚠️ Quando a página abre
+     com uma secção a tijolo (o herói da `/encomendas`), a faixa colava-se a ela
+     e lia-se como parte do herói: aí passa a tinta, com a pastilha a tijolo.
+     Decide-o o CSS (`:has`), para a faixa continuar a ser de servidor e não
+     ter de saber que páginas abrem a tijolo. */
+  .faixa-desconto {
+    background-color: var(--color-tijolo);
+    color: var(--color-papel);
+  }
+  .faixa-desconto__destaque {
+    background-color: var(--color-papel);
+    color: var(--color-tijolo);
+  }
+  .faixa-desconto:has(+ main > .bloco-tijolo:first-child) {
+    background-color: var(--color-tinta);
+  }
+  .faixa-desconto:has(+ main > .bloco-tijolo:first-child) .faixa-desconto__destaque {
+    background-color: var(--color-tijolo);
+    color: var(--color-papel);
+  }
   /* A cor da marca em superfície inteira: o herói, o fecho, os selos. Texto a
      papel — nunca a tinta. */
   .bloco-tijolo {
