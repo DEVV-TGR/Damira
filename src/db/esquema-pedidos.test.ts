@@ -149,8 +149,34 @@ describe("o que é válido entra", () => {
       avisosTratados: [],
       reembolsoReservadoCent: 0,
       deTeste: false,
+      /* Um pedido de antes da 0013, ou depois do fim do desconto, fica sem ele. */
+      descontoPercentagem: 0,
+      descontoCent: 0,
     });
     expect(await db.select().from(linhasPedido)).toHaveLength(2);
+  });
+
+  it("um pedido com o desconto da loja: o total já vem descontado", async () => {
+    const outro = (n: number) => ({
+      id: `6f1c1f5e-8c1b-4d5a-9a43-1d2f3c4b5a7${n}`,
+      referencia: `DAM-0311-DSC${n + 2}`,
+      chaveIdempotencia: `2b7e1516-28ae-4d2a-8f15-0a1b2c3d4e7${n}`,
+    });
+    /* Subtotal 14,00 €: 10 % são 1,40 €, e o cliente paga 12,60 €. */
+    await db.insert(pedidos).values({ ...NA_LOJA, totalCent: 1260, descontoPercentagem: 10, descontoCent: 140 });
+    /* Meio cêntimo arredonda para cima: 10 % de 0,05 € são 0,5 cêntimos → 1. */
+    await db.insert(pedidos).values({
+      ...NA_LOJA, ...outro(1), totalCent: 4, descontoPercentagem: 10, descontoCent: 1,
+    });
+    /* Um por confirmar sem nada com preço: subtotal zero, desconto zero. */
+    await db.insert(pedidos).values({
+      ...POR_CONFIRMAR, ...outro(2), totalCent: 0, descontoPercentagem: 10, descontoCent: 0,
+    });
+    /* 30 milhões de cêntimos × 10 passa o limite de um integer: a conta é em bigint. */
+    await db.insert(pedidos).values({
+      ...NA_LOJA, ...outro(3), totalCent: 27_000_000, descontoPercentagem: 10, descontoCent: 3_000_000,
+    });
+    expect(await db.select().from(pedidos)).toHaveLength(4);
   });
 
   it("uma linha sem preço, com o preço e o total por saber", async () => {
@@ -304,6 +330,19 @@ describe("um pedido recusa", () => {
   it("valores negativos", async () => {
     expect(await tenta({ totalCent: -1 })).toBe("pedidos_valores");
   });
+
+  it("um desconto que não é a conta da percentagem sobre o subtotal", async () => {
+    // O total mudou (uma proposta fixou um preço) e o desconto ficou o de antes.
+    expect(await tenta({ totalCent: 2000, descontoPercentagem: 10, descontoCent: 140 })).toBe("pedidos_desconto");
+    // Desconto sem percentagem, ou percentagem sem desconto.
+    expect(await tenta({ totalCent: 1260, descontoCent: 140 })).toBe("pedidos_desconto");
+    expect(await tenta({ totalCent: 1400, descontoPercentagem: 10 })).toBe("pedidos_desconto");
+    // Arredondado para baixo no meio cêntimo.
+    expect(await tenta({ totalCent: 5, descontoPercentagem: 10, descontoCent: 0 })).toBe("pedidos_desconto");
+    expect(await tenta({ totalCent: 1260, descontoPercentagem: 101, descontoCent: 140 })).toBe("pedidos_desconto");
+    expect(await tenta({ totalCent: 1400, descontoPercentagem: -10, descontoCent: 0 })).toBe("pedidos_desconto");
+  });
+
 
   it("um pago sem data de pagamento, ou um pendente com ela", async () => {
     expect(await tenta({ estado: "pago", pagoOnlineCent: 1260 })).toBe("pedidos_pago_em");
