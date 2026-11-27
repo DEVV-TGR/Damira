@@ -80,8 +80,9 @@ export async function importarCatalogo(db: BaseDeDados, origem: OrigemDoCatalogo
     }
 
     /* As famílias antes das categorias, e as categorias antes dos produtos:
-       cada uma aponta para a de cima. O Natal já lá está, que a `0012` o cria
-       mesmo numa base vazia. */
+       cada uma aponta para a de cima. Numa base vazia a `0012` não cria
+       nenhuma; o `onConflictDoNothing` é para quem importar sobre uma que já
+       as tenha. */
     await tx.insert(familias).values([...FAMILIAS_DE_PARTIDA]).onConflictDoNothing({ target: familias.id });
     await tx.insert(categorias).values(categoriasDoCatalogo(catalogo, origem.casa.ordem));
     await tx.insert(produtos).values(linhas.map((l) => l.produto));

@@ -23,15 +23,15 @@ type LinhaFamilia = typeof familias.$inferInsert;
 
 /**
  * As famílias de partida (26/11): as secções da `/encomendas` de hoje, com as
- * âncoras e os títulos de hoje, e o Natal, que a casa pediu. ⚠️ A migração
- * `0012` escreve as mesmas, e o `migracao-categorias.test.ts` compara.
+ * âncoras e os títulos de hoje. ⚠️ A migração `0012` escreve as mesmas, e o
+ * `migracao-categorias.test.ts` compara. O Natal não está aqui (27/11): cria-o
+ * a gerente no painel, para nenhuma migração escrever o que não sai da base.
  */
 export const FAMILIAS_DE_PARTIDA: readonly LinhaFamilia[] = [
   { id: "festas", nomePt: "Kit Festas", nomeEn: "Party Kits", posicao: 0 },
   { id: "kits-bolo", nomePt: "Bolo e mesa decorada", nomeEn: "Cake and decorated table", posicao: 1 },
   { id: "boxes", nomePt: "Boxes para dias especiais", nomeEn: "Boxes for special days", posicao: 2 },
   { id: "da-ementa", nomePt: "Da carta", nomeEn: "From the menu", posicao: 3 },
-  { id: "natal", nomePt: "Natal", nomeEn: "Christmas", posicao: 4 },
 ];
 
 /** A família de partida de uma categoria: as das encomendas são a sua; as outras, da carta. */

@@ -98,7 +98,9 @@ categoria.
   `desenvolvimento` antes da Preview do #162.
 - As de partida são as secções da `/encomendas` de hoje, **com as âncoras de
   hoje**: `festas`, `kits-bolo`, `boxes`, `da-ementa` (o cabeçalho e o rodapé
-  levam lá) — e `natal`, vazia. A `0012` dá a cada categoria a sua: as três das
+  levam lá). ⚠️ **O Natal não vem da migração** (decidido a 27/11): cria-o a
+  gerente em «Famílias e categorias», para a `0012` não escrever nada que não
+  saia da base (a regra 1 de cima). A `0012` dá a cada categoria a sua: as três das
   encomendas a do mesmo nome, as da carta a `da-ementa`. Não muda o nome nem a
   posição de nenhuma categoria (as regras do catálogo do `production`).
 

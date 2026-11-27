@@ -8,14 +8,14 @@
 --
 -- ⚠️ Segue as regras do catálogo do `production` (`base-de-dados.md`): **só
 -- preenche o que cria**, a partir do que já está na base. Não muda o nome, a
--- posição nem nada de uma categoria. A única linha que não sai da base é a
--- família «Natal», vazia, que a casa pediu: não toca em nada que a gerente
--- tenha gravado.
+-- posição nem nada de uma categoria. ⚠️ **O Natal não nasce aqui** (decidido a
+-- 27/11): a casa pediu-o, mas uma família vazia não sai da base, e cria-a a
+-- gerente no painel — a regra 1 do #159 fica sem exceções.
 --
 -- As famílias de partida são as secções da `/encomendas` de hoje, com as
 -- âncoras de hoje (o cabeçalho e o rodapé levam a `/encomendas#da-ementa`), os
 -- títulos de `messages/*.json` e a ordem da página. Uma família só nasce se
--- houver categoria para ela, ou se for o Natal.
+-- houver categoria para ela.
 CREATE TABLE "familias" (
 	"id" text PRIMARY KEY NOT NULL,
 	"nome_pt" text NOT NULL,
@@ -44,10 +44,9 @@ FROM (VALUES
 	('festas', 'Kit Festas', 'Party Kits', 0),
 	('kits-bolo', 'Bolo e mesa decorada', 'Cake and decorated table', 1),
 	('boxes', 'Boxes para dias especiais', 'Boxes for special days', 2),
-	('da-ementa', 'Da carta', 'From the menu', 3),
-	('natal', 'Natal', 'Christmas', 4)
+	('da-ementa', 'Da carta', 'From the menu', 3)
 ) AS f("id", "nome_pt", "nome_en", "ordem")
-WHERE f."id" = 'natal' OR EXISTS (SELECT 1 FROM "categorias" c WHERE c."familia_id" = f."id");--> statement-breakpoint
+WHERE EXISTS (SELECT 1 FROM "categorias" c WHERE c."familia_id" = f."id");--> statement-breakpoint
 ALTER TABLE "categorias" ALTER COLUMN "familia_id" SET NOT NULL;--> statement-breakpoint
 -- ⚠️ O `DEFAULT` é para o deploy: entre esta migração e o deploy do código
 -- novo, o código antigo continua a criar categorias da carta sem família (o

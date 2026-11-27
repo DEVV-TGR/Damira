@@ -190,7 +190,9 @@ describe("as regras da tabela", () => {
       expect(await recusado(db.insert(categorias).values({ ...categoria, nomePt: "doces" }))).toBe(
         "categorias_nome_unico",
       );
-      /* Noutra família, o mesmo nome entra (26/11): uns «Doces» no Natal. */
+      /* Noutra família, o mesmo nome entra (26/11): uns «Doces» no Natal, que
+         a gerente cria no painel. */
+      await db.insert(familias).values({ id: "natal", nomePt: "Natal", nomeEn: null, posicao: 4 });
       await db.insert(categorias).values({ ...categoria, nomePt: "Doces", familiaId: "natal" });
       expect(await recusado(db.insert(categorias).values({ ...categoria, id: "outra", familiaId: "nao-existe" }))).toBe(
         "categorias_familia_id_familias_id_fk",
@@ -231,7 +233,7 @@ describe("as regras da tabela", () => {
 });
 
 describe("a 0012 e as famílias (26/11)", () => {
-  it("dá as mesmas famílias que a importação, com as âncoras de hoje e o Natal vazio", async () => {
+  it("dá as mesmas famílias que a importação, com as âncoras de hoje e sem o Natal", async () => {
     const migrada = await pelaMigracao(ORIGEM);
     const importada = await pelaImportacao(ORIGEM);
     try {
@@ -247,7 +249,6 @@ describe("a 0012 e as famílias (26/11)", () => {
         "kits-bolo",
         "boxes",
         "da-ementa",
-        "natal",
       ]);
       const familiaDe = new Map(
         daMigracao.categorias.map((c) => [(c as { id: string }).id, (c as { familia_id: string }).familia_id]),
@@ -256,7 +257,6 @@ describe("a 0012 e as famílias (26/11)", () => {
       expect(familiaDe.get("kits-bolo")).toBe("kits-bolo");
       expect(familiaDe.get("boxes")).toBe("boxes");
       expect(familiaDe.get("vegan-doces")).toBe("da-ementa");
-      expect([...familiaDe.values()]).not.toContain("natal");
     } finally {
       await migrada.cliente.close();
       await importada.cliente.close();
@@ -274,13 +274,16 @@ describe("a 0012 e as famílias (26/11)", () => {
     const familia = { id: "pascoa", nomePt: "Páscoa", nomeEn: null, posicao: 5 };
     try {
       expect(await recusado(db.insert(familias).values({ ...familia, nomePt: " " }))).toBe("familias_nome_pt");
-      expect(await recusado(db.insert(familias).values({ ...familia, nomePt: "NATAL" }))).toBe("familias_nome_unico");
+      expect(await recusado(db.insert(familias).values({ ...familia, nomePt: "DA CARTA" }))).toBe(
+        "familias_nome_unico",
+      );
       expect(await recusado(db.insert(familias).values({ ...familia, id: "Páscoa" }))).toBe("familias_id_formato");
       expect(await recusado(db.delete(familias).where(eq(familias.id, "festas")))).toBe(
         "categorias_familia_id_familias_id_fk",
       );
-      /* O Natal não tem categorias: apaga-se. */
-      await db.delete(familias).where(eq(familias.id, "natal"));
+      /* Uma sem categorias apaga-se. */
+      await db.insert(familias).values(familia);
+      await db.delete(familias).where(eq(familias.id, "pascoa"));
     } finally {
       await cliente.close();
     }
