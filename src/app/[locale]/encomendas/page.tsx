@@ -2,18 +2,15 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { useTranslations } from "next-intl";
 import { casa, telefoneMarcavel } from "@/data/casa";
-import { listarProdutos, ordemDaEmenta } from "@/lib/dados";
-import type { OrdemEmenta, Produto } from "@/lib/dados/tipos";
+import { familiasDaLoja } from "@/lib/dados";
 import { routing, type Locale } from "@/i18n/routing";
 import { metadataDaPagina } from "@/lib/metadata";
-import { GRELHA_CARTOES, porOrdemAlfabetica, SECCOES_ENCOMENDAS } from "@/lib/vista";
+import { emLingua, type FamiliaComProdutos } from "@/lib/vista";
 import { IrParaCompra } from "@/components/encomendas/IrParaCompra";
-import { CartaoProduto } from "@/components/encomendas/CartaoProduto";
-import { EmentaEncomendavel } from "@/components/encomendas/EmentaEncomendavel";
 import { ListaHistorico } from "@/components/encomendas/ListaHistorico";
 import { PesquisaProdutos } from "@/components/encomendas/PesquisaProdutos";
+import { SeccaoFamilia } from "@/components/encomendas/SeccaoFamilia";
 import { SeccoesMinimizaveis } from "@/components/encomendas/SeccoesMinimizaveis";
-import { TituloDaSeccao, TituloParaLeitores } from "@/components/encomendas/TituloDaSeccao";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -36,83 +33,15 @@ export default async function PaginaEncomendas({
   const { locale } = await params;
   setRequestLocale(locale);
   await getTranslations({ locale, namespace: "encomendas" });
-  const [encomendas, daEmenta, ordem] = await Promise.all([
-    listarProdutos({ origem: "encomendas" }),
-    listarProdutos({ origem: "ementa", aVendaOnline: true }),
-    ordemDaEmenta(),
-  ]);
-  /* Tudo por ordem alfabética (decidido a 25/11), na língua de quem lê. */
-  const daFamilia = (...familias: Produto["familia"][]) =>
-    porOrdemAlfabetica(
-      encomendas.filter((produto) => familias.includes(produto.familia)),
-      locale as Locale,
-    );
-
   return (
     <Encomendas
-      festas={daFamilia("festa")}
-      bolos={daFamilia("bolo", "medida")}
-      boxes={daFamilia("box")}
-      daEmenta={daEmenta}
-      ordem={ordem}
+      seccoes={await familiasDaLoja()}
       locale={locale as Locale}
     />
   );
 }
 
-/**
- * # A página das encomendas
- *
- * ## O que esta página é, e o que não é
- *
- * **Não é uma loja.** Não há carrinho com pagamento, não há reserva e não há
- * calendário de disponibilidade — e nenhuma dessas coisas se pode fingir: um
- * botão «juntar ao pedido» que acaba num email é honesto; um que parece um
- * checkout e acaba num email não é.
- *
- * É um **catálogo que termina num pedido**.
- *
- * ## ⚠️ Isto era uma página só com tudo dentro, e passou a ser um índice
- *
- * Até setembro de 2026 esta página trazia os onze produtos **com o conteúdo todo
- * aberto**: as listas de miudezas de cada kit, as noventa e nove opções do bolo
- * por medida, e o formulário. Cinco ecrãs de rolagem em que a única coisa que
- * distinguia dois kits era um preço a meio de vinte linhas — e **sem sítio
- * nenhum para uma fotografia** sem empurrar o resto para fora do ecrã.
- *
- * Agora cada produto tem página própria (`/encomendas/<id>`) e aqui ficam
- * cartões: nome, uma frase, preço, e o caminho para lá. As três consequências
- * que interessam:
- *
- * 1. **há espaço para fotografia** — na página do produto, que é onde ela conta;
- * 2. **o escalão e a mensagem do bolo escolhem-se antes de juntar**, em vez de
- *    se juntar às cegas e corrigir numa caixa de texto no fim;
- * 3. **o catálogo do bolo saiu daqui.** Ocupava meia página entre as boxes e o
- *    formulário, a separar duas coisas que se compram.
- *
- * A sequência do que fica é a da conversa que já acontece ao telefone: *quantas
- * pessoas?*, *e o bolo?*, *e para dois?*, *e o resto da carta?*, *como é que
- * peço?*
- *
- * ⚠️ **O formulário é o fim da página e não o princípio.** Um pedido de orçamento
- * no topo é uma pergunta feita a quem ainda não sabe o que quer pedir; no fim, é
- * a pergunta que a página inteira preparou.
- */
-function Encomendas({
-  festas,
-  bolos,
-  boxes,
-  daEmenta,
-  ordem,
-  locale,
-}: {
-  festas: Produto[];
-  bolos: Produto[];
-  boxes: Produto[];
-  daEmenta: Produto[];
-  ordem: OrdemEmenta;
-  locale: Locale;
-}) {
+function Encomendas({ seccoes, locale }: { seccoes: FamiliaComProdutos[]; locale: Locale }) {
   const t = useTranslations("encomendas");
   const telefone = telefoneMarcavel();
 
@@ -143,13 +72,19 @@ function Encomendas({
               uma vez, no princípio, que é quando se decide para onde ir. */}
           <nav aria-label={t("indice.titulo")} className="mt-8">
             <ul className="flex flex-wrap gap-2">
-              {SECCOES_ENCOMENDAS.map((seccao) => (
-                <li key={seccao}>
+              {/* As famílias com produtos, pela ordem da gerente, e o fim da
+                  página. Com o nome que ela lhes deu: um rótulo curto escrito
+                  aqui ficava a dizer «Festas» depois de ela a renomear. */}
+              {[
+                ...seccoes.map(({ familia }) => ({ id: familia.id, nome: emLingua(familia.nome, locale) })),
+                { id: "pedido", nome: t("indice.pedido") },
+              ].map((seccao) => (
+                <li key={seccao.id}>
                   <a
-                    href={`#${seccao}`}
+                    href={`#${seccao.id}`}
                     className="premivel alvo-toque inline-flex min-h-11 items-center rounded-full border border-papel/40 px-5 text-sm font-semibold transition-colors hover:bg-papel hover:text-tijolo"
                   >
-                    {t(`indice.${seccao}`)}
+                    {seccao.nome}
                   </a>
                 </li>
               ))}
@@ -169,38 +104,13 @@ function Encomendas({
           encontra aparece por baixo dela, e não três ecrãs abaixo. */}
       <PesquisaProdutos />
 
-      <Familia
-        id="festas"
-        titulo={t("festas.titulo")}
-        texto={t("festas.texto")}
-        produtos={festas}
-        locale={locale}
-      />
-
-      <Familia
-        id="kits-bolo"
-        titulo={t("kitsBolo.titulo")}
-        texto={t("kitsBolo.texto")}
-        /* ⚠️ **O bolo por medida entra na mesma grelha dos kits de bolo.**
-           É a mesma pergunta — *e o bolo?* — e tinha uma secção própria só
-           porque o seu catálogo era enorme. Agora que o catálogo vive na página
-           dele, a secção separada era um degrau a mais entre duas coisas que se
-           comparam uma à outra. */
-        produtos={bolos}
-        locale={locale}
-        fundo="claro"
-      />
-
-      <Familia
-        id="boxes"
-        titulo={t("boxes.titulo")}
-        texto={t("boxes.texto")}
-        produtos={boxes}
-        locale={locale}
-      />
-
-      {/* ── Da carta, por encomenda ──────────────────────────────────── */}
-      <EmentaEncomendavel artigos={daEmenta} ordem={ordem} locale={locale} />
+      {/* ── As famílias da gerente, pela ordem dela (26/11) ─────────── */}
+      {/* Os fundos alternam como antes (papel, claro, papel…), contados pela
+          posição e não pela família: com uma família nova no meio, duas
+          seguidas da mesma cor deixavam de se separar. */}
+      {seccoes.map((dados, i) => (
+        <SeccaoFamilia key={dados.familia.id} dados={dados} locale={locale} fundo={i % 2 === 1 ? "claro" : "papel"} />
+      ))}
 
       {/* ── Como encomendar ──────────────────────────────────────────── */}
       <section id="pedido" aria-labelledby="como" className="ancora-rente seccao bg-tinta text-papel">
@@ -253,57 +163,5 @@ function Encomendas({
           meio. Não desenha nada. */}
       <SeccoesMinimizaveis />
     </>
-  );
-}
-
-/**
- * Uma família de produtos: título, uma frase, e a grelha de cartões.
- *
- * Existe para as três famílias saírem iguais. Escritas à mão, a primeira
- * diferença de espaçamento entre elas entrava sem ninguém dar por isso — e são
- * três blocos que se leem em sequência, onde uma diferença se nota logo.
- */
-function Familia({
-  id,
-  titulo,
-  texto,
-  produtos,
-  locale,
-  fundo = "papel",
-}: {
-  id: string;
-  titulo: string;
-  texto: string;
-  produtos: Produto[];
-  locale: Locale;
-  fundo?: "papel" | "claro";
-}) {
-  return (
-    <section
-      id={id}
-      aria-labelledby={`${id}-titulo`}
-      className={`ancora-rente seccao seccao-minimizavel ${fundo === "claro" ? "bg-papel-fundo" : ""}`}
-      data-grupo-procura
-    >
-      <TituloParaLeitores id={`${id}-titulo`} nivel={2}>
-        {titulo}
-      </TituloParaLeitores>
-      <details open data-seccao className="group/seccao">
-        <TituloDaSeccao titulo={titulo} fundo={fundo === "claro" ? "bg-papel-fundo" : "bg-papel"} />
-
-        <div className="envolvente">
-          <p className="mt-1 max-w-[52ch] text-tinta-suave">{texto}</p>
-
-          {/* ⚠️ `items-stretch` é o de origem da grelha, e é ele que iguala os
-              cartões de uma linha (#83): cada `<li>` estica até à mais alta e o
-              cartão enche-a com `h-full`. Um `items-start` aqui desfazia-o. */}
-          <ul className={`mt-12 ${GRELHA_CARTOES}`}>
-            {produtos.map((produto) => (
-              <CartaoProduto key={produto.id} produto={produto} locale={locale} />
-            ))}
-          </ul>
-        </div>
-      </details>
-    </section>
   );
 }

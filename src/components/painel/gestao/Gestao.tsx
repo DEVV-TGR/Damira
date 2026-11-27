@@ -5,6 +5,7 @@ import type {
   AvisoAtencao,
   ConfiguracaoDaCasa,
   DefinicoesLoja,
+  Familia,
   OpcoesBolo,
   OrdemEmenta,
   Pedido,
@@ -17,7 +18,7 @@ import { Definicoes } from "./Definicoes";
 import { DetalhePedido } from "./DetalhePedido";
 import { Equipa } from "./Equipa";
 import { Horarios } from "./Horarios";
-import { OrdemCategorias } from "./OrdemCategorias";
+import { FamiliasCategorias } from "./FamiliasCategorias";
 import { PedidosGestao } from "./PedidosGestao";
 import { Produtos } from "./Produtos";
 
@@ -43,8 +44,8 @@ export type DadosGestao = {
   /** Todos, arquivados incluídos, para a edição de produtos. */
   produtos: Produto[];
   ordem: OrdemEmenta;
-  /** Os nomes das categorias como o site os escreve, para a ordem (#87). */
-  nomesCategorias: Record<string, string>;
+  /** As famílias e as categorias da loja (26/11), para as arrumar e para o editor. */
+  familias: Familia[];
   /** As opções do bolo personalizado, desligadas incluídas. */
   opcoesBolo: OpcoesBolo;
 };
@@ -89,13 +90,14 @@ export function Gestao({
         <Produtos
           produtos={dados.produtos}
           ordem={dados.ordem}
+          familias={dados.familias}
           vistaInicial={vista === "por-preencher" ? "por-preencher" : "todos"}
           procura={procura}
           onRascunho={onRascunho}
         />
       );
     case "categorias":
-      return <OrdemCategorias ordem={dados.ordem} produtos={dados.produtos} nomes={dados.nomesCategorias} />;
+      return <FamiliasCategorias familias={dados.familias} produtos={dados.produtos} />;
     case "bolos":
       return <BolosPersonalizados opcoes={dados.opcoesBolo} />;
     case "horarios":

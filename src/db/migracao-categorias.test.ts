@@ -52,8 +52,8 @@ const ORIGEM = await origemDosJson();
  */
 async function inserirComoAntes(cliente: PGlite, tabela: Table, linha: Record<string, unknown>) {
   const colunas = getTableColumns(tabela);
-  /* As da `0008` e as da `0011` (#88), que a base parada na `0007` ainda não tem. */
-  const pares = Object.entries(linha).filter(([chave]) => !["categoriaId", "tipo", "opcoes", "ativa"].includes(chave));
+  /* As da `0008`, da `0011` (#88) e da `0012`, que a base parada na `0007` ainda não tem. */
+  const pares = Object.entries(linha).filter(([chave]) => !["categoriaId", "seccaoId", "tipo", "opcoes", "ativa"].includes(chave));
   const nomes = pares.map(([chave]) => `"${colunas[chave].name}"`).join(", ");
   const marcas = pares.map((_, i) => `$${i + 1}`).join(", ");
   /* Os `jsonb` vão em texto: é como o Postgres os recebe. */
@@ -351,18 +351,21 @@ describe("as secções (27/11)", () => {
 const modelo = await catalogoDeTeste();
 afterAll(() => modelo.fechar());
 
-describe("o painel, até a fronteira ler as categorias", () => {
+describe("o painel, sem a categoria escolhida", () => {
   it("pôr um artigo numa carta e categoria nova cria a categoria, no fim", async () => {
     const { db, cliente } = await modelo.copia();
     try {
       const fonte = criarFonteBd(db, loteEmTransacao(db));
       const atual = (await lerCatalogo(db)).find((p) => p.id === "bolo-de-cenoura")!;
-      /* O que a gerente vê ao abrir o produto: sem o id e os interruptores do balcão. */
+      /* O que a gerente vê ao abrir o produto: sem o id e os interruptores do
+         balcão — e sem a categoria escolhida (26/11), que é o editor de antes:
+         sem ela, a categoria sai da carta e da categoria. */
       const entrada = EsquemaProduto.omit({
         id: true,
         arquivado: true,
         foraDeVenda: true,
         esgotadoNoDia: true,
+        categoriaId: true,
       }).parse(atual);
       const editado = await fonte.editarProduto(
         "bolo-de-cenoura",
