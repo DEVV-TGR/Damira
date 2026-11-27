@@ -169,6 +169,9 @@ body:has(.cartaz) .barra-vidro {
      como se fazia antes de haver cinzentos. */
   --sc-ink-soft: var(--color-papel);
   color: var(--sc-ink);
+  /* O motor escreve o `--sc-p` (0 → 1) nesta secção. O «100%» enche entre
+     0,04 e 0,38; sem JavaScript o `--sc-p` não existe e o número sai cheio. */
+  --raro-enche: clamp(0, (var(--sc-p, 1) - 0.04) / 0.34, 1);
 }
 .cap--festa {
   background: var(--color-tijolo);
@@ -218,6 +221,11 @@ body:has(.cartaz) .barra-vidro {
   margin: 1.75rem 0 0;
   text-wrap: pretty;
 }
+.capa__oferta {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
 .cap__texto {
   max-width: 56ch;
   line-height: 1.62;
@@ -245,6 +253,10 @@ body:has(.cartaz) .barra-vidro {
   text-decoration-thickness: 1px;
   transition: text-decoration-thickness 160ms var(--sc-ease-out, ease-out);
 }
+.cap__ligacao.cap__ligacao--em-linha {
+  display: inline;
+  margin: 0;
+}
 .cap__ligacao:hover {
   text-decoration-thickness: 3px;
 }
@@ -265,6 +277,17 @@ body:has(.cartaz) .barra-vidro {
   .cap__duas--invertida > .cap__estampa {
     order: -1;
   }
+}
+/* ⚠️ **«Comemorativos» é uma palavra de treze letras e não parte.** No
+   tamanho dos outros títulos (até 4,4rem) não cabe na coluna estreita das duas
+   colunas: transbordava pelo espaço entre elas e encostava à fotografia, sem
+   erro nenhum. O título mede-se pela coluna (`cqi`), e não pelo ecrã:
+   13cqi é o que a palavra mais longa ocupa com folga na Caros. */
+.cap--bolos .cap__caixa {
+  container-type: inline-size;
+}
+.cap--bolos .cap__titulo {
+  font-size: min(clamp(2.2rem, 1.4rem + 3.6vw, 4.4rem), 13cqi);
 }
 .cap__estampa {
   margin: 0;
@@ -333,23 +356,57 @@ body:has(.cartaz) .barra-vidro {
 .raro__caixa {
   max-width: 44rem;
 }
-.raro__conta {
-  display: flex;
-  align-items: baseline;
-  gap: 0.6rem;
-  margin: 1rem 0 0;
-  flex-wrap: wrap;
-}
-.raro__numero {
+/* O título é um cartaz em três linhas: «Opções», o número, «vegan». As
+   palavras ficam no tamanho dos outros títulos; o número é o que pesa. */
+.raro__titulo {
   font-family: var(--sc-font-display);
-  font-size: clamp(4rem, 2rem + 12vw, 11rem);
-  line-height: 0.86;
-  letter-spacing: -0.04em;
-  color: var(--color-papel);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 0.94;
+  margin: 0;
 }
-.raro__de {
-  font-size: clamp(1rem, 0.9rem + 0.5vw, 1.3rem);
+.raro__linha {
+  display: block;
+  font-size: clamp(2.2rem, 1.4rem + 3.6vw, 4.4rem);
+}
+/* ⚠️ **O mínimo do `clamp` foi medido a 320 px**: com a margem do cartaz, o
+   «100%» cabe com folga até 1,5rem + 22vw; acima disso a página ganha rolagem
+   horizontal só no telemóvel mais estreito (armadilha 15). */
+.raro__cem {
+  display: block;
+  position: relative;
+  width: max-content;
+  font-size: clamp(5rem, 1.5rem + 22vw, 15rem);
+  line-height: 0.86;
+  letter-spacing: -0.05em;
+  margin-block: 0.06em 0.1em;
+}
+/* O contorno é o chão: está lá antes de o progresso sair do zero, por isso o
+   palco nunca aparece vazio. É decorativo (o `<h2>` tem `aria-label`), e a
+   frase lê-se também nas duas linhas de papel liso à volta dele. */
+.raro__cem-contorno {
+  color: transparent;
+  -webkit-text-stroke: max(1.5px, 0.012em) var(--color-papel);
+}
+/* ⚠️ **O enchimento é um recorte, não uma opacidade.** Papel a meia opacidade
+   sobre este verde cai abaixo de 4,5:1 (armadilha 5); recortado, cada píxel
+   pintado é papel a 100 %. */
+.raro__cem-cheio {
+  position: absolute;
+  inset: 0;
   color: var(--color-papel);
+  clip-path: inset(calc((1 - var(--raro-enche)) * 100%) 0 0 0);
+}
+.raro__texto {
+  margin-top: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+}
+.raro__acao {
+  margin-top: 1.75rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cap--raro {
+    --raro-enche: 1;
+  }
 }
 /* Com o chão já em `verde-forte`, o corpo e a ligação são papel liso: 4,67:1,
    sem pastilha nenhuma por baixo. A pastilha que aqui esteve era o
@@ -489,6 +546,12 @@ body:has(.cartaz) .barra-vidro {
    na parte de que ele não se vai lembrar.
    =========================================================================== */
 
+.cap--natal {
+  background: var(--color-tinta);
+  --sc-ink: var(--color-papel);
+  --sc-ink-soft: var(--suave-sobre-tinta);
+  color: var(--sc-ink);
+}
 .cap--vitrine {
   background: var(--color-papel);
   --sc-ink: var(--color-tinta);
@@ -598,54 +661,36 @@ body:has(.cartaz) .barra-vidro {
   border-radius: 3px;
   overflow: hidden;
 }
-.reels__cela a,
-.reels__espaco {
+.reels__cela a {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
+  justify-content: end;
+  gap: 0.5rem;
   width: 100%;
   height: 100%;
-  text-align: center;
+  padding: clamp(0.75rem, 2.5vw, 1.75rem);
+  border: 1px solid color-mix(in oklab, var(--color-papel) 26%, transparent);
+  border-radius: inherit;
+  background: color-mix(in oklab, var(--color-papel) 6%, var(--color-tinta));
+  transition: background-color 160ms ease;
 }
-.reels__cela a {
-  position: relative;
+.reels__cela a:hover,
+.reels__cela a:focus-visible {
+  background: var(--color-tijolo);
 }
-.reels__cela img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.reels__cela a:focus-visible {
+  outline: 2px solid var(--color-papel);
+  outline-offset: -4px;
 }
-.reels__cela a .reels__rotulo {
-  position: relative;
-  align-self: end;
-  width: 100%;
-  padding: 0.75rem;
-  background: linear-gradient(to top, rgb(31 29 27 / 0.85), transparent);
+.reels__play {
+  font-size: 0.8rem;
 }
-/* Um lugar por encher **diz que está por encher**. O tracejado e o vapor
-   apagado são a diferença entre um espaço reservado e um vídeo que não
-   carregou. */
-.reels__espaco {
-  border: 2px dashed color-mix(in oklab, var(--color-papel) 26%, transparent);
-  border-radius: 3px;
-}
-.reels__marca {
-  width: 1.75rem;
-  height: auto;
-  color: color-mix(in oklab, var(--color-papel) 40%, transparent);
-}
-.reels__marca path {
-  stroke-dasharray: none;
-  stroke-dashoffset: 0;
+.reels__titulo {
+  font-size: clamp(1.1rem, 2vw, 1.4rem);
+  font-weight: 600;
 }
 .reels__rotulo {
-  font-size: 0.78rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-size: 0.8rem;
   color: var(--sc-ink-soft);
 }
 
@@ -972,10 +1017,17 @@ body:has(.cartaz) .barra-vidro {
   max-height: 72svh;
 }
 .reels__instagram {
-  width: min(22rem, 74vw);
-  margin-inline-end: 14vw;
-  display: grid;
-  gap: 1rem;
+  display: flex;
+  justify-content: center;
+  padding: 1rem var(--margem-cartaz) 0;
+}
+.reels__instagram a {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+.reels__fila:last-child {
+  margin-inline-end: var(--margem-cartaz);
 }
 @media (max-width: 48rem) {
   .reels__cela {
@@ -1007,4 +1059,82 @@ body:has(.cartaz) .barra-vidro {
   background: var(--color-tinta);
   color: var(--suave-sobre-tinta);
   font-size: 0.85rem;
+}
+
+/* O pedido vem depois das fotografias: primeiro vê-se o que há, depois
+   encomenda-se. */
+.natal__accao {
+  margin: clamp(1.75rem, 3vw, 2.5rem) 0 0;
+}
+/* ⚠️ O estado de passagem do botão principal é tinta, e este capítulo **é**
+   tinta: sem contorno, o botão desaparecia debaixo do rato e ficava só o
+   texto a flutuar. */
+.cap--natal .cap__accao--principal:hover,
+.cap--natal .cap__accao--principal:focus-visible {
+  border-color: var(--color-papel);
+}
+
+.natal__ampliar {
+  position: absolute;
+  inset: 0;
+  cursor: zoom-in;
+}
+.natal__ampliar:focus-visible {
+  outline: 3px solid white;
+  outline-offset: -5px;
+}
+.natal__previa {
+  margin: auto;
+  width: min(56rem, 96vw);
+  max-height: 96dvh;
+  border-radius: 0.75rem;
+  background: var(--color-tinta);
+  color: var(--color-papel);
+}
+.natal__previa::backdrop {
+  background: rgb(15 14 13 / 85%);
+}
+body:has(.natal__previa[open]) {
+  overflow: hidden;
+}
+.natal__painel {
+  padding: clamp(0.5rem, 2vw, 1rem);
+}
+.natal__painel header,
+.natal__controlos {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.natal__painel header {
+  justify-content: space-between;
+  padding-bottom: 0.5rem;
+}
+.natal__fotografia {
+  position: relative;
+  height: min(64dvh, 36rem);
+  background: #171614;
+}
+.natal__fotografia img {
+  object-fit: contain;
+}
+.natal__controlos {
+  padding-top: 0.5rem;
+}
+.natal__controlos span {
+  margin-inline-end: auto;
+  font-variant-numeric: tabular-nums;
+}
+.natal__painel button {
+  min-width: 44px;
+  min-height: 44px;
+  padding-inline: 0.75rem;
+  border: 1px solid currentColor;
+  border-radius: 99px;
+  cursor: pointer;
+}
+.natal__painel button:hover,
+.natal__painel button:focus-visible {
+  background: var(--color-papel);
+  color: var(--color-tinta);
 }

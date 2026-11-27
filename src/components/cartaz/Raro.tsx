@@ -1,47 +1,29 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import type { Produto } from "@/lib/dados/tipos";
 
 /**
- * Capítulo II: **o raro**. É o argumento que faz alguém atravessar Ermesinde.
+ * Capítulo do vegan: **«Opções 100% vegan»**, o texto pedido no Notion.
  *
- * ⚠️ **Vem logo a seguir ao silêncio, e foi a casa que o pôs lá** (reunião de
- * 12/10/2026, #79). Esteve depois dos reels, a meio da página; a casa quer que
- * a carta vegan se veja antes de alguém desistir de rolar.
+ * ## O «100%» enche-se; não se conta
  *
- * ## O verde entra aqui, e só aqui
+ * ⚠️ Esteve aqui um contador de 0 a 100. Um contador é uma afirmação com
+ * movimento (`devices.md` › count), e a meio do percurso afirmava «37% vegan» —
+ * durante quase toda a secção, porque contava até 0,9 do progresso. O número
+ * está agora **sempre certo**: começa em contorno e enche-se de papel, de baixo
+ * para cima, com a rolagem (`--raro-enche`, em `cartaz.css`). O movimento diz o
+ * mesmo que a frase — cheio, todo — sem nunca escrever um valor que a casa não
+ * deu.
  *
- * ⚠️ O `AGENTS.md` é taxativo: o verde é da carta vegan e **não é uma cor de
- * acento disponível**. Usá-lo como decoração numa secção de leitão ensina o
- * olho a ignorá-lo justamente onde ele conta. Nesta página há seis fundos e
- * este é o único verde, o que faz dele o corte mais forte da sequência sem que
- * ninguém tenha de inventar cor nenhuma.
+ * ## Chão, e só depois deixas
  *
- * ⚠️ **Papel sobre o verde da marca dá 3,89:1** e só passa em títulos grandes.
- * Por isso o corpo de texto deste capítulo assenta no `verde-forte`, que existe
- * no `globals.css` exactamente para isto e dá 4,67:1. Ver a tabela lá.
- *
- * ## Os avisos do contrato de deixas que este acto podia apanhar
- *
- * É um acto preso, e um palco preso fica visível cerca de um ecrã **antes** de
- * o seu progresso sair do zero. Um primeiro conteúdo com deixa de duas
- * posições mostrava palco vazio esse tempo todo, por isso o olho abre em forma
- * de saudação (`"0 1 0 0"`: cheio a p = 0, sem rampa nas duas pontas).
- *
- * E nenhuma deixa daqui pode segurar até ao fim: só o último acto da página o
- * pode fazer. Uma deixa de um valor num acto do meio fica acesa durante toda a
- * saída do palco, sobe um ecrã inteiro e sobrepõe-se ao capítulo seguinte.
- * Todas fecham a 1.
+ * É um acto preso, e um palco preso fica à vista cerca de um ecrã **antes** de
+ * o progresso sair do zero. Por isso o título não tem deixa: é o chão, já lá
+ * quando o verde chega. O que entra com deixas é o texto, em escada, depois de
+ * o número encher. E nenhuma deixa segura até ao fim — só o último acto da
+ * página o pode fazer —, por isso todas fecham a 1, com uma saída curta.
  */
-export function Raro({ ementa }: { ementa: Produto[] }) {
+export function Raro() {
   const t = useTranslations("cartaz.raro");
-
-  /* ⚠️ **Contados, não escritos.** O `taste.md` e o `AGENTS.md` proíbem os dois
-     um número inventado, e um número escrito à mão é um número inventado assim
-     que alguém acrescentar um artigo sem se lembrar disto. Saem do catálogo que
-     a página foi buscar a `@/lib/dados`. */
-  const VEGAN = ementa.filter((artigo) => artigo.vegan).length;
-  const TOTAL = ementa.length;
 
   return (
     <section
@@ -49,37 +31,41 @@ export function Raro({ ementa }: { ementa: Produto[] }) {
       className="cap cap--raro"
       data-capitulo
       data-sc-act="pin"
-      /* ⚠️ **3 e não 1,7, e com `dwell`.** O curso de um acto preso é o vão
-         menos um ecrã: com 1,7 sobravam 0,7 ecrãs para cinco deixas e a
-         contagem, e o cliente viu a secção passar a correr — o 49 nem chegava
-         a contar. Com 3 são dois ecrãs de curso, e o `dwell` de 0,35 faz a
-         rolagem assentar a meio, onde o número e o título estão. */
-      data-sc-span="3"
-      data-sc-dwell="0.35"
+      /* 2,2 ecrãs: 1,2 de curso. Chega para o número encher (0,04 → 0,38) e
+         o texto entrar (0,3 → 0,6) com o `dwell` a assentar a meio; com 2,5 e
+         nada a acontecer depois do contador, sobrava um ecrã de verde parado. */
+      data-sc-span="2.2"
+      data-sc-dwell="0.3"
       aria-labelledby="raro"
     >
       <div data-sc-stage className="raro__palco">
         <div className="raro__caixa">
-          <p className="cap__olho" data-sc-cue="0 1 0 0">
-            <span className="cap__numeral">{t("numeral")}</span> {t("olho")}
-          </p>
-
-          <p className="raro__conta" data-sc-cue="0.05 1">
-            <span className="raro__numero" data-sc-count={`0 ${VEGAN}`} data-sc-count-at="0.12 0.55">
-              0
-            </span>
-            <span className="raro__de">{t("de", { total: TOTAL })}</span>
-          </p>
-
-          <h2 id="raro" className="cap__titulo" data-sc-cue="0.22 1" data-sc-kinetic="lines">
-            {t("titulo")}
+          {/* O `aria-label` dá a frase inteira: o «100%» desenhado está duas
+              vezes (contorno e enchimento), e um leitor de ecrã ouvia-o duas. */}
+          <h2 id="raro" className="raro__titulo" aria-label={t("titulo")}>
+            {t.rich("tituloAnimado", {
+              antes: (texto) => <span className="raro__linha">{texto}</span>,
+              depois: (texto) => <span className="raro__linha">{texto}</span>,
+              cem: () => (
+                <span className="raro__cem" aria-hidden="true">
+                  <span className="raro__cem-contorno">100%</span>
+                  <span className="raro__cem-cheio">100%</span>
+                </span>
+              ),
+            })}
           </h2>
 
-          <p className="cap__texto" data-sc-cue="0.4 1">
+          <p className="cap__texto raro__texto" data-sc-cue="0.3 1 0.25 0.06">
             {t("texto")}
           </p>
-
-          <p data-sc-cue="0.52 1">
+          <p className="cap__texto" data-sc-cue="0.38 1 0.25 0.06">
+            {t("exemplo")}
+          </p>
+          <p className="raro__acao" data-sc-cue="0.46 1 0.25 0.06">
+            {/* ⚠️ **`#da-ementa`, e não uma âncora da carta vegan.** Desde as
+                famílias da gerente (#162) só as famílias têm `id`; as
+                categorias não, de propósito (armadilha 8). Um `#carta-vegan`
+                aterrava no topo da página sem aviso. */}
             <Link href="/encomendas#da-ementa" className="cap__ligacao">
               {t("ligacao")}
             </Link>

@@ -11,7 +11,7 @@ import {
   guardarDefinicoes,
   guardarHorarios,
   guardarOpcoesDoBolo,
-  guardarOrdemCategorias,
+  guardarFamilias,
   listarPedidos,
   pedidoDoPainel,
   reagendarPedido,
@@ -193,15 +193,15 @@ export async function arquivar(id: string, arquivado: boolean) {
   return resultado;
 }
 
-// ——— A ordem das categorias (#87) ———
+// ——— As famílias e as categorias (26/11) ———
 
 /**
- * A ordem por que as categorias aparecem na ementa e nas encomendas. Como um
- * produto, muda páginas estáticas: sem revalidar, o site continuava na ordem
- * antiga até ao próximo deploy.
+ * A árvore inteira, como a gerente a deixou. Muda a `/encomendas` e o menu do
+ * cabeçalho, que são estáticos: sem revalidar, o site ficava como estava até ao
+ * deploy seguinte.
  */
-export async function gravarOrdemCategorias(categorias: string[]) {
-  const resultado = await comSessao((ctx) => guardarOrdemCategorias({ categorias }, ctx));
+export async function gravarFamilias(entrada: unknown) {
+  const resultado = await comSessao((ctx) => guardarFamilias(entrada, ctx));
   if (resultado.ok) revalidatePath("/", "layout");
   return resultado;
 }

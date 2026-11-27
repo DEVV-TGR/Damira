@@ -1,6 +1,5 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { casa } from "@/data/casa";
 import { CarrosselCapa } from "./CarrosselCapa";
 
 /** A capa alterna as duas fotografias entregues pela Damira. */
@@ -13,7 +12,7 @@ export function FolhaDeRosto() {
       <CarrosselCapa />
       <div className="cap__caixa" data-sc-in data-sc-stagger="70">
         <p className="cap__olho">
-          {t("olho")}, {marca("desde", { ano: casa.desde })}
+          {t("olho")}
         </p>
 
         {/* O ponto final faz parte da assinatura pintada na montra. */}
@@ -21,7 +20,14 @@ export function FolhaDeRosto() {
           {marca("assinatura")}.
         </h1>
 
-        <p className="cap__lede">{t("lede")}</p>
+        <div className="cap__lede">
+          <p><strong>{t("lede")}</strong></p>
+          <ul className="capa__oferta">
+            <li>{t("refeicoes")}</li>
+            <li>{t("padaria")}</li>
+            <li>{t("vegan")}</li>
+          </ul>
+        </div>
 
         {/* O catálogo reúne toda a oferta num só destino, incluindo a carta. */}
         <p className="capa__atalhos">
@@ -29,8 +35,6 @@ export function FolhaDeRosto() {
             {t("encomendar")}
           </Link>
         </p>
-
-        <p className="cap__nota">{t("credito")}</p>
       </div>
     </section>
   );

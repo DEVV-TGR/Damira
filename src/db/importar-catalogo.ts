@@ -11,8 +11,8 @@ import {
   type BaseDeDados,
   type DadosDaCasa,
 } from "./catalogo";
-import { categoriasDoCatalogo } from "./categorias";
-import { casa, categorias, produtos, variantes } from "./esquema";
+import { categoriasDoCatalogo, FAMILIAS_DE_PARTIDA } from "./categorias";
+import { casa, categorias, familias, produtos, variantes } from "./esquema";
 
 /**
  * # A migração do catálogo, JSON → base de dados (#28)
@@ -79,7 +79,11 @@ export async function importarCatalogo(db: BaseDeDados, origem: OrigemDoCatalogo
       );
     }
 
-    /* As categorias antes dos produtos, que apontam para elas. */
+    /* As famílias antes das categorias, e as categorias antes dos produtos:
+       cada uma aponta para a de cima. Numa base vazia a `0012` não cria
+       nenhuma; o `onConflictDoNothing` é para quem importar sobre uma que já
+       as tenha. */
+    await tx.insert(familias).values([...FAMILIAS_DE_PARTIDA]).onConflictDoNothing({ target: familias.id });
     await tx.insert(categorias).values(categoriasDoCatalogo(catalogo, origem.casa.ordem));
     await tx.insert(produtos).values(linhas.map((l) => l.produto));
     await tx.insert(variantes).values(linhas.flatMap((l) => l.variantes));
