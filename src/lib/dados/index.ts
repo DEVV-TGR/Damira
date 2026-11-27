@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { fonteDoAmbiente, type FonteDeExemplo } from "./exemplo";
 import { listarPelaOrdem } from "@/lib/ordenar";
 import { protegerPainel } from "./papeis";
@@ -51,14 +52,19 @@ export const familias: FonteDeDados["familias"] = () => fonte.familias();
  * `/encomendas` e o menu «Encomendas» do cabeçalho: os dois leem a mesma coisa,
  * e um link do menu nunca aponta para uma secção que a página não tem.
  */
-export async function familiasDaLoja(): Promise<FamiliaComProdutos[]> {
+/* ⚠️ **Em `cache()`**: o layout (o menu) e a `/encomendas` pedem-no na mesma
+   página, e cada chamada são três consultas. Com o `cache()` é uma vez por
+   render, no build e em cada revalidação (revisão do Sobral ao #162). Não
+   guarda nada entre pedidos: é a memória de um render, e o que a gerente grava
+   entra no seguinte. */
+export const familiasDaLoja = cache(async (): Promise<FamiliaComProdutos[]> => {
   const [arvore, encomendas, daCarta] = await Promise.all([
     fonte.familias(),
     listarProdutos({ origem: "encomendas" }),
     listarProdutos({ origem: "ementa", aVendaOnline: true }),
   ]);
   return familiasComProdutos(arvore, [...encomendas, ...daCarta]);
-}
+});
 
 export const configuracaoDaCasa: FonteDeDados["configuracaoDaCasa"] = () =>
   fonte.configuracaoDaCasa();
