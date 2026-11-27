@@ -578,3 +578,21 @@ describe("a resposta da casa e o aceite do cliente (pedidos.md › O aceite do c
     expect(await f.aceitarProposta("DAM-0710-ZZZZ", 1, AGORA)).toEqual({ ok: false, erro: "nao-existe" });
   });
 });
+
+describe("a gerente pode combinar um dia bloqueado", () => {
+  it("reagenda e propõe outra hora sem impor os bloqueios à gerente, nas duas fontes", async () => {
+    const confirmado = pedido("a", { estado: "confirmado", modoPagamento: "na-loja", pagoEm: null, pagoOnlineCent: 0, confirmadoEm: lisboa(6, 9) });
+    const porConfirmar = pedido("b", { expiraEm: new Date("2099-10-08T09:00:00Z"), estado: "por-confirmar", modoPagamento: "na-loja", pagoEm: null, pagoOnlineCent: 0, confirmadoEm: null });
+    const f = await fonteComPedidos([confirmado, porConfirmar]);
+    const produto = (await f.produtosDoPainel(GERENTE)).find(p => p.id === "festa-premium")!;
+    const entrada: Partial<typeof produto> = { ...produto };
+    delete entrada.id;
+    delete entrada.arquivado;
+    delete entrada.foraDeVenda;
+    delete entrada.esgotadoNoDia;
+    const gravado = await f.editarProduto(produto.id, { ...entrada, alergenios: [], diasSemEncomenda: [{ de: "2026-10-09", ate: "2026-10-09" }] }, GERENTE);
+    expect(gravado.ok).toBe(true);
+    expect((await f.reagendarPedido(confirmado.id, lisboa(9, 11).toISOString(), GERENTE)).ok).toBe(true);
+    expect((await f.responderPedido(porConfirmar.id, { precos: [], levantamentoEm: lisboa(9, 11).toISOString() }, GERENTE)).ok).toBe(true);
+  });
+});

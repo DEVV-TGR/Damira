@@ -508,3 +508,14 @@ describe.skipIf(NA_BASE_DE_DADOS)("os pedidos de exemplo do modo de teste", () =
     expect(Math.max(...porDia.values()) - Math.min(...porDia.values())).toBeGreaterThan(20);
   });
 });
+
+describe.skipIf(NA_BASE_DE_DADOS)("criar pedido com dias sem encomenda nos JSON", () => {
+  it("recusa o produto bloqueado e aceita um cesto sem ele, incluindo um kit que o leva", async () => {
+    const catalogo = CATALOGO_JSON.map(p => p.id === "bolo-de-cenoura"
+      ? { ...p, diasSemEncomenda: [{ de: "2026-10-07", ate: "2026-10-07" }] }
+      : p.id === "festa-premium" ? { ...p, variantes: p.variantes.map(v => ({ ...v, leva: [{ produtoId: "bolo-de-cenoura", quantidade: 12 }] })) } : p);
+    const f = fonteDeExemplo({ catalogo });
+    expect(await f.criarPedido(entrada({ linhas: [{ produtoId: "bolo-de-cenoura", varianteId: "unica", quantidade: 12 }] }), CONTEXTO)).toMatchObject({ ok: false, erro: "indisponivel" });
+    expect((await f.criarPedido(entrada(), CONTEXTO)).ok).toBe(true);
+  });
+});

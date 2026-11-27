@@ -71,6 +71,33 @@ avisa a gerente, que fala com os clientes. Cancelar pedidos pagos às escondidas
 por causa de uma alteração de configuração é a pior maneira de descobrir que ela
 existia.
 
+## Dias em que um produto não se encomenda
+
+A gerente define no editor do produto intervalos inclusivos de dias de Lisboa
+(`diasSemEncomenda`, até 50, datas válidas, sem intervalos repetidos). Não são os
+dias fechados da casa: o produto continua no site e encomendável noutros dias,
+com uma nota dos intervalos ainda em curso ou a começar na janela do calendário.
+A nota filtra-se no browser em Lisboa porque as páginas são estáticas.
+
+Tal como «esgotado hoje», qualquer produto bloqueado tira o dia ao **cesto
+inteiro**: o calendário mostra o motivo com o nome do produto, e o servidor
+recusa a hora, mesmo que venha forjada pelo browser. Vale também no percurso
+sem tempos de produção, cuja hora é a confirmar. O calendário termina em hoje
++ `diasAFrente`, mesmo quando as horas a confirmar começam amanhã.
+
+**Os kits não herdam** os dias dos simples que levam: só contam os do próprio
+produto da linha, sem diferenças por tamanho ou variante. **Só a gerente** os
+muda, com o papel conferido no servidor. «À venda online», arquivar e fora de
+venda continuam independentes; o campo conserva-se nesses produtos.
+
+**A gerente pode marcar na mesma**, ao mudar o levantamento ou propor outra
+hora: vê «Este dia está bloqueado para: … Pode marcar na mesma.». O aviso
+calcula-se no servidor pelos produtos do pedido. Mantém-se a validação de loja
+aberta, hora futura e vaga livre, sem impor tempos de produção à gerente.
+
+**Os pedidos existentes ficam como estão**. Não se cancelam, não se reagendam
+e não se cria um aviso em «Precisa de atenção» por causa deste campo.
+
 ## A loja em pausa e os esgotados
 
 São do `painel-balcao.md`, mas tocam aqui: com a loja em pausa não se criam

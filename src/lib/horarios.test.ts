@@ -4,6 +4,7 @@ import { TZDate, tz } from "@date-fns/tz";
 import { format } from "date-fns";
 import { describe, expect, it } from "vitest";
 import {
+  diasSemEncomendaNoCalendario,
   dentroDoPrazoDeCancelamento,
   inicioDaProducao,
   primeiroLevantamento,
@@ -537,5 +538,33 @@ describe("o módulo não lê o relógio", () => {
       "utf8",
     );
     expect(fonte).not.toMatch(/new Date\b|Date\.now|\.getHours\(|\.getDay\(/);
+  });
+});
+
+describe("dias em que um produto não se encomenda", () => {
+  const agora = lisboa("2026-10-05 10:00");
+  const bloqueado: ArtigoDoCesto = { ...horas(0), diasSemEncomenda: [{ de: "2026-10-05", ate: "2026-10-07" }] };
+
+  it("salta o intervalo inclusivo e o primeiro levantamento passa para o dia ao lado", () => {
+    expect(emLisboa(primeiroLevantamento([bloqueado], agora, BASE))).toBe("2026-10-08 07:00");
+    expect(vagas([bloqueado], agora, BASE).some(v => v.data <= "2026-10-07")).toBe(false);
+    expect(validarLevantamento([bloqueado], lisboa("2026-10-07 15:00"), agora, BASE)).toEqual({ ok: false, motivo: "indisponivel" });
+    expect(validarLevantamento([bloqueado], lisboa("2026-10-08 15:00"), agora, BASE)).toEqual({ ok: true });
+  });
+
+  it("um dia solto, outro produto e o esgotado hoje somam-se sem afetar o cesto sem eles", () => {
+    const outro: ArtigoDoCesto = { ...horas(0, true), diasSemEncomenda: [{ de: "2026-10-08", ate: "2026-10-08" }] };
+    expect(emLisboa(primeiroLevantamento([outro], agora, BASE))).toBe("2026-10-06 07:00");
+    expect(emLisboa(primeiroLevantamento([bloqueado, outro], agora, BASE))).toBe("2026-10-09 07:00");
+    expect(emLisboa(primeiroLevantamento([horas(0)], agora, BASE))).toBe("2026-10-05 10:00");
+  });
+
+  it("lista só dias da janela, sem duplicar sobreposições e com índices dos artigos", () => {
+    const outro = { ...horas(0), diasSemEncomenda: [{ de: "2026-10-06", ate: "2026-11-20" }, { de: "2026-10-06", ate: "2026-10-07" }] };
+    expect(diasSemEncomendaNoCalendario([bloqueado, outro], agora, com({ diasAFrente: 2 }))).toEqual([
+      { data: "2026-10-05", artigos: [0] },
+      { data: "2026-10-06", artigos: [0, 1] },
+      { data: "2026-10-07", artigos: [0, 1] },
+    ]);
   });
 });

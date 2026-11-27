@@ -1,5 +1,7 @@
 "use server";
 
+import { getLocale } from "next-intl/server";
+import type { Locale } from "@/i18n/routing";
 import { configuracaoDaCasa, cotarCesto, ocupacao, produtoPorId } from "@/lib/dados";
 import { vagasDoCesto, type ResultadoVagas } from "@/lib/vagas-servidor";
 
@@ -9,5 +11,5 @@ import { vagasDoCesto, type ResultadoVagas } from "@/lib/vagas-servidor";
  * que é a ponta do sistema: daqui para dentro entra por argumento.
  */
 export async function consultarVagas(linhas: unknown): Promise<ResultadoVagas> {
-  return vagasDoCesto(linhas, { configuracaoDaCasa, cotarCesto, ocupacao, produtoPorId }, new Date());
+  return vagasDoCesto(linhas, { configuracaoDaCasa, cotarCesto, ocupacao, produtoPorId }, new Date(), await getLocale() as Locale);
 }

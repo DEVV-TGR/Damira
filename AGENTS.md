@@ -83,6 +83,9 @@ esquecerem:
    no servidor. (`painel.md`)
 9. **Um pedido pago nunca se perde e nunca se apaga.** (`pedidos.md`)
 
+Os dias sem encomenda são do **produto**, não da casa: não são dias fechados,
+os kits não os herdam, e os pedidos existentes não mudam (`horarios.md`).
+
 ### O modo de teste — e é um bloqueador de lançamento
 
 Até a casa dar os tempos de produção (o horário da cozinha já deu: das 6h00

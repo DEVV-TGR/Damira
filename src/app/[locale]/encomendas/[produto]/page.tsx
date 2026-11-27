@@ -6,7 +6,7 @@ import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { URL_SITE, caminhoLocalizado, urlLocalizado } from "@/lib/site";
 import { imagensDePartilha } from "@/lib/metadata";
-import { listarProdutos, opcoesDoBolo, produtoPorId } from "@/lib/dados";
+import { configuracaoDaCasa, listarProdutos, opcoesDoBolo, produtoPorId } from "@/lib/dados";
 import type { GrupoComposicao, OpcoesBolo, Produto } from "@/lib/dados/tipos";
 import { formatarCent } from "@/lib/preco";
 import {
@@ -23,6 +23,7 @@ import {
 import { ComprarProduto } from "@/components/encomendas/ComprarProduto";
 import { ConfiguradorBolo } from "@/components/encomendas/ConfiguradorBolo";
 import { ComFotoEscolhida, GaleriaProduto } from "@/components/encomendas/GaleriaProduto";
+import { NotaDiasSemEncomenda } from "@/components/encomendas/NotaDiasSemEncomenda";
 import { VoltarAtras } from "@/components/VoltarAtras";
 
 /** Uma página por produto e por língua, todas geradas no `build`. */
@@ -122,7 +123,7 @@ export default async function PaginaProduto({
   const opcoes = produto.familia === "medida" ? await opcoesDoBolo() : null;
 
   return (
-    <Detalhe produto={produto} personalizavel={paraPersonalizar(produto, simples)} opcoes={opcoes} locale={locale as Locale} />
+    <Detalhe diasAFrente={(await configuracaoDaCasa()).diasAFrente} produto={produto} personalizavel={paraPersonalizar(produto, simples)} opcoes={opcoes} locale={locale as Locale} />
   );
 }
 
@@ -149,11 +150,13 @@ export default async function PaginaProduto({
  * `cesto.ts`.
  */
 function Detalhe({
+  diasAFrente,
   produto,
   personalizavel,
   opcoes,
   locale,
 }: {
+  diasAFrente: number;
   produto: Produto;
   personalizavel: DadosPersonalizacao;
   /** As opções do bolo personalizado; `null` nos outros produtos. */
@@ -220,6 +223,7 @@ function Detalhe({
                 </span>
               )}
               {resumo && <p className="mt-5 text-lg text-tinta-suave">{resumo}</p>}
+              <NotaDiasSemEncomenda intervalos={produto.diasSemEncomenda} diasAFrente={diasAFrente} locale={locale} />
 
               {/* O que leva em texto, dos kits de antes da #88. Um grupo que já
                   passou a produtos mostra-os ao escolher (`LevaDoGrupo`). */}

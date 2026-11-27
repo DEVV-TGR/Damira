@@ -361,6 +361,7 @@ export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale:
             <div className="rounded-2xl border border-tinta/15">
               <CalendarioLevantamento
                 vagas={vagas.vagas}
+                diasSemEncomenda={vagas.diasSemEncomenda}
                 aConfirmar={vagas.aConfirmar}
                 escolhida={escolhidaValida?.inicio ?? null}
                 aoEscolher={setEscolhida}
