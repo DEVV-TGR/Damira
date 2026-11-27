@@ -46,7 +46,7 @@ export function PesquisaProdutos() {
   const termo = texto.trim();
 
   return (
-    <div className="envolvente pt-10 sm:pt-12">
+    <div className="pesquisa-produtos envolvente pt-10 sm:pt-12">
       <div role="search" className="max-w-xl">
         <label htmlFor="procurar-produto" className="text-sm font-semibold">
           {t("rotulo")}

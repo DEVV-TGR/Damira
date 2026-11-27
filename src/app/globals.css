@@ -406,6 +406,14 @@ body::after {
   padding-block: var(--espaco-seccao);
 }
 
+/* ⚠️ **A primeira secção depois da pesquisa sobe** (27/11). O `--espaco-seccao`
+   separa duas secções e chega a 8rem num monitor; entre a pesquisa e o primeiro
+   título deixava um vazio que parecia a página por carregar. A pesquisa já
+   abre o bloco, por isso basta metade. */
+.pesquisa-produtos + .seccao {
+  padding-block-start: clamp(2rem, 4vw, 3.5rem);
+}
+
 .seccao.ficha-produto {
   padding-block-start: clamp(1.25rem, 3vw, 2rem);
 }
