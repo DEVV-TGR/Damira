@@ -35,7 +35,8 @@ export default async function PaginaInicial({
      `sabores-de-natal`. Um `#natal` escrito à mão aterrava no topo da
      `/encomendas` no dia em que o nome fosse outro. É a mesma leitura do menu
      do cabeçalho (`layout.tsx`), que o painel revalida ao gravar; só traz
-     famílias com produtos, e sem família do Natal não há botão. */
+     famílias com produtos; sem família do Natal, o botão leva à loja
+     inteira. */
   const natal =
     (await familiasDaLoja()).find(
       ({ familia }) => falaDeNatal(familia.id) || falaDeNatal(emLingua(familia.nome, "pt")),

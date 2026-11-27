@@ -46,19 +46,18 @@ export function Natal({ idDaFamilia }: { idDaFamilia: string | null }) {
           larga: foto.larga ?? false,
         }))}
       />
-      {/* O id vem da família que a gerente criou (ver `page.tsx`). Sem ela,
-          não há botão: «Encomendar o Natal» a levar ao topo da loja era
-          prometer uma secção que não existe. */}
-      {idDaFamilia && (
-        <p className="natal__accao">
-          <Link
-            href={{ pathname: "/encomendas", hash: idDaFamilia }}
-            className="cap__accao cap__accao--principal"
-          >
-            {t("encomendar")}
-          </Link>
-        </p>
-      )}
+      {/* O id vem da família que a gerente criou (ver `page.tsx`). O botão
+          está sempre à vista, pedido da casa a 27/11: sem a família — em
+          local, sem base de dados —, leva à `/encomendas` inteira em vez de
+          prometer uma âncora que não existe. */}
+      <p className="natal__accao">
+        <Link
+          href={idDaFamilia ? { pathname: "/encomendas", hash: idDaFamilia } : "/encomendas"}
+          className="cap__accao cap__accao--principal"
+        >
+          {t("encomendar")}
+        </Link>
+      </p>
     </section>
   );
 }
