@@ -337,9 +337,9 @@ que a casa não garantiu.
 
 As imagens da página inicial vêm da Damira. A remessa «Conteúdo Site», de
 26/11/2026, trouxe duas fotografias de capa, novas imagens de pão e de
-decoração de um bolo e o álbum da vitrine. A capa alterna entre a fachada e
-a montra a cada cinco segundos. Com a preferência de movimento reduzido,
-mostra a fachada. As seis fotografias de Natal abrem uma secção própria, logo
+decoração de um bolo e o álbum da vitrine. **No Natal, a capa é só um boneco de
+gengibre** (`capa-natal.webp`, 27/11), sem a troca com a montra; a fachada e a
+montra ficam em `public/fotos/` para voltarem depois das festas. As seis fotografias de Natal abrem uma secção própria, logo
 depois da capa. A galeria da casa abre com seis fotografias (#80) e o botão
 «Ver mais» mostra as restantes.
 
