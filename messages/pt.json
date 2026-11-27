@@ -622,9 +622,10 @@
     }
   },
   "desconto": {
-    "faixa": "Aproveita <destaque>{n}% de desconto</destaque> nas primeiras encomendas",
+    "faixa": "Aproveita <destaque>{n}% de desconto</destaque> em todas as encomendas",
     "subtotal": "Subtotal",
-    "linha": "Desconto de boas-vindas ({n}%)"
+    "linha": "Desconto ({n}%)",
+    "aplicadoNoFim": "Desconto de {n}% aplicado ao total final"
   },
   "modoTeste": {
     "etiqueta": "Modo de teste",

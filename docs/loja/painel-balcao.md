@@ -110,7 +110,8 @@ O único toque do dia a dia: **Entregue**.
 
 - **Pago na loja, não pergunta nada:** o dinheiro entra no próprio toque
   (`pedidos.md` › Os estados), e o cartão diz «A PAGAR NA LOJA · 129,00 €» em
-  grande.
+  grande. Com o desconto da loja, «A PAGAR NA LOJA · 116,10 € · DESCONTO DE 10%
+  INCLUÍDO»: o valor já vem descontado, e não se desconta outra vez ao cobrar.
 - ⚠️ **Com dinheiro em falta, pergunta primeiro.** Se o pedido tem sinal, o toque
   abre «Recebeu os 12,50 € em falta?» antes de marcar. Entregar um bolo sem cobrar
   o resto é o erro mais caro que o balcão pode fazer, e o mais fácil numa hora de

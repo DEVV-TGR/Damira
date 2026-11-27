@@ -2,7 +2,8 @@ import { useTranslations } from "next-intl";
 import { DESCONTO_PERCENTAGEM } from "@/lib/desconto";
 
 /**
- * A faixa do desconto de boas-vindas, no topo de todas as páginas.
+ * A faixa do desconto da loja (10 % em toda a loja, decidido a 27/11), no topo
+ * de todas as páginas. Com o desconto a `0` (`src/lib/desconto.ts`), não aparece.
  *
  * Fica **por baixo do cabeçalho**, e não no lugar da faixa do modo de teste:
  * aquela é a que impede o site de afirmar um prazo que a casa não deu, e não se
@@ -17,6 +18,7 @@ import { DESCONTO_PERCENTAGEM } from "@/lib/desconto";
  */
 export function FaixaDesconto() {
   const t = useTranslations("desconto");
+  if (DESCONTO_PERCENTAGEM === 0) return null;
 
   /* No telemóvel a letra desce a 12 px e o `text-balance` reparte o texto em
      linhas de largura parecida: cabe numa linha a partir de ~390 px e, abaixo

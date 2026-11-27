@@ -148,6 +148,7 @@ export function fonteDeExemplo(
       totalCent,
       modoPagamento: "total",
       pagoOnlineCent: totalCent,
+      descontoPercentagem: 0, descontoCent: 0,
       reembolsadoCent: 0,
       chegouTarde: false,
       propostaVersao: 0, propostaEm: null, levantamentoAnteriorEm: null,
@@ -488,6 +489,7 @@ export function pedidosDoPainelDeExemplo(
       modoPagamento: p.porConfirmar ? "na-loja" : p.sinal ? "sinal" : "total",
       /* Com sinal, 30 % pago online; o resto cobra-se na loja. Pago na loja, nada online. */
       pagoOnlineCent: p.porConfirmar ? 0 : p.sinal ? Math.round(totalCent * 0.3) : totalCent,
+      descontoPercentagem: 0, descontoCent: 0,
       reembolsadoCent: 0,
       chegouTarde: p.chegouTarde ?? false,
       propostaVersao: 0, propostaEm: null, levantamentoAnteriorEm: null,
@@ -568,6 +570,7 @@ export function pedidosDoPainelDeExemplo(
       totalCent: natas.totalCent,
       modoPagamento: "na-loja",
       pagoOnlineCent: 0,
+      descontoPercentagem: 0, descontoCent: 0,
       reembolsadoCent: 0,
       chegouTarde: false,
       pagoEm: null,

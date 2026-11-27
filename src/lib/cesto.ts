@@ -2,6 +2,7 @@ import type { TipoPedido } from "@/lib/pedidos";
 import { urlDaFotoDoBolo } from "@/lib/bolo-personalizado";
 import { EsquemaEscolhaBolo, type EscolhaBolo } from "@/lib/dados/tipos";
 import type { Locale } from "@/i18n/routing";
+import { aplicarDesconto } from "@/lib/desconto";
 import { formatarCent } from "@/lib/preco";
 
 /**
@@ -363,7 +364,13 @@ export const totalDaLinha = (precoCent: number, quantidade: number): number =>
 export function cestoEmTexto(
   cesto: ItemCesto[],
   locale: Locale,
-  rotulos: { semPreco: string; estimativa: string; aPartirDe: string },
+  rotulos: {
+    semPreco: string;
+    estimativa: string;
+    aPartirDe: string;
+    /** O desconto da loja (`src/lib/desconto.ts`); sem ele, o texto fica como antes. */
+    desconto?: { subtotal: string; linha: string };
+  },
 ): string {
   if (cesto.length === 0) return "";
 
@@ -391,7 +398,15 @@ export function cestoEmTexto(
 
   const { somaCent, semPreco } = estimativa(cesto);
   const rotulo = semPreco > 0 ? rotulos.aPartirDe : rotulos.estimativa;
-  linhas.push("", `${rotulo}: ${formatarCent(somaCent, locale)}`);
+  const valores = aplicarDesconto(somaCent);
+  linhas.push("");
+  if (rotulos.desconto && valores.descontoCent > 0) {
+    linhas.push(
+      `${rotulos.desconto.subtotal}: ${formatarCent(valores.subtotalCent, locale)}`,
+      `${rotulos.desconto.linha}: −${formatarCent(valores.descontoCent, locale)}`,
+    );
+  }
+  linhas.push(`${rotulo}: ${formatarCent(rotulos.desconto ? valores.totalCent : somaCent, locale)}`);
 
   return linhas.join("\n");
 }

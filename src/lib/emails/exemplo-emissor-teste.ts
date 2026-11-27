@@ -9,6 +9,7 @@ export function pedidoDeEmail(): Pedido {
       escolhas: ["Baunilha"], personalizacao: null, unidade: "kg", quantidade: 2, precoUnitarioCent: 1700,
       totalCent: 3400, notas: "Nota guardada", precoDaProposta: false }],
     totalCent: 3400, observacoes: null, modoPagamento: "na-loja", pagoOnlineCent: 0,
+    descontoPercentagem: 0, descontoCent: 0,
     reembolsadoCent: 0, reembolsos: [], avisosTratados: [], chegouTarde: false,
     pagoEm: null, confirmadoEm: null, expiraEm: new Date("2026-10-26T09:00:00Z"), aceiteEm: null, causaExpiracao: null,
     impressoEm: null, entregueEm: null, canceladoEm: null, canceladoPor: null, reagendadoEm: null,

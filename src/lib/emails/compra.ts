@@ -1,6 +1,7 @@
 import { casa } from "@/data/casa";
 import type { ItemCesto } from "@/lib/cesto";
 import { estimativa, totalDaLinha } from "@/lib/cesto";
+import { aplicarDesconto } from "@/lib/desconto";
 import { urlDaFotoDoBolo } from "@/lib/bolo-personalizado";
 import type { DadosCompra } from "@/lib/pedidos";
 import { escreverEmail } from "./modelos";
@@ -35,6 +36,9 @@ export function emailDaCompraParaLoja(pedido: {
 }): { assunto: string; texto: string; html: string } | null {
   if (!pedido.levantamento || !/^DAM-.+-.+$/.test(pedido.referencia)) return null;
   const { somaCent, semPreco } = estimativa([...pedido.itens]);
+  /* Sem base de dados também: o email à casa diz o mesmo desconto que o checkout mostrou. Os itens
+     já vêm com os preços do catálogo (`itensDoServidor`), e a conta é a de `src/lib/desconto.ts`. */
+  const valores = aplicarDesconto(somaCent);
 
   const dados: DadosEmailPedido = {
     referencia: pedido.referencia as DadosEmailPedido["referencia"],
@@ -68,7 +72,9 @@ export function emailDaCompraParaLoja(pedido: {
       totalCent: item.precoCent === null ? null : totalDaLinha(item.precoCent, item.quantidade),
       aoQuilo: item.unidade === "kg",
     })),
-    totalCent: somaCent,
+    totalCent: valores.totalCent,
+    descontoPercentagem: valores.descontoPercentagem,
+    descontoCent: valores.descontoCent,
     faltamPrecos: semPreco > 0,
     criadoEm: pedido.criadoEm,
     levantamentoEm: pedido.levantamento,

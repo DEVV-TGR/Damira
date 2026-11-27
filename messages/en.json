@@ -622,9 +622,10 @@
     }
   },
   "desconto": {
-    "faixa": "Enjoy <destaque>{n}% off</destaque> your first orders",
+    "faixa": "Enjoy <destaque>{n}% off</destaque> every order",
     "subtotal": "Subtotal",
-    "linha": "Welcome discount ({n}%)"
+    "linha": "Discount ({n}%)",
+    "aplicadoNoFim": "{n}% discount applied to the final total"
   },
   "modoTeste": {
     "etiqueta": "Test mode",

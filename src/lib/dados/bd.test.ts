@@ -97,7 +97,7 @@ describe("as perguntas têm respostas a sério", () => {
 
     const precoAoQuilo = AO_QUILO.variantes[0].precoCent!;
     const quilo = await bd.cotarCesto([{ produtoId: AO_QUILO.id, varianteId: "unica", quantidade: 1.5 }]);
-    expect(quilo.ok && quilo.cotacao.totalCent).toBe(Math.round(precoAoQuilo * 1.5));
+    expect(quilo.ok && quilo.cotacao.subtotalCent).toBe(Math.round(precoAoQuilo * 1.5));
   });
 });
 

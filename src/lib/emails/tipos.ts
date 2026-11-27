@@ -23,8 +23,14 @@ export type DadosEmailPedido = {
     aoQuilo: boolean;
     fixadoAgora?: boolean;
   }[];
-  /** Totais já calculados pelo servidor: nunca se recalcula um pedido antigo. */
+  /** Totais já calculados pelo servidor: nunca se recalcula um pedido antigo. O que se paga, já com o desconto. */
   totalCent: number;
+  /**
+   * O desconto da loja que o pedido teve (`pedidos.desconto_*`, migração `0013`). Sem ele, ou a
+   * `0`, o email fica como antes; com ele, o total leva por cima o subtotal e a linha do desconto.
+   */
+  descontoPercentagem?: number;
+  descontoCent?: number;
   faltamPrecos: boolean;
   criadoEm: Date;
   levantamentoEm: Date;
