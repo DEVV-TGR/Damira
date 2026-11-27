@@ -2,7 +2,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { CarrosselCapa } from "./CarrosselCapa";
 
-/** A capa alterna as duas fotografias entregues pela Damira. */
+/** A capa alterna duas fotografias: no Natal, o boneco de gengibre e a montra. */
 export function FolhaDeRosto() {
   const t = useTranslations("cartaz.capa");
   const marca = useTranslations("marca");

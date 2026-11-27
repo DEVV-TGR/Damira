@@ -93,6 +93,12 @@ body:has(.cartaz) .barra-vidro {
   object-position: 65% center;
 }
 
+/* O boneco está a 70 % da largura: no telemóvel, ao centro do recorte, e não
+   cortado pela margem direita. */
+.capa__foto--natal {
+  object-position: 70% center;
+}
+
 .capa__foto--alternativa {
   opacity: 0;
   transition: opacity 600ms ease-in-out;

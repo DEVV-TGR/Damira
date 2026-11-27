@@ -18,13 +18,16 @@ export function CarrosselCapa() {
 
   return (
     <>
+      {/* ⚠️ **No Natal, a primeira é o boneco de gengibre** (pedido do Gonçalo,
+          27/11); a fachada (`capa-fachada.webp`) fica em `public/fotos/` para
+          voltar depois das festas. É a que fica com o movimento reduzido. */}
       <Image
-        src="/fotos/capa-fachada.webp"
+        src="/fotos/capa-natal.webp"
         alt=""
         fill
         sizes="100vw"
         preload
-        className="capa__foto"
+        className="capa__foto capa__foto--natal"
       />
       <Image
         src="/fotos/capa-montra.webp"
