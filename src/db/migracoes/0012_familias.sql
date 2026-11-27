@@ -1,4 +1,5 @@
--- As famílias da gerente (pedido de 26/11): o nível de cima da `/encomendas`.
+-- As famílias da gerente (pedido de 26/11): o nível de cima da `/encomendas`,
+-- e as secções (27/11), o de baixo.
 -- Cada categoria passa a viver numa família.
 --
 -- Reescrita à mão depois do `drizzle-kit generate`, como a `0008`: o gerador
@@ -29,6 +30,24 @@ CREATE TABLE "familias" (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX "familias_nome_unico" ON "familias" USING btree (lower("nome_pt")) WHERE not "familias"."arquivada";--> statement-breakpoint
+-- As secções de cada categoria (27/11): o terceiro nível. Nascem vazias — é a
+-- gerente quem as cria (decidido a 27/11) —, por isso nada aqui as enche.
+CREATE TABLE "seccoes" (
+	"id" text PRIMARY KEY NOT NULL,
+	"categoria_id" text NOT NULL,
+	"nome_pt" text NOT NULL,
+	"nome_en" text,
+	"posicao" integer NOT NULL,
+	"arquivada" boolean DEFAULT false NOT NULL,
+	CONSTRAINT "seccoes_categoria_id_unico" UNIQUE("categoria_id","id"),
+	CONSTRAINT "seccoes_id_formato" CHECK ("seccoes"."id" ~ '^[a-z0-9-]+$'),
+	CONSTRAINT "seccoes_nome_pt" CHECK (btrim("seccoes"."nome_pt") <> '' and char_length("seccoes"."nome_pt") <= 60),
+	CONSTRAINT "seccoes_nome_en" CHECK (btrim("seccoes"."nome_en") <> '' and char_length("seccoes"."nome_en") <= 60),
+	CONSTRAINT "seccoes_posicao" CHECK ("seccoes"."posicao" >= 0)
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX "seccoes_nome_unico" ON "seccoes" USING btree ("categoria_id",lower("nome_pt")) WHERE not "seccoes"."arquivada";--> statement-breakpoint
+ALTER TABLE "seccoes" ADD CONSTRAINT "seccoes_categoria_id_categorias_id_fk" FOREIGN KEY ("categoria_id") REFERENCES "public"."categorias"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "categorias" ADD COLUMN "familia_id" text;--> statement-breakpoint
 -- A família de cada categoria: as três das encomendas são cada uma a sua; todas
 -- as outras vêm da carta (a `0008` só cria essas quatro espécies). ⚠️ A mesma
@@ -58,4 +77,8 @@ ALTER TABLE "categorias" ADD CONSTRAINT "categorias_familia_id_familias_id_fk" F
 -- Os nomes repetem-se agora entre famílias (uns «Doces» no Natal e outros na
 -- carta), mas nunca dentro da mesma.
 DROP INDEX "categorias_nome_unico";--> statement-breakpoint
-CREATE UNIQUE INDEX "categorias_nome_unico" ON "categorias" USING btree ("familia_id",lower("nome_pt")) WHERE not "categorias"."arquivada";
+CREATE UNIQUE INDEX "categorias_nome_unico" ON "categorias" USING btree ("familia_id",lower("nome_pt")) WHERE not "categorias"."arquivada";--> statement-breakpoint
+-- A secção de cada produto, nula para todos: nenhum tem secção até a gerente a
+-- dar. A chave é composta para a secção ser sempre da categoria do produto.
+ALTER TABLE "produtos" ADD COLUMN "seccao_id" text;--> statement-breakpoint
+ALTER TABLE "produtos" ADD CONSTRAINT "produtos_seccao_da_categoria" FOREIGN KEY ("categoria_id","seccao_id") REFERENCES "public"."seccoes"("categoria_id","id") ON DELETE no action ON UPDATE no action;

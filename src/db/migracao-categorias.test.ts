@@ -11,7 +11,7 @@ import { criarFonteBd } from "@/lib/dados/bd";
 import { EsquemaProduto, type OrdemEmenta } from "@/lib/dados/tipos";
 import { casaParaLinha, lerCatalogo, produtoParaLinhas } from "./catalogo";
 import { categoriasDoCatalogo } from "./categorias";
-import { casa, categorias, familias, produtos, variantes } from "./esquema";
+import { casa, categorias, familias, produtos, seccoes, variantes } from "./esquema";
 import { importarCatalogo, origemDosJson, type OrigemDoCatalogo } from "./importar-catalogo";
 import { loteEmTransacao } from "./lote";
 import { baseDeTeste, catalogoDeTeste, recusado } from "./teste";
@@ -301,6 +301,47 @@ describe("a 0012 e as famílias (26/11)", () => {
       );
       const [lida] = await db.select().from(categorias).where(eq(categorias.id, "casa-bolos-inteiros"));
       expect(lida.familiaId).toBe("da-ementa");
+    } finally {
+      await cliente.close();
+    }
+  });
+});
+
+describe("as secções (27/11)", () => {
+  it("nascem vazias, e nenhum produto tem secção", async () => {
+    const migrada = await pelaMigracao(ORIGEM);
+    try {
+      expect((await migrada.cliente.query("select count(*)::int as n from seccoes")).rows).toEqual([{ n: 0 }]);
+      expect(
+        (await migrada.cliente.query("select count(*)::int as n from produtos where seccao_id is not null")).rows,
+      ).toEqual([{ n: 0 }]);
+    } finally {
+      await migrada.cliente.close();
+    }
+  });
+
+  it("a secção de um produto é sempre da categoria dele", async () => {
+    const { db, cliente } = await pelaImportacao(ORIGEM);
+    const veganas = { id: "vegan", categoriaId: "casa-doces", nomePt: "Vegan", nomeEn: null, posicao: 0 };
+    try {
+      await db.insert(seccoes).values(veganas);
+      /* Na categoria dele, entra. */
+      await db.update(produtos).set({ seccaoId: "vegan" }).where(eq(produtos.id, "bolo-de-cenoura"));
+      /* Num produto de outra categoria, a chave composta recusa. */
+      const [box] = await db.select({ id: produtos.id }).from(produtos).where(eq(produtos.categoriaId, "boxes"));
+      expect(await recusado(db.update(produtos).set({ seccaoId: "vegan" }).where(eq(produtos.id, box.id)))).toBe(
+        "produtos_seccao_da_categoria",
+      );
+      /* Mudar de categoria sem largar a secção também. */
+      expect(
+        await recusado(db.update(produtos).set({ categoriaId: "boxes" }).where(eq(produtos.id, "bolo-de-cenoura"))),
+      ).toBe("produtos_seccao_da_categoria");
+      /* Uma secção com produtos não se apaga; o nome repete-se só noutra categoria. */
+      expect(await recusado(db.delete(seccoes).where(eq(seccoes.id, "vegan")))).toBe("produtos_seccao_da_categoria");
+      expect(await recusado(db.insert(seccoes).values({ ...veganas, id: "vegan-2", nomePt: "VEGAN" }))).toBe(
+        "seccoes_nome_unico",
+      );
+      await db.insert(seccoes).values({ ...veganas, id: "vegan-3", categoriaId: "casa-salgados" });
     } finally {
       await cliente.close();
     }

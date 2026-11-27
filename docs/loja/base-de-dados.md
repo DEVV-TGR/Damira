@@ -104,6 +104,29 @@ categoria.
   encomendas a do mesmo nome, as da carta a `da-ementa`. Não muda o nome nem a
   posição de nenhuma categoria (as regras do catálogo do `production`).
 
+### `seccoes` — o nível de baixo (pedido de 27/11, migração `0012`)
+
+A `/encomendas` tem três níveis: **Família › Categoria › Secção** («Da carta ›
+Doces › Vegan»). **Cada secção é de uma categoria só**, pela ordem da gerente,
+e uma categoria sem secções mostra os produtos diretamente.
+
+| Coluna | Tipo | Notas |
+|---|---|---|
+| `id` | `text` chave primária, `[a-z0-9-]` | não vai em âncora nenhuma |
+| `categoria_id` | `text` → `categorias` | as secções andam com a categoria quando ela muda de família |
+| `nome_pt`, `nome_en` | `text`, `text` nulo | as mesmas regras das categorias; único dentro da categoria |
+| `posicao` | `integer >= 0` | a ordem dentro da categoria |
+| `arquivada` | `boolean` | |
+
+- **`produtos.seccao_id`**, nulo = sem secção. ⚠️ **A secção de um produto é
+  sempre da categoria dele**, e quem o garante é a chave estrangeira composta
+  `produtos_seccao_da_categoria` (`(categoria_id, seccao_id)` →
+  `seccoes(categoria_id, id)`, sobre o `UNIQUE` `seccoes_categoria_id_unico`).
+  Com `seccao_id` nulo não se confere. Mudar um produto de categoria obriga a
+  largar ou mudar a secção na mesma instrução.
+- **Nascem vazias** (decidido a 27/11): nenhuma migração as tira da carta. É a
+  gerente quem as cria e arruma os produtos.
+
 ### `categorias` — as da gerente (#124, migração `0008`)
 
 Decidido a 15/11: acabam as famílias e a gerente cria, renomeia e ordena as
