@@ -141,6 +141,18 @@ export function criarPainelJson(
     erro: "dados-invalidos",
     campos: ["categoriaId"],
   };
+  /* A secção (27/11) tem de ser da categoria escolhida e estar em uso: a mesma
+     regra do `bd.ts`. */
+  const seccaoEscolhidaInvalida = (categoriaId: string | undefined, seccaoId: string | null | undefined) =>
+    seccaoId !== undefined &&
+    seccaoId !== null &&
+    (categoriaId === undefined ||
+      !estado.arvore.seccoes.some((x) => x.id === seccaoId && x.categoriaId === categoriaId && !x.arquivada));
+  const seccaoEscolhidaRecusada: ResultadoPainel<never> = { ok: false, erro: "dados-invalidos", campos: ["seccaoId"] };
+  /* Sem categoria escolhida, sem secção: uma secção é sempre de uma categoria.
+     Sem secção é a ausência (`undefined`), como o `bd.ts` a lê. */
+  const seccaoGravada = (categoriaId: string | undefined, seccaoId: string | null | undefined) =>
+    categoriaId === undefined ? undefined : (seccaoId ?? undefined);
 
   /* Sem categoria escolhida, a que sai da família, da carta e da categoria — e,
      se ainda não existir, nasce no fim da família dela, como o `categoriaNova`
@@ -194,20 +206,24 @@ export function criarPainelJson(
       if (!lido.success) return invalido(lido.error);
       if (foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
       if (categoriaEscolhidaInvalida(lido.data.categoriaId)) return categoriaEscolhidaRecusada;
+      if (seccaoEscolhidaInvalida(lido.data.categoriaId, lido.data.seccaoId)) return seccaoEscolhidaRecusada;
       const preparado = prepararProduto(lido.data, [...estado.porId.values()], null);
       if (!preparado.ok) return preparado.resultado;
       const id = livre(emId(lido.data.nome.pt) || "produto", (candidato) => estado.porId.has(candidato));
-      const produto = comCategoria(
-        EsquemaProduto.parse({
-          ...lido.data,
-          id,
-          ...preparado.campos,
-          arquivado: false,
-          foraDeVenda: false,
-          esgotadoNoDia: null,
-        }),
-        lido.data.categoriaId,
-      );
+      const produto = {
+        ...comCategoria(
+          EsquemaProduto.parse({
+            ...lido.data,
+            id,
+            ...preparado.campos,
+            arquivado: false,
+            foraDeVenda: false,
+            esgotadoNoDia: null,
+          }),
+          lido.data.categoriaId,
+        ),
+        seccaoId: seccaoGravada(lido.data.categoriaId, lido.data.seccaoId),
+      };
       estado.porId.set(id, produto);
       partilhar(produto);
       return { ok: true, valor: produto };
@@ -220,6 +236,7 @@ export function criarPainelJson(
       if (!lido.success) return invalido(lido.error);
       if (foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
       if (categoriaEscolhidaInvalida(lido.data.categoriaId)) return categoriaEscolhidaRecusada;
+      if (seccaoEscolhidaInvalida(lido.data.categoriaId, lido.data.seccaoId)) return seccaoEscolhidaRecusada;
       const preparado = prepararProduto(lido.data, [...estado.porId.values()], atual);
       if (!preparado.ok) return preparado.resultado;
       /* Sem categoria na entrada, sai outra vez da carta e da categoria: a
@@ -227,7 +244,12 @@ export function criarPainelJson(
       const semCategoria = EsquemaProduto.safeParse({ ...atual, ...lido.data, ...preparado.campos, categoriaId: undefined });
       if (!semCategoria.success) return invalido(semCategoria.error);
       const { categoriaId } = comCategoria(semCategoria.data, lido.data.categoriaId);
-      const resultado = alterar(id, { ...lido.data, ...preparado.campos, categoriaId });
+      const resultado = alterar(id, {
+        ...lido.data,
+        ...preparado.campos,
+        categoriaId,
+        seccaoId: seccaoGravada(lido.data.categoriaId, lido.data.seccaoId),
+      });
       if (resultado.ok) partilhar(resultado.valor);
       return resultado;
     },
@@ -272,10 +294,20 @@ export function criarPainelJson(
       const planeado = planearFamilias(entrada, estado.arvore, usadas);
       if (!planeado.ok) return planeado;
       const { plano } = planeado;
-      /* Os produtos das que saem passam para o destino, arquivados incluídos. */
+      /* Os produtos das secções que saem ficam na categoria, sem secção. */
+      const seccoesQueSaem = new Set(plano.apagarSeccoes);
+      for (const produto of estado.porId.values()) {
+        if (produto.seccaoId && seccoesQueSaem.has(produto.seccaoId)) {
+          estado.porId.set(produto.id, { ...produto, seccaoId: undefined });
+        }
+      }
+      /* Os produtos das que saem passam para o destino, arquivados incluídos, e
+         sem secção. */
       for (const { de, para } of plano.moverProdutos) {
         for (const produto of estado.porId.values()) {
-          if (categoriaDe(produto) === de) estado.porId.set(produto.id, { ...produto, categoriaId: para });
+          if (categoriaDe(produto) === de) {
+            estado.porId.set(produto.id, { ...produto, categoriaId: para, seccaoId: undefined });
+          }
         }
       }
       /* As arquivadas ficam como estavam; as que saem apagam-se ou arquivam-se. */
@@ -291,6 +323,12 @@ export function criarPainelJson(
         categorias: [
           ...plano.categorias,
           ...estado.arvore.categorias.filter((c) => c.arquivada && !tocadas.has(c.id)),
+        ],
+        seccoes: [
+          ...plano.seccoes,
+          ...estado.arvore.seccoes.filter(
+            (x) => x.arquivada && !seccoesQueSaem.has(x.id) && !plano.seccoes.some((n) => n.id === x.id),
+          ),
         ],
       };
       const valor: Familia[] = arvoreDaLoja(estado.arvore);

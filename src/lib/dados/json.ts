@@ -373,6 +373,8 @@ function arvoreDePartida(catalogo: readonly Produto[], ordem: OrdemEmenta): Arvo
       familiaId: c.familiaId,
       arquivada: false,
     })),
+    /* As secções nascem vazias (27/11): é a gerente quem as cria. */
+    seccoes: [],
   };
 }
 

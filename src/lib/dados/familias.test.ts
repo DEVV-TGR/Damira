@@ -20,7 +20,15 @@ const fonte = async (): Promise<FonteDeDados> => {
 
 /** A árvore como o painel a manda: ids das que existem, só o nome das novas. */
 const comoEntrada = (arvore: Familia[]): EntradaFamilias["familias"] =>
-  arvore.map((f) => ({ id: f.id, nome: f.nome.pt, categorias: f.categorias.map((c) => ({ id: c.id, nome: c.nome.pt })) }));
+  arvore.map((f) => ({
+    id: f.id,
+    nome: f.nome.pt,
+    categorias: f.categorias.map((c) => ({
+      id: c.id,
+      nome: c.nome.pt,
+      seccoes: c.seccoes.map((x) => ({ id: x.id, nome: x.nome.pt })),
+    })),
+  }));
 
 const gravar = async (f: FonteDeDados, familias: EntradaFamilias["familias"]) => {
   const resultado = await f.guardarFamilias({ familias }, GERENTE);
@@ -213,5 +221,122 @@ describe("a gerente grava a árvore", () => {
     );
     expect(gravada.find((familia) => familia.id === "festas")?.nome).toEqual({ pt: "Festas", en: null });
     expect(gravada.find((familia) => familia.id === "boxes")?.nome.en).toBe("Boxes for special days");
+  });
+});
+
+describe("as secções (27/11)", () => {
+  /* «Da carta › Doces» com duas secções novas, «Da casa» e «Vegan». */
+  const comSeccoes = async (f: FonteDeDados) => {
+    const arvore = comoEntrada(await f.familias()).map((familia) => ({
+      ...familia,
+      categorias: familia.categorias.map((c) =>
+        c.id === "casa-doces" ? { ...c, seccoes: [{ nome: "Da casa" }, { nome: "Vegan" }] } : c,
+      ),
+    }));
+    return gravar(f, arvore);
+  };
+  const entradaDe = async (f: FonteDeDados, id: string, mudanca: Record<string, unknown>) => {
+    const atual = (await f.produtosDoPainel(GERENTE)).find((p) => p.id === id)!;
+    return EsquemaProduto.omit({ id: true, arquivado: true, foraDeVenda: true, esgotadoNoDia: true }).parse({
+      ...atual,
+      alergenios: atual.alergenios ?? [],
+      ...mudanca,
+    });
+  };
+
+  it("nascem vazias e criam-se dentro da categoria, pela ordem da gerente", async () => {
+    const f = await fonte();
+    expect((await f.familias()).flatMap((familia) => familia.categorias.flatMap((c) => c.seccoes))).toEqual([]);
+    const gravada = await comSeccoes(f);
+    const doces = gravada.flatMap((familia) => familia.categorias).find((c) => c.id === "casa-doces")!;
+    expect(doces.seccoes.map((x) => [x.id, x.nome.pt])).toEqual([
+      ["da-casa", "Da casa"],
+      ["vegan", "Vegan"],
+    ]);
+  });
+
+  it("um produto vai para uma secção da categoria dele, e nunca de outra", async () => {
+    const f = await fonte();
+    await comSeccoes(f);
+    const editado = await f.editarProduto(
+      "bolo-de-cenoura",
+      await entradaDe(f, "bolo-de-cenoura", { categoriaId: "casa-doces", seccaoId: "vegan" }),
+      GERENTE,
+    );
+    expect(editado.ok && editado.valor.seccaoId).toBe("vegan");
+    expect((await f.produtoPorId("bolo-de-cenoura"))?.seccaoId).toBe("vegan");
+
+    /* A secção de outra categoria recusa-se, com o campo certo. */
+    expect(
+      await f.editarProduto(
+        "bolo-de-cenoura",
+        await entradaDe(f, "bolo-de-cenoura", { categoriaId: "boxes", seccaoId: "vegan" }),
+        GERENTE,
+      ),
+    ).toEqual({ ok: false, erro: "dados-invalidos", campos: ["seccaoId"] });
+
+    /* Sem secção, volta a aparecer logo debaixo da categoria. */
+    const sem = await f.editarProduto(
+      "bolo-de-cenoura",
+      await entradaDe(f, "bolo-de-cenoura", { categoriaId: "casa-doces", seccaoId: null }),
+      GERENTE,
+    );
+    expect(sem.ok && sem.valor.seccaoId).toBeUndefined();
+  });
+
+  it("apagar uma secção deixa os produtos na categoria, e uma secção não muda de categoria", async () => {
+    const f = await fonte();
+    await comSeccoes(f);
+    await f.editarProduto(
+      "bolo-de-cenoura",
+      await entradaDe(f, "bolo-de-cenoura", { categoriaId: "casa-doces", seccaoId: "vegan" }),
+      GERENTE,
+    );
+    const semVegan = comoEntrada(await f.familias()).map((familia) => ({
+      ...familia,
+      categorias: familia.categorias.map((c) =>
+        c.id === "casa-doces" ? { ...c, seccoes: (c.seccoes ?? []).filter((x) => x.id !== "vegan") } : c,
+      ),
+    }));
+    expect((await f.guardarFamilias({ familias: semVegan }, GERENTE)).ok).toBe(true);
+    const produto = await f.produtoPorId("bolo-de-cenoura");
+    expect(produto?.categoriaId).toBe("casa-doces");
+    expect(produto?.seccaoId).toBeUndefined();
+
+    /* A «Da casa» posta noutra categoria recusa-se. */
+    const trocada = comoEntrada(await f.familias()).map((familia) => ({
+      ...familia,
+      categorias: familia.categorias.map((c) =>
+        c.id === "casa-doces"
+          ? { ...c, seccoes: [] }
+          : c.id === "casa-salgados"
+            ? { ...c, seccoes: [{ id: "da-casa", nome: "Da casa" }] }
+            : c,
+      ),
+    }));
+    expect(await f.guardarFamilias({ familias: trocada }, GERENTE)).toEqual({
+      ok: false,
+      erro: "dados-invalidos",
+      campos: ["seccoes"],
+    });
+  });
+
+  it("apagar a categoria com destino leva os produtos sem secção", async () => {
+    const f = await fonte();
+    await comSeccoes(f);
+    await f.editarProduto(
+      "bolo-de-cenoura",
+      await entradaDe(f, "bolo-de-cenoura", { categoriaId: "casa-doces", seccaoId: "vegan" }),
+      GERENTE,
+    );
+    const semDoces = comoEntrada(await f.familias()).map((familia) => ({
+      ...familia,
+      categorias: familia.categorias.filter((c) => c.id !== "casa-doces"),
+    }));
+    const gravada = await f.guardarFamilias({ familias: semDoces, destinos: { "casa-doces": "casa-salgados" } }, GERENTE);
+    expect(gravada.ok).toBe(true);
+    const produto = await f.produtoPorId("bolo-de-cenoura");
+    expect(produto?.categoriaId).toBe("casa-salgados");
+    expect(produto?.seccaoId).toBeUndefined();
   });
 });

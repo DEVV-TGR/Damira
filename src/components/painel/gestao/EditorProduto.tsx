@@ -6,6 +6,7 @@ import { arquivar, gravarProduto } from "@/app/painel/acoes-gestao";
 import type { EntradaProduto, Familia, OrdemEmenta, Produto } from "@/lib/dados/tipos";
 import { ALERGENIOS_UE, entradaDoProduto, paraCent } from "@/lib/painel";
 import { Ajuda, Rotulo } from "../Ajuda";
+import { ExemploLoja } from "../ExemploLoja";
 import { BOTAO, BOTAO_PRINCIPAL, BOTAO_SECUNDARIO, MENSAGENS } from "../balcao/comum";
 import { usePainel } from "../PainelAberto";
 import { FotosProduto } from "./FotosProduto";
@@ -84,10 +85,11 @@ const separadoresDe = (
 const CAMPOS: Record<string, { nome: string; em: Separador }> = {
   nome: { nome: "o nome", em: "geral" },
   descricao: { nome: "a descrição", em: "geral" },
-  carta: { nome: "a secção", em: "geral" },
-  categoria: { nome: "a categoria", em: "geral" },
-  categoriaId: { nome: "onde aparece na loja", em: "geral" },
-  familia: { nome: "o cartão", em: "geral" },
+  carta: { nome: "a carta do impresso", em: "geral" },
+  categoria: { nome: "a categoria do impresso", em: "geral" },
+  categoriaId: { nome: "a categoria", em: "geral" },
+  seccaoId: { nome: "a secção", em: "geral" },
+  familia: { nome: "o tipo de cartão", em: "geral" },
   variantes: { nome: "os tamanhos, os grupos e os preços", em: "precos" },
   tipo: { nome: "o tipo de produto", em: "geral" },
   variancias: { nome: "as variâncias", em: "variancias" },
@@ -101,12 +103,13 @@ const CAMPOS: Record<string, { nome: string; em: Separador }> = {
   limite: { nome: "o limite de quantidade", em: "encomenda" },
 };
 
-const FAMILIAS: Record<EntradaProduto["familia"], string> = {
-  ementa: "Carta",
+/* O «Tipo de cartão»: a `familia` do produto, com a `origem` que lhe corresponde. */
+const CARTOES: Record<EntradaProduto["familia"], string> = {
+  ementa: "Artigo da carta",
   festa: "Kit de festa",
   bolo: "Kit de bolo",
   box: "Box",
-  medida: "Bolo por medida",
+  medida: "Bolo personalizado",
 };
 
 const NOVO: EntradaProduto = {
@@ -266,6 +269,8 @@ export function EditorProduto({
   const gravar = () =>
     iniciar(async () => {
       setErro(null);
+      /* Sem categoria, o produto não tinha sítio na loja: escolhe-se antes de gravar. */
+      if (!e.categoriaId) return falhar("Escolha a categoria onde o produto aparece na loja.", ["geral"]);
       /* Os preços escrevem-se em euros e guardam-se em cêntimos inteiros (regra 2). */
       const lidas = variantes.map((v) => ({ v, cent: v.sobOrcamento ? null : paraCent(v.preco) }));
       if (lidas.some(({ v, cent }) => !v.sobOrcamento && cent === null)) {
@@ -354,10 +359,15 @@ export function EditorProduto({
     .filter((v) => v.ativa)
     .map((v) => ({ nome: v.rotulo, cent: v.sobOrcamento ? null : paraCent(v.preco) }));
 
-  const subtitulo =
-    e.origem === "ementa"
-      ? ["Carta", e.carta, e.categoria].filter(Boolean).join(" · ")
-      : `Encomendas · ${FAMILIAS[e.familia]}`;
+  /* Onde aparece, como a gerente o arrumou: «Da carta · Doces · Vegan». */
+  const familiaEscolhida = familias.find((f) => f.categorias.some((c) => c.id === e.categoriaId));
+  const categoriaEscolhida = familiaEscolhida?.categorias.find((c) => c.id === e.categoriaId);
+  const seccoesDaCategoria = categoriaEscolhida?.seccoes ?? [];
+  const subtitulo = categoriaEscolhida
+    ? [familiaEscolhida?.nome.pt, categoriaEscolhida.nome.pt, seccoesDaCategoria.find((x) => x.id === e.seccaoId)?.nome.pt]
+        .filter(Boolean)
+        .join(" · ")
+    : `${CARTOES[e.familia]} · sem categoria`;
   const estado = produto?.arquivado
     ? "Arquivado"
     : e.aVendaOnline && !produto?.foraDeVenda
@@ -451,31 +461,50 @@ export function EditorProduto({
                 />
               </div>
               <div>
+                {/* ⚠️ **Um campo só para o que eram dois** (27/11): «Como se vende»
+                    (a `origem`) e «Cartão» (a `familia`). Os dois juntos decidem o
+                    cartão e a página; onde o produto aparece é a Categoria, mais
+                    abaixo. */}
                 <Rotulo
-                  htmlFor={`${ids}-origem`}
+                  htmlFor={`${ids}-cartao`}
                   ajuda={
                     <>
-                      <strong>Carta:</strong> o que se pede ao balcão, encomendado com um mínimo (ex.: à dúzia).{" "}
-                      <strong>Encomendas:</strong> kits, bolos e boxes, com data e antecedência.
+                      O que o cartão e a página do produto fazem. <strong>Artigo da carta:</strong> tem o botão «+» e
+                      encomenda-se com um mínimo (ex.: à dúzia). <strong>Kit de festa:</strong> pergunta para quantas
+                      pessoas. <strong>Bolo personalizado:</strong> abre o configurador. Não decide onde aparece: isso é a
+                      Categoria.
+                      <ExemploLoja realce="cartao" />
                     </>
                   }
                 >
-                  Como se vende
+                  Tipo de cartão
                 </Rotulo>
                 <select
-                  id={`${ids}-origem`}
-                  value={e.origem}
-                  onChange={(ev) =>
+                  id={`${ids}-cartao`}
+                  value={e.familia}
+                  onChange={(ev) => {
+                    const familia = ev.target.value as EntradaProduto["familia"];
                     mudar(
-                      ev.target.value === "ementa"
-                        ? { origem: "ementa", familia: "ementa" }
-                        : { origem: "encomendas", familia: "bolo", carta: null, categoria: null, subcategoria: null },
-                    )
-                  }
+                      familia === "ementa"
+                        ? /* A carta e a categoria do impresso são obrigatórias num
+                             artigo da carta; começam nas primeiras, e mudam-se em
+                             «Do impresso». Não decidem nada à vista. */
+                          {
+                            origem: "ementa",
+                            familia,
+                            carta: e.carta ?? ordem.cartas[0] ?? null,
+                            categoria: e.categoria ?? ordem.categorias[0] ?? null,
+                          }
+                        : { origem: "encomendas", familia, carta: null, categoria: null, subcategoria: null },
+                    );
+                  }}
                   className={campo}
                 >
-                  <option value="ementa">Carta</option>
-                  <option value="encomendas">Encomendas</option>
+                  {(["ementa", "festa", "bolo", "box", "medida"] as const).map((f) => (
+                    <option key={f} value={f}>
+                      {CARTOES[f]}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -516,103 +545,134 @@ export function EditorProduto({
               )}
             </fieldset>
 
-            {e.origem === "ementa" ? (
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div>
-                  <Rotulo htmlFor={`${ids}-carta`} ajuda="A carta onde o produto aparece, como no impresso da casa.">
-                    Secção
-                  </Rotulo>
-                  <select id={`${ids}-carta`} value={e.carta ?? ""} onChange={(ev) => mudar({ carta: ev.target.value || null })} className={campo}>
-                    <option value="">—</option>
-                    {ordem.cartas.map((c) => (
-                      <option key={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <Rotulo htmlFor={`${ids}-categoria`} ajuda="A categoria do impresso. Onde o produto aparece na loja escolhe-se em «Onde aparece na loja».">
-                    Categoria
-                  </Rotulo>
-                  <select
-                    id={`${ids}-categoria`}
-                    value={e.categoria ?? ""}
-                    onChange={(ev) => mudar({ categoria: ev.target.value || null })}
-                    className={campo}
-                  >
-                    <option value="">—</option>
-                    {ordem.categorias.map((c) => (
-                      <option key={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <Rotulo htmlFor={`${ids}-grupo`} opcional ajuda="Só nas bebidas: quentes, frias, sumos.">
-                    Grupo
-                  </Rotulo>
-                  <select
-                    id={`${ids}-grupo`}
-                    value={e.subcategoria ?? ""}
-                    onChange={(ev) => mudar({ subcategoria: ev.target.value || null })}
-                    className={campo}
-                  >
-                    <option value="">—</option>
-                    {ordem.subcategorias.map((c) => (
-                      <option key={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            ) : (
-              <div className="sm:max-w-xs">
-                <Rotulo htmlFor={`${ids}-familia`} ajuda="Decide o cartão e a página do produto: pessoas num kit de festa, o configurador no bolo por medida. Onde aparece na loja escolhe-se em «Onde aparece na loja».">
-                  Cartão
+            {/* ⚠️ **Onde o produto aparece na loja: Categoria e Secção, e mais
+                nada** (27/11). Antes eram cinco campos (Como se vende, Secção,
+                Categoria, Grupo, Onde aparece). As famílias, as categorias e as
+                secções criam-se e ordenam-se em «Famílias e categorias». */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Rotulo
+                  htmlFor={`${ids}-onde`}
+                  ajuda={
+                    <>
+                      A família e a categoria onde o produto aparece nas encomendas. Criam-se e ordenam-se em «Famílias e
+                      categorias».
+                      <ExemploLoja realce="categoria" />
+                    </>
+                  }
+                >
+                  Categoria
                 </Rotulo>
                 <select
-                  id={`${ids}-familia`}
-                  value={e.familia}
-                  onChange={(ev) => mudar({ familia: ev.target.value as EntradaProduto["familia"] })}
+                  id={`${ids}-onde`}
+                  value={e.categoriaId ?? ""}
+                  onChange={(ev) => mudar({ categoriaId: ev.target.value || undefined, seccaoId: null })}
                   className={campo}
                 >
-                  {(["festa", "bolo", "box", "medida"] as const).map((f) => (
-                    <option key={f} value={f}>
-                      {FAMILIAS[f]}
+                  {/* Só para um produto que ainda não tem: os de antes do painel
+                      novo vêm todos com a sua. */}
+                  {!e.categoriaId && <option value="">Escolha…</option>}
+                  {familias
+                    .filter((f) => f.categorias.length > 0)
+                    .map((f) => (
+                      <optgroup key={f.id} label={f.nome.pt}>
+                        {f.categorias.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {f.nome.pt} · {c.nome.pt}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                </select>
+              </div>
+              <div>
+                <Rotulo
+                  htmlFor={`${ids}-seccao`}
+                  opcional
+                  ajuda={
+                    <>
+                      Um título dentro da categoria, para a dividir (ex.: em «Doces», «Da casa» e «Vegan»). Só aparecem as
+                      secções da categoria escolhida.
+                      <ExemploLoja realce="seccao" />
+                    </>
+                  }
+                >
+                  Secção
+                </Rotulo>
+                <select
+                  id={`${ids}-seccao`}
+                  value={e.seccaoId ?? ""}
+                  disabled={seccoesDaCategoria.length === 0}
+                  onChange={(ev) => mudar({ seccaoId: ev.target.value || null })}
+                  className={`${campo} disabled:opacity-60`}
+                >
+                  <option value="">{seccoesDaCategoria.length === 0 ? "Esta categoria não tem secções" : "Sem secção"}</option>
+                  {seccoesDaCategoria.map((x) => (
+                    <option key={x.id} value={x.id}>
+                      {x.nome.pt}
                     </option>
                   ))}
                 </select>
               </div>
-            )}
-
-            {/* ⚠️ **É isto que decide onde o produto aparece na loja** (26/11).
-                A carta, a categoria e o cartão de cima ficam para o que já
-                faziam (o cartão, a página, o mínimo); sem nada escolhido aqui,
-                o produto vai para a categoria que sai deles, como antes. */}
-            <div className="sm:max-w-md">
-              <Rotulo
-                htmlFor={`${ids}-onde`}
-                ajuda="A família e a categoria onde o produto aparece nas encomendas. As famílias e as categorias criam-se e ordenam-se em «Famílias e categorias»."
-              >
-                Onde aparece na loja
-              </Rotulo>
-              <select
-                id={`${ids}-onde`}
-                value={e.categoriaId ?? ""}
-                onChange={(ev) => mudar({ categoriaId: ev.target.value || undefined })}
-                className={campo}
-              >
-                <option value="">Automático, pela carta e categoria</option>
-                {familias
-                  .filter((f) => f.categorias.length > 0)
-                  .map((f) => (
-                    <optgroup key={f.id} label={f.nome.pt}>
-                      {f.categorias.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {f.nome.pt} · {c.nome.pt}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))}
-              </select>
             </div>
+
+            {/* A carta e a categoria do impresso: obrigatórias num artigo da carta
+                (o contrato e a base de dados pedem-nas), mas já não decidem onde
+                ele aparece. Ficam fechadas, para não parecerem outra escolha de
+                sítio — que era a confusão de ter cinco campos. */}
+            {e.origem === "ementa" && (
+              <details className="group rounded-xl border border-tinta/10 px-3">
+                <summary className="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-semibold text-tinta-suave">
+                  <span aria-hidden className="transition-transform group-open:rotate-90">
+                    ▸
+                  </span>
+                  Do impresso <span className="font-normal">· não muda onde aparece no site</span>
+                </summary>
+                <div className="grid gap-4 pb-3 sm:grid-cols-3">
+                  <div>
+                    <Rotulo htmlFor={`${ids}-carta`} ajuda="A carta do impresso da casa (casa, vegan…). Só para arquivo.">
+                      Carta
+                    </Rotulo>
+                    <select id={`${ids}-carta`} value={e.carta ?? ""} onChange={(ev) => mudar({ carta: ev.target.value || null })} className={campo}>
+                      {ordem.cartas.map((c) => (
+                        <option key={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Rotulo htmlFor={`${ids}-categoria`} ajuda="A categoria do impresso (doces, salgados…). Só para arquivo.">
+                      Categoria do impresso
+                    </Rotulo>
+                    <select
+                      id={`${ids}-categoria`}
+                      value={e.categoria ?? ""}
+                      onChange={(ev) => mudar({ categoria: ev.target.value || null })}
+                      className={campo}
+                    >
+                      {ordem.categorias.map((c) => (
+                        <option key={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Rotulo htmlFor={`${ids}-grupo`} opcional ajuda="Só nas bebidas do impresso: quentes, frias, sumos.">
+                      Grupo
+                    </Rotulo>
+                    <select
+                      id={`${ids}-grupo`}
+                      value={e.subcategoria ?? ""}
+                      onChange={(ev) => mudar({ subcategoria: ev.target.value || null })}
+                      className={campo}
+                    >
+                      <option value="">—</option>
+                      {ordem.subcategorias.map((c) => (
+                        <option key={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </details>
+            )}
 
             <div>
               <Rotulo htmlFor={`${ids}-descricao`} opcional ajuda="Uma ou duas frases: o que leva e para quantos. Aparece por baixo do nome.">

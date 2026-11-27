@@ -317,13 +317,14 @@ lançamento, e é o que nos diz quando podemos fazer os testes reais.
 pedidos antigos continuam a apontar para ele. Um produto apagado a sério deixava
 pedidos pagos a referir uma coisa que não existe.
 
-### Famílias e categorias
+### Famílias, categorias e secções
 
 Pedido da casa a 26/11, com a **família «Natal»** como primeira nova — que **a
 gerente cria aqui** (decidido a 27/11: nenhuma migração escreve uma família
 vazia). Substitui a
 «Ordem das categorias» (#87), que só ordenava as da carta. Em **Produtos ›
-Famílias e categorias**, a gerente arruma a `/encomendas` inteira num sítio só:
+Famílias, categorias e secções**, a gerente arruma a `/encomendas` inteira num
+sítio só, em três níveis — **Família › Categoria › Secção** (decidido a 27/11):
 
 - **As famílias, pela ordem em que aparecem na loja**: Kit Festas, Bolo e mesa
   decorada, Boxes para dias especiais, Da carta — e as que ela criar, o Natal
@@ -331,10 +332,20 @@ Famílias e categorias**, a gerente arruma a `/encomendas` inteira num sítio s�
 - **Dentro de cada família, as categorias, pela ordem dela.** Cria categorias
   novas, muda-lhes o nome e **passa uma categoria para outra família** («Passar
   para»): os produtos vão com ela.
-- **Cada produto vive numa categoria só** (decidido a 26/11). Escolhe-se no
-  editor, em **«Onde aparece na loja»**. «Automático» é o de antes: a categoria
-  que sai da carta e da categoria do impresso (`categoriaDoProduto`), para os
-  produtos que ninguém mexeu.
+- **Dentro de cada categoria, as secções**, opcionais e pela ordem dela («Doces ›
+  Da casa / Vegan»). **Cada secção é de uma categoria só**. Nascem vazias: é ela
+  quem as cria (27/11). Apagar uma secção com produtos não pede destino: ficam
+  na categoria, sem secção, e continuam à vista.
+- **Cada produto vive numa categoria só** (decidido a 26/11), e numa secção dela
+  ou em nenhuma. **No editor são dois campos, Categoria e Secção**, e mais nada
+  sobre o sítio (27/11): antes eram cinco (Como se vende, Secção, Categoria,
+  Grupo, Onde aparece). Um produto sem categoria não grava. A carta, a
+  categoria e o grupo do impresso ficam fechados em «Do impresso · não muda
+  onde aparece no site»: o contrato pede-os num artigo da carta, mas já não
+  decidem nada à vista.
+- **As ajudas «?» mostram como aparece no site** (`ExemploLoja`): um desenho
+  pequeno da loja com o nível de que se fala marcado — família, categoria,
+  secção ou cartão. ⚠️ Se a loja mudar de forma, o desenho muda com ela.
 - **Dentro de cada categoria, os produtos ficam por ordem alfabética**, e isso
   não se escolhe: ninguém ordena noventa e cinco artigos à mão num telemóvel.
 - ⚠️ **Uma família ou categoria sem produtos não aparece no site** — nem secção,
@@ -365,9 +376,10 @@ Famílias e categorias**, a gerente arruma a `/encomendas` inteira num sítio s�
   artigos ao quilo e à unidade, e ficam sem ela: antes mostravam a do primeiro
   artigo, que estava errada para metade.
 - ⚠️ **Não é a `familia` do produto.** Essa decide o cartão e a página — pessoas
-  num kit de festa, o configurador no bolo por medida — e no editor chama-se
-  agora **«Cartão»**; na lista de produtos, o filtro dela chama-se «Todos os
-  tipos». Um bolo de Natal pode ser um «Kit de bolo» na família «Natal».
+  num kit de festa, o configurador no bolo por medida — e no editor junta-se à
+  `origem` num campo só, **«Tipo de cartão»** (Artigo da carta, Kit de festa,
+  Kit de bolo, Box, Bolo personalizado); na lista de produtos, o filtro dela
+  chama-se «Todos os tipos». Um bolo de Natal pode ser um «Kit de bolo» na família «Natal».
 - **Alfabética é a portuguesa** (`localeCompare` com `pt`, em
   `src/lib/ordenar.ts`): «Éclair» vem antes de «Tosta», e «Pão» antes de
   «pastel». Ordena-se pelo nome português também na página inglesa.

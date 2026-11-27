@@ -101,9 +101,16 @@ export function Produtos({
   /* Por ordem alfabética, como nas encomendas (decidido a 25/11): um produto
      novo aparece logo no sítio dele, aqui e no site. */
   const lista = porOrdemAlfabetica(filtrarProdutos(produtos, { procura, vista, familia }), "pt");
+  /* «Da carta · Doces · Vegan»: onde a gerente o arrumou (famílias, categorias e secções). */
   const ondeAparece = new Map(
-    familias.flatMap((f) => f.categorias.map((c) => [c.id, `${f.nome.pt} · ${c.nome.pt}`] as const)),
+    familias.flatMap((f) => f.categorias.map((c) => [c.id, { rotulo: `${f.nome.pt} · ${c.nome.pt}`, seccoes: c.seccoes }] as const)),
   );
+  const ondeEsta = (p: Produto) => {
+    const sitio = ondeAparece.get(p.categoriaId ?? "");
+    if (!sitio) return undefined;
+    const seccao = sitio.seccoes.find((x) => x.id === p.seccaoId);
+    return seccao ? `${sitio.rotulo} · ${seccao.nome.pt}` : sitio.rotulo;
+  };
 
   const ficha =
     aEditar !== null ? (
@@ -216,7 +223,7 @@ export function Produtos({
                     <strong className="block">{p.nome.pt}</strong>
                     <span className="block text-sm text-tinta-suave">
                       {/* Onde aparece na loja (26/11): é o que a gerente arruma. */}
-                      {ondeAparece.get(p.categoriaId ?? "") ??
+                      {ondeEsta(p) ??
                         (p.familia === "ementa" ? `${p.carta} · ${p.categoria}` : FAMILIAS.find((f) => f.id === p.familia)?.rotulo)}{" "}
                       ·{" "}
                       {precoDe(p)}

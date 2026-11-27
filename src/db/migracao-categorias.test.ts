@@ -52,8 +52,8 @@ const ORIGEM = await origemDosJson();
  */
 async function inserirComoAntes(cliente: PGlite, tabela: Table, linha: Record<string, unknown>) {
   const colunas = getTableColumns(tabela);
-  /* As da `0008` e as da `0011` (#88), que a base parada na `0007` ainda não tem. */
-  const pares = Object.entries(linha).filter(([chave]) => !["categoriaId", "tipo", "opcoes", "ativa"].includes(chave));
+  /* As da `0008`, da `0011` (#88) e da `0012`, que a base parada na `0007` ainda não tem. */
+  const pares = Object.entries(linha).filter(([chave]) => !["categoriaId", "seccaoId", "tipo", "opcoes", "ativa"].includes(chave));
   const nomes = pares.map(([chave]) => `"${colunas[chave].name}"`).join(", ");
   const marcas = pares.map((_, i) => `$${i + 1}`).join(", ");
   /* Os `jsonb` vão em texto: é como o Postgres os recebe. */

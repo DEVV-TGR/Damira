@@ -17,14 +17,14 @@ const produto = (id: string, categoriaId: string): Produto => ({
 const texto = (pt: string) => ({ pt, en: null });
 
 const ARVORE: Familia[] = [
-  { id: "natal", nome: texto("Natal"), categorias: [{ id: "bolos-de-natal", nome: texto("Bolos de Natal"), familiaId: "natal" }] },
-  { id: "vazia", nome: texto("Vazia"), categorias: [{ id: "sem-nada", nome: texto("Sem nada"), familiaId: "vazia" }] },
+  { id: "natal", nome: texto("Natal"), categorias: [{ id: "bolos-de-natal", nome: texto("Bolos de Natal"), familiaId: "natal", seccoes: [] }] },
+  { id: "vazia", nome: texto("Vazia"), categorias: [{ id: "sem-nada", nome: texto("Sem nada"), familiaId: "vazia", seccoes: [] }] },
   {
     id: "festas",
     nome: texto("Kit Festas"),
     categorias: [
-      { id: "festas", nome: texto("Kit Festas"), familiaId: "festas" },
-      { id: "festas-vazia", nome: texto("Vazia"), familiaId: "festas" },
+      { id: "festas", nome: texto("Kit Festas"), familiaId: "festas", seccoes: [] },
+      { id: "festas-vazia", nome: texto("Vazia"), familiaId: "festas", seccoes: [] },
     ],
   },
 ];

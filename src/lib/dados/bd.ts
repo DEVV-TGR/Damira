@@ -14,7 +14,7 @@ import {
   type DadosDaCasa,
 } from "@/db/catalogo";
 import { OPCOES_BOLO } from "@/data/bolos-personalizados";
-import { casa as tabelaCasa, categorias, familias as tabelaFamilias, produtos, variantes } from "@/db/esquema";
+import { casa as tabelaCasa, categorias, familias as tabelaFamilias, produtos, seccoes, variantes } from "@/db/esquema";
 import { erroDoPostgres, violouChave } from "@/db/erros";
 import { arvoreDaLoja, planearFamilias, type ArvoreGravada } from "./familias";
 import type { ExecutarLote } from "@/db/lote";
@@ -139,7 +139,11 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
 
   /* A árvore como está gravada, arquivadas incluídas: é o que a gravação confere. */
   const lerArvore = async (): Promise<ArvoreGravada> => {
-    const [fs, cs] = await Promise.all([db.select().from(tabelaFamilias), db.select().from(categorias)]);
+    const [fs, cs, ss] = await Promise.all([
+      db.select().from(tabelaFamilias),
+      db.select().from(categorias),
+      db.select().from(seccoes),
+    ]);
     const nome = (l: { nomePt: string; nomeEn: string | null }) => ({ pt: l.nomePt, en: l.nomeEn });
     return {
       familias: fs.map((f) => ({ id: f.id, nome: nome(f), posicao: f.posicao, arquivada: f.arquivada })),
@@ -149,6 +153,13 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
         posicao: c.posicao,
         arquivada: c.arquivada,
         familiaId: c.familiaId,
+      })),
+      seccoes: ss.map((x) => ({
+        id: x.id,
+        nome: nome(x),
+        posicao: x.posicao,
+        arquivada: x.arquivada,
+        categoriaId: x.categoriaId,
       })),
     };
   };
@@ -169,6 +180,19 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
     erro: "dados-invalidos",
     campos: ["categoriaId"],
   };
+  /* A secção (27/11) tem de ser da categoria escolhida e estar em uso. A chave
+     composta recusava a de outra categoria, mas com um erro de base de dados em
+     vez do campo certo — e uma arquivada passava. */
+  const seccaoEscolhidaInvalida = async (categoriaId: string | undefined, seccaoId: string | null | undefined) => {
+    if (seccaoId === undefined || seccaoId === null) return false;
+    if (categoriaId === undefined) return true;
+    const [linha] = await db
+      .select({ id: seccoes.id })
+      .from(seccoes)
+      .where(and(eq(seccoes.id, seccaoId), eq(seccoes.categoriaId, categoriaId), eq(seccoes.arquivada, false)));
+    return !linha;
+  };
+  const seccaoEscolhidaRecusada: ResultadoPainel<never> = { ok: false, erro: "dados-invalidos", campos: ["seccaoId"] };
 
   return {
     async listarProdutos(filtro = {}) {
@@ -240,6 +264,7 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
       if (!lido.success) return invalido(lido.error);
       if (await foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
       if (await categoriaEscolhidaInvalida(lido.data.categoriaId)) return categoriaEscolhidaRecusada;
+      if (await seccaoEscolhidaInvalida(lido.data.categoriaId, lido.data.seccaoId)) return seccaoEscolhidaRecusada;
       const base = emId(lido.data.nome.pt) || "produto";
 
       /* O id é o primeiro livre de `base`, `base-2`… Entre ler os ocupados e
@@ -291,6 +316,7 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
       if (!lido.success) return invalido(lido.error);
       if (await foraDaOrdem(lido.data.categoria)) return categoriaDesconhecida;
       if (await categoriaEscolhidaInvalida(lido.data.categoriaId)) return categoriaEscolhidaRecusada;
+      if (await seccaoEscolhidaInvalida(lido.data.categoriaId, lido.data.seccaoId)) return seccaoEscolhidaRecusada;
       /* As variantes, as peças partilhadas e o que os grupos levam conferem-se
          contra o catálogo inteiro: a mesma regra do `json-painel.ts`. */
       const preparado = prepararProduto(lido.data, await lerProdutos(db), atual);
@@ -303,6 +329,7 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
         ...atual,
         ...lido.data,
         categoriaId: lido.data.categoriaId,
+        seccaoId: lido.data.seccaoId ?? null,
         ...preparado.campos,
       });
       const linhas = produtoParaLinhas(produto, 0);
@@ -413,11 +440,30 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
                   }),
               ]
             : []),
+          ...(plano.seccoes.length > 0
+            ? [
+                d
+                  .insert(seccoes)
+                  .values(plano.seccoes.map((x) => ({ ...linhaFamilia(x), categoriaId: x.categoriaId })))
+                  .onConflictDoUpdate({
+                    target: seccoes.id,
+                    set: substituir({ nomePt: "nome_pt", nomeEn: "nome_en", posicao: "posicao" }),
+                  }),
+              ]
+            : []),
+          /* Os produtos das secções que saem ficam na categoria, sem secção. */
+          ...(plano.apagarSeccoes.length > 0
+            ? [d.update(produtos).set({ seccaoId: null }).where(inArray(produtos.seccaoId, plano.apagarSeccoes))]
+            : []),
           /* Os produtos das que saem passam para o destino **antes** de elas
-             saírem, arquivados incluídos: senão a chave estrangeira recusava. */
+             saírem, arquivados incluídos, e sem secção — a do destino é outra
+             conversa: senão a chave estrangeira recusava. */
           ...plano.moverProdutos.map(({ de, para }) =>
-            d.update(produtos).set({ categoriaId: para }).where(eq(produtos.categoriaId, de)),
+            d.update(produtos).set({ categoriaId: para, seccaoId: null }).where(eq(produtos.categoriaId, de)),
           ),
+          ...(plano.apagarSeccoes.length > 0
+            ? [d.delete(seccoes).where(inArray(seccoes.id, plano.apagarSeccoes))]
+            : []),
           ...(plano.apagarCategorias.length > 0
             ? [d.delete(categorias).where(inArray(categorias.id, plano.apagarCategorias))]
             : []),
@@ -440,7 +486,12 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
            gerente tenta outra vez. */
         const { code, constraint } = erroDoPostgres(erro);
         if (code === "23505" || code === "23503") {
-          return { ok: false, erro: "dados-invalidos", campos: [constraint?.startsWith("familias") ? "familias" : "categorias"] };
+          const campo = constraint?.startsWith("familias")
+            ? "familias"
+            : constraint?.startsWith("seccoes")
+              ? "seccoes"
+              : "categorias";
+          return { ok: false, erro: "dados-invalidos", campos: [campo] };
         }
         throw erro;
       }

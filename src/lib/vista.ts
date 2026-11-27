@@ -1,5 +1,5 @@
 import type { Locale } from "@/i18n/routing";
-import type { Categoria, Extra, Familia, Opcao, OrdemEmenta, Produto, Variancia, Variante } from "@/lib/dados/tipos";
+import type { Categoria, Extra, Familia, Opcao, OrdemEmenta, Produto, Seccao, Variancia, Variante } from "@/lib/dados/tipos";
 import type { TipoPedido } from "@/lib/pedidos";
 
 /**
@@ -97,6 +97,25 @@ export type FamiliaComProdutos = { familia: Familia; categorias: CategoriaComPro
  * língua da página. Um produto numa categoria que não está na árvore (uma
  * arquivada) não aparece — e a gravação já recusa apagar uma com produtos.
  */
+/**
+ * Os produtos de uma categoria pelas secções dela (27/11), pela ordem da
+ * gerente: **primeiro os que não têm secção**, sem título, e depois cada secção
+ * com os seus. Uma secção vazia não aparece; uma que não é desta categoria (não
+ * devia acontecer: a base de dados recusa-a) conta como sem secção, para o
+ * produto nunca desaparecer.
+ */
+export function porSeccao(
+  categoria: Categoria,
+  produtos: readonly Produto[],
+): { seccao: Seccao | null; produtos: Produto[] }[] {
+  const daCategoria = new Set(categoria.seccoes.map((x) => x.id));
+  const semSeccao = produtos.filter((p) => !p.seccaoId || !daCategoria.has(p.seccaoId));
+  return [
+    { seccao: null, produtos: semSeccao },
+    ...categoria.seccoes.map((seccao) => ({ seccao, produtos: produtos.filter((p) => p.seccaoId === seccao.id) })),
+  ].filter((grupo) => grupo.produtos.length > 0);
+}
+
 export function familiasComProdutos(arvore: readonly Familia[], produtos: readonly Produto[]): FamiliaComProdutos[] {
   const porCategoria = new Map<string, Produto[]>();
   for (const produto of produtos) {

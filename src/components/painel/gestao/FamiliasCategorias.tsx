@@ -6,6 +6,8 @@ import { gravarFamilias } from "@/app/painel/acoes-gestao";
 import type { EntradaFamilias, Familia, Produto } from "@/lib/dados/tipos";
 import { moverNaLista } from "@/lib/ordenar";
 import { BOTAO_PRINCIPAL, BOTAO_SECUNDARIO, MENSAGENS } from "../balcao/comum";
+import { Ajuda } from "../Ajuda";
+import { ExemploLoja } from "../ExemploLoja";
 
 /**
  * # Famílias e categorias (pedido de 26/11)
@@ -34,7 +36,8 @@ import { BOTAO_PRINCIPAL, BOTAO_SECUNDARIO, MENSAGENS } from "../balcao/comum";
  *   hoje só se vê no site quando tiver o primeiro produto. Diz-se ao lado.
  */
 
-type CategoriaRascunho = { chave: string; id?: string; nome: string };
+type SeccaoRascunho = { chave: string; id?: string; nome: string };
+type CategoriaRascunho = { chave: string; id?: string; nome: string; seccoes: SeccaoRascunho[] };
 type FamiliaRascunho = { chave: string; id?: string; nome: string; categorias: CategoriaRascunho[] };
 
 const paraRascunho = (familias: Familia[]): FamiliaRascunho[] =>
@@ -42,7 +45,12 @@ const paraRascunho = (familias: Familia[]): FamiliaRascunho[] =>
     chave: f.id,
     id: f.id,
     nome: f.nome.pt,
-    categorias: f.categorias.map((c) => ({ chave: c.id, id: c.id, nome: c.nome.pt })),
+    categorias: f.categorias.map((c) => ({
+      chave: c.id,
+      id: c.id,
+      nome: c.nome.pt,
+      seccoes: c.seccoes.map((x) => ({ chave: x.id, id: x.id, nome: x.nome.pt })),
+    })),
   }));
 
 /* O que vai para o servidor: só ids e nomes, e o destino dos produtos das que
@@ -51,7 +59,11 @@ const paraEntrada = (rascunho: FamiliaRascunho[], destinos: Record<string, strin
   familias: rascunho.map((f) => ({
     ...(f.id ? { id: f.id } : {}),
     nome: f.nome.trim(),
-    categorias: f.categorias.map((c) => ({ ...(c.id ? { id: c.id } : {}), nome: c.nome.trim() })),
+    categorias: f.categorias.map((c) => ({
+      ...(c.id ? { id: c.id } : {}),
+      nome: c.nome.trim(),
+      seccoes: c.seccoes.map((x) => ({ ...(x.id ? { id: x.id } : {}), nome: x.nome.trim() })),
+    })),
   })),
   ...(Object.keys(destinos).length > 0 ? { destinos } : {}),
 });
@@ -81,6 +93,7 @@ export function FamiliasCategorias({ familias, produtos }: { familias: Familia[]
   const [aGravar, iniciar] = useTransition();
   const [novaFamilia, setNovaFamilia] = useState("");
   const [novasCategorias, setNovasCategorias] = useState<Record<string, string>>({});
+  const [novasSeccoes, setNovasSeccoes] = useState<Record<string, string>>({});
   const contador = useRef(0);
   const novaChave = () => `nova-${++contador.current}`;
   /* Para onde vão os produtos de cada categoria apagada: id → id. */
@@ -120,11 +133,33 @@ export function FamiliasCategorias({ familias, produtos }: { familias: Familia[]
     const nome = (novasCategorias[familia.chave] ?? "").trim();
     if (!nome) return;
     mudar(
-      mudarFamilia(familia.chave, (f) => ({ ...f, categorias: [...f.categorias, { chave: novaChave(), nome }] })),
+      mudarFamilia(familia.chave, (f) => ({ ...f, categorias: [...f.categorias, { chave: novaChave(), nome, seccoes: [] }] })),
       `Categoria «${nome}» juntada a ${familia.nome}.`,
     );
     setNovasCategorias((atuais) => ({ ...atuais, [familia.chave]: "" }));
   };
+
+  /* As secções de uma categoria, mudadas no rascunho. */
+  const mudarSeccoes = (
+    familia: FamiliaRascunho,
+    categoria: CategoriaRascunho,
+    mudanca: (seccoes: SeccaoRascunho[]) => SeccaoRascunho[],
+  ) =>
+    mudarFamilia(familia.chave, (f) => ({
+      ...f,
+      categorias: f.categorias.map((c) => (c.chave === categoria.chave ? { ...c, seccoes: mudanca(c.seccoes) } : c)),
+    }));
+  const juntarSeccao = (familia: FamiliaRascunho, categoria: CategoriaRascunho) => {
+    const nome = (novasSeccoes[categoria.chave] ?? "").trim();
+    if (!nome) return;
+    mudar(
+      mudarSeccoes(familia, categoria, (seccoes) => [...seccoes, { chave: novaChave(), nome }]),
+      `Secção «${nome}» juntada a ${categoria.nome}.`,
+    );
+    setNovasSeccoes((atuais) => ({ ...atuais, [categoria.chave]: "" }));
+  };
+  const naSeccao = (seccaoId: string | undefined) =>
+    seccaoId === undefined ? 0 : produtos.filter((p) => p.seccaoId === seccaoId).length;
 
   const passarCategoria = (de: FamiliaRascunho, categoria: CategoriaRascunho, para: string) => {
     const destino = rascunho.find((f) => f.chave === para);
@@ -165,12 +200,16 @@ export function FamiliasCategorias({ familias, produtos }: { familias: Familia[]
     nomes.filter((n) => n.trim().toLocaleLowerCase("pt") === nome.trim().toLocaleLowerCase("pt")).length > 1;
   const nomesFamilias = rascunho.map((f) => f.nome);
   const problema =
-    rascunho.some((f) => !f.nome.trim() || f.categorias.some((c) => !c.nome.trim()))
+    rascunho.some((f) => !f.nome.trim() || f.categorias.some((c) => !c.nome.trim() || c.seccoes.some((x) => !x.nome.trim())))
       ? "Há um nome em branco."
       : rascunho.some((f) => repetido(nomesFamilias, f.nome))
         ? "Há duas famílias com o mesmo nome."
         : rascunho.some((f) => f.categorias.some((c) => repetido(f.categorias.map((x) => x.nome), c.nome)))
           ? "Há duas categorias com o mesmo nome na mesma família."
+          : rascunho.some((f) =>
+                f.categorias.some((c) => c.seccoes.some((x) => repetido(c.seccoes.map((y) => y.nome), x.nome))),
+              )
+            ? "Há duas secções com o mesmo nome na mesma categoria."
           : semDestino.length > 0
             ? "Escolha para onde vão os produtos das categorias a apagar."
             : null;
@@ -205,13 +244,43 @@ export function FamiliasCategorias({ familias, produtos }: { familias: Familia[]
   return (
     <section aria-labelledby={`${ids}-titulo`} className="rounded-2xl border border-tinta/15 bg-papel p-5">
       <h3 id={`${ids}-titulo`} className="titulo-display text-xl">
-        Famílias e categorias
+        Famílias, categorias e secções
       </h3>
       <p className="mt-2 max-w-[62ch] text-tinta-suave">
-        A ordem em que as famílias aparecem nas encomendas e, dentro de cada uma, a ordem das categorias. Os produtos
-        ficam sempre por ordem alfabética dentro da categoria. Para pôr um produto numa categoria, abra-o em «Todos os
-        produtos» e escolha «Onde aparece na loja». <strong>Uma família ou categoria sem produtos não aparece no site.</strong>
+        Como a página das encomendas se arruma, de cima para baixo. A ordem daqui é a do site; os produtos ficam sempre
+        por ordem alfabética. Cada produto escolhe a categoria e a secção no editor («Todos os produtos»).{" "}
+        <strong>Uma família, categoria ou secção sem produtos não aparece no site.</strong>
       </p>
+      {/* As três ajudas com o desenho da loja (27/11): um nome solto não diz onde
+          aquilo cai na página. */}
+      <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold">
+        <li className="flex items-center gap-1.5">
+          Família
+          <Ajuda titulo="Família">
+            O nível de cima: um título grande na página, e um link no topo e no menu «Encomendas». Ex.: Kit Festas, Da
+            carta, Natal.
+            <ExemploLoja realce="familia" />
+          </Ajuda>
+        </li>
+        <li aria-hidden className="text-tinta-suave">›</li>
+        <li className="flex items-center gap-1.5">
+          Categoria
+          <Ajuda titulo="Categoria">
+            Dentro de uma família, agrupa os produtos com um título que fica colado no topo enquanto se desce. Ex.: em Da
+            carta, Doces e Salgados.
+            <ExemploLoja realce="categoria" />
+          </Ajuda>
+        </li>
+        <li aria-hidden className="text-tinta-suave">›</li>
+        <li className="flex items-center gap-1.5">
+          Secção <span className="font-normal text-tinta-suave">(opcional)</span>
+          <Ajuda titulo="Secção">
+            Divide uma categoria. Ex.: em Doces, Da casa e Vegan. Apagar uma secção não tira os produtos do site: ficam na
+            categoria, sem secção.
+            <ExemploLoja realce="seccao" />
+          </Ajuda>
+        </li>
+      </ul>
 
       <ol className="mt-5 space-y-4">
         {rascunho.map((familia, i) => {
@@ -362,6 +431,111 @@ export function FamiliasCategorias({ familias, produtos }: { familias: Familia[]
                           Apagar
                         </button>
                       </div>
+
+                      {/* As secções desta categoria (27/11): o terceiro nível. */}
+                      <ol className="mt-2 space-y-1 border-l-2 border-tijolo/20 pl-3" aria-label={`Secções de ${categoria.nome}`}>
+                        {categoria.seccoes.map((seccao, k) => (
+                          <li key={seccao.chave} className="flex flex-wrap items-center gap-2">
+                            <label className="sr-only" htmlFor={`${ids}-s-${seccao.chave}`}>
+                              Nome da secção {k + 1} de {categoria.nome}
+                            </label>
+                            <input
+                              id={`${ids}-s-${seccao.chave}`}
+                              value={seccao.nome}
+                              maxLength={60}
+                              onChange={(e) => {
+                                setRascunho(
+                                  mudarSeccoes(familia, categoria, (seccoes) =>
+                                    seccoes.map((x) => (x.chave === seccao.chave ? { ...x, nome: e.target.value } : x)),
+                                  ),
+                                );
+                                setMensagem(null);
+                              }}
+                              className={`${campo} min-h-10 grow basis-36 text-sm`}
+                            />
+                            <span className="ml-auto flex items-center gap-2">
+                              <span className="text-xs text-tinta-suave">
+                                {seccao.id ? contar(naSeccao(seccao.id)) : "Nova"}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  mudar(
+                                    mudarSeccoes(familia, categoria, (seccoes) => moverNaLista(seccoes, k, -1)),
+                                    `${seccao.nome} passou para ${k}.º lugar em ${categoria.nome}.`,
+                                  )
+                                }
+                                disabled={k === 0 || aGravar}
+                                aria-label={`Subir a secção ${seccao.nome}`}
+                                className={`${botao} size-10`}
+                              >
+                                <span aria-hidden>↑</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  mudar(
+                                    mudarSeccoes(familia, categoria, (seccoes) => moverNaLista(seccoes, k, 1)),
+                                    `${seccao.nome} passou para ${k + 2}.º lugar em ${categoria.nome}.`,
+                                  )
+                                }
+                                disabled={k === categoria.seccoes.length - 1 || aGravar}
+                                aria-label={`Descer a secção ${seccao.nome}`}
+                                className={`${botao} size-10`}
+                              >
+                                <span aria-hidden>↓</span>
+                              </button>
+                              {/* Sem destino a escolher: os produtos ficam na
+                                  categoria, sem secção, e continuam à vista. */}
+                              <button
+                                type="button"
+                                disabled={aGravar}
+                                onClick={() =>
+                                  mudar(
+                                    mudarSeccoes(familia, categoria, (seccoes) =>
+                                      seccoes.filter((x) => x.chave !== seccao.chave),
+                                    ),
+                                    naSeccao(seccao.id) > 0
+                                      ? `Secção ${seccao.nome} apagada do rascunho: os produtos dela ficam em ${categoria.nome}, sem secção.`
+                                      : `Secção ${seccao.nome} apagada do rascunho.`,
+                                  )
+                                }
+                                aria-label={`Apagar a secção ${seccao.nome}`}
+                                className={pequeno}
+                              >
+                                Apagar
+                              </button>
+                            </span>
+                          </li>
+                        ))}
+                        <li className="flex flex-wrap items-center gap-2">
+                          <label className="sr-only" htmlFor={`${ids}-ns-${categoria.chave}`}>
+                            Nova secção em {categoria.nome}
+                          </label>
+                          <input
+                            id={`${ids}-ns-${categoria.chave}`}
+                            value={novasSeccoes[categoria.chave] ?? ""}
+                            maxLength={60}
+                            placeholder="Nova secção (opcional)"
+                            onChange={(e) => setNovasSeccoes((atuais) => ({ ...atuais, [categoria.chave]: e.target.value }))}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                juntarSeccao(familia, categoria);
+                              }
+                            }}
+                            className={`${campo} min-h-10 grow basis-36 text-sm`}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => juntarSeccao(familia, categoria)}
+                            disabled={!(novasSeccoes[categoria.chave] ?? "").trim() || aGravar}
+                            className={`${pequeno} min-h-10`}
+                          >
+                            Juntar secção
+                          </button>
+                        </li>
+                      </ol>
                     </li>
                   );
                 })}

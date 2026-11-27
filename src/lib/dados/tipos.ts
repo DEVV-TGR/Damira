@@ -161,6 +161,12 @@ export const EsquemaProduto = z.object({
    * decidido a 26/11: pôr um produto no Natal é mudá-lo de categoria.
    */
   categoriaId: z.string().regex(/^[a-z0-9-]+$/).optional(),
+  /**
+   * A secção dentro da categoria (27/11), ou `null` — o produto aparece logo
+   * debaixo da categoria. Tem de ser uma secção da `categoriaId`: a base de
+   * dados recusa outra (`produtos_seccao_da_categoria`).
+   */
+  seccaoId: z.string().regex(/^[a-z0-9-]+$/).nullable().optional(),
   carta: z.string().nullable(),
   categoria: z.string().nullable(),
   /** Os títulos dentro de uma categoria da ementa (`SeccaoEmenta`). */
@@ -800,8 +806,11 @@ export type OrdemEmenta = {
 
 // ——— As famílias e as categorias (26/11) ———
 
-/** Uma categoria da gerente, dentro de uma família. */
-export type Categoria = { id: string; nome: Texto; familiaId: string };
+/** Uma secção (27/11): o terceiro nível, dentro de uma categoria só. */
+export type Seccao = { id: string; nome: Texto; categoriaId: string };
+
+/** Uma categoria da gerente, dentro de uma família, com as secções dela pela ordem dela. */
+export type Categoria = { id: string; nome: Texto; familiaId: string; seccoes: Seccao[] };
 
 /**
  * O nível de cima da `/encomendas` (pedido de 26/11): Kit Festas, Bolo e mesa
@@ -828,6 +837,11 @@ const IdDoCatalogo = z.string().regex(/^[a-z0-9-]+$/).max(80);
  * depois a categoria sai — nada se perde e os pedidos antigos continuam a
  * apontar para os mesmos produtos. Sem destino, recusa-se. Apagar uma família
  * é não a mandar, nem às categorias dela.
+ *
+ * **As secções vêm dentro de cada categoria** (27/11), com as mesmas regras de
+ * id e de nome. Uma secção não muda de categoria (os produtos dela deixavam de
+ * bater certo com a chave composta). Apagar uma secção com produtos não pede
+ * destino: os produtos ficam na categoria, sem secção — continuam à vista.
  */
 export const EsquemaFamilias = z
   .object({
@@ -838,7 +852,18 @@ export const EsquemaFamilias = z
             id: IdDoCatalogo.optional(),
             nome: NomeDaGerente,
             categorias: z
-              .array(z.object({ id: IdDoCatalogo.optional(), nome: NomeDaGerente }).strict())
+              .array(
+                z
+                  .object({
+                    id: IdDoCatalogo.optional(),
+                    nome: NomeDaGerente,
+                    seccoes: z
+                      .array(z.object({ id: IdDoCatalogo.optional(), nome: NomeDaGerente }).strict())
+                      .max(40)
+                      .default([]),
+                  })
+                  .strict(),
+              )
               .max(60),
           })
           .strict(),

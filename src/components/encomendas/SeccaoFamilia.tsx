@@ -1,7 +1,7 @@
 import { useTranslations } from "next-intl";
 import type { Locale } from "@/i18n/routing";
 import type { Produto } from "@/lib/dados/tipos";
-import { emLingua, GRELHA_CARTOES, porOrdemAlfabetica, regraDe, type FamiliaComProdutos } from "@/lib/vista";
+import { emLingua, GRELHA_CARTOES, porOrdemAlfabetica, porSeccao, regraDe, type FamiliaComProdutos } from "@/lib/vista";
 import { CartaoArtigo } from "./CartaoArtigo";
 import { CartaoProduto } from "./CartaoProduto";
 import { SetaMinimizar } from "./SetaMinimizar";
@@ -85,9 +85,10 @@ export function SeccaoFamilia({
             {categorias.map(({ categoria, produtos }) => {
               const ordenados = porOrdemAlfabetica(produtos, locale);
               const regra = regraDaCategoria(ordenados, t);
-              const grelha = (
-                <ul className={`${comTitulos || regra ? "mt-4" : ""} ${GRELHA_CARTOES}`}>
-                  {ordenados.map((produto) =>
+              const nome = emLingua(categoria.nome, locale);
+              const cartoes = (lista: Produto[], margem: boolean) => (
+                <ul className={`${margem ? "mt-4" : ""} ${GRELHA_CARTOES}`}>
+                  {lista.map((produto) =>
                     produto.familia === "ementa" ? (
                       <CartaoArtigo key={produto.id} artigo={produto} locale={locale} />
                     ) : (
@@ -96,7 +97,27 @@ export function SeccaoFamilia({
                   )}
                 </ul>
               );
-              const nome = emLingua(categoria.nome, locale);
+              /* As secções (27/11): um título pequeno por cima de cada grelha,
+                 dentro da categoria. Sem secções, é a grelha de sempre. Não têm
+                 `id` (armadilha 8) nem ficam coladas: já há dois títulos colados. */
+              const grupos = porSeccao(categoria, ordenados);
+              const grelha = grupos.some((grupo) => grupo.seccao) ? (
+                <div className="space-y-8">
+                  {grupos.map(({ seccao, produtos: daSeccao }) => (
+                    <div key={seccao?.id ?? "sem-seccao"} data-grupo-procura>
+                      {seccao && (
+                        <h4 className="mt-6 text-sm font-semibold uppercase tracking-[0.2em] text-tijolo">
+                          <span className="sr-only">{nome}, </span>
+                          {emLingua(seccao.nome, locale)}
+                        </h4>
+                      )}
+                      {cartoes(daSeccao, true)}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                cartoes(ordenados, comTitulos || regra !== null)
+              );
               if (!comTitulos && !regra) return <div key={categoria.id} data-grupo-procura>{grelha}</div>;
               return (
                 <div key={categoria.id} data-grupo-procura>

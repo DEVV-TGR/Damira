@@ -263,12 +263,13 @@ desfeita), e o que dela se encomenda vive na `/encomendas`, na secção
 
 **As secções da `/encomendas` são as famílias da gerente** (pedido de 26/11):
 Kit Festas, Bolo e mesa decorada, Boxes, Da carta (e o Natal, que a gerente cria) — criadas, renomeadas
-e ordenadas por ela em **Produtos › Famílias e categorias**, com as categorias
-dela dentro (`painel-gerente.md`, tabela `familias`, migração `0012`). **Cada
-produto vive numa categoria só** (`categoriaId`, escolhido no editor em «Onde
-aparece na loja»). As âncoras de partida ficaram as de antes (`#festas`,
+e ordenadas por ela em **Produtos › Famílias, categorias e secções**, em três
+níveis: **Família › Categoria › Secção** (`painel-gerente.md`, tabelas
+`familias` e `seccoes`, migração `0012`). **Cada produto vive numa categoria só,
+e numa secção dela ou em nenhuma** (`categoriaId` e `seccaoId`, os dois campos
+de sítio do editor). As âncoras de partida ficaram as de antes (`#festas`,
 `#da-ementa`…). ⚠️ **Não confundir com a `familia` do produto**, que decide o
-cartão e a página e no editor se chama «Cartão».
+cartão e a página e no editor é o «Tipo de cartão».
 
 **Na `/encomendas`, todos os produtos têm o mesmo cartão e a mesma grelha**
 (`GRELHA_CARTOES`, em `vista.ts`) — kits, bolos, boxes e carta —, **todos por
