@@ -218,10 +218,9 @@ export function gravarPecas(db: BaseDeDados, linhas: ReturnType<typeof produtoPa
  * que a gerente lhe deu.
  */
 export function categoriaNova(db: BaseDeDados, categoria: ReturnType<typeof categoriaDoProduto>) {
-  return db
-    .insert(categorias)
-    .values({ ...categoria, posicao: sql`(select coalesce(max(${categorias.posicao}), -1) + 1 from ${categorias})` })
-    .onConflictDoNothing({ target: categorias.id });
+  /* No fim da família dela, e não do catálogo todo: a posição conta dentro da família. */
+  const naFamilia = sql`(select coalesce(max(${categorias.posicao}), -1) + 1 from ${categorias} where ${categorias.familiaId} = ${categoria.familiaId})`;
+  return db.insert(categorias).values({ ...categoria, posicao: naFamilia }).onConflictDoNothing({ target: categorias.id });
 }
 
 /** As variantes já vêm pela ordem delas (`posicao`). */

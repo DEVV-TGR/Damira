@@ -21,7 +21,8 @@ const { db, cliente } = await baseDeTeste();
 afterAll(() => cliente.close());
 /* Os produtos apontam para uma categoria (#124): as que estes usam nascem com cada transação. */
 const COMECAR = `begin;
-  insert into categorias (id, nome_pt, posicao) values ('casa-doces', 'Doces', 0), ('festas', 'Kit Festas', 1), ('kits-bolo', 'Bolo e mesa decorada', 2);`;
+  insert into familias (id, nome_pt, posicao) values ('festas', 'Kit Festas', 0), ('kits-bolo', 'Bolo e mesa decorada', 1), ('da-ementa', 'Da carta', 3);
+  insert into categorias (id, nome_pt, posicao, familia_id) values ('casa-doces', 'Doces', 0, 'da-ementa'), ('festas', 'Kit Festas', 1, 'festas'), ('kits-bolo', 'Bolo e mesa decorada', 2, 'kits-bolo');`;
 beforeEach(() => cliente.exec(COMECAR));
 afterEach(() => cliente.exec("rollback"));
 
