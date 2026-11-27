@@ -105,7 +105,7 @@ const FAMILIAS: Record<EntradaProduto["familia"], string> = {
   festa: "Kit de festa",
   bolo: "Kit de bolo",
   box: "Box",
-  medida: "Bolo por medida",
+  medida: "Os nossos Bolos",
 };
 
 const NOVO: EntradaProduto = {
