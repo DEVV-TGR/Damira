@@ -11,8 +11,9 @@ um estado que os pagamentos não sabem que existe.
 > A fonte já cria levantamentos `confirmado` ou `por-confirmar`, a pagar na loja,
 > e expira os pedidos sem resposta às 48 horas, nas leituras da ocupação e na
 > criação de pedidos. Os dois emails de criação ficam na fila, no mesmo lote
-> que o pedido, as linhas e a vaga; o emissor existe (#141), mas a compra ainda
-> não o chama (é o PR seguinte).
+> que o pedido, as linhas e a vaga, e o emissor (#141) envia-os depois de a
+> escrita ficar gravada: a compra, o aceite e a recusa da proposta e as decisões
+> do painel chamam o `enviarDepois()` (#119).
 > **Com `DATABASE_URL`, a compra já chama essa fonte** e devolve a referência e
 > o total gravados. Sem base de dados, mantém o percurso provisório por email.
 > A fonte do painel já entrega, desfaz, cancela e muda a hora
@@ -21,9 +22,11 @@ um estado que os pagamentos não sabem que existe.
 > contrato para distinguir a iniciativa do cliente. O reagendamento ainda só
 > grava a nova hora e `reagendadoEm`: faltam o registo do acordo, o aviso ao
 > cliente e o talão de alteração. Estas peças continuam necessárias antes do
-> uso real destes fluxos. Faltam os ecrãs do balcão para estes estados (#125), o aceite por
-> link, as entregas e os emails automáticos; a expiração sem visitas e os
-> lembretes também precisam de implementação. Os pontos marcados «(em aberto:
+> uso real destes fluxos. O aceite da proposta por link existe desde o #139.
+> Faltam os ecrãs do balcão para estes estados (#125) e as entregas. Dos emails
+> faltam os avisos de cancelamento e de reagendamento ao cliente, os lembretes e
+> as tentativas sem visitas (#149); a expiração sem visitas também precisa de
+> implementação. Os pontos marcados «(em aberto:
 > ver n.º X)» continuam por decidir — estão no fim, com a proposta e quem decide.
 
 ## A política da casa manda
