@@ -23,8 +23,11 @@ import { BOTAO_PRINCIPAL, BOTAO_SECUNDARIO, MENSAGENS } from "../balcao/comum";
  * - **Tudo num rascunho, gravado de uma vez.** Um toque a mais não mexe na loja
  *   de ninguém, e a gravação é a árvore inteira (`EsquemaFamilias`): o servidor
  *   confere-a toda, e nunca fica meia gravada.
- * - **Apagar só o que está vazio.** Uma categoria com produtos (arquivados
- *   incluídos) não tem o botão — e o servidor recusa-o na mesma (regra 8).
+ * - **Apagar tudo, mas os produtos nunca ficam sem sítio** (27/11). Uma
+ *   categoria ou família com produtos apaga-se, e ao lado aparece «A apagar ao
+ *   gravar», onde a gerente escolhe para que categoria passam os produtos de
+ *   cada uma (arquivados incluídos). Sem destino, o «Gravar» não se liga, e o
+ *   servidor recusa na mesma (`EsquemaFamilias` › `destinos`).
  * - **Os produtos escolhem a categoria no editor** («Onde aparece na loja»):
  *   aqui não se mexe em produtos.
  * - ⚠️ **Uma família ou categoria vazia não aparece na loja.** O Natal criado
@@ -42,13 +45,15 @@ const paraRascunho = (familias: Familia[]): FamiliaRascunho[] =>
     categorias: f.categorias.map((c) => ({ chave: c.id, id: c.id, nome: c.nome.pt })),
   }));
 
-/* O que vai para o servidor: só ids e nomes. A chave é do browser. */
-const paraEntrada = (rascunho: FamiliaRascunho[]): EntradaFamilias => ({
+/* O que vai para o servidor: só ids e nomes, e o destino dos produtos das que
+   saem. A chave é do browser. */
+const paraEntrada = (rascunho: FamiliaRascunho[], destinos: Record<string, string> = {}): EntradaFamilias => ({
   familias: rascunho.map((f) => ({
     ...(f.id ? { id: f.id } : {}),
     nome: f.nome.trim(),
     categorias: f.categorias.map((c) => ({ ...(c.id ? { id: c.id } : {}), nome: c.nome.trim() })),
   })),
+  ...(Object.keys(destinos).length > 0 ? { destinos } : {}),
 });
 
 const assinatura = (rascunho: FamiliaRascunho[]) => JSON.stringify(paraEntrada(rascunho));
@@ -78,6 +83,8 @@ export function FamiliasCategorias({ familias, produtos }: { familias: Familia[]
   const [novasCategorias, setNovasCategorias] = useState<Record<string, string>>({});
   const contador = useRef(0);
   const novaChave = () => `nova-${++contador.current}`;
+  /* Para onde vão os produtos de cada categoria apagada: id → id. */
+  const [destinos, setDestinos] = useState<Record<string, string>>({});
 
   /* Arquivados incluídos: uma categoria com um produto arquivado também não se
      apaga (a chave estrangeira não deixa). */
@@ -134,6 +141,25 @@ export function FamiliasCategorias({ familias, produtos }: { familias: Familia[]
     );
   };
 
+  /* As que saem ao gravar: as gravadas que já não estão no rascunho — apagadas
+     sozinhas ou com a família. Sai-se da conta, e não de uma lista à parte:
+     o «Desfazer» e o «Passar para» não a deixam desacertada. */
+  const noRascunho = new Set(rascunho.flatMap((f) => f.categorias.flatMap((c) => (c.id ? [c.id] : []))));
+  const aApagar = gravada.flatMap((f) =>
+    f.categorias.filter((c) => c.id && !noRascunho.has(c.id)).map((c) => ({ ...c, id: c.id!, familia: f.nome })),
+  );
+  const comProdutos = aApagar.filter((c) => quantos(c.id) > 0);
+  /* Só uma que já existe e que fica pode receber produtos: uma nova ainda não tem id. */
+  const destinosPossiveis = rascunho.flatMap((f) =>
+    f.categorias.flatMap((c) => (c.id ? [{ id: c.id, rotulo: `${f.nome} · ${c.nome}` }] : [])),
+  );
+  const destinosValidos = Object.fromEntries(
+    comProdutos.flatMap((c) =>
+      destinos[c.id] && destinosPossiveis.some((d) => d.id === destinos[c.id]) ? [[c.id, destinos[c.id]]] : [],
+    ),
+  );
+  const semDestino = comProdutos.filter((c) => !destinosValidos[c.id]);
+
   /* Os nomes repetidos recusa-os o servidor; aqui avisa-se antes, ao lado. */
   const repetido = (nomes: string[], nome: string) =>
     nomes.filter((n) => n.trim().toLocaleLowerCase("pt") === nome.trim().toLocaleLowerCase("pt")).length > 1;
@@ -145,22 +171,25 @@ export function FamiliasCategorias({ familias, produtos }: { familias: Familia[]
         ? "Há duas famílias com o mesmo nome."
         : rascunho.some((f) => f.categorias.some((c) => repetido(f.categorias.map((x) => x.nome), c.nome)))
           ? "Há duas categorias com o mesmo nome na mesma família."
-          : null;
+          : semDestino.length > 0
+            ? "Escolha para onde vão os produtos das categorias a apagar."
+            : null;
 
   const gravar = () =>
     iniciar(async () => {
-      const resultado = await gravarFamilias(paraEntrada(rascunho));
+      const resultado = await gravarFamilias(paraEntrada(rascunho, destinosValidos));
       if (resultado.ok) {
         const nova = paraRascunho(resultado.valor);
         setGravada(nova);
         setRascunho(nova);
+        setDestinos({});
         setMensagem({ ok: true, texto: "Gravado." });
         setAnuncio("Famílias e categorias gravadas.");
         router.refresh();
       } else {
         const texto =
           resultado.erro === "dados-invalidos"
-            ? "Não foi possível gravar: há um nome repetido, ou uma categoria com produtos que saiu da lista."
+            ? "Não foi possível gravar: há um nome repetido, ou uma categoria apagada sem sítio para os produtos. Tente outra vez."
             : MENSAGENS[resultado.erro];
         setMensagem({ ok: false, texto });
         setAnuncio(texto);
@@ -313,24 +342,25 @@ export function FamiliasCategorias({ familias, produtos }: { familias: Familia[]
                             </select>
                           </label>
                         )}
-                        {n === 0 && (
-                          <button
-                            type="button"
-                            disabled={aGravar}
-                            onClick={() =>
-                              mudar(
-                                mudarFamilia(familia.chave, (f) => ({
-                                  ...f,
-                                  categorias: f.categorias.filter((c) => c.chave !== categoria.chave),
-                                })),
-                                `Categoria ${categoria.nome} apagada do rascunho.`,
-                              )
-                            }
-                            className={pequeno}
-                          >
-                            Apagar
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          disabled={aGravar}
+                          onClick={() =>
+                            mudar(
+                              mudarFamilia(familia.chave, (f) => ({
+                                ...f,
+                                categorias: f.categorias.filter((c) => c.chave !== categoria.chave),
+                              })),
+                              n > 0
+                                ? `Categoria ${categoria.nome} a apagar. Escolha em baixo para onde vão os ${n} produtos.`
+                                : `Categoria ${categoria.nome} apagada do rascunho.`,
+                            )
+                          }
+                          aria-label={`Apagar a categoria ${categoria.nome}`}
+                          className={pequeno}
+                        >
+                          Apagar
+                        </button>
                       </div>
                     </li>
                   );
@@ -364,16 +394,19 @@ export function FamiliasCategorias({ familias, produtos }: { familias: Familia[]
                 </li>
               </ol>
 
-              {familia.categorias.length === 0 && rascunho.length > 1 && (
+              {rascunho.length > 1 && (
                 <button
                   type="button"
                   disabled={aGravar}
                   onClick={() =>
                     mudar(
                       rascunho.filter((f) => f.chave !== familia.chave),
-                      `Família ${familia.nome} apagada do rascunho.`,
+                      familia.categorias.some((c) => quantos(c.id) > 0)
+                        ? `Família ${familia.nome} a apagar. Escolha em baixo para onde vão os produtos dela.`
+                        : `Família ${familia.nome} apagada do rascunho.`,
                     )
                   }
+                  aria-label={`Apagar a família ${familia.nome}`}
                   className={`${pequeno} mt-3 sm:ml-8`}
                 >
                   Apagar a família
@@ -407,6 +440,55 @@ export function FamiliasCategorias({ familias, produtos }: { familias: Familia[]
         </button>
       </div>
 
+      {comProdutos.length > 0 && (
+        /* ⚠️ Antes do «Gravar» e à vista: o que se apaga com produtos não grava
+           sem destino, e quem não visse isto ficava com o botão desligado sem
+           saber porquê. */
+        <section
+          aria-labelledby={`${ids}-apagar`}
+          className="mt-6 rounded-2xl border border-tijolo/40 bg-tijolo/5 p-4"
+        >
+          <h4 id={`${ids}-apagar`} className="font-semibold">
+            A apagar ao gravar
+          </h4>
+          <p className="mt-1 text-sm text-tinta-suave">
+            Estas categorias têm produtos. Escolha para onde passam: nenhum produto se perde, e os pedidos antigos
+            continuam iguais. Para os passar para uma categoria nova, grave-a primeiro.
+          </p>
+          <ul className="mt-3 space-y-3">
+            {comProdutos.map((c) => (
+              <li key={c.id} className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <span className="min-w-0">
+                  <strong>
+                    {c.familia} · {c.nome}
+                  </strong>
+                  <span className="block text-sm text-tinta-suave">{contar(quantos(c.id))}</span>
+                </span>
+                <label className="inline-flex min-w-0 max-w-full items-center gap-2 text-sm">
+                  <span className="shrink-0">Passar para</span>
+                  <select
+                    value={destinosValidos[c.id] ?? ""}
+                    disabled={aGravar}
+                    onChange={(e) => {
+                      setDestinos((atuais) => ({ ...atuais, [c.id]: e.target.value }));
+                      setMensagem(null);
+                    }}
+                    className="min-h-11 min-w-0 max-w-full rounded-lg border border-tinta/25 bg-papel px-2"
+                  >
+                    <option value="">Escolha…</option>
+                    {destinosPossiveis.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.rotulo}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <p role="status" className="sr-only">
         {anuncio}
       </p>
@@ -423,7 +505,10 @@ export function FamiliasCategorias({ familias, produtos }: { familias: Familia[]
         {mudou && !aGravar && (
           <button
             type="button"
-            onClick={() => mudar(gravada, "O rascunho voltou ao que está gravado.")}
+            onClick={() => {
+              mudar(gravada, "O rascunho voltou ao que está gravado.");
+              setDestinos({});
+            }}
             className={BOTAO_SECUNDARIO}
           >
             Desfazer

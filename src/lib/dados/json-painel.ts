@@ -272,6 +272,12 @@ export function criarPainelJson(
       const planeado = planearFamilias(entrada, estado.arvore, usadas);
       if (!planeado.ok) return planeado;
       const { plano } = planeado;
+      /* Os produtos das que saem passam para o destino, arquivados incluídos. */
+      for (const { de, para } of plano.moverProdutos) {
+        for (const produto of estado.porId.values()) {
+          if (categoriaDe(produto) === de) estado.porId.set(produto.id, { ...produto, categoriaId: para });
+        }
+      }
       /* As arquivadas ficam como estavam; as que saem apagam-se ou arquivam-se. */
       const apagadas = new Set([...plano.apagarFamilias, ...plano.apagarCategorias]);
       const tocadas = new Set([...plano.familias, ...plano.categorias].map((l) => l.id));

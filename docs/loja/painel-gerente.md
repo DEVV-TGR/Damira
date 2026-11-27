@@ -341,9 +341,14 @@ Famílias e categorias**, a gerente arruma a `/encomendas` inteira num sítio s�
   nem link no índice ou no menu do cabeçalho. O ecrã diz-o ao lado de cada uma
   («Sem produtos — ainda não aparece no site»). O Natal criado vazio só se vê
   quando tiver o primeiro produto.
-- **Apagar só o que está vazio.** Uma categoria com produtos (arquivados
-  incluídos) não tem o botão, e o servidor recusa-o na mesma; uma família só se
-  apaga sem categorias.
+- **Apaga-se qualquer família ou categoria, mas nenhum produto fica sem
+  sítio** (decidido a 27/11). Ao apagar uma com produtos, aparece **«A apagar
+  ao gravar»**, e a gerente escolhe para que categoria passa cada uma — uma que
+  já exista e fique (uma nova grava-se primeiro). Passam todos, arquivados
+  incluídos, e só depois a categoria sai: os pedidos antigos continuam a
+  apontar para os mesmos produtos. Sem destino o «Gravar» não se liga, e o
+  servidor recusa na mesma (`destinos` no `EsquemaFamilias`). Apagar uma família
+  é apagá-la com as categorias dela.
 - **Subir e descer, sem arrastar**, como na #87: arrastar num telemóvel briga
   com a rolagem, não se faz com o teclado e pede uma biblioteca.
 - Tudo muda num rascunho e **só vai para o site ao gravar** — a árvore inteira

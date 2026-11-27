@@ -413,6 +413,11 @@ export function criarFonteBd(db: BaseDeDados, emLote: ExecutarLote): FonteBd {
                   }),
               ]
             : []),
+          /* Os produtos das que saem passam para o destino **antes** de elas
+             saírem, arquivados incluídos: senão a chave estrangeira recusava. */
+          ...plano.moverProdutos.map(({ de, para }) =>
+            d.update(produtos).set({ categoriaId: para }).where(eq(produtos.categoriaId, de)),
+          ),
           ...(plano.apagarCategorias.length > 0
             ? [d.delete(categorias).where(inArray(categorias.id, plano.apagarCategorias))]
             : []),

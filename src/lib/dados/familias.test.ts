@@ -133,7 +133,7 @@ describe("a gerente grava a árvore", () => {
     expect((await f.produtoPorId("bolo-de-cenoura"))?.categoriaId).toBe(idNatal);
   });
 
-  it("apaga o que está vazio, e recusa apagar uma categoria com produtos", async () => {
+  it("apaga o que está vazio, e uma família com produtos só com destino para eles", async () => {
     const f = await fonte();
     const antes = comoEntrada(await comNatal(f));
     /* O Natal está vazio: sai. */
@@ -143,14 +143,38 @@ describe("a gerente grava a árvore", () => {
     );
     expect(semNatal.map((familia) => familia.id)).not.toContain("natal");
 
-    /* Os kits de festa têm produtos: a categoria não sai, nem a família. */
+    /* Os kits de festa têm produtos: sem destino para eles, recusa-se. */
     const semFestas = comoEntrada(semNatal).filter((familia) => familia.id !== "festas");
     expect(await f.guardarFamilias({ familias: semFestas }, GERENTE)).toEqual({
       ok: false,
       erro: "dados-invalidos",
-      campos: ["categorias"],
+      campos: ["destinos"],
     });
+    /* Um destino que também sai, ou que não existe, também. */
+    expect(
+      await f.guardarFamilias({ familias: semFestas, destinos: { festas: "nao-existe" } }, GERENTE),
+    ).toMatchObject({ ok: false, campos: ["destinos"] });
     expect((await f.familias()).map((familia) => familia.id)).toContain("festas");
+
+    /* Com destino, os produtos passam para as boxes e a família sai. */
+    const kits = (await f.produtosDoPainel(GERENTE)).filter((p) => p.categoriaId === "festas").map((p) => p.id);
+    expect(kits.length).toBeGreaterThan(0);
+    const gravada = await f.guardarFamilias({ familias: semFestas, destinos: { festas: "boxes" } }, GERENTE);
+    expect(gravada.ok).toBe(true);
+    expect((await f.familias()).map((familia) => familia.id)).not.toContain("festas");
+    const depois = await f.produtosDoPainel(GERENTE);
+    for (const id of kits) expect(depois.find((p) => p.id === id)?.categoriaId).toBe("boxes");
+  });
+
+  it("os arquivados também passam para o destino", async () => {
+    const f = await fonte();
+    const [primeiro] = (await f.produtosDoPainel(GERENTE)).filter((p) => p.categoriaId === "boxes");
+    await f.arquivarProduto(primeiro.id, true, GERENTE);
+    const semBoxes = comoEntrada(await f.familias()).filter((familia) => familia.id !== "boxes");
+    const gravada = await f.guardarFamilias({ familias: semBoxes, destinos: { boxes: "kits-bolo" } }, GERENTE);
+    expect(gravada.ok).toBe(true);
+    const arquivado = (await f.produtosDoPainel(GERENTE)).find((p) => p.id === primeiro.id);
+    expect(arquivado).toMatchObject({ arquivado: true, categoriaId: "kits-bolo" });
   });
 
   it("recusa nomes repetidos, ids que não existem, e quem não é gerente", async () => {

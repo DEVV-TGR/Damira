@@ -34,6 +34,8 @@ export type PlanoFamilias = {
   /** As que ficam com categorias arquivadas apontadas: não se apagam, arquivam-se. */
   arquivarFamilias: string[];
   apagarCategorias: string[];
+  /** Os produtos das que saem, para onde vão — antes de elas saírem. */
+  moverProdutos: { de: string; para: string }[];
 };
 
 type Recusa = Extract<ResultadoPainel<never>, { ok: false }>;
@@ -137,9 +139,19 @@ export function planearFamilias(
     }
   }
 
-  /* O que existia e não veio apaga-se — só se estiver vazio. */
+  /* O que existia e não veio apaga-se. Os produtos de uma que sai passam para o
+     destino que a gerente escolheu (27/11): uma que exista e fique. Sem ele, ou
+     com um destino que também sai, recusa-se — um produto sem categoria
+     desaparecia da loja sem ninguém dar por isso. */
   const apagarCategorias = [...categoriasPorId.keys()].filter((id) => !vistasCategorias.has(id));
-  if (apagarCategorias.some((id) => comProdutos.has(id))) return recusa("categorias");
+  const destinos = lido.data.destinos ?? {};
+  const moverProdutos: PlanoFamilias["moverProdutos"] = [];
+  for (const de of apagarCategorias) {
+    if (!comProdutos.has(de)) continue;
+    const para = destinos[de];
+    if (para === undefined || !categoriasPorId.has(para) || !vistasCategorias.has(para)) return recusa("destinos");
+    moverProdutos.push({ de, para });
+  }
 
   const omitidas = [...familiasPorId.keys()].filter((id) => !vistasFamilias.has(id));
   /* Uma categoria arquivada continua a apontar para a família: aí a família
@@ -154,6 +166,7 @@ export function planearFamilias(
       apagarFamilias: omitidas.filter((id) => !comArquivadas.has(id)),
       arquivarFamilias: omitidas.filter((id) => comArquivadas.has(id)),
       apagarCategorias,
+      moverProdutos,
     },
   };
 }

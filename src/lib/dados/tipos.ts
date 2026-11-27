@@ -818,10 +818,16 @@ const IdDoCatalogo = z.string().regex(/^[a-z0-9-]+$/).max(80);
 /**
  * O que a gerente grava em «Famílias e categorias»: **a árvore inteira**, pela
  * ordem nova. Uma família ou uma categoria **sem `id` é nova**, e o servidor
- * dá-lhe um a partir do nome. Uma que existia e não vem é **apagada** — só se
- * estiver vazia; uma categoria com produtos recusa-se (a fonte sabe quais têm).
- * Mover uma categoria para outra família é pô-la debaixo dela: os produtos vão
- * com ela.
+ * dá-lhe um a partir do nome. Uma que existia e não vem é **apagada**. Mover
+ * uma categoria para outra família é pô-la debaixo dela: os produtos vão com
+ * ela.
+ *
+ * **Apagar uma categoria com produtos pede um destino** (27/11): em `destinos`,
+ * o id da que sai → o id da categoria para onde os produtos dela passam, que
+ * tem de existir e ficar na árvore. Todos passam, arquivados incluídos, e só
+ * depois a categoria sai — nada se perde e os pedidos antigos continuam a
+ * apontar para os mesmos produtos. Sem destino, recusa-se. Apagar uma família
+ * é não a mandar, nem às categorias dela.
  */
 export const EsquemaFamilias = z
   .object({
@@ -839,6 +845,7 @@ export const EsquemaFamilias = z
       )
       .min(1)
       .max(30),
+    destinos: z.record(IdDoCatalogo, IdDoCatalogo).optional(),
   })
   .strict();
 
