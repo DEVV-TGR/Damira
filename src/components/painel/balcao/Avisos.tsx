@@ -10,12 +10,14 @@ import { BOTAO } from "./comum";
  *
  * - **novo**: «Novo pedido DAM-… · 14:30 · talão impresso ✓». O som toca uma vez;
  *   o aviso **fica até alguém lhe tocar** — é o que resta para quem estava de costas.
+ * - **por confirmar**: um pedido que espera pela casa. Som uma vez e aviso, como
+ *   um novo, mas **sem talão** — ainda não é uma ordem para a cozinha.
  * - **talão**: o talão não saiu. Vermelho, e o alarme repete-se até «Já tratei».
  * - **cancelado**: vermelho, até alguém lhe tocar. O talão já está na cozinha.
  * - **entregue**: «Desfazer» durante 5 minutos.
  */
 export type Aviso =
-  | { id: string; tipo: "novo" | "talao" | "cancelado"; pedido: Pedido }
+  | { id: string; tipo: "novo" | "por-confirmar" | "talao" | "cancelado"; pedido: Pedido }
   | { id: string; tipo: "entregue"; pedido: Pedido; ate: number };
 
 export function Avisos({
@@ -76,7 +78,9 @@ export function Avisos({
             <p className="font-semibold">
               {cancelado
                 ? `CANCELADO ${pedido.referencia} — levantamento ${diaPorExtenso(pedido.levantamentoEm)} ${hora}`
-                : `Novo pedido ${pedido.referencia} · ${hora} · talão impresso ✓`}
+                : aviso.tipo === "por-confirmar"
+                  ? `Por confirmar ${pedido.referencia} — ${diaPorExtenso(pedido.levantamentoEm)} ${hora}`
+                  : `Novo pedido ${pedido.referencia} · ${hora} · talão impresso ✓`}
             </p>
             <p className="mt-1 text-xs uppercase tracking-widest text-papel/80">Toque para fechar</p>
           </button>

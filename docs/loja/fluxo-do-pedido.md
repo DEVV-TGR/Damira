@@ -44,7 +44,7 @@ a tracejado 💡.
    não põe nenhum email na fila. **Sem isto, nada deste fluxo acontece no site.**
 2. **Os emails da fila saem desde o ponto 2 (26/11)**: o `enviarDepois()`
    (`src/lib/emails/depois.ts`) é chamado depois da compra, do aceite e da recusa
-   da proposta e das decisões do painel. As novas tentativas sem visitas (#149)
+   da proposta e das decisões do painel, incluindo o «Confirmar» do balcão. As novas tentativas sem visitas (#149)
    ainda não entraram, e em modo de teste tudo vai para a caixa de `EMAILS_SO_PARA`.
 3. **A referência.** O diagrama usa `#00001`; o código usa `DAM-2611-HYUS`. Fica
    para a Andreia dizer se aceita a do código.
@@ -499,9 +499,11 @@ emails saírem.
 
 ### 6. O balcão com os pedidos pagos na loja — Gonçalo (#125)
 
-**Para o Gonçalo:**
-- «Levantam hoje», «Produzir hoje», o som e o «✓ Entregue» aceitam `confirmado`, e não só `pago`.
-- Onde mexer: `src/lib/painel.ts:190-191` e `:359-360`, e `src/components/painel/balcao/PedidoCartao.tsx:122`.
+✅ **Feito no PR da #125.** «Levantam hoje», «Produzir hoje», «Próximos», o som e
+o «✓ Entregue» aceitam `confirmado` (`aFazer`, em `src/lib/painel.ts`). Há um
+separador «Por confirmar», com o prazo e a urgência de cada pedido, onde o
+balcão confirma tal como está. O «transferência recebida» fica com as entregas
+(ponto 8). Ver `painel-balcao.md`.
 
 ### 7. A loja chega ao pedido a partir do email — Gonçalo
 

@@ -174,7 +174,7 @@ apaga o que a pessoa escreveu (`robustez.md` › Erros).
 O emissor de `emails_por_enviar` está em `src/lib/emails/enviar.ts`, com reserva
 condicional e idempotência no Resend. **Desde 26/11 está ligado às ações**: a
 compra (`registar.ts`), o aceite e a recusa da proposta e as decisões do painel
-(responder, reagendar, cancelar) chamam `enviarDepois()` **depois** de a escrita
+(responder, reagendar, cancelar), e o «Confirmar» do balcão, chamam `enviarDepois()` **depois** de a escrita
 ficar gravada, nunca antes, e só se ela correu bem. A fronteira continua a pôr os
 emails na fila na mesma instrução que muda o pedido; a ação só pede o envio.
 
@@ -233,6 +233,13 @@ que as torna falsas:
   contra a de produção — com uma exceção: o site no ar em modo de teste, até ao
   lançamento, compra com cartões de teste contra ela (`pagamentos.md` ›
   Ambientes). Os pedidos que isso deixa lá saem das contas no lançamento.
+- ⚠️ **Desde 27/11/2026 o catálogo do `production` é trabalho da casa**: a
+  gerente preenche-o no painel, e não há outra cópia. Uma migração só preenche
+  o que ela própria cria, a partir do que já está na base, e nunca altera um
+  valor que a gerente edita. Antes de cada migração no `production` cria-se um
+  ramo de segurança na Neon. O `production` nunca se repõe a partir do
+  `desenvolvimento` nem dos JSON. As quatro regras inteiras estão em
+  `base-de-dados.md` › O catálogo do `production` é da casa.
 
 ### Revisão
 
@@ -242,6 +249,12 @@ o resto: merge pelo próprio, depois de `lint`, `build` e `test`.
 
 Antes de abrir qualquer PR, revê o diff com o Claude. Não substitui a revisão do
 outro onde ela é obrigatória; apanha o básico onde não é.
+
+⚠️ **Suspensa até à abertura da loja** (decidido pelo Tomás a 27/11): o
+«Require review from Code Owners» do `main` foi desligado para os merges não
+esperarem pela aprovação do outro. O PR continua obrigatório, e quem faz o
+merge deixa no PR o que mudou, para o outro rever depois. **Volta a ligar-se
+depois da abertura**, e esta nota sai no mesmo PR.
 
 ### O repositório é público
 
