@@ -11,7 +11,6 @@ export function criarEmailsBd(db: BaseDeDados): FonteEmails {
   // A condição é a mesma na leitura e na escrita: a leitura não concede a reserva.
   const disponivel = (agora: Date) => and(
     isNull(fila.enviadoEm), lt(fila.tentativas, MAXIMO_TENTATIVAS),
-    sql`${fila.modelo} <> 'resposta-cliente'`,
     sql`(${fila.ultimaTentativaEm} is null or
       ${fila.ultimaTentativaEm} + (${JANELA_RESERVA_MS} * power(2, greatest(0, ${fila.tentativas} - 1))) * interval '1 millisecond'
         <= ${agora.toISOString()}::timestamptz)`,
@@ -20,7 +19,6 @@ export function criarEmailsBd(db: BaseDeDados): FonteEmails {
   const semAnteriorPendente = (agora: Date, soIndisponiveis = false) => sql`not exists (
     select 1 from emails_por_enviar anterior
     where anterior.pedido_id = ${fila.pedidoId} and anterior.destinatario = ${fila.destinatario}
-      and anterior.modelo <> 'resposta-cliente'
       and (
         (anterior.modelo in ('criado-confirmado-cliente', 'criado-por-confirmar-cliente')
           and ${fila.modelo} not in ('criado-confirmado-cliente', 'criado-por-confirmar-cliente'))
