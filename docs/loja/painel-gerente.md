@@ -10,14 +10,14 @@ Ao lado da pesquisa, três menus em vez de uma fila de separadores:
 
 | Menu | Vistas |
 |---|---|
-| **Produtos** | Todos os produtos · Ordem das categorias · Por preencher · Esgotados |
+| **Produtos** | Todos os produtos · Famílias e categorias · Bolos personalizados · Por preencher · Esgotados |
 | **Pedidos** | Levantam hoje · Produzir hoje · Próximos · Todos os pedidos · Arquivo |
 | **Loja** | Precisa de atenção · Horários · Definições · Equipa |
 
 As migalhas por baixo dizem onde se está. A pesquisa procura produtos na lista
 de produtos, e pedidos em todo o resto. **Todos os produtos ficam por ordem alfabética**, na lista do painel e na
-`/encomendas` — um produto novo entra logo no sítio dele. Só as categorias da
-carta seguem a ordem que a gerente escolhe. **Levantam hoje** e **Próximos**
+`/encomendas` — um produto novo entra logo no sítio dele. As famílias e as
+categorias seguem a ordem que a gerente escolhe (Famílias e categorias). **Levantam hoje** e **Próximos**
 aparecem à gerente em lista compacta (hora, referência, cliente, estado,
 total); «Ver pedido» abre o mesmo cartão do balcão, com o «Entregue». O balcão
 continua com cartões grandes e separadores (`painel-balcao.md`).
@@ -317,39 +317,79 @@ lançamento, e é o que nos diz quando podemos fazer os testes reais.
 pedidos antigos continuam a apontar para ele. Um produto apagado a sério deixava
 pedidos pagos a referir uma coisa que não existe.
 
-### Ordem das categorias
+### Famílias, categorias e secções
 
-Pedido da casa a 12/10 (#87). Em **Produtos › Ordem das categorias**, a gerente escolhe a
-ordem em que as categorias aparecem na secção «Da carta» das encomendas
-(até 12/11 também na `/ementa`, que saiu). **Dentro de cada categoria, os produtos ficam por
-ordem alfabética**, e isso não se escolhe: ninguém ordena noventa e cinco
-artigos à mão num telemóvel. Não há subcategorias para ordenar (os títulos das
-bebidas ficam na ordem do impresso), e as cartas também não se ordenam.
+Pedido da casa a 26/11, com a **família «Natal»** como primeira nova — que **a
+gerente cria aqui** (decidido a 27/11: nenhuma migração escreve uma família
+vazia). Substitui a
+«Ordem das categorias» (#87), que só ordenava as da carta. Em **Produtos ›
+Famílias, categorias e secções**, a gerente arruma a `/encomendas` inteira num
+sítio só, em três níveis — **Família › Categoria › Secção** (decidido a 27/11):
 
-- **Subir e descer, sem arrastar.** Arrastar num telemóvel briga com a rolagem,
-  não se faz com o teclado e pede uma biblioteca. Cada categoria tem os dois
-  botões; o foco acompanha a categoria que se move, e um leitor de ecrã ouve
-  para que lugar ela foi.
-- A ordem muda num rascunho e **só vai para o site ao gravar**. Gravar revalida
-  as páginas, como um preço.
-- ⚠️ **Grava-se a lista inteira, e tem de ser uma permutação das categorias que
-  existem.** Uma categoria que faltasse não ia para o fim — desaparecia da
-  «Da carta», porque a secção sai desta lista. O servidor recusa listas com
-  categorias a menos, a mais ou repetidas.
-- ⚠️ **Só a gerente**: o papel verifica-se no servidor (`papeis.ts`), como nos
-  produtos.
+- **As famílias, pela ordem em que aparecem na loja**: Kit Festas, Bolo e mesa
+  decorada, Boxes para dias especiais, Da carta — e as que ela criar, o Natal
+  primeiro.
+- **Dentro de cada família, as categorias, pela ordem dela.** Cria categorias
+  novas, muda-lhes o nome e **passa uma categoria para outra família** («Passar
+  para»): os produtos vão com ela.
+- **Dentro de cada categoria, as secções**, opcionais e pela ordem dela («Doces ›
+  Da casa / Vegan»). **Cada secção é de uma categoria só**. Nascem vazias: é ela
+  quem as cria (27/11). Apagar uma secção com produtos não pede destino: ficam
+  na categoria, sem secção, e continuam à vista.
+- **Cada produto vive numa categoria só** (decidido a 26/11), e numa secção dela
+  ou em nenhuma. **No editor são dois campos, Categoria e Secção**, e mais nada
+  sobre o sítio (27/11): antes eram cinco (Como se vende, Secção, Categoria,
+  Grupo, Onde aparece). Um produto sem categoria não grava. A carta, a
+  categoria e o grupo do impresso ficam fechados em «Do impresso · não muda
+  onde aparece no site»: o contrato pede-os num artigo da carta, mas já não
+  decidem nada à vista.
+- **As ajudas «?» mostram como aparece no site** (`ExemploLoja`): um desenho
+  pequeno da loja com o nível de que se fala marcado — família, categoria,
+  secção ou cartão. ⚠️ Se a loja mudar de forma, o desenho muda com ela.
+- **Dentro de cada categoria, os produtos ficam por ordem alfabética**, e isso
+  não se escolhe: ninguém ordena noventa e cinco artigos à mão num telemóvel.
+- ⚠️ **Uma família ou categoria sem produtos não aparece no site** — nem secção,
+  nem link no índice ou no menu do cabeçalho. O ecrã diz-o ao lado de cada uma
+  («Sem produtos — ainda não aparece no site»). O Natal criado vazio só se vê
+  quando tiver o primeiro produto.
+- **Apaga-se qualquer família ou categoria, mas nenhum produto fica sem
+  sítio** (decidido a 27/11). Ao apagar uma com produtos, aparece **«A apagar
+  ao gravar»**, e a gerente escolhe para que categoria passa cada uma — uma que
+  já exista e fique (uma nova grava-se primeiro). Passam todos, arquivados
+  incluídos, e só depois a categoria sai: os pedidos antigos continuam a
+  apontar para os mesmos produtos. Sem destino o «Gravar» não se liga, e o
+  servidor recusa na mesma (`destinos` no `EsquemaFamilias`). Apagar uma família
+  é apagá-la com as categorias dela.
+- **Subir e descer, sem arrastar**, como na #87: arrastar num telemóvel briga
+  com a rolagem, não se faz com o teclado e pede uma biblioteca.
+- Tudo muda num rascunho e **só vai para o site ao gravar** — a árvore inteira
+  de uma vez (`EsquemaFamilias`, `guardarFamilias`). Gravar revalida as páginas,
+  como um preço. Ganha a última gravação.
+- ⚠️ **Só a gerente**: o papel verifica-se no servidor (`papeis.ts`).
+- **Os nomes repetem-se entre famílias, nunca dentro da mesma** (uns «Doces» no
+  Natal e outros na carta). Um nome mudado perde a tradução inglesa, que era a
+  do nome antigo; a loja em inglês mostra o português até haver tradução.
+- **O texto de cada família** (a frase por baixo do título) só existe para as
+  quatro de partida, em `messages/*.json`. Uma família nova só tem o nome.
+- **A quantidade mínima no título da categoria** só aparece quando é a mesma em
+  todos os artigos da carta dessa categoria. Os «Salgados vegan» misturam
+  artigos ao quilo e à unidade, e ficam sem ela: antes mostravam a do primeiro
+  artigo, que estava errada para metade.
+- ⚠️ **Não é a `familia` do produto.** Essa decide o cartão e a página — pessoas
+  num kit de festa, o configurador no bolo por medida — e no editor junta-se à
+  `origem` num campo só, **«Tipo de cartão»** (Artigo da carta, Kit de festa,
+  Kit de bolo, Box, Os nossos Bolos); na lista de produtos, o filtro dela
+  chama-se «Todos os tipos». Um bolo de Natal pode ser um «Kit de bolo» na família «Natal».
 - **Alfabética é a portuguesa** (`localeCompare` com `pt`, em
   `src/lib/ordenar.ts`): «Éclair» vem antes de «Tosta», e «Pão» antes de
   «pastel». Ordena-se pelo nome português também na página inglesa.
-- Ordena-se **na fronteira** (`listarProdutos` do `index.ts`), e não nos
-  componentes nem na base de dados: as páginas recebem a lista já ordenada, e
-  ninguém depende da colação do Postgres. Os produtos de encomenda (kits, boxes)
-  não têm categoria e ficam pela ordem do catálogo.
-- **As cartas e as categorias desenham-se por uma função**
-  (`cartasComArtigos` e `categoriasDaCarta`, em `src/lib/vista.ts`), a partir da
-  ordem gravada, e não pela sequência em que os artigos chegam.
-- Por defeito, até a gerente mexer, é a ordem do impresso (`CATEGORIAS`, em
-  `src/data/ementa.ts`).
+- Na base de dados: `familias` e `categorias.familia_id` (migração `0012`,
+  `base-de-dados.md`). Sem base de dados, a árvore vive na memória da fonte
+  JSON, e ⚠️ **não passa do painel para a loja**: cada uma tem a sua cópia (o
+  limite que a «Ordem das categorias» já tinha).
+- A ordem das categorias de antes (`casa.ordem_ementa`, `guardarOrdemCategorias`)
+  continua na fronteira, sem ecrã: ainda ordena os artigos que o
+  `listarProdutos` devolve, mas a `/encomendas` já não a usa para desenhar.
 
 ### Bolos personalizados
 

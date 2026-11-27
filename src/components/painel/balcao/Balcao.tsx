@@ -155,7 +155,7 @@ export function Balcao({ papel, pedidos, balcao, produtos, pausaAte, modoTeste, 
           icone: ICONES.produtos,
           itens: [
             { id: "produtos", rotulo: "Todos os produtos" },
-            { id: "categorias", rotulo: "Ordem das categorias" },
+            { id: "categorias", rotulo: "Famílias, categorias e secções" },
             { id: "bolos", rotulo: "Bolos personalizados" },
             { id: "por-preencher", rotulo: "Por preencher", contagem: gestao.porPreencher.produtos.length },
             { id: "esgotados", rotulo: "Esgotados" },

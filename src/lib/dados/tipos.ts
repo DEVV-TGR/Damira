@@ -152,6 +152,21 @@ export const EsquemaProduto = z.object({
   familia: z.enum(["ementa", "festa", "bolo", "box", "medida"]),
   nome: Texto,
   descricao: Texto.nullable(),
+  /**
+   * **Onde o produto aparece na loja** (26/11): a categoria da gerente, dentro
+   * de uma família (`Familia`). As fontes enchem-no sempre que leem. Ao gravar,
+   * se não vier, sai da `familia`, da `carta` e da `categoria`, como desde a
+   * #124 (`categoriaDoProduto`, em `src/db/categorias.ts`) — é o que mantém os
+   * produtos de antes do painel novo onde estavam. Uma categoria por produto,
+   * decidido a 26/11: pôr um produto no Natal é mudá-lo de categoria.
+   */
+  categoriaId: z.string().regex(/^[a-z0-9-]+$/).optional(),
+  /**
+   * A secção dentro da categoria (27/11), ou `null` — o produto aparece logo
+   * debaixo da categoria. Tem de ser uma secção da `categoriaId`: a base de
+   * dados recusa outra (`produtos_seccao_da_categoria`).
+   */
+  seccaoId: z.string().regex(/^[a-z0-9-]+$/).nullable().optional(),
   carta: z.string().nullable(),
   categoria: z.string().nullable(),
   /** Os títulos dentro de uma categoria da ementa (`SeccaoEmenta`). */
@@ -789,6 +804,78 @@ export type OrdemEmenta = {
   subcategorias: string[];
 };
 
+// ——— As famílias e as categorias (26/11) ———
+
+/** Uma secção (27/11): o terceiro nível, dentro de uma categoria só. */
+export type Seccao = { id: string; nome: Texto; categoriaId: string };
+
+/** Uma categoria da gerente, dentro de uma família, com as secções dela pela ordem dela. */
+export type Categoria = { id: string; nome: Texto; familiaId: string; seccoes: Seccao[] };
+
+/**
+ * O nível de cima da `/encomendas` (pedido de 26/11): Kit Festas, Bolo e mesa
+ * decorada, Boxes, Da carta, Natal… **Pela ordem da gerente**, as categorias
+ * também, e sem as arquivadas. O `id` é a âncora da secção, e nunca muda.
+ */
+export type Familia = { id: string; nome: Texto; categorias: Categoria[] };
+
+type Texto = z.infer<typeof Texto>;
+
+const NomeDaGerente = z.string().trim().min(1).max(60);
+const IdDoCatalogo = z.string().regex(/^[a-z0-9-]+$/).max(80);
+
+/**
+ * O que a gerente grava em «Famílias e categorias»: **a árvore inteira**, pela
+ * ordem nova. Uma família ou uma categoria **sem `id` é nova**, e o servidor
+ * dá-lhe um a partir do nome. Uma que existia e não vem é **apagada**. Mover
+ * uma categoria para outra família é pô-la debaixo dela: os produtos vão com
+ * ela.
+ *
+ * **Apagar uma categoria com produtos pede um destino** (27/11): em `destinos`,
+ * o id da que sai → o id da categoria para onde os produtos dela passam, que
+ * tem de existir e ficar na árvore. Todos passam, arquivados incluídos, e só
+ * depois a categoria sai — nada se perde e os pedidos antigos continuam a
+ * apontar para os mesmos produtos. Sem destino, recusa-se. Apagar uma família
+ * é não a mandar, nem às categorias dela.
+ *
+ * **As secções vêm dentro de cada categoria** (27/11), com as mesmas regras de
+ * id e de nome. Uma secção não muda de categoria (os produtos dela deixavam de
+ * bater certo com a chave composta). Apagar uma secção com produtos não pede
+ * destino: os produtos ficam na categoria, sem secção — continuam à vista.
+ */
+export const EsquemaFamilias = z
+  .object({
+    familias: z
+      .array(
+        z
+          .object({
+            id: IdDoCatalogo.optional(),
+            nome: NomeDaGerente,
+            categorias: z
+              .array(
+                z
+                  .object({
+                    id: IdDoCatalogo.optional(),
+                    nome: NomeDaGerente,
+                    seccoes: z
+                      .array(z.object({ id: IdDoCatalogo.optional(), nome: NomeDaGerente }).strict())
+                      .max(40)
+                      .default([]),
+                  })
+                  .strict(),
+              )
+              .max(60),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(30),
+    destinos: z.record(IdDoCatalogo, IdDoCatalogo).optional(),
+  })
+  .strict();
+
+export type EntradaFamilias = z.input<typeof EsquemaFamilias>;
+
 // ——— O painel ———
 
 export const PAPEIS = ["funcionario", "gerente"] as const;
@@ -1106,6 +1193,13 @@ export type FontePainel = {
    */
   guardarOrdemCategorias(entrada: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<OrdemEmenta>>;
   /**
+   * As famílias e as categorias, todas de uma vez (`EsquemaFamilias`). Só
+   * gerente. Recusa com `dados-invalidos` um `id` que não existe ou repetido, um
+   * nome repetido (na mesma família, para as categorias) e apagar uma categoria
+   * com produtos. Devolve a árvore já gravada, como o `familias` a lê.
+   */
+  guardarFamilias(entrada: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<Familia[]>>;
+  /**
    * As opções do bolo personalizado, todas de uma vez (`painel-gerente.md` ›
    * Bolos personalizados). Só a gerente. ⚠️ Na base de dados responde
    * `indisponivel` até a tabela existir (PR de esquema).
@@ -1203,6 +1297,11 @@ export type FonteLoja = {
   listarProdutos(filtro?: FiltroProdutos): Promise<Produto[]>;
   produtoPorId(id: string): Promise<Produto | null>;
   ordemDaEmenta(): Promise<OrdemEmenta>;
+  /**
+   * As famílias e as categorias, pela ordem da gerente (26/11), sem as
+   * arquivadas. É o que desenha a `/encomendas`, e o que o painel edita.
+   */
+  familias(): Promise<Familia[]>;
   configuracaoDaCasa(): Promise<ConfiguracaoDaCasa>;
   definicoesLoja(): Promise<DefinicoesLoja>;
   /** ⚠️ **Nunca em cache** (`robustez.md`): uma vaga em cache vende-se duas vezes. */

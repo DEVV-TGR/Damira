@@ -64,10 +64,10 @@ export function TituloParaLeitores({
   children,
 }: {
   id?: string;
-  nivel: 2 | 4;
+  nivel: 2 | 3 | 4;
   children: ReactNode;
 }) {
-  const Titulo = nivel === 2 ? "h2" : "h4";
+  const Titulo = nivel === 2 ? "h2" : nivel === 3 ? "h3" : "h4";
   return (
     <Titulo id={id} className="sr-only">
       {children}

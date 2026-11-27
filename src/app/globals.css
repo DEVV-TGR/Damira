@@ -967,8 +967,7 @@ details[data-seccao] :is(a[href], button, input, select, textarea, [tabindex]) {
 details[data-categoria] {
   --altura-titulo-categoria: 3.5rem;
 }
-details[data-seccao] summary.titulo-fixo-categoria,
-.ancora-carta {
+details[data-seccao] summary.titulo-fixo-categoria {
   scroll-margin-top: calc(
     var(--altura-cabecalho) + var(--altura-titulo-seccao, 5rem) + 0.75rem - var(--folga-ancoras)
   );

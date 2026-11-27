@@ -62,7 +62,11 @@ export function Raro() {
             {t("exemplo")}
           </p>
           <p className="raro__acao" data-sc-cue="0.46 1 0.25 0.06">
-            <Link href="/encomendas#carta-vegan" className="cap__ligacao">
+            {/* ⚠️ **`#da-ementa`, e não uma âncora da carta vegan.** Desde as
+                famílias da gerente (#162) só as famílias têm `id`; as
+                categorias não, de propósito (armadilha 8). Um `#carta-vegan`
+                aterrava no topo da página sem aviso. */}
+            <Link href="/encomendas#da-ementa" className="cap__ligacao">
               {t("ligacao")}
             </Link>
           </p>
