@@ -378,7 +378,7 @@ sítio só, em três níveis — **Família › Categoria › Secção** (decidi
 - ⚠️ **Não é a `familia` do produto.** Essa decide o cartão e a página — pessoas
   num kit de festa, o configurador no bolo por medida — e no editor junta-se à
   `origem` num campo só, **«Tipo de cartão»** (Artigo da carta, Kit de festa,
-  Kit de bolo, Box, Bolo personalizado); na lista de produtos, o filtro dela
+  Kit de bolo, Box, Os nossos Bolos); na lista de produtos, o filtro dela
   chama-se «Todos os tipos». Um bolo de Natal pode ser um «Kit de bolo» na família «Natal».
 - **Alfabética é a portuguesa** (`localeCompare` com `pt`, em
   `src/lib/ordenar.ts`): «Éclair» vem antes de «Tosta», e «Pão» antes de

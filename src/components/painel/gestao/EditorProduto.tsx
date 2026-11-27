@@ -109,7 +109,7 @@ const CARTOES: Record<EntradaProduto["familia"], string> = {
   festa: "Kit de festa",
   bolo: "Kit de bolo",
   box: "Box",
-  medida: "Bolo personalizado",
+  medida: "Os nossos Bolos",
 };
 
 const NOVO: EntradaProduto = {
@@ -471,7 +471,7 @@ export function EditorProduto({
                     <>
                       O que o cartão e a página do produto fazem. <strong>Artigo da carta:</strong> tem o botão «+» e
                       encomenda-se com um mínimo (ex.: à dúzia). <strong>Kit de festa:</strong> pergunta para quantas
-                      pessoas. <strong>Bolo personalizado:</strong> abre o configurador. Não decide onde aparece: isso é a
+                      pessoas. <strong>Os nossos Bolos:</strong> abre o configurador do bolo personalizado. Não decide onde aparece: isso é a
                       Categoria.
                       <ExemploLoja realce="cartao" />
                     </>

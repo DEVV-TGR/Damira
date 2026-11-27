@@ -36,7 +36,7 @@ const FAMILIAS: { id: Produto["familia"] | "todas"; rotulo: string }[] = [
   { id: "festa", rotulo: "Kits de festa" },
   { id: "bolo", rotulo: "Kits de bolo" },
   { id: "box", rotulo: "Boxes" },
-  { id: "medida", rotulo: "Bolo por medida" },
+  { id: "medida", rotulo: "Os nossos Bolos" },
 ];
 
 const precoDe = (p: Produto) => {
