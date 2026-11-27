@@ -45,6 +45,7 @@ const pedido = (nome: string, alteracoes: Partial<Pedido> = {}): Pedido => ({
   totalCent: 33500,
   modoPagamento: "total",
   pagoOnlineCent: 33500,
+  descontoPercentagem: 0, descontoCent: 0,
   reembolsadoCent: 0,
   chegouTarde: false,
   propostaVersao: 0, propostaEm: null, levantamentoAnteriorEm: null,

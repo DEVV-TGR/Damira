@@ -82,6 +82,20 @@ export function DetalhePedido({ id, onVoltar }: { id: string; onVoltar: () => vo
                 ))}
               </ol>
               <dl className="mt-4 space-y-1 border-t border-tinta/10 pt-3 text-sm">
+                {/* O desconto da loja que o pedido teve: o total de baixo já o tem aplicado, e é esse
+                    que se cobra. */}
+                {pedido.descontoCent > 0 && (
+                  <>
+                    <div className="flex justify-between">
+                      <dt>Subtotal</dt>
+                      <dd className="tabular-nums">{formatarCent(pedido.totalCent + pedido.descontoCent, "pt")}</dd>
+                    </div>
+                    <div className="flex justify-between font-semibold text-tijolo">
+                      <dt>Desconto ({pedido.descontoPercentagem}%)</dt>
+                      <dd className="tabular-nums">−{formatarCent(pedido.descontoCent, "pt")}</dd>
+                    </div>
+                  </>
+                )}
                 <div className="flex justify-between">
                   <dt>Total</dt>
                   <dd className="tabular-nums">{formatarCent(pedido.totalCent, "pt")}</dd>

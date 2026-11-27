@@ -71,6 +71,8 @@ type Opcoes = {
   corpo: string;
   campos: Campos;
   partesLinhas: (paraLoja: boolean, comUnitario: boolean) => { nome: string; valor: string }[];
+  /** «Subtotal: …» e «Desconto (10%): −…», já preenchidos, em texto; vazio sem desconto. */
+  linhasDoDesconto: () => string[];
   blocos: (typeof BLOCOS)[keyof typeof BLOCOS];
   dados: DadosEmailPedido;
   casa: DadosCasa;
@@ -105,7 +107,7 @@ const ESTILO_ABERTURA = `margin:0 0 24px;font-family:${TITULOS};font-size:22px;l
 /** Um valor em euros não se parte a meio («15,60 / €»); um texto como «a fixar pela casa» pode. */
 const eDinheiro = (valor: string) => /^(€\s?)?[\d.,\s]+(\s?€)?$/.test(valor.trim());
 
-export function escreverHtmlEmail({ corpo, campos, partesLinhas, blocos, dados, casa, lingua }: Opcoes): string {
+export function escreverHtmlEmail({ corpo, campos, partesLinhas, linhasDoDesconto, blocos, dados, casa, lingua }: Opcoes): string {
   const ler = (chave: string) => {
     const campo = campos[chave];
     if (campo === undefined) throw new Error(`Marcador de email desconhecido: ${chave}`);
@@ -186,6 +188,17 @@ export function escreverHtmlEmail({ corpo, campos, partesLinhas, blocos, dados, 
         + `<td align="right" class="caixa" style="${fio}text-align:right;${eDinheiro(valor) ? "white-space:nowrap;" : `font-size:14px;line-height:22px;color:${SUAVE};`}">${escaparHtml(valor)}</td></tr>`;
     }).join("");
     let rodapeTabela = "";
+    /* O desconto da loja, por cima do total ou do pagamento: o subtotal como as linhas, e o desconto a
+       tijolo, com o valor à direita. Sem desconto não há linhas, e a tabela fica como antes. */
+    const linhasDesconto = total ? linhasDoDesconto().map((linha, indice) => {
+      const corte = linha.lastIndexOf(": ");
+      const destaque = indice > 0 || corte < 0 ? `color:${TIJOLO};font-weight:bold;` : "";
+      if (corte < 0) {
+        return `<tr class="linha-desconto"><td colspan="2" class="caixa" style="${celula}${destaque}">${escaparHtml(linha)}</td></tr>`;
+      }
+      return `<tr class="linha-desconto"><td class="caixa" style="${celula}${destaque}">${escaparHtml(linha.slice(0, corte))}</td>`
+        + `<td align="right" class="caixa" style="${celula}text-align:right;white-space:nowrap;${destaque}">${escaparHtml(linha.slice(corte + 2))}</td></tr>`;
+    }).join("") : "";
     if (total) {
       const modelo = total === "{total}" ? (dados.faltamPrecos ? blocos.totalConhecido : blocos.total) : total;
       const partes = total === "{total}" ? modelo.split("{valor}") : [];
@@ -203,7 +216,7 @@ export function escreverHtmlEmail({ corpo, campos, partesLinhas, blocos, dados, 
             : `<div style="font-weight:bold;">${[primeira, ...resto].join("<br>")}</div>`;
         })()}</td></tr>`;
     }
-    return tabela(`${cabeca}${corpoTabela}${rodapeTabela}`, `margin:0 0 24px;background-color:${FUNDO};border-radius:8px;`);
+    return tabela(`${cabeca}${corpoTabela}${linhasDesconto}${rodapeTabela}`, `margin:0 0 24px;background-color:${FUNDO};border-radius:8px;`);
   };
 
   const botao = () => {

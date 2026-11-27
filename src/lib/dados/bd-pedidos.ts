@@ -237,6 +237,8 @@ export async function lerPedidos(
         })),
       observacoes: p.observacoes,
       totalCent: p.totalCent,
+      descontoPercentagem: p.descontoPercentagem,
+      descontoCent: p.descontoCent,
       modoPagamento: p.modoPagamento,
       pagoOnlineCent: p.pagoOnlineCent,
       /* Não tem coluna: é a soma dos concluídos (`base-de-dados.md` › Os pedidos). */
@@ -478,14 +480,16 @@ function inserirSeDentroDosLimites(
     insert into pedidos (
       id, referencia, estado, criado_em, levantamento_em,
       cliente_nome, cliente_email, cliente_telefone, cliente_nif, conta_id,
-      observacoes, total_cent, modo_pagamento, chave_idempotencia, ip, procura, de_teste,
+      observacoes, total_cent, desconto_percentagem, desconto_cent,
+      modo_pagamento, chave_idempotencia, ip, procura, de_teste,
       confirmado_em, expira_em
     )
     select
       ${pedido.id}::uuid, ${pedido.referencia}, ${pedido.estado},
       ${pedido.criadoEm.toISOString()}::timestamptz, ${pedido.levantamentoEm.toISOString()}::timestamptz,
       ${cliente.nome}, ${cliente.email}, ${cliente.telefone}, ${cliente.nif}::text, ${cliente.contaId}::text,
-      ${pedido.observacoes}::text, ${pedido.totalCent}::integer, ${pedido.modoPagamento},
+      ${pedido.observacoes}::text, ${pedido.totalCent}::integer,
+      ${pedido.descontoPercentagem}::integer, ${pedido.descontoCent}::integer, ${pedido.modoPagamento},
       ${chave}::uuid, ${ip}::text, ${textoDeProcura(cliente.nome, pedido.referencia)}, ${deTeste}::boolean,
       ${pedido.confirmadoEm?.toISOString() ?? null}::timestamptz, ${pedido.expiraEm?.toISOString() ?? null}::timestamptz
     where (

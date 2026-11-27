@@ -621,6 +621,12 @@
       "opcional": "(optional)"
     }
   },
+  "desconto": {
+    "faixa": "Enjoy <destaque>{n}% off</destaque> every order",
+    "subtotal": "Subtotal",
+    "linha": "Discount ({n}%)",
+    "aplicadoNoFim": "{n}% discount applied to the final total"
+  },
   "modoTeste": {
     "etiqueta": "Test mode",
     "aviso": "Nothing is charged, and the pick-up times and booked slots are examples."

@@ -201,7 +201,11 @@ describe("cotar o cesto: o preço calcula-se no servidor", () => {
       valida: true,
       semPreco: 0,
       // 18 × 300 + 1,5 × 1700 + 2 × 1075
-      totalCent: 5400 + 2550 + 2150,
+      subtotalCent: 5400 + 2550 + 2150,
+      // O desconto da loja (10 %, `src/lib/desconto.ts`), aplicado no servidor.
+      descontoPercentagem: 10,
+      descontoCent: 1010,
+      totalCent: 10100 - 1010,
     });
   });
 
@@ -230,7 +234,10 @@ describe("cotar o cesto: o preço calcula-se no servidor", () => {
       { produtoId: "bolo-por-medida", varianteId: "unica", quantidade: 1, bolo: BOLO_DE_TESTE },
       { produtoId: "box-aniversario", varianteId: "unica", quantidade: 1 },
     ]);
-    expect(resultado.ok && resultado.cotacao).toMatchObject({ totalCent: 3500, semPreco: 1, valida: true });
+    /* O desconto aplica-se só à parte com preço; o resto leva-o quando a casa o fixar. */
+    expect(resultado.ok && resultado.cotacao).toMatchObject({
+      subtotalCent: 3500, descontoCent: 350, totalCent: 3150, semPreco: 1, valida: true,
+    });
   });
 });
 
@@ -248,7 +255,10 @@ describe.skipIf(NA_BASE_DE_DADOS)("criar o pedido", () => {
     if (!resultado.ok) return;
     expect(resultado.pedido).toMatchObject({
       estado: "confirmado",
-      totalCent: 33500,
+      // 335,00 € com os 10 % da loja: o total gravado é o que se paga.
+      totalCent: 30150,
+      descontoPercentagem: 10,
+      descontoCent: 3350,
       modoPagamento: "na-loja",
       pagoOnlineCent: 0,
       confirmadoEm: AGORA,
@@ -322,7 +332,9 @@ describe.skipIf(NA_BASE_DE_DADOS)("criar o pedido", () => {
     expect(resultado.pedido).toMatchObject({
       estado: "por-confirmar",
       modoPagamento: "na-loja",
-      totalCent: 3500,
+      totalCent: 3150,
+      descontoPercentagem: 10,
+      descontoCent: 350,
       confirmadoEm: null,
       expiraEm: new Date(AGORA.getTime() + 48 * 3_600_000),
     });
@@ -345,6 +357,15 @@ describe.skipIf(NA_BASE_DE_DADOS)("criar o pedido", () => {
     expect(
       await fonte.criarPedido(entrada({ linhas: [box], chaveIdempotencia: "4f1b2c3d-1111-4222-8333-888888888888" }), CONTEXTO),
     ).toEqual({ ok: false, erro: "abaixo-do-minimo-da-loja" });
+  });
+
+  it("o mínimo da loja confere-se antes do desconto: 10 % não põem ninguém abaixo dele", async () => {
+    /* O kit são 335,00 €; com 10 % paga-se 301,50 €. Com o mínimo a 320,00 €, passa: conta o subtotal. */
+    const fonte = fonteDeExemplo({
+      definicoes: { aceitarCancelamentosSite: false, devolverSinalAoCancelar: false, valorMinimoCent: 32000, pausaAte: null },
+    });
+    const resultado = await fonte.criarPedido(entrada(), CONTEXTO);
+    expect(resultado.ok && resultado.pedido).toMatchObject({ totalCent: 30150, descontoCent: 3350 });
   });
 
   it("recusa a loja em pausa", async () => {

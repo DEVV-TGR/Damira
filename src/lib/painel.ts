@@ -385,11 +385,14 @@ export function avisosDosPedidos(
  * não tem nada pago online.
  */
 export const rotuloPagamento = (
-  pedido: Pick<Pedido, "totalCent" | "pagoOnlineCent"> & Partial<Pick<Pedido, "modoPagamento" | "linhas">>,
+  pedido: Pick<Pedido, "totalCent" | "pagoOnlineCent"> &
+    Partial<Pick<Pedido, "modoPagamento" | "linhas" | "descontoPercentagem">>,
 ): string => {
   if (pedido.modoPagamento === "na-loja") {
     const porFixar = pedido.linhas?.some((linha) => linha.totalCent === null) ?? false;
-    return `A PAGAR NA LOJA · ${formatarCent(pedido.totalCent, "pt")}${porFixar ? " · PREÇO POR FIXAR" : ""}`;
+    /* O total já tem o desconto da loja: diz-se, para o balcão não o descontar outra vez. */
+    const desconto = pedido.descontoPercentagem ? ` · DESCONTO DE ${pedido.descontoPercentagem}% INCLUÍDO` : "";
+    return `A PAGAR NA LOJA · ${formatarCent(pedido.totalCent, "pt")}${desconto}${porFixar ? " · PREÇO POR FIXAR" : ""}`;
   }
   const falta = faltaPagarCent(pedido);
   return falta === 0 ? "PAGO" : `SINAL PAGO · FALTA ${formatarCent(falta, "pt")}`;

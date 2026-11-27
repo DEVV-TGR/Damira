@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { horasParaMudar, linkDaProposta, responder } from "@/app/painel/acoes-gestao";
 import type { Pedido } from "@/lib/dados/tipos";
+import { aplicarDesconto } from "@/lib/desconto";
 import { diaDeLisboa, diaPorExtenso, paraCent } from "@/lib/painel";
 import { horaDeLisboa } from "@/lib/painel-ligacao";
 import { formatarCent } from "@/lib/preco";
@@ -75,10 +76,13 @@ export function Responder({ pedido, onFeito }: { pedido: Pedido; onFeito?: (pedi
   const mal = lidos.filter(({ posicao, cent }) => (precos[posicao] ?? "") !== "" && cent === null);
   const fixados = lidos.filter(({ linha, cent }) => cent !== null && cent !== linha.precoUnitarioCent);
   const faltam = lidos.filter(({ linha, cent }) => cent === null && linha.precoUnitarioCent === null);
-  const totalNovo = pedido.linhas.reduce((soma, linha, i) => {
+  const subtotalNovo = pedido.linhas.reduce((soma, linha, i) => {
     const novo = fixados.find((f) => f.posicao === i);
     return soma + (novo ? Math.round(novo.cent! * linha.quantidade) : (linha.totalCent ?? 0));
   }, 0);
+  /* Com o desconto com que o pedido nasceu, como o servidor o vai gravar (`planearResposta`): o
+     valor do botão é o que o cliente paga. */
+  const totalNovo = aplicarDesconto(subtotalNovo, pedido.descontoPercentagem).totalCent;
   const novaHora = mudarHora && hora !== null ? hora : null;
   const propoe = fixados.length > 0 || novaHora !== null;
 
@@ -105,7 +109,7 @@ export function Responder({ pedido, onFeito }: { pedido: Pedido; onFeito?: (pedi
   const rotulo = aEnviar
     ? "A enviar…"
     : propoe
-      ? `${aguarda ? "Rever a proposta" : "Enviar a proposta"} · ${formatarCent(totalNovo, "pt")}`
+      ? `${aguarda ? "Rever a proposta" : "Enviar a proposta"} · ${formatarCent(totalNovo, "pt")}${pedido.descontoPercentagem > 0 ? ` (com ${pedido.descontoPercentagem}% de desconto)` : ""}`
       : aguarda
         ? "Mude o preço ou a hora para rever"
         : "Confirmar o pedido";

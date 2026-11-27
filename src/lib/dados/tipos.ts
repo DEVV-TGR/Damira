@@ -528,7 +528,12 @@ export type LinhaCotada = {
  */
 export type Cotacao = {
   linhas: LinhaCotada[];
-  /** Só as linhas válidas e com preço. */
+  /** A soma das linhas válidas e com preço, **antes** do desconto. É sobre ele que se confere o mínimo da loja. */
+  subtotalCent: number;
+  /** A percentagem do desconto da loja de agora (`DESCONTO_PERCENTAGEM`), `0` sem desconto. */
+  descontoPercentagem: number;
+  descontoCent: number;
+  /** O que se paga pelas linhas com preço: o subtotal menos o desconto. É o que o pedido grava. */
   totalCent: number;
   /** Linhas válidas sob orçamento. Contam-se à parte, nunca como zero. */
   semPreco: number;
@@ -678,7 +683,19 @@ export const EsquemaPedido = z.object({
   cliente: EsquemaCliente.extend({ contaId: z.string().nullable() }),
   linhas: z.array(EsquemaLinhaPedido).min(1),
   observacoes: z.string().nullable(),
+  /**
+   * O que o cliente paga, **já com o desconto da loja**: o subtotal é
+   * `totalCent + descontoCent` (`src/lib/desconto.ts`, migração `0013`).
+   */
   totalCent: Cent,
+  /**
+   * A percentagem do desconto com que o pedido nasceu (`0` sem desconto). Fica no
+   * pedido, e não se lê do código, porque a resposta da casa que fixa um preço sob
+   * orçamento recalcula o desconto com ela, mesmo que a loja já o tenha desligado.
+   */
+  descontoPercentagem: z.number().int().min(0).max(100),
+  /** O desconto em cêntimos, sobre o subtotal (`descontoCent` em `src/lib/desconto.ts`). */
+  descontoCent: Cent,
   modoPagamento: z.enum(MODOS_PAGAMENTO),
   pagoOnlineCent: Cent,
   /** Só reembolsos `concluido`. O que falta pagar na loja calcula-se, não se guarda. */

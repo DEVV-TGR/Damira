@@ -71,9 +71,11 @@ function enviar(campos: Record<string, string> = {}) {
 describe("o pedido do site na base de dados", () => {
   it("guarda antes de responder e devolve a referência, o dia de Lisboa e o total gravados", async () => {
     const resultado = await enviar({ nif: "123456789", observacoes: "Campainha da porta" });
-    expect(resultado).toMatchObject({ estado: "enviado", estadoPedido: "confirmado", registo: { totalCent: 33500, data: "2026-10-07", semPreco: 0 } });
+    expect(resultado).toMatchObject({ estado: "enviado", estadoPedido: "confirmado", registo: { totalCent: 30150, data: "2026-10-07", semPreco: 0 } });
     const [pedido] = await base.db.select().from(pedidos);
     expect(resultado).toMatchObject({ registo: { referencia: pedido.referencia } });
+    // Gravado com o desconto da loja: 335,00 € − 33,50 €.
+    expect(pedido).toMatchObject({ totalCent: 30150, descontoPercentagem: 10, descontoCent: 3350 });
     expect(pedido).toMatchObject({ estado: "confirmado", clienteTelefone: "+351912345678", clienteNif: "123456789", observacoes: "Campainha da porta", ip: "203.0.113.8", contaId: null, deTeste: true });
     expect(await base.db.select().from(emailsPorEnviar)).toHaveLength(2);
     expect(dependencias.avisar).toHaveBeenCalled();

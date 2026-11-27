@@ -424,7 +424,9 @@ Tudo em **cêntimos, inteiros**. Nunca `number` decimal num valor a cobrar.
 
 | Campo | O que é |
 |---|---|
-| `totalCent` | o valor dos produtos, calculado no servidor. Num `por-confirmar` com linhas sem preço, é só a parte conhecida, e fica completo quando a gerente as fixa |
+| `totalCent` | o valor dos produtos, calculado no servidor, **já com o desconto da loja**. Num `por-confirmar` com linhas sem preço, é só a parte conhecida, e fica completo quando a gerente as fixa |
+| `descontoPercentagem` | o desconto da loja com que o pedido nasceu (`10` desde 27/11; `0` sem desconto). Fica no pedido: a resposta da gerente reaplica-o |
+| `descontoCent` | o desconto em cêntimos, sobre o subtotal (`totalCent + descontoCent`), com o meio cêntimo para cima |
 | `entregaCent` | o custo da entrega: `0` num levantamento, `null` numa entrega por responder (ver acima) |
 | `modoPagamento` | `na-loja` num levantamento, `transferencia` numa entrega. (`total` e `sinal` são do pagamento online — `pagamentos.md`) |
 | `pagoOnlineCent` | o que o Stripe cobrou. Sem pagamento online, é sempre 0 |
@@ -433,7 +435,22 @@ Tudo em **cêntimos, inteiros**. Nunca `number` decimal num valor a cobrar.
 O que o cliente paga é `totalCent + entregaCent − pagoOnlineCent` — na loja,
 num levantamento; por transferência, numa entrega. **Calcula-se, não se guarda**
 — um campo derivado guardado é um campo que um dia não bate certo. O talão de um
-levantamento diz `A PAGAR NA LOJA · 23,50 €`.
+levantamento diz `A PAGAR NA LOJA · 23,50 €`, e com o desconto da loja
+`A PAGAR NA LOJA · 23,50 € · DESCONTO DE 10% INCLUÍDO` — o total já o traz, e o
+balcão não o desconta outra vez.
+
+⚠️ **O desconto da loja** (decidido pelo Tomás a 27/11): **10 % em toda a loja,
+para toda a gente**, sem códigos nem «primeiras encomendas», até a casa dizer que
+acabou. A percentagem vive num sítio só (`DESCONTO_PERCENTAGEM`, em
+`src/lib/desconto.ts`); desligar é pô-la a `0`. **Calcula-o o servidor**, na
+cotação e ao criar o pedido, sobre a parte com preço; o mínimo da loja confere-se
+sobre o subtotal, antes dele. O `descontoCent` guarda-se, apesar de ser uma conta,
+porque a percentagem tem de ficar no pedido (um preço sob orçamento fixado depois
+de o desconto da loja desligar mantém o desconto com que o pedido nasceu) — e o
+`CHECK pedidos_desconto` (migração `0013`) obriga os dois a baterem sempre com o
+total. O checkout, os emails ao cliente e à casa, o painel, a página da proposta e
+o talão mostram subtotal, desconto e total; com preços por fixar, dizem que o
+desconto se aplica ao total final.
 
 ⚠️ **O cliente vê o total proposto antes de aceitar.** Com os preços das linhas
 e o custo de entrega fixados, o orçamento mostra o total ainda em

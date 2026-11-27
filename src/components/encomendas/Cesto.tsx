@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
+import { aplicarDesconto } from "@/lib/desconto";
 import { estimativa, quantidadeEmTexto, totalArtigos, totalDaLinha } from "@/lib/cesto";
 import { formatarCent } from "@/lib/preco";
 import { useCesto } from "./CestoProvider";
@@ -40,6 +41,7 @@ import { DetalhesDoBolo } from "./DetalhesDoBolo";
  */
 export function Cesto({ locale }: { locale: Locale }) {
   const t = useTranslations("encomendas.cesto");
+  const td = useTranslations("desconto");
   const contexto = useCesto();
   const caixa = useRef<HTMLDialogElement>(null);
   const caminho = usePathname();
@@ -78,7 +80,11 @@ export function Cesto({ locale }: { locale: Locale }) {
   const artigos = totalArtigos(cesto);
   /* Só com artigos sob orçamento (um bolo personalizado sozinho), «0,00 €» lia-se
      como de graça. */
-  const valor = somaCent === 0 && semPreco > 0 ? t("semPreco") : formatarCent(somaCent, locale);
+  /* O desconto da loja, em estimativa: o cesto ainda não tem a cotação do servidor, e faz a mesma
+     conta que ele (`src/lib/desconto.ts`). Quem o grava é o servidor, ao criar o pedido. */
+  const comDesconto = aplicarDesconto(somaCent);
+  const desconto = comDesconto.descontoCent > 0 ? comDesconto : null;
+  const valor = somaCent === 0 && semPreco > 0 ? t("semPreco") : formatarCent(desconto ? desconto.totalCent : somaCent, locale);
 
   return (
     <>
@@ -209,6 +215,18 @@ export function Cesto({ locale }: { locale: Locale }) {
           </ul>
 
           <div className="border-t border-tinta/15 p-5 pt-4">
+            {desconto && (
+              <div className="mb-3 grid gap-1 border-b border-tinta/10 pb-3 text-sm">
+                <p className="flex items-baseline justify-between gap-4">
+                  <span>{td("subtotal")}</span>
+                  <span className="tabular-nums">{formatarCent(somaCent, locale)}</span>
+                </p>
+                <p className="flex items-baseline justify-between gap-4 font-semibold text-tijolo">
+                  <span>{td("linha", { n: desconto.descontoPercentagem })}</span>
+                  <span className="tabular-nums">−{formatarCent(desconto.descontoCent, locale)}</span>
+                </p>
+              </div>
+            )}
             <p className="flex items-baseline justify-between gap-4 font-semibold">
               <span>{somaCent === 0 && semPreco > 0 ? t("total") : semPreco > 0 ? t("aPartirDe") : t("estimativa")}</span>
               <span className="titulo-display text-2xl tabular-nums text-tijolo">{valor}</span>

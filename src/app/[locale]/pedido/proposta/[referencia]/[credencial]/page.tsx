@@ -38,6 +38,7 @@ export default async function PaginaProposta({ params }: { params: Promise<Param
   const { locale, referencia, credencial } = await params;
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "proposta" });
+  const td = await getTranslations({ locale, namespace: "desconto" });
   const telefone = casa.telefone ?? "";
 
   /* A credencial primeiro: sem ela nem se lê o pedido, e um link inventado não descobre se a
@@ -125,7 +126,13 @@ export default async function PaginaProposta({ params }: { params: Promise<Param
             </section>
           )}
 
-          <Resumo pedido={pedido} lingua={lingua} titulo={t("resumo")} total={t("total")} />
+          <Resumo
+            pedido={pedido}
+            lingua={lingua}
+            titulo={t("resumo")}
+            total={t("total")}
+            desconto={{ subtotal: td("subtotal"), linha: td("linha", { n: pedido.descontoPercentagem }) }}
+          />
           <Levantamento rotulo={t("dataLevantamento")} quando={data(pedido.levantamentoEm)} naLoja={t("naLoja")} />
 
           <p className="mt-6">
@@ -167,7 +174,19 @@ function Aviso({ titulo, texto, children }: { titulo: string; texto: string; chi
   );
 }
 
-function Resumo({ pedido, lingua, titulo, total }: { pedido: Pedido; lingua: Locale; titulo: string; total: string }) {
+function Resumo({
+  pedido,
+  lingua,
+  titulo,
+  total,
+  desconto,
+}: {
+  pedido: Pedido;
+  lingua: Locale;
+  titulo: string;
+  total: string;
+  desconto: { subtotal: string; linha: string };
+}) {
   return (
     <section className="mt-8 rounded-2xl bg-papel-fundo p-5 sm:p-6">
       <h2 className="text-xs font-semibold uppercase tracking-widest text-tinta-suave">{titulo}</h2>
@@ -186,6 +205,20 @@ function Resumo({ pedido, lingua, titulo, total }: { pedido: Pedido; lingua: Loc
           </li>
         ))}
       </ul>
+      {/* O desconto que o pedido teve, gravado nele: a proposta já o traz aplicado ao preço que a
+          casa fixou (`planearResposta`). */}
+      {pedido.descontoCent > 0 && (
+        <div className="mt-2 grid gap-1 border-t border-tinta/15 pt-3 text-sm">
+          <p className="flex justify-between gap-4">
+            <span>{desconto.subtotal}</span>
+            <span className="whitespace-nowrap">{formatarCent(pedido.totalCent + pedido.descontoCent, lingua)}</span>
+          </p>
+          <p className="flex justify-between gap-4 font-semibold text-tijolo">
+            <span>{desconto.linha}</span>
+            <span className="whitespace-nowrap">−{formatarCent(pedido.descontoCent, lingua)}</span>
+          </p>
+        </div>
+      )}
       <p className="mt-2 flex justify-between gap-4 border-t-2 border-tijolo pt-4 font-semibold">
         <span>{total}</span>
         <span className="titulo-display whitespace-nowrap text-xl">{formatarCent(pedido.totalCent, lingua)}</span>
