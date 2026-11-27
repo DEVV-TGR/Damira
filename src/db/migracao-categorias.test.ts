@@ -285,6 +285,23 @@ describe("a 0012 e as famílias (26/11)", () => {
       await cliente.close();
     }
   });
+
+  it("o código de antes da 0012 ainda grava uma categoria da carta, que vai para a da-ementa", async () => {
+    /* Entre a migração no production e o deploy, o `categoriaNova` antigo
+       insere sem `familia_id` (revisão do Sobral ao #161). SQL e não o
+       `db.insert`: o Drizzle de hoje já conhece a coluna e escrevia-a. */
+    const { db, cliente } = await pelaImportacao(ORIGEM);
+    try {
+      await cliente.query(
+        `insert into categorias (id, nome_pt, nome_en, posicao) values ('casa-bolos-inteiros', 'Bolos inteiros', 'Whole cakes', 12)
+         on conflict (id) do nothing`,
+      );
+      const [lida] = await db.select().from(categorias).where(eq(categorias.id, "casa-bolos-inteiros"));
+      expect(lida.familiaId).toBe("da-ementa");
+    } finally {
+      await cliente.close();
+    }
+  });
 });
 
 const modelo = await catalogoDeTeste();

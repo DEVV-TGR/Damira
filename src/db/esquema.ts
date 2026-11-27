@@ -130,6 +130,14 @@ export const categorias = pgTable(
      */
     familiaId: text("familia_id")
       .notNull()
+      /* ⚠️ **O `DEFAULT` é para o deploy, e não para o código novo**, que
+         escreve sempre a família. Entre aplicar a `0012` no production e o
+         deploy deste código, o código antigo ainda grava categorias sem
+         `familia_id` (o `categoriaNova`, a cada produto gravado) — e só as da
+         carta, que é a `da-ementa`. Sem isto, o `NOT NULL` recusava-as e
+         gravar um produto no painel dava erro durante esses minutos (revisão do
+         Sobral ao #161). Sai numa limpeza, quando nenhum código antigo correr. */
+      .default("da-ementa")
       .references(() => familias.id),
     /**
      * A ordem **dentro da família**. ⚠️ **Sem `UNIQUE`, de propósito**: reordenar é trocar
