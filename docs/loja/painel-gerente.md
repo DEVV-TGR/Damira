@@ -319,12 +319,15 @@ pedidos pagos a referir uma coisa que não existe.
 
 ### Famílias e categorias
 
-Pedido da casa a 26/11, com a **família «Natal»** como primeira nova. Substitui a
+Pedido da casa a 26/11, com a **família «Natal»** como primeira nova — que **a
+gerente cria aqui** (decidido a 27/11: nenhuma migração escreve uma família
+vazia). Substitui a
 «Ordem das categorias» (#87), que só ordenava as da carta. Em **Produtos ›
 Famílias e categorias**, a gerente arruma a `/encomendas` inteira num sítio só:
 
 - **As famílias, pela ordem em que aparecem na loja**: Kit Festas, Bolo e mesa
-  decorada, Boxes para dias especiais, Da carta, Natal — e as que ela criar.
+  decorada, Boxes para dias especiais, Da carta — e as que ela criar, o Natal
+  primeiro.
 - **Dentro de cada família, as categorias, pela ordem dela.** Cria categorias
   novas, muda-lhes o nome e **passa uma categoria para outra família** («Passar
   para»): os produtos vão com ela.

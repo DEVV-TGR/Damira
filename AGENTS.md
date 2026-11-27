@@ -262,7 +262,7 @@ desfeita), e o que dela se encomenda vive na `/encomendas`, na secção
 **«Da carta»**: 70 dos 95 artigos.
 
 **As secções da `/encomendas` são as famílias da gerente** (pedido de 26/11):
-Kit Festas, Bolo e mesa decorada, Boxes, Da carta, Natal — criadas, renomeadas
+Kit Festas, Bolo e mesa decorada, Boxes, Da carta (e o Natal, que a gerente cria) — criadas, renomeadas
 e ordenadas por ela em **Produtos › Famílias e categorias**, com as categorias
 dela dentro (`painel-gerente.md`, tabela `familias`, migração `0012`). **Cada
 produto vive numa categoria só** (`categoriaId`, escolhido no editor em «Onde

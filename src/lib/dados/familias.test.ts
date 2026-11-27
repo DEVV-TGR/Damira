@@ -28,12 +28,18 @@ const gravar = async (f: FonteDeDados, familias: EntradaFamilias["familias"]) =>
   return resultado.valor;
 };
 
+/* O Natal não vem de partida (27/11): cria-o a gerente, como aqui, no fim. */
+const comNatal = async (f: FonteDeDados) =>
+  gravar(f, [...comoEntrada(await f.familias()), { nome: "Natal", categorias: [] }]);
+
 describe("as famílias de partida", () => {
-  it("são as secções da /encomendas, com as âncoras de hoje, e o Natal", async () => {
+  it("são as secções da /encomendas, com as âncoras de hoje, e sem o Natal", async () => {
     const f = await fonte();
     const arvore = await f.familias();
-    expect(arvore.map((familia) => familia.id)).toEqual(["festas", "kits-bolo", "boxes", "da-ementa", "natal"]);
-    expect(arvore.find((familia) => familia.id === "natal")?.categorias).toEqual([]);
+    expect(arvore.map((familia) => familia.id)).toEqual(["festas", "kits-bolo", "boxes", "da-ementa"]);
+    /* A gerente cria-o, e fica vazio e no fim, com o id tirado do nome. */
+    const comEle = await comNatal(f);
+    expect(comEle.at(-1)).toMatchObject({ id: "natal", nome: { pt: "Natal", en: null }, categorias: [] });
     expect(arvore.find((familia) => familia.id === "festas")?.categorias.map((c) => c.id)).toEqual(["festas"]);
     expect(arvore.find((familia) => familia.id === "da-ementa")?.categorias.map((c) => c.id)).toContain("vegan-doces");
   });
@@ -51,7 +57,7 @@ describe("as famílias de partida", () => {
 describe("a gerente grava a árvore", () => {
   it("reordena as famílias e as categorias dentro delas", async () => {
     const f = await fonte();
-    const antes = comoEntrada(await f.familias());
+    const antes = comoEntrada(await comNatal(f));
     const carta = antes.find((familia) => familia.id === "da-ementa")!;
     const nova = [
       { ...antes.find((familia) => familia.id === "natal")! },
@@ -67,7 +73,7 @@ describe("a gerente grava a árvore", () => {
 
   it("cria uma família e categorias novas, com um id tirado do nome", async () => {
     const f = await fonte();
-    const antes = comoEntrada(await f.familias());
+    const antes = comoEntrada(await comNatal(f));
     const gravada = await gravar(f, [
       ...antes.map((familia) =>
         familia.id === "natal" ? { ...familia, categorias: [{ nome: "Bolos de Natal" }, { nome: "Doces" }] } : familia,
@@ -86,7 +92,7 @@ describe("a gerente grava a árvore", () => {
 
   it("um produto vai para uma categoria do Natal, e a categoria anda com os produtos", async () => {
     const f = await fonte();
-    const antes = comoEntrada(await f.familias());
+    const antes = comoEntrada(await comNatal(f));
     const gravada = await gravar(
       f,
       antes.map((familia) => (familia.id === "natal" ? { ...familia, categorias: [{ nome: "Bolos de Natal" }] } : familia)),
@@ -129,7 +135,7 @@ describe("a gerente grava a árvore", () => {
 
   it("apaga o que está vazio, e recusa apagar uma categoria com produtos", async () => {
     const f = await fonte();
-    const antes = comoEntrada(await f.familias());
+    const antes = comoEntrada(await comNatal(f));
     /* O Natal está vazio: sai. */
     const semNatal = await gravar(
       f,
@@ -149,7 +155,7 @@ describe("a gerente grava a árvore", () => {
 
   it("recusa nomes repetidos, ids que não existem, e quem não é gerente", async () => {
     const f = await fonte();
-    const antes = comoEntrada(await f.familias());
+    const antes = comoEntrada(await comNatal(f));
     const recusa = (campo: string) => ({ ok: false, erro: "dados-invalidos", campos: [campo] });
 
     expect(await f.guardarFamilias({ familias: [...antes, { nome: "kit festas", categorias: [] }] }, GERENTE)).toEqual(
@@ -176,7 +182,7 @@ describe("a gerente grava a árvore", () => {
 
   it("um nome mudado perde o inglês, e um que fica guarda-o", async () => {
     const f = await fonte();
-    const antes = comoEntrada(await f.familias());
+    const antes = comoEntrada(await comNatal(f));
     const gravada = await gravar(
       f,
       antes.map((familia) => (familia.id === "festas" ? { ...familia, nome: "Festas" } : familia)),
