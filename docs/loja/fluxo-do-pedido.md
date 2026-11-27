@@ -42,9 +42,10 @@ a tracejado 💡.
    o `criado-loja`, direto e fora da fila (`:167`). O `criarPedido`
    (`src/lib/dados/bd-pedidos.ts:288`) existe, mas ninguém o chama, e também
    não põe nenhum email na fila. **Sem isto, nada deste fluxo acontece no site.**
-2. **Nenhum email da fila sai.** O `enviarDepois()` (`src/lib/emails/depois.ts:6`)
-   não é chamado em lado nenhum, e as novas tentativas sem visitas (#149) ainda
-   não entraram. Um email «na fila ✅» quer dizer gravado, e não enviado.
+2. **Os emails da fila saem desde o ponto 2 (26/11)**: o `enviarDepois()`
+   (`src/lib/emails/depois.ts`) é chamado depois da compra, do aceite e da recusa
+   da proposta e das decisões do painel, incluindo o «Confirmar» do balcão. As novas tentativas sem visitas (#149)
+   ainda não entraram, e em modo de teste tudo vai para a caixa de `EMAILS_SO_PARA`.
 3. **A referência.** O diagrama usa `#00001`; o código usa `DAM-2611-HYUS`. Fica
    para a Andreia dizer se aceita a do código.
 
@@ -96,7 +97,7 @@ flowchart TB
         direction TB
         C1["/encomendas/pedido<br/>a compra ✅<br/>(não grava ❌)"]
         C2["«Pedido enviado.»<br/>referência ✅"]
-        C3["Email com botão<br/>«Consultar e aceitar proposta»<br/>(o emissor ainda não escreve o link ❌)"]
+        C3["Email com botão<br/>«Consultar e aceitar proposta» ✅"]
         C4["/pedido/proposta/‹ref›/‹credencial›<br/>Aceitar ✅ · Recusar ✅"]
         C5["💡 «Pedir alteração»<br/>na página da proposta"]
         C6["Telefone da casa<br/>alterar · cancelar"]
@@ -204,7 +205,7 @@ flowchart TB
     end
     A2 --> B1
     B4 -- "confirmado-cliente na fila ✅ · envio ❌" --> R3
-    B5 -- "resposta-cliente na fila ✅ · emissor sem link ❌" --> R4
+    B5 -- "resposta-cliente na fila ✅ · sai com o link ✅" --> R4
     B6 -- "recusado-cliente ❌" --> R16
     B8 -- "expirado-cliente na fila ✅ · envio ❌" --> R10
 
@@ -270,7 +271,7 @@ flowchart TB
 - A página: `src/app/[locale]/pedido/proposta/[referencia]/[credencial]/page.tsx`, com `src/components/pedido/DecisaoProposta.tsx`.
 - Aceitar e recusar: `aceitarProposta` e `recusarProposta`, em `bd-pedidos.ts:373` e `:386`. Os dois gravam os emails na mesma instrução.
 - A credencial é `src/lib/proposta.ts` (`caminhoDaProposta`), assinada com o `PROPOSTA_SEGREDO`.
-- ⚠️ O emissor exclui o `resposta-cliente` (`src/lib/emails/emissor.ts:20`) e não passa o `linkAceitar`. Enquanto isso não mudar, o T04 **nunca sai**, e a gerente tem de copiar o link no painel.
+- O T04 sai com o link da versão em vigor (`dadosDoEmail`, em `src/lib/emails/emissor.ts`, com o link montado em `enviar.ts`). Uma proposta substituída ou que já não espera o aceite é saltada. O link do painel continua, para mandar à mão.
 
 ### C4. Entrega ao domicílio (T05, T07, T08, T15) — tudo ❌
 
@@ -404,11 +405,11 @@ que o modelo exige. Os textos estão em `src/lib/emails/textos.ts`, e a lista em
 | T01 | `criado-confirmado-cliente` | cliente | compra sem análise | ❌ ninguém | ✅ | ❌ |
 | T02 | `criado-por-confirmar-cliente` | cliente | compra com análise | ❌ ninguém | ✅ | ❌ |
 | — | `criado-loja` | loja | qualquer compra | ❌ (hoje vai direto, `soPorEmail`) | ✅ | 🟡 |
-| T03 | `confirmado-cliente` | cliente | loja confirma | ✅ `bd-painel-pedidos.ts:412` | ✅ | 🟡 envio |
-| T04 | `resposta-cliente` | cliente | loja propõe / revê | ✅ `:436` | ❌ sem `linkAceitar`, excluído em `emissor.ts:20` | 🟡 |
+| T03 | `confirmado-cliente` | cliente | loja confirma | ✅ `bd-painel-pedidos.ts:412` | ✅ | ✅ |
+| T04 | `resposta-cliente` | cliente | loja propõe / revê | ✅ `:436` | ✅ com o `linkAceitar` da versão em vigor | ✅ |
 | T05 | *(não existe)* | cliente | proposta com entrega | ❌ | ❌ | ❌ |
-| T06 | `aceite-cliente` | cliente | cliente aceita | ✅ `bd-pedidos.ts:373` | ✅ | 🟡 envio |
-| — | `aceite-loja` | loja | cliente aceita | ✅ `bd-pedidos.ts:373` | ✅ | 🟡 envio |
+| T06 | `aceite-cliente` | cliente | cliente aceita | ✅ `bd-pedidos.ts:373` | ✅ | ✅ |
+| — | `aceite-loja` | loja | cliente aceita | ✅ `bd-pedidos.ts:373` | ✅ | ✅ |
 | T07 | *(não existe)* | cliente | aceite com entrega: IBAN | ❌ | ❌ | ❌ |
 | T08 | *(não existe)* | cliente | transferência recebida | ❌ | ❌ | ❌ |
 | T09 | `reagendado-cliente` | cliente | loja muda a data | ❌ ninguém | ❌ sem `levantamentoAnteriorEm` | ❌ |
@@ -417,7 +418,7 @@ que o modelo exige. Os textos estão em `src/lib/emails/textos.ts`, e a lista em
 | T10 | `expirado-cliente` | cliente | 48 h sem resposta | ✅ `bd-pedidos.ts:105` | ✅ | 🟡 só com visitas |
 | T11 | `cancelado-cliente` (`canceladoPor=cliente`) | cliente | loja regista o cancelamento pedido pelo cliente | ❌ | ✅ | ❌ |
 | T12 | `cancelado-cliente` (`canceladoPor=gerente`) | cliente | loja cancela | ❌ (`cancelarPedido` não grava email) | ✅ | ❌ |
-| T13 | `proposta-recusada-cliente` | cliente | cliente recusa | ✅ `bd-pedidos.ts:386` | ✅ | 🟡 envio |
+| T13 | `proposta-recusada-cliente` | cliente | cliente recusa | ✅ `bd-pedidos.ts:386` | ✅ | ✅ |
 | T14 | `proposta-expirada-cliente` | cliente | 24 h sem aceite | ✅ `bd-pedidos.ts:105` | ✅ | 🟡 só com visitas |
 | T15 | `cancelado-sem-pagamento-cliente` | cliente | prazo da transferência passou | ❌ | ✅ | ❌ |
 | T16 | `recusado-cliente` | cliente | loja recusa antes de confirmar | ❌ (não há operação) | ✅ | ❌ |
@@ -444,7 +445,13 @@ ninguém.
 - **Pronto quando:** comprar no site deixa um pedido na base com o estado certo, e duas linhas em `emails_por_enviar`. O ecrã de «Pedido enviado» diz «confirmada» ou «em análise» (o `estadoPedido` do resultado, `acoes.ts:33`).
 - **Teste:** os da fronteira, nas duas fontes, com as linhas da fila conferidas, como no #139.
 
-### 2. Os emails saem — Sobral
+### 2. Os emails saem — Sobral ✅ (PR do emissor, 26/11)
+
+Feito como se descreve abaixo, com uma diferença: a expiração não chama o
+`enviarDepois()` (corre à boleia das leituras, dentro da fronteira); o email dela
+sai no envio seguinte — uma compra limpa sempre antes de criar — ou na volta
+horária do ponto 3. O cancelar e o reagendar já pedem o envio, mas só gravam
+emails com o ponto 5.
 
 **Para o Sobral:**
 - `enviarDepois()` (`src/lib/emails/depois.ts:6`) chamado **depois** de cada escrita que grava emails: compra, responder, aceitar, recusar, cancelar, reagendar e expirar.
@@ -459,7 +466,16 @@ ninguém.
 - A expiração às 48 h e às 24 h (T10, T14) e o `lembrete-loja` (que hoje ninguém grava) correm na mesma tarefa horária, e não só quando alguém visita o site.
 - **Pronto quando:** um pedido por confirmar sem visitas expira à hora certa, com o T10 enviado, e a loja recebe o lembrete antes.
 
-### 4. O emissor escreve propostas e reagendamentos — Sobral, com o Gonçalo a rever
+### 4. O emissor escreve propostas e reagendamentos — Sobral, com o Gonçalo a rever ✅ (propostas, 26/11)
+
+Feito para a proposta, como se descreve abaixo. Uma proposta substituída é
+reconhecida pelo instante: a linha da fila entra na mesma instrução que grava o
+`proposta_em`, por isso uma linha mais antiga do que o `proposta_em` do pedido é
+de uma versão anterior. **O reagendamento fica para o ponto 5:** o
+`levantamentoAnteriorEm` é a hora pedida antes da proposta, não a de antes de um
+reagendamento, e por isso não vai nos `reagendado-*`. O `reagendarPedido` tem de
+gravar a hora anterior dele (uma coluna nova, num PR de esquema) para esses
+emails saírem.
 
 **Para o Sobral:**
 - **Em `dadosDoEmail`** (`src/lib/emails/emissor.ts:22`), passar:
@@ -483,9 +499,11 @@ ninguém.
 
 ### 6. O balcão com os pedidos pagos na loja — Gonçalo (#125)
 
-**Para o Gonçalo:**
-- «Levantam hoje», «Produzir hoje», o som e o «✓ Entregue» aceitam `confirmado`, e não só `pago`.
-- Onde mexer: `src/lib/painel.ts:190-191` e `:359-360`, e `src/components/painel/balcao/PedidoCartao.tsx:122`.
+✅ **Feito no PR da #125.** «Levantam hoje», «Produzir hoje», «Próximos», o som e
+o «✓ Entregue» aceitam `confirmado` (`aFazer`, em `src/lib/painel.ts`). Há um
+separador «Por confirmar», com o prazo e a urgência de cada pedido, onde o
+balcão confirma tal como está. O «transferência recebida» fica com as entregas
+(ponto 8). Ver `painel-balcao.md`.
 
 ### 7. A loja chega ao pedido a partir do email — Gonçalo
 

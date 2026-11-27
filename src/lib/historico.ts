@@ -8,9 +8,9 @@ import type { TipoPedido } from "@/lib/pedidos";
  *
  * ## ⚠️ Isto são **os pedidos feitos neste browser**, e o site diz isso
  *
- * Não é o histórico da casa. Não há base de dados: as encomendas saem daqui por
- * email e nada nosso as guarda (ver `autenticacao.ts`). O que existe é o
- * registo que **o próprio browser** faz do que enviou, exactamente como o cesto.
+ * Não é o histórico da casa. Com BD, os pedidos ficam guardados no servidor,
+ * mas esta lista ainda é o registo que **o próprio browser** faz do que enviou,
+ * exactamente como o cesto. Sem BD, o pedido continua a sair por email.
  *
  * Isso quer dizer três coisas que a interface tem de dizer em vez de esconder:
  *

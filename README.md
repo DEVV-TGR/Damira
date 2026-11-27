@@ -100,16 +100,16 @@ lista que aparece na conta **e** no topo de `/encomendas`, com um botão para
 *pedir o mesmo*.
 
 ⚠️ **É o histórico deste browser, não o histórico da casa** — e o site diz isso
-por cima da lista, sempre. Não há base de dados: a sessão é um JWT num cookie e
-nada nosso guarda o que foi pedido. Quem encomendou no telemóvel não vê esse
+por cima da lista, sempre. Com `DATABASE_URL`, o pedido fica na base de dados,
+mas esta lista ainda só lê o armazenamento local. A sessão é um JWT num cookie.
+Quem encomendou no telemóvel não vê esse
 pedido no computador, e limpar os dados do site apaga a lista.
 
 **Chamar-lhe «as suas encomendas» sem essa ressalva era mentir com uma
 funcionalidade**: quem não encontra lá o pedido conclui que ele se perdeu. Um
-histórico partilhado entre dispositivos exige base de dados e adaptador de
-sessão — é âmbito novo, com custo, e está na #1.
+histórico partilhado entre dispositivos ainda falta (#41/#50).
 
-Um pedido que ficou por enviar (sem serviço de email configurado, o pedido volta
+Sem base de dados, um pedido que ficou por enviar (sem serviço de email configurado, o pedido volta
 para a pessoa o mandar do seu correio) fica marcado **por enviar**, para não se
 esquecer.
 
@@ -154,10 +154,13 @@ falta, faz o site mentir a alguém:
       lançamento**: um site publicado a mandar as encomendas para quem o
       construiu é uma casa a perder trabalho sem dar por isso. Muda-se com a
       variável `EMAIL_PEDIDOS`.
-- [ ] **Chave do serviço de email (`RESEND_API_KEY`) e domínio verificado.** Sem
-      ela o formulário não se parte — devolve o pedido escrito para a pessoa o
-      enviar do seu correio —, mas cada pedido passa a depender de ela carregar
-      em enviar uma segunda vez.
+- [ ] **Fila e envio dos emails (#119), `RESEND_API_KEY` e domínio verificado.**
+      Com BD, a compra grava pedido, linhas, vaga e os dois emails de criação
+      juntos. O emissor da fila existe (#141), mas a compra ainda não o chama:
+      até esse PR, os emails ficam na fila e não saem. Sem BD, mantém-se o pedido escrito para enviar
+      pelo correio da própria pessoa. Uma tentativa persistente sem resposta
+      guarda-se temporariamente no `sessionStorage` e recupera-se com a mesma
+      chave; uma resposta definitiva remove os dados dessa tentativa.
 - [ ] **Política de privacidade.** O formulário recolhe nome, email, telefone e
       uma data, e pede consentimento explícito para os tratar. Falta a página
       que diz durante quanto tempo se guardam e como se pede a eliminação.

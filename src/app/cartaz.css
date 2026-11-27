@@ -93,13 +93,10 @@ body:has(.cartaz) .barra-vidro {
   object-position: 65% center;
 }
 
-.capa__foto--alternativa {
-  opacity: 0;
-  transition: opacity 600ms ease-in-out;
-}
-
-.capa__foto--alternativa[data-visivel] {
-  opacity: 1;
+/* O boneco está a 70 % da largura: no telemóvel, ao centro do recorte, e não
+   cortado pela margem direita. */
+.capa__foto--natal {
+  object-position: 70% center;
 }
 
 /* A sombra acompanha a coluna de texto e deixa o letreiro visível à direita. */
@@ -528,10 +525,6 @@ body:has(.cartaz) .barra-vidro {
    gramática. Fica como nas outras duas páginas. */
 
 @media (prefers-reduced-motion: reduce) {
-  .capa__foto--alternativa {
-    display: none;
-  }
-
   .pao__estampa {
     transform: none;
   }

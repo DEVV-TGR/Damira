@@ -9,10 +9,20 @@ import { agora, pedidoDeEmail, linhaDeEmail } from "@/lib/emails/exemplo-emissor
 const ambiente = { VERCEL_ENV: "preview", EMAILS_SO_PARA: "ensaio@example.com", RESEND_API_KEY: "chave-inventada", EMAIL_REMETENTE: "remetente@example.com", LOJA_EM_TESTE: "1" };
 const casa = { nome: "Casa", morada: "Rua Exemplo", localidade: "Localidade", telefone: "+351 229 730 939", email: "casa@example.com" };
 const mais = (ms: number) => new Date(+agora + ms);
+/* As linhas de exemplo são de outubro, antes do corte da fila: estes testes são do envio. */
+const corte = new Date(0);
 let base: Awaited<ReturnType<typeof baseComPedidos>>;
 let fonte: ReturnType<typeof criarEmailsBd>;
+const linkDaProposta = (referencia: string, versao: number) => `https://site.example/pedido/proposta/${referencia}/${versao}-assinatura`;
 const executar = (buscar: typeof fetch, data = agora, env = ambiente, origem = fonte) => executarEmissor({ agora: data, limite: 10 }, {
-  fonte: origem, ambiente: env, casa, buscar, esperar: async () => {}, decorrido: () => 0,
+  fonte: origem, ambiente: env, casa, buscar, esperar: async () => {}, decorrido: () => 0, corte, linkDaProposta,
+});
+/** O pedido de exemplo com a proposta n.º `versao` à espera do aceite, feita em `propostaEm`. */
+const comProposta = (versao: number, propostaEm: Date) => ({
+  ...fonte, pedidoDoEmail: async () => ({
+    ...pedidoDeEmail(), estado: "a-aguardar-aceite" as const, propostaVersao: versao, propostaEm,
+    expiraEm: mais(24 * 3_600_000),
+  }),
 });
 const sucesso = () => vi.fn<typeof fetch>().mockResolvedValue(new Response('{"id":"inventado"}', { status: 200 }));
 
@@ -78,7 +88,7 @@ describe("emissor com Postgres", () => {
     await preparar({ tentativas: 1, ultimaTentativaEm: agora });
     const buscar = sucesso();
     await executarEmissor({ agora: mais(86399000), limite: 10 }, {
-      fonte, ambiente, casa, buscar, esperar: async () => {}, decorrido: () => 2000,
+      fonte, ambiente, casa, buscar, esperar: async () => {}, decorrido: () => 2000, corte,
     });
     expect(buscar).not.toHaveBeenCalled();
     expect(await fonte.emailsFalhados(10)).toMatchObject([{ ultimoErro: "idempotencia-expirada" }]);
@@ -89,21 +99,23 @@ describe("emissor com Postgres", () => {
     const lenta = { ...fonte, pedidoDoEmail: async (id: string) => {
       const pedido = await fonte.pedidoDoEmail(id); decorrido = 2000; return pedido;
     } };
-    await executarEmissor({ agora: mais(86399000) }, { fonte: lenta, ambiente, casa, buscar, decorrido: () => decorrido });
+    await executarEmissor({ agora: mais(86399000) }, { fonte: lenta, ambiente, casa, buscar, decorrido: () => decorrido, corte });
     expect(buscar).not.toHaveBeenCalled();
     expect(await fonte.emailsFalhados(10)).toMatchObject([{ ultimoErro: "idempotencia-expirada" }]);
   });
   it("o limite temporal deixa a fila por tentar e não gasta reservas", async () => {
     await preparar(); const buscar = sucesso();
-    const resumo = await executarEmissor({ agora }, { fonte, ambiente, casa, buscar, decorrido: () => 45000 });
+    const resumo = await executarEmissor({ agora }, { fonte, ambiente, casa, buscar, decorrido: () => 45000, corte });
     expect(resumo).toMatchObject({ enviados: 0, adiados: 1 });
     expect(buscar).not.toHaveBeenCalled();
     expect((await base.db.select().from(emailsPorEnviar))[0].tentativas).toBe(0);
   });
-  it("a reserva direta também deixa resposta-cliente sem tentativa", async () => {
-    await preparar({ modelo: "resposta-cliente" });
-    expect(await fonte.reservarEmail(linhaDeEmail().id, agora)).toBeNull();
-    expect((await base.db.select().from(emailsPorEnviar))[0].tentativas).toBe(0);
+  it("a proposta em vigor sai, com o link assinado da versão dela", async () => {
+    await preparar({ modelo: "resposta-cliente" }); const buscar = sucesso();
+    expect(await executar(buscar, agora, ambiente, comProposta(1, agora))).toMatchObject({ enviados: 1 });
+    const corpo = JSON.parse(buscar.mock.calls[0][1]!.body as string);
+    expect(corpo.text).toContain("https://site.example/pedido/proposta/DAM-2410-AAAA/1-assinatura");
+    expect(corpo.html).toContain("https://site.example/pedido/proposta/DAM-2410-AAAA/1-assinatura");
   });
   it("a confirmação espera pelo recibo inicial reservado ou em backoff", async () => {
     await preparar();
@@ -119,7 +131,7 @@ describe("emissor com Postgres", () => {
   });
   it("marca com instante posterior ao de uma linha criada durante a volta", async () => {
     await preparar({ criadoEm: mais(1000) }); const buscar = sucesso();
-    expect(await executarEmissor({ agora }, { fonte, ambiente, casa, buscar, decorrido: () => 2000 })).toMatchObject({ enviados: 1 });
+    expect(await executarEmissor({ agora }, { fonte, ambiente, casa, buscar, decorrido: () => 2000, corte })).toMatchObject({ enviados: 1 });
     expect((await base.db.select().from(emailsPorEnviar))[0].enviadoEm).toEqual(mais(2000));
   });
   it("usa o remetente de teste existente se EMAIL_REMETENTE estiver ausente", async () => {
@@ -153,7 +165,7 @@ describe("emissor com Postgres", () => {
     const lenta = { ...fonte, pedidoDoEmail: async (id: string) => {
       const pedido = await fonte.pedidoDoEmail(id); decorrido = 110000; return pedido;
     } };
-    expect(await executarEmissor({ agora }, { fonte: lenta, ambiente, casa, buscar, decorrido: () => decorrido })).toMatchObject({ falhados: 1 });
+    expect(await executarEmissor({ agora }, { fonte: lenta, ambiente, casa, buscar, decorrido: () => decorrido, corte })).toMatchObject({ falhados: 1 });
     expect(buscar).not.toHaveBeenCalled();
     expect(await fonte.emailsFalhados(10)).toMatchObject([{ ultimoErro: "reserva-expirada" }]);
   });
@@ -165,14 +177,44 @@ describe("emissor com Postgres", () => {
   });
   it("produção usa o destinatário gravado e loja responde ao cliente", async () => {
     await preparar({ modelo: "criado-loja", destinatario: "destino-gravado@example.com" }); const buscar = sucesso();
-    await executar(buscar, agora, { ...ambiente, VERCEL_ENV: "production", EMAILS_SO_PARA: "" });
+    await executar(buscar, agora, { ...ambiente, VERCEL_ENV: "production", EMAILS_SO_PARA: "", LOJA_EM_TESTE: "" });
     expect(JSON.parse(buscar.mock.calls[0][1]!.body as string)).toMatchObject({ to: ["destino-gravado@example.com"], reply_to: "pessoa@example.com" });
   });
-  it("resposta sem #139 fica pendente e não impede o próximo email", async () => {
+  it("em produção com o modo de teste, sem caixa segura não consulta nem envia", async () => {
+    await preparar(); const buscar = sucesso(); const ler = vi.spyOn(fonte, "emailsPendentes");
+    expect(await executar(buscar, agora, { ...ambiente, VERCEL_ENV: "production", EMAILS_SO_PARA: "" }))
+      .toMatchObject({ bloqueado: "sem-destino-seguro" });
+    expect(ler).not.toHaveBeenCalled(); expect(buscar).not.toHaveBeenCalled(); ler.mockRestore();
+  });
+  it("em produção com o modo de teste, tudo vai para a caixa segura", async () => {
+    await preparar({ modelo: "criado-loja", destinatario: "destino-gravado@example.com" }); const buscar = sucesso();
+    await executar(buscar, agora, { ...ambiente, VERCEL_ENV: "production" });
+    expect(JSON.parse(buscar.mock.calls[0][1]!.body as string)).toMatchObject({ to: [ambiente.EMAILS_SO_PARA] });
+  });
+  it("o que entrou na fila antes do corte salta sem chegar ao Resend, e o seguinte sai", async () => {
+    await preparar();
+    await base.db.insert(emailsPorEnviar).values({ ...linhaDeEmail(), id: "00000000-0000-4000-8000-000000000003", modelo: "criado-loja", destinatario: "casa@example.com", criadoEm: mais(60_000) });
+    const buscar = sucesso(); const ler = vi.spyOn(fonte, "pedidoDoEmail");
+    const resumo = await executarEmissor({ agora: mais(120_000) }, { fonte, ambiente, casa, buscar, esperar: async () => {}, decorrido: () => 0, corte: mais(30_000) });
+    expect(resumo).toMatchObject({ enviados: 1, saltados: 1, falhados: 0 });
+    expect(buscar).toHaveBeenCalledTimes(1); expect(ler).toHaveBeenCalledTimes(1); ler.mockRestore();
+    expect(await fonte.emailsFalhados(10)).toMatchObject([{ ultimoErro: "saltado: anterior-ao-emissor", enviadoEm: null, saltado: true }]);
+  });
+  it("a proposta revista salta a antiga e não fica presa atrás dela", async () => {
     await preparar({ modelo: "resposta-cliente" });
-    await base.db.insert(emailsPorEnviar).values({ ...linhaDeEmail(), id: "00000000-0000-4000-8000-000000000003" });
-    const buscar = sucesso(); await executar(buscar); expect(buscar).toHaveBeenCalledTimes(1);
-    expect((await base.db.select().from(emailsPorEnviar).where(eq(emailsPorEnviar.id, linhaDeEmail().id)))[0]).toMatchObject({ enviadoEm: null, tentativas: 0 });
+    const revista = { ...linhaDeEmail(), id: "00000000-0000-4000-8000-000000000003", modelo: "resposta-cliente", criadoEm: mais(1000) };
+    await base.db.insert(emailsPorEnviar).values(revista);
+    const buscar = sucesso();
+    expect(await executar(buscar, mais(2000), ambiente, comProposta(2, mais(1000)))).toMatchObject({ enviados: 1, saltados: 1 });
+    expect(JSON.parse(buscar.mock.calls[0][1]!.body as string).text).toContain("/DAM-2410-AAAA/2-assinatura");
+    expect((await base.db.select().from(emailsPorEnviar).where(eq(emailsPorEnviar.id, linhaDeEmail().id)))[0])
+      .toMatchObject({ enviadoEm: null, ultimoErro: "saltado: proposta-substituida" });
+  });
+  it("uma proposta sem link assinado fica nos falhados, sem chegar ao Resend", async () => {
+    await preparar({ modelo: "resposta-cliente" }); const buscar = sucesso();
+    await executarEmissor({ agora }, { fonte: comProposta(1, agora), ambiente, casa, buscar, esperar: async () => {}, decorrido: () => 0, corte });
+    expect(buscar).not.toHaveBeenCalled();
+    expect(await fonte.emailsFalhados(10)).toMatchObject([{ ultimoErro: "dados-do-modelo", saltado: false }]);
   });
   it("salta lembretes obsoletos e regista modelos sem dados", async () => {
     await preparar({ modelo: "reagendado-cliente" }); const buscar = sucesso(); await executar(buscar);

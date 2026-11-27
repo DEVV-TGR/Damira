@@ -1,14 +1,21 @@
 # Recuperação automática dos emails
 
-Implementação de 26/11/2026, preparada em `feat/recuperacao-emails`.
-**Não ativada em produção nesta tarefa.** A ativação é uma operação separada,
-com revisão do Gonçalo na leitura interna de `src/lib/dados/bd-emails.ts` e na
-exceção operacional à regra 6. Não altera o esquema nem liga a compra/#139.
+Implementação de 26/11/2026 (#149), no `main` desde 27/11. **Desligada por
+defeito e ainda não ativada em produção.** A ativação é uma operação separada
+(um PR com o `crons` no `vercel.json` e a flag, passo 6), com revisão do Gonçalo
+na leitura interna de `src/lib/dados/bd-emails.ts` e na exceção operacional à
+regra 6. Não altera o esquema. **É um bloqueador do lançamento**: sem ela, uma
+falha recuperável só se repete quando outra ação chama o emissor.
+
+Desde o #158 a proposta (`resposta-cliente`) também sai pelo emissor, e por isso
+uma proposta que falhe de vez conta para o alerta como qualquer outro email; uma
+proposta saltada (`saltado: proposta-substituida`, `saltado: proposta-fechada`)
+não conta.
 
 ## O que faz e o que garante
 
-O produtor grava o pedido e os emails na mesma transação. Quando for integrado,
-chama `enviarDepois()` após o commit para o envio inicial. A recuperação horária
+O produtor grava o pedido e os emails na mesma transação, e a ação chama
+`enviarDepois()` após o commit para o envio inicial (ligado desde 26/11, #157). A recuperação horária
 é independente desse helper: uma morte depois do commit, mesmo antes do
 agendamento, deixa os emails na BD para a execução seguinte. Não depende de
 visitas e não precisa de um sinal em cache que possa faltar ou ficar antigo.
@@ -100,7 +107,7 @@ acesso a emails falhados do painel: esta tarefa só recebe um sinal booleano.
 Depois de terminar os lotes, se não havia avaria, consulta-se a existência de
 emails não enviados com tentativas esgotadas. O filtro aplica-se **antes do
 limite**, sem o risco de esconder terminais atrás de cem erros transitórios.
-Saltados e `resposta-cliente` ainda suspenso pelo #139 ficam excluídos. A última
+Os saltados ficam excluídos; desde o #158 a proposta (`resposta-cliente`) conta como os outros. A última
 reserva em curso não é terminal; uma quinta reserva abandonada passa a exigir
 atenção após os dois minutos. **Cada falha definitiva avisa uma vez**: só contam
 as que tiveram a última tentativa nos últimos 65 minutos
@@ -180,14 +187,13 @@ continua a decidir que modelos suporta e quando salta um email.
 
 Não há schema novo, transações entre fornecedores, chave de Resend nova ou
 novo estado de pedido. A camada HTTP pode ser chamada por outro agendador no
-futuro; regras de reserva e transporte ficam no emissor existente. Quando o
-#139 suportar `resposta-cliente`, rever também a exclusão desse modelo nas
-consultas de seleção e no sinal de intervenção de `bd-emails.ts`.
+futuro; regras de reserva e transporte ficam no emissor existente. A exclusão
+do `resposta-cliente` saiu das consultas de seleção com o #158 e do sinal de
+intervenção de `bd-emails.ts` ao juntar este PR com ele (27/11).
 
-⚠️ **Antes de ligar `enviarDepois()` à compra ou ao #139:** a regra «`EMAILS_SO_PARA`
-obrigatória em Production com `LOJA_EM_TESTE=1`» só existe nesta rota. O emissor
-só a exige fora de Production, por isso um envio imediato em modo de teste iria
-para os destinatários gravados. A guarda tem de descer para o emissor nesse PR.
+A regra «`EMAILS_SO_PARA` obrigatória em Production com `LOJA_EM_TESTE=1`»
+desceu para o emissor (`executar.ts`) com o #157: vale para o envio imediato das
+ações e para esta rota.
 
 ## Fontes verificadas
 

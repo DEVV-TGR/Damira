@@ -14,7 +14,9 @@ const casa = { nome: "Casa", morada: "Rua", localidade: "Local", telefone: "+351
 const sucesso = () => vi.fn<typeof fetch>().mockImplementation(async () => new Response('{"id":"inventado"}', { status: 200 }));
 const hora = (n: number) => new Date(+agora + n * 3_600_000);
 const recuperar = (data: Date, buscar: typeof fetch) => recuperarEmailsAutomaticamente(data, {
-  enviar: opcoes => executarEmissor(opcoes, { fonte, ambiente, casa, buscar, decorrido: () => 0, esperar: async () => {} }),
+  /* As datas de exemplo (outubro) são anteriores ao corte da fila: sem um corte antigo,
+     todas as linhas sairiam como `saltado: anterior-ao-emissor`. */
+  enviar: opcoes => executarEmissor(opcoes, { fonte, ambiente, casa, buscar, decorrido: () => 0, esperar: async () => {}, corte: new Date(0) }),
   decorrido: () => 0, esperar: async () => {},
 });
 async function preparar(quantas = 1) {
@@ -44,8 +46,17 @@ describe("recuperação horária com Postgres e emissor reais", () => {
     await base.db.update(emailsPorEnviar).set({ tentativas: 5, ultimoErro: "resend-422" })
       .where(eq(emailsPorEnviar.id, "00000000-0000-4000-8000-000000000103"));
     expect(await haEmailsDefinitivamenteFalhados(base.db, hora(1))).toBe(true);
-    await base.db.update(emailsPorEnviar).set({ modelo: "resposta-cliente" })
-      .where(eq(emailsPorEnviar.id, "00000000-0000-4000-8000-000000000103"));
+  });
+  it("uma proposta falhada também avisa; uma proposta saltada não", async () => {
+    /* Desde o #158 a proposta (T04) sai pelo emissor: se falhar de vez, o cliente
+       nunca recebe o botão para aceitar, e isso tem de dar alerta como os outros. */
+    await preparar();
+    await base.db.update(emailsPorEnviar).set({
+      modelo: "resposta-cliente", tentativas: 5, ultimaTentativaEm: agora, ultimoErro: "dados-do-modelo",
+    });
+    expect(await haEmailsDefinitivamenteFalhados(base.db, hora(1))).toBe(true);
+    // A que outra mais nova substituiu não é avaria: a proposta em vigor sai na mesma.
+    await base.db.update(emailsPorEnviar).set({ ultimoErro: "saltado: proposta-substituida" });
     expect(await haEmailsDefinitivamenteFalhados(base.db, hora(1))).toBe(false);
   });
   it("uma falha definitiva avisa na execução seguinte e não em todas as outras", async () => {

@@ -129,14 +129,15 @@ linhas e espera pela tentativa seguinte. As cinco tentativas também se aplicam
 a quotas esgotadas: se a indisponibilidade durar mais do que as esperas, ficam
 falhadas e exigem revisão, sem desaparecerem.
 O limite de 10 envios e a paragem antes de iniciar outra linha após 45 s limitam
-a duração de cada lote (um último timeout pode levar mais 10 s). A rota de
-recuperação tem 300 s, no máximo 12 lotes de dez e não inicia outro lote após
-180 s. Uma avaria interrompe novos lotes. Sem elegíveis, confere ainda falhas
-definitivas por uma leitura booleana filtrada antes do limite; se houver, devolve
-`intervencao-necessaria`, em vez de anunciar sucesso. Só contam as falhas da
-última hora (65 minutos): cada uma avisa uma vez, sem pôr o cron a vermelho a
-cada hora até alguém mexer na base. Saltados e a última reserva ainda em curso
-não contam como avaria. Ver `recuperacao-emails.md`.
+a duração de cada lote (um último timeout pode levar mais 10 s). As ações
+chamam-no pelo `after()`, depois de responder. A rota de recuperação (#149,
+desligada por defeito) tem 300 s, no máximo 12 lotes de dez e não inicia outro
+lote após 180 s. Uma avaria interrompe novos lotes. Sem elegíveis, confere ainda
+falhas definitivas por uma leitura booleana filtrada antes do limite; se houver,
+devolve `intervencao-necessaria`, em vez de anunciar sucesso. Só contam as
+falhas da última hora (65 minutos): cada uma avisa uma vez, sem pôr o cron a
+vermelho a cada hora até alguém mexer na base. Saltados e a última reserva ainda
+em curso não contam como avaria. Ver `recuperacao-emails.md`.
 
 Os logs e `ultimo_erro` só recebem códigos controlados: `resend-503`,
 `resend-rede`, `dados-do-modelo`, etc. Nunca o corpo do Resend, a mensagem do
@@ -144,8 +145,8 @@ Postgres nem objetos de erro. No log só referência, modelo e código HTTP ou
 Postgres (`erroDoPostgres`). Uma linha saltada tem o prefixo `saltado: ` e não
 se confunde com uma avaria. A leitura para o futuro ecrã dos falhados exige gerente.
 
-**Local e Preview (`VERCEL_ENV !== production`): `EMAILS_SO_PARA` é obrigatória.**
-Sem um endereço válido, o emissor nem consulta a base. Preenchida, redireciona
+**Local e Preview (`VERCEL_ENV !== production`), e Production com `LOJA_EM_TESTE=1`:
+`EMAILS_SO_PARA` é obrigatória.** Sem um endereço válido, o emissor nem consulta a base. Preenchida, redireciona
 **todos** os emails para essa caixa e acrescenta o destino original ao assunto.
 Também se pode manter preenchida em Production para ensaio autorizado. O Tomás
 configura a caixa na Vercel; este PR não cria variáveis nem envia emails reais.
@@ -155,13 +156,16 @@ Production, exige `LOJA_EM_TESTE=1` e confere o servidor da ligação com o
 hostname do desenvolvimento confirmado pelo utilizador na Neon, antes de
 qualquer consulta. Não carrega `.env`.
 
-**Bloqueador de ligar os emails da compra:** a recuperação horária tem de estar
-revista, configurada e operacionalmente confirmada, com alerta de erro/ausência,
-antes de os emails ao cliente dependerem dela. Só ter a rota ou os testes verdes
-não comprova que o agendador corre. Cada falha pode esperar cerca de uma hora;
-indisponibilidade prolongada, cinco tentativas ou backlog podem exigir intervenção.
-Não se deve assumir que o próximo pedido chega a tempo nem que uma volta diária
-respeita as 24 h. A ativação ainda está pendente (`recuperacao-emails.md`).
+**Bloqueador do lançamento:** até a recuperação horária do #149 estar ativada,
+uma falha recuperável só se repete quando outra ação chama o emissor. A rota
+existe, desligada por defeito; tem de estar revista, configurada e
+operacionalmente confirmada, com alerta de erro/ausência, antes de os emails ao
+cliente dependerem dela a sério (em modo de teste tudo vai para a caixa de
+ensaio). Só ter a rota ou os testes verdes não comprova que o agendador corre.
+Cada falha pode esperar cerca de uma hora; indisponibilidade prolongada, cinco
+tentativas ou backlog podem exigir intervenção. Não se deve assumir que o
+próximo pedido chega a tempo nem que uma volta diária respeita as 24 h. A
+ativação ainda está pendente (`recuperacao-emails.md`).
 
 A idempotência do Resend dura 24 horas. Uma linha já tentada que chegue às 24 h
 desde a sua criação fica terminal para revisão manual (`idempotencia-expirada`),
