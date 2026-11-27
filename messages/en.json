@@ -154,7 +154,12 @@
     },
     "natal": {
       "titulo": "Christmas flavours",
-      "texto": "you won’t want to miss this year"
+      "texto": "you won’t want to miss this year",
+      "fechar": "Close",
+      "anterior": "Previous photo",
+      "seguinte": "Next photo",
+      "pausar": "Pause",
+      "reproduzir": "Play"
     },
     "bolos": {
       "titulo": "Celebration cakes",

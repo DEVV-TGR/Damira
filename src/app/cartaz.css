@@ -344,9 +344,24 @@ body:has(.cartaz) .barra-vidro {
 }
 .raro__conta {
   display: inline-block;
-  min-inline-size: 3ch;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+.raro__conta [data-sc-count] {
+  display: inline-block;
+  min-inline-size: 3ch;
+  text-align: end;
+}
+.raro__valor-final {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .raro__conta [data-sc-count] {
+    display: none;
+  }
+  .raro__valor-final {
+    display: inline;
+  }
 }
 /* Com o chão já em `verde-forte`, o corpo e a ligação são papel liso: 4,67:1,
    sem pastilha nenhuma por baixo. A pastilha que aqui esteve era o
@@ -957,10 +972,17 @@ body:has(.cartaz) .barra-vidro {
   max-height: 72svh;
 }
 .reels__instagram {
-  width: min(22rem, 74vw);
-  margin-inline-end: 14vw;
-  display: grid;
-  gap: 1rem;
+  display: flex;
+  justify-content: center;
+  padding: 1rem var(--margem-cartaz) 0;
+}
+.reels__instagram a {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+.reels__fila:last-child {
+  margin-inline-end: var(--margem-cartaz);
 }
 @media (max-width: 48rem) {
   .reels__cela {
@@ -992,4 +1014,69 @@ body:has(.cartaz) .barra-vidro {
   background: var(--color-tinta);
   color: var(--suave-sobre-tinta);
   font-size: 0.85rem;
+}
+
+.natal__ampliar {
+  position: absolute;
+  inset: 0;
+  cursor: zoom-in;
+}
+.natal__ampliar:focus-visible {
+  outline: 3px solid white;
+  outline-offset: -5px;
+}
+.natal__previa {
+  margin: auto;
+  width: min(56rem, 96vw);
+  max-height: 96dvh;
+  border-radius: 0.75rem;
+  background: var(--color-tinta);
+  color: var(--color-papel);
+}
+.natal__previa::backdrop {
+  background: rgb(15 14 13 / 85%);
+}
+body:has(.natal__previa[open]) {
+  overflow: hidden;
+}
+.natal__painel {
+  padding: clamp(0.5rem, 2vw, 1rem);
+}
+.natal__painel header,
+.natal__controlos {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.natal__painel header {
+  justify-content: space-between;
+  padding-bottom: 0.5rem;
+}
+.natal__fotografia {
+  position: relative;
+  height: min(64dvh, 36rem);
+  background: #171614;
+}
+.natal__fotografia img {
+  object-fit: contain;
+}
+.natal__controlos {
+  padding-top: 0.5rem;
+}
+.natal__controlos span {
+  margin-inline-end: auto;
+  font-variant-numeric: tabular-nums;
+}
+.natal__painel button {
+  min-width: 44px;
+  min-height: 44px;
+  padding-inline: 0.75rem;
+  border: 1px solid currentColor;
+  border-radius: 99px;
+  cursor: pointer;
+}
+.natal__painel button:hover,
+.natal__painel button:focus-visible {
+  background: var(--color-papel);
+  color: var(--color-tinta);
 }

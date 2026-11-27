@@ -53,11 +53,13 @@ export function VitrineGrelha({
   fotos,
   visiveis = fotos.length,
   rotuloMais,
+  aoAbrirFoto,
 }: {
   id: string;
   fotos: FotoDaVitrine[];
   visiveis?: number;
   rotuloMais?: string;
+  aoAbrirFoto?: (indice: number) => void;
 }) {
   const [aberta, setAberta] = useState(false);
   const [entraram, setEntraram] = useState(false);
@@ -99,7 +101,7 @@ export function VitrineGrelha({
             >
               <Image
                 src={foto.src}
-                alt={foto.alt}
+                alt={aoAbrirFoto ? "" : foto.alt}
                 width={1400}
                 height={875}
                 loading="lazy"
@@ -111,6 +113,15 @@ export function VitrineGrelha({
                    nesta página. */
                 sizes="(max-width: 48rem) 46vw, (max-width: 72rem) 45vw, 30vw"
               />
+              {aoAbrirFoto && (
+                <button
+                  type="button"
+                  className="natal__ampliar"
+                  aria-label={foto.alt}
+                  aria-haspopup="dialog"
+                  onClick={() => aoAbrirFoto(i)}
+                />
+              )}
             </li>
           );
         })}

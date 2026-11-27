@@ -1,4 +1,5 @@
 import { useTranslations } from "next-intl";
+import { GaleriaNatal } from "./GaleriaNatal";
 import { VitrineGrelha } from "./VitrineGrelha";
 
 const FOTOS = [
@@ -37,8 +38,7 @@ export function Natal() {
         <h2 id="natal" className="cap__titulo">{t("titulo")}</h2>
         <p className="cap__texto">{t("texto")}</p>
       </div>
-      <VitrineGrelha
-        id="natal-grelha"
+      <GaleriaNatal
         fotos={FOTOS_NATAL.map((foto) => ({
           src: `/vitrine/${foto.ficheiro}.webp`,
           alt: legendas(foto.chave),

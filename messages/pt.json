@@ -154,7 +154,12 @@
     },
     "natal": {
       "titulo": "Sabores de Natal",
-      "texto": "que não podem faltar este ano"
+      "texto": "que não podem faltar este ano",
+      "fechar": "Fechar",
+      "anterior": "Fotografia anterior",
+      "seguinte": "Fotografia seguinte",
+      "pausar": "Pausar",
+      "reproduzir": "Reproduzir"
     },
     "bolos": {
       "titulo": "Bolos comemorativos",

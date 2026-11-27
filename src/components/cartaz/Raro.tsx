@@ -10,8 +10,7 @@ export function Raro() {
       className="cap cap--raro"
       data-capitulo
       data-sc-act="pin"
-      data-sc-span="2"
-      data-sc-dwell="0.35"
+      data-sc-span="2.5"
       aria-labelledby="raro"
     >
       <div data-sc-stage className="raro__palco">
@@ -20,7 +19,8 @@ export function Raro() {
             {t.rich("tituloAnimado", {
               percentagem: () => (
                 <span className="raro__conta" aria-hidden="true">
-                  <span data-sc-count="0 100" data-sc-count-at="0.08 0.4">100</span>%
+                  <span data-sc-count="0 100" data-sc-count-at="0 0.9">100</span>
+                  <span className="raro__valor-final">100</span>%
                 </span>
               ),
             })}
