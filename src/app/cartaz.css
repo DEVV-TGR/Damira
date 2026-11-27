@@ -1061,6 +1061,19 @@ body:has(.cartaz) .barra-vidro {
   font-size: 0.85rem;
 }
 
+/* O pedido vem depois das fotografias: primeiro vê-se o que há, depois
+   encomenda-se. */
+.natal__accao {
+  margin: clamp(1.75rem, 3vw, 2.5rem) 0 0;
+}
+/* ⚠️ O estado de passagem do botão principal é tinta, e este capítulo **é**
+   tinta: sem contorno, o botão desaparecia debaixo do rato e ficava só o
+   texto a flutuar. */
+.cap--natal .cap__accao--principal:hover,
+.cap--natal .cap__accao--principal:focus-visible {
+  border-color: var(--color-papel);
+}
+
 .natal__ampliar {
   position: absolute;
   inset: 0;

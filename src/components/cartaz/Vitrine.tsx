@@ -1,4 +1,5 @@
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { GaleriaNatal } from "./GaleriaNatal";
 import { VitrineGrelha } from "./VitrineGrelha";
 
@@ -28,7 +29,7 @@ const FOTOS_NATAL = [
   { ficheiro: "natal-bolo-fatia", chave: "natalBoloFatia" },
 ];
 
-export function Natal() {
+export function Natal({ idDaFamilia }: { idDaFamilia: string | null }) {
   const t = useTranslations("cartaz.natal");
   const legendas = useTranslations("cartaz.vitrine.legendas");
 
@@ -45,6 +46,19 @@ export function Natal() {
           larga: foto.larga ?? false,
         }))}
       />
+      {/* O id vem da família que a gerente criou (ver `page.tsx`). Sem ela,
+          não há botão: «Encomendar o Natal» a levar ao topo da loja era
+          prometer uma secção que não existe. */}
+      {idDaFamilia && (
+        <p className="natal__accao">
+          <Link
+            href={{ pathname: "/encomendas", hash: idDaFamilia }}
+            className="cap__accao cap__accao--principal"
+          >
+            {t("encomendar")}
+          </Link>
+        </p>
+      )}
     </section>
   );
 }
