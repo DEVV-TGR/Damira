@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { BotaoConta } from "./conta/BotaoConta";
-import { MenuEncomendas } from "./MenuEncomendas";
+import { MenuEncomendas, type SeccaoDoMenu } from "./MenuEncomendas";
 
 /* ⚠️ **A barra tem uma secção só, as encomendas.** Até 12/11 havia também a
    ementa, numa lista com as duas; a `/ementa` saiu (#123) e a lista com ela.
@@ -18,7 +18,7 @@ import { MenuEncomendas } from "./MenuEncomendas";
  * está para trocar de língua **sem sair dela** — mandar sempre para a homepage é
  * o erro clássico, e faz o visitante perder o sítio onde ia.
  */
-export function Cabecalho({ locale }: { locale: Locale }) {
+export function Cabecalho({ locale, seccoes }: { locale: Locale; seccoes: SeccaoDoMenu[] }) {
   const t = useTranslations("nav");
   const marca = useTranslations("marca");
   /**
@@ -86,7 +86,7 @@ export function Cabecalho({ locale }: { locale: Locale }) {
               não traz desenho novo, usa o que a casa tem. */}
           {/* As encomendas abrem um menu com as secções da página (#82). Ver
               `MenuEncomendas.tsx`. */}
-          <MenuEncomendas actual={caminho === "/encomendas"} />
+          <MenuEncomendas actual={caminho === "/encomendas"} seccoes={seccoes} />
           {/* ⚠️ **A conta fica antes do idioma e depois das secções.** É
               navegação pessoal e não navegação do site: pô-la antes das
               encomendas dava-lhe o mesmo peso que à página que a casa quer que

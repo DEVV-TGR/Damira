@@ -3,13 +3,17 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
-import { SECCOES_ENCOMENDAS } from "@/lib/vista";
 
-const SECCOES = SECCOES_ENCOMENDAS.filter((seccao) => seccao !== "pedido");
+/**
+ * As secções vêm das famílias da gerente (26/11), pelo layout: as mesmas, com o
+ * mesmo nome e pela mesma ordem da `/encomendas` (`familiasDaLoja`). Escritas
+ * aqui, o Natal nunca entrava no menu, e uma família apagada ficava com um link
+ * para lado nenhum.
+ */
+export type SeccaoDoMenu = { id: string; nome: string };
 
-export function MenuEncomendas({ actual }: { actual: boolean }) {
+export function MenuEncomendas({ actual, seccoes }: { actual: boolean; seccoes: SeccaoDoMenu[] }) {
   const t = useTranslations("nav");
-  const ti = useTranslations("encomendas.indice");
   const tc = useTranslations("encomendas.cesto");
   const caminho = usePathname();
   const [abertoEm, setAbertoEm] = useState<string | null>(null);
@@ -102,14 +106,14 @@ export function MenuEncomendas({ actual }: { actual: boolean }) {
                 <span aria-hidden>→</span>
               </Link>
             </li>
-            {SECCOES.map((seccao) => (
-              <li key={seccao} className="border-t border-tinta/10">
+            {seccoes.map((seccao) => (
+              <li key={seccao.id} className="border-t border-tinta/10">
                 <Link
-                  href={{ pathname: "/encomendas", hash: seccao }}
+                  href={{ pathname: "/encomendas", hash: seccao.id }}
                   onClick={fechar}
                   className="flex min-h-11 items-center justify-between gap-3 rounded-lg px-4 text-sm font-semibold transition-colors hover:bg-papel-fundo hover:text-tijolo"
                 >
-                  {ti(seccao)}
+                  {seccao.nome}
                   <span aria-hidden className="text-tinta-suave">›</span>
                 </Link>
               </li>

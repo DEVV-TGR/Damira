@@ -1,5 +1,5 @@
 import type { Locale } from "@/i18n/routing";
-import type { Extra, Opcao, OrdemEmenta, Produto, Variancia, Variante } from "@/lib/dados/tipos";
+import type { Categoria, Extra, Familia, Opcao, OrdemEmenta, Produto, Seccao, Variancia, Variante } from "@/lib/dados/tipos";
 import type { TipoPedido } from "@/lib/pedidos";
 
 /**
@@ -81,7 +81,58 @@ export const temPagina = (produto: Produto): boolean =>
  * nenhum. O «pedido» é a última: o índice mostra-a, o menu não (ver
  * `MenuEncomendas`).
  */
-export const SECCOES_ENCOMENDAS = ["festas", "kits-bolo", "boxes", "da-ementa", "pedido"] as const;
+
+// ——— As famílias da gerente (26/11) ———
+
+export type CategoriaComProdutos = { categoria: Categoria; produtos: Produto[] };
+export type FamiliaComProdutos = { familia: Familia; categorias: CategoriaComProdutos[] };
+
+/**
+ * A `/encomendas` por famílias e categorias, pela ordem da gerente, **só com o
+ * que tem produtos**: uma família ou uma categoria vazia não desenha nada — nem
+ * secção, nem link no índice (armadilha 19: uma secção vazia ocupa o ecrã na
+ * mesma). O Natal aparece no dia em que tiver o primeiro produto.
+ *
+ * Os produtos ficam pela ordem em que chegam; quem desenha ordena-os pela
+ * língua da página. Um produto numa categoria que não está na árvore (uma
+ * arquivada) não aparece — e a gravação já recusa apagar uma com produtos.
+ */
+/**
+ * Os produtos de uma categoria pelas secções dela (27/11), pela ordem da
+ * gerente: **primeiro os que não têm secção**, sem título, e depois cada secção
+ * com os seus. Uma secção vazia não aparece; uma que não é desta categoria (não
+ * devia acontecer: a base de dados recusa-a) conta como sem secção, para o
+ * produto nunca desaparecer.
+ */
+export function porSeccao(
+  categoria: Categoria,
+  produtos: readonly Produto[],
+): { seccao: Seccao | null; produtos: Produto[] }[] {
+  const daCategoria = new Set(categoria.seccoes.map((x) => x.id));
+  const semSeccao = produtos.filter((p) => !p.seccaoId || !daCategoria.has(p.seccaoId));
+  return [
+    { seccao: null, produtos: semSeccao },
+    ...categoria.seccoes.map((seccao) => ({ seccao, produtos: produtos.filter((p) => p.seccaoId === seccao.id) })),
+  ].filter((grupo) => grupo.produtos.length > 0);
+}
+
+export function familiasComProdutos(arvore: readonly Familia[], produtos: readonly Produto[]): FamiliaComProdutos[] {
+  const porCategoria = new Map<string, Produto[]>();
+  for (const produto of produtos) {
+    if (produto.categoriaId === undefined) continue;
+    const lista = porCategoria.get(produto.categoriaId) ?? [];
+    lista.push(produto);
+    porCategoria.set(produto.categoriaId, lista);
+  }
+  return arvore
+    .map((familia) => ({
+      familia,
+      categorias: familia.categorias
+        .map((categoria) => ({ categoria, produtos: porCategoria.get(categoria.id) ?? [] }))
+        .filter((c) => c.produtos.length > 0),
+    }))
+    .filter((f) => f.categorias.length > 0);
+}
 
 // ——— A ementa, por carta e categoria ———
 

@@ -306,11 +306,21 @@ a chamar-se «Carta»** (decidido a 25/11: a troca para «Dia a dia» de 15/11 f
 desfeita), e o que dela se encomenda vive na `/encomendas`, na secção
 **«Da carta»**: 70 dos 95 artigos.
 
+**As secções da `/encomendas` são as famílias da gerente** (pedido de 26/11):
+Kit Festas, Bolo e mesa decorada, Boxes, Da carta (e o Natal, que a gerente cria) — criadas, renomeadas
+e ordenadas por ela em **Produtos › Famílias, categorias e secções**, em três
+níveis: **Família › Categoria › Secção** (`painel-gerente.md`, tabelas
+`familias` e `seccoes`, migração `0012`). **Cada produto vive numa categoria só,
+e numa secção dela ou em nenhuma** (`categoriaId` e `seccaoId`, os dois campos
+de sítio do editor). As âncoras de partida ficaram as de antes (`#festas`,
+`#da-ementa`…). ⚠️ **Não confundir com a `familia` do produto**, que decide o
+cartão e a página e no editor é o «Tipo de cartão».
+
 **Na `/encomendas`, todos os produtos têm o mesmo cartão e a mesma grelha**
 (`GRELHA_CARTOES`, em `vista.ts`) — kits, bolos, boxes e carta —, **todos por
 ordem alfabética** (`porOrdemAlfabetica`), e há uma pesquisa por cima deles
 (`PesquisaProdutos`). Decidido a 25/11. A lista de produtos do painel segue a
-mesma ordem; só as categorias da carta seguem a ordem da gerente (#87). Os dois ficheiros continuam separados
+mesma ordem; as famílias e as categorias seguem a ordem da gerente (26/11). Os dois ficheiros continuam separados
 (`ementa.json` e `encomendas.json`) até o catálogo passar a categorias (#124).
 
 O que evita alguém aparecer ao sábado à espera de levar um kit debaixo do braço
@@ -331,9 +341,10 @@ fora (`aVendaOnline: false`): não se encomenda um galão para sexta-feira.
 Porque as categorias **repetem-se entre cartas**: há `doces` na carta da casa e
 `doces` na vegan, `salgados` nas duas. Na `/ementa`, que saiu a 12/11, a âncora
 de uma secção era por isso `{carta}-{categoria}` e não só a categoria — duas
-âncoras iguais deixavam uma delas inalcançável, sem aviso nenhum. Na «Da carta» é
-o título colado que leva a carta à frente («Vegan, Doces»). Revê-se com
-as categorias da gerente (#124).
+âncoras iguais deixavam uma delas inalcançável, sem aviso nenhum. Desde 26/11
+a `/encomendas` já não lê a carta para desenhar: as categorias são as da
+gerente («Doces vegan»), e o título colado leva a **família** à frente («Da
+carta · Doces vegan»), pela mesma razão.
 
 ### `unidade` decide se o preço está certo ou errado
 
@@ -344,10 +355,8 @@ com o cliente à frente. O `superRefine` obriga `bolos-inteiros` a ser `kg`.
 ### O que a casa não afirma, o site não afirma
 
 ⚠️ **Não há *best sellers*.** O Santo Burga tinha doze artigos com selo no
-impresso; **os impressos da Damira não marcam nada**. A homepage destaca em vez
-disso as *combinações perfeitas*, que estão escritas no menu — é a diferença
-entre mostrar o que a casa recomenda e escolher seis artigos porque a grelha
-precisava de seis.
+impresso; **os impressos da Damira não marcam nada**. As combinações recomendadas
+pela casa estão no menu impresso.
 
 ⚠️ **Os alergénios estão vazios nos 95 e ficam assim** até a pastelaria os
 preencher. É informação com peso legal e clínico, e uma lista deduzida da
@@ -368,8 +377,9 @@ As imagens da página inicial vêm da Damira. A remessa «Conteúdo Site», de
 26/11/2026, trouxe duas fotografias de capa, novas imagens de pão e de
 decoração de um bolo e o álbum da vitrine. A capa alterna entre a fachada e
 a montra a cada cinco segundos. Com a preferência de movimento reduzido,
-mostra a fachada. As imagens de Natal vêm juntas no fim da vitrine, depois de
-«Ver mais». A galeria abre com seis fotografias (#80).
+mostra a fachada. As seis fotografias de Natal abrem uma secção própria, logo
+depois da capa. A galeria da casa abre com seis fotografias (#80) e o botão
+«Ver mais» mostra as restantes.
 
 As fotografias são servidas em WebP. As da vitrine ficam em
 `public/vitrine/`, as dos capítulos em `public/fotos/`. Os originais não são
@@ -585,10 +595,11 @@ primeiras sete vieram do Santo Burga e continuam a valer — o motor é o mesmo.
    acumulador em vírgula flutuante, à parte do DOM.
 8. **Uma categoria em duas cartas dá duas âncoras iguais.** É a armadilha nova
    deste site, e foi a razão de a âncora da `/ementa` ser `{carta}-{categoria}`.
-   A página saiu (#123), e com ela o `SeccaoEmenta.tsx`; na «Da carta» a
-   categoria não tem âncora, e o título colado leva o nome da carta à frente
-   («Vegan, Doces») pela mesma razão. Volta a morder no dia em que alguém der
-   um `id` a uma categoria, ou em que duas categorias puderem ter o mesmo nome.
+   A página saiu (#123), e com ela o `SeccaoEmenta.tsx`; na `/encomendas` a
+   categoria não tem âncora — só a família —, e o título colado leva o nome da
+   família à frente («Da carta · Doces vegan») pela mesma razão. Desde 26/11
+   **duas categorias podem ter o mesmo nome em famílias diferentes**: volta a
+   morder no dia em que alguém der um `id` de DOM a uma categoria.
 9. **`background: currentColor` resolve para a cor do *próprio* elemento.** Uma
    pastilha com `background: currentColor` e `color: transparent` fica
    transparente, não fica da cor herdada. Declarar as duas cores.
