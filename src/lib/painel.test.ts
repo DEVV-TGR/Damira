@@ -5,6 +5,7 @@ import { COZINHA_DE_EXEMPLO } from "@/lib/dados/exemplo";
 import type { ConfiguracaoDaCasa, Pedido, Produto } from "@/lib/dados/tipos";
 import {
   avisosDosPedidos,
+  balcaoPodeConfirmar,
   contarPorPreencher,
   diaDeLisboa,
   esgotadoHoje,
@@ -242,6 +243,93 @@ describe("os separadores do balcão", () => {
   });
 });
 
+describe("os pedidos pagos na loja, ao balcão (#125)", () => {
+  const QUARTA = lisboa(10, 7, 10);
+  const naLoja = (id: string, alteracoes: Partial<Pedido> = {}) =>
+    pedido(id, { estado: "confirmado", modoPagamento: "na-loja", pagoOnlineCent: 0, pagoEm: null, confirmadoEm: lisboa(10, 5, 9), ...alteracoes });
+
+  it("um confirmado entra nas listas como um pago: levantam, produzir e próximos", () => {
+    const balcao = organizarBalcao(
+      [
+        naLoja("hoje", { levantamentoEm: lisboa(10, 7, 15), linhas: [linha("bolo")] }),
+        naLoja("kit1", { levantamentoEm: lisboa(10, 8, 15) }),
+      ],
+      TEMPOS,
+      CASA,
+      QUARTA,
+    );
+    expect(balcao.levantamHoje.map((p) => p.id)).toEqual(["hoje"]);
+    expect(balcao.proximos.map((p) => p.id)).toEqual(["kit1"]);
+    expect(balcao.produzirHoje.map((l) => l.produtoId)).toEqual(["kit", "bolo"]);
+  });
+
+  it("um por confirmar não vai para a cozinha: fica em «Por confirmar», com quando teria de começar", () => {
+    const espera = naLoja("espe", { estado: "por-confirmar", confirmadoEm: null, levantamentoEm: lisboa(10, 8, 15), expiraEm: lisboa(10, 8, 9) });
+    const balcao = organizarBalcao([espera], TEMPOS, CASA, QUARTA);
+    expect(balcao.levantamHoje).toEqual([]);
+    expect(balcao.proximos).toEqual([]);
+    expect(balcao.produzirHoje).toEqual([]);
+    /* O kit de dois dias para quinta às 15h começa hoje às 8h: urgente. */
+    expect(balcao.porConfirmar).toEqual([{ pedido: espera, comecaAte: lisboa(10, 7, 8), urgente: true }]);
+  });
+
+  it("os urgentes primeiro, depois o prazo que acaba mais cedo; sem tempo de produção também é urgente", () => {
+    const sabado = naLoja("saba", { estado: "por-confirmar", levantamentoEm: lisboa(10, 10, 11), linhas: [linha("box")], expiraEm: lisboa(10, 8, 9) });
+    const domingo = naLoja("domi", { estado: "por-confirmar", levantamentoEm: lisboa(10, 11, 11), linhas: [linha("box")], expiraEm: lisboa(10, 7, 20) });
+    const semTempo = naLoja("semt", { estado: "por-confirmar", levantamentoEm: lisboa(10, 12, 11), linhas: [linha("por-preencher")], expiraEm: lisboa(10, 9, 9) });
+    const ordem = organizarBalcao([sabado, domingo, semTempo], TEMPOS, CASA, QUARTA).porConfirmar;
+    expect(ordem.map((p) => [p.pedido.id, p.urgente])).toEqual([["semt", true], ["domi", false], ["saba", false]]);
+    expect(ordem[0].comecaAte).toBeNull();
+  });
+
+  it("um por confirmar com o prazo passado já está expirado, mesmo antes de a limpeza o gravar", () => {
+    const passou = naLoja("pass", { estado: "por-confirmar", expiraEm: QUARTA });
+    const aceite = naLoja("acei", { estado: "a-aguardar-aceite", expiraEm: lisboa(10, 7, 9) });
+    const balcao = organizarBalcao([passou, aceite], TEMPOS, CASA, QUARTA);
+    expect(balcao.porConfirmar).toEqual([]);
+    expect(balcao.aEsperaDoCliente).toEqual([]);
+  });
+
+  it("à espera do cliente fica à parte, fora da cozinha", () => {
+    const aceite = naLoja("acei", { estado: "a-aguardar-aceite", expiraEm: lisboa(10, 8, 9) });
+    const balcao = organizarBalcao([aceite], TEMPOS, CASA, QUARTA);
+    expect(balcao.aEsperaDoCliente.map((p) => p.id)).toEqual(["acei"]);
+    expect(balcao.porConfirmar).toEqual([]);
+    expect(balcao.produzirHoje).toEqual([]);
+  });
+
+  it("o balcão confirma tal como está; uma linha sem preço é da gerente", () => {
+    const espera = naLoja("espe", { estado: "por-confirmar" });
+    expect(balcaoPodeConfirmar(espera)).toBe(true);
+    expect(balcaoPodeConfirmar({ ...espera, linhas: [{ ...linha("bolo"), precoUnitarioCent: null, totalCent: null }] })).toBe(false);
+    expect(balcaoPodeConfirmar(naLoja("conf"))).toBe(false);
+  });
+
+  it("novidades: um confirmado novo, um confirmado depois de esperar, um por confirmar novo e um confirmado cancelado", () => {
+    const antes = new Map<string, Pedido["estado"]>([
+      ["espe", "por-confirmar"],
+      ["acei", "a-aguardar-aceite"],
+      ["conf", "confirmado"],
+      ["pcan", "por-confirmar"],
+      ["entr", "entregue"],
+    ]);
+    const resultado = novidades(antes, [
+      naLoja("novo"),
+      naLoja("espe"),
+      naLoja("acei"),
+      naLoja("conf", { estado: "cancelado" }),
+      naLoja("pcan", { estado: "cancelado" }),
+      naLoja("entr"),
+      naLoja("pnov", { estado: "por-confirmar" }),
+    ]);
+    /* Desfazer um «entregue» não é um pedido novo: o talão já saiu. */
+    expect(resultado.novos.map((p) => p.id)).toEqual(["novo", "espe", "acei"]);
+    expect(resultado.porConfirmar.map((p) => p.id)).toEqual(["pnov"]);
+    /* Um por confirmar recusado não teve talão: não há o que tirar à cozinha. */
+    expect(resultado.cancelados.map((p) => p.id)).toEqual(["conf"]);
+  });
+});
+
 describe("precisa de atenção", () => {
   const HOJE = lisboa(10, 7, 10);
 
@@ -325,7 +413,7 @@ describe("o que o balcão mostra", () => {
   });
 
   it("na primeira leitura não há novidades — abrir o painel não é receber os pedidos todos", () => {
-    expect(novidades(null, [pedido("aaaa")])).toEqual({ novos: [], cancelados: [] });
+    expect(novidades(null, [pedido("aaaa")])).toEqual({ novos: [], porConfirmar: [], cancelados: [] });
   });
 
   it("um pago que não estava lá é novo; um pago que passou a cancelado é cancelado", () => {

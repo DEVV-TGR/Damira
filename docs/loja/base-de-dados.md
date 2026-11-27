@@ -245,6 +245,47 @@ novo preenchimento dos produtos criados pelo código antigo entre as duas.
 **Esta passagem faz-se antes de a casa recriar o catálogo por categorias e
 nunca no dia do lançamento.**
 
+#### O catálogo do `production` é da casa (desde 27/11/2026)
+
+A 27/11 a gerente começa a preencher o catálogo no painel do `production`:
+preços, descrições, alergénios, tempos de produção, fotografias, variâncias.
+**Daí para a frente, o que lá está é trabalho dela e não tem outra cópia.** Os
+JSON foram só o ponto de partida da importação, e o `desenvolvimento` já tem
+dados diferentes (na `0011`, sete produtos com sabores contra seis). Quatro
+regras seguram isso:
+
+1. **Uma migração só preenche o que ela própria cria, e só a partir do que já
+   está na base.** Uma coluna ou tabela nova pode nascer cheia a partir das
+   colunas que já existem, como na `0005` (o `pede_confirmacao` sai dos preços),
+   na `0008` (a categoria sai da família, da carta e da categoria) e na `0011`
+   (as variâncias saem das `escolhas`). **Nunca altera um valor que a gerente
+   edita**, e nunca escreve um preço, um tempo, um alergénio ou uma
+   classificação escritos à mão no SQL. Uma coluna nova sem origem nasce com o
+   valor que quer dizer «por preencher» (`NULL`), e não com um inventado.
+2. **Antes de cada migração no `production`, um ramo de segurança.** Neon →
+   **Branches** → **New branch**, com o `production` como pai e os dados de
+   agora. Leva o nome da migração (`antes-0012`). Ao contrário da janela de
+   restauro, não caduca. Só se apaga depois de o deploy novo estar no ar e o
+   catálogo conferido.
+3. **O `production` nunca se repõe a partir do `desenvolvimento` nem dos
+   JSON.** O `npm run bd:importar` já recusa uma base com produtos. Essa recusa
+   não se contorna, nem esvaziando a tabela antes. Voltar a um ponto do passado
+   segue o `restauro.md`, que começa por olhar num ramo: restaurar o
+   `production` desfaz também tudo o que a gerente gravou depois desse ponto.
+4. **Uma limpeza que tira colunas** (a da #124, a das `escolhas`) só corre
+   depois de duas confirmações. Primeiro, que nenhum código lê essas colunas.
+   Depois, com uma consulta só de leitura **no próprio `production`**, que o
+   que elas guardavam já está nas colunas novas, produto a produto.
+
+E duas coisas que a gerente deve saber, porque o painel ainda não a protege
+delas: **gravar por cima é definitivo**, porque o histórico de alterações é a
+#121, depois do lançamento. E **ganha a última gravação**: o mesmo produto aberto
+em dois separadores, ou por duas pessoas, fica com o que se gravou por último.
+
+⚠️ A janela de restauro tem de estar nos **7 dias** (`restauro.md`) antes de ela
+começar. Com as 6 horas do plano gratuito, um erro descoberto no dia seguinte
+já não tem volta.
+
 ### `produtos`
 
 | Coluna | Tipo | Do contrato |
@@ -637,8 +678,9 @@ o contador bate sempre com a soma dos reembolsos `pendente` e `concluido`.
   um `por-confirmar`, um `a-aguardar-aceite` ou um `confirmado`, sem reembolso,
   e a vaga liberta-se; e reagenda um `confirmado`. As listas de estados vivem no
   `regras.ts` (`podeCancelar`, `REAGENDAVEIS`, `estadoAntesDeEntregue`), para as
-  duas fontes decidirem igual. ⚠️ Confirmar, responder e aceitar ainda não
-  existem na `FontePainel`: chegam com o contrato do balcão (#125).
+  duas fontes decidirem igual. Responder e confirmar são o
+  `responderPedido` (#139), que o balcão também usa para o «sim» tal como está
+  (#125); o aceite é o `aceitarProposta`, pelo link.
 - **Cancelar não ultrapassa a expiração:** um `por-confirmar` só se cancela
   com `expira_em > agora`, tanto na regra partilhada como no `WHERE`. Se o prazo
   já passou, devolve `estado-mudou`; a limpeza grava a expiração e liberta a vaga.

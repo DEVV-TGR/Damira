@@ -22,11 +22,12 @@ um estado que os pagamentos não sabem que existe.
 > contrato para distinguir a iniciativa do cliente. O reagendamento ainda só
 > grava a nova hora e `reagendadoEm`: faltam o registo do acordo, o aviso ao
 > cliente e o talão de alteração. Estas peças continuam necessárias antes do
-> uso real destes fluxos. O aceite da proposta por link existe desde o #139.
-> Faltam os ecrãs do balcão para estes estados (#125) e as entregas. Dos emails
-> faltam os avisos de cancelamento e de reagendamento ao cliente, os lembretes e
-> as tentativas sem visitas (#149); a expiração sem visitas também precisa de
-> implementação. Os pontos marcados «(em aberto:
+> uso real destes fluxos. O aceite da proposta por link existe desde o #139. O
+> balcão já mostra os `confirmado` e confirma os `por-confirmar` tal como estão
+> (#125); faltam a transferência recebida e o cancelar por falta de pagamento das
+> entregas, e as próprias entregas. Dos emails faltam os avisos de cancelamento e
+> de reagendamento ao cliente, os lembretes e as tentativas sem visitas (#149); a
+> expiração sem visitas também precisa de implementação. Os pontos marcados «(em aberto:
 > ver n.º X)» continuam por decidir — estão no fim, com a proposta e quem decide.
 
 ## A política da casa manda
