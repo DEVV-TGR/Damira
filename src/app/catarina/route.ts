@@ -26,7 +26,7 @@ import { track } from "@vercel/analytics/server";
  *
  * Fica fora do encaminhamento de idioma (`src/proxy.ts`): sem isso, o
  * `next-intl` mandava o pedido para `/catarina` dentro de `[locale]`, que não
- * existe. As maiúsculas (`/Catarina`) chegam cá pelo `next.config.ts`.
+ * existe. As maiúsculas (`/Catarina`) chegam cá pelo `src/proxy.ts`, que as leva a `/catarina`.
  *
  * Nunca em cache: uma resposta guardada pela CDN deixava de chegar ao servidor,
  * e o contador parava no primeiro clique.
