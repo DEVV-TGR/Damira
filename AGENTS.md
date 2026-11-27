@@ -243,6 +243,12 @@ o resto: merge pelo próprio, depois de `lint`, `build` e `test`.
 Antes de abrir qualquer PR, revê o diff com o Claude. Não substitui a revisão do
 outro onde ela é obrigatória; apanha o básico onde não é.
 
+⚠️ **Suspensa até à abertura da loja** (decidido pelo Tomás a 27/11): o
+«Require review from Code Owners» do `main` foi desligado para os merges não
+esperarem pela aprovação do outro. O PR continua obrigatório, e quem faz o
+merge deixa no PR o que mudou, para o outro rever depois. **Volta a ligar-se
+depois da abertura**, e esta nota sai no mesmo PR.
+
 ### O repositório é público
 
 - Nunca `.env`, chaves ou segredos — nem em comentários, nem em exemplos.
