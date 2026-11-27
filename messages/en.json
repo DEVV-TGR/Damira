@@ -298,7 +298,12 @@
         "telefone-curto": "Please enter a phone number — we'll call if something needs sorting out.",
         "nif-invalido": "The tax number has nine digits.",
         "telefone-invalido": "Please check the number: it doesn't look like a valid phone number for the country chosen.",
-        "loja-em-pausa": "The shop is paused until {quando}: the kitchen is full. You can order from then."
+        "loja-em-pausa": "The shop is paused until {quando}: the kitchen is full. You can order from then.",
+        "dados-invalidos": "Check your order details and try again.",
+        "pedido-indisponivel": "The shop cannot receive your order right now. Please try later.",
+        "abaixo-do-minimo-da-loja": "Your order is below the shop’s minimum value. Please review your basket.",
+        "demasiados-pedidos": "There are already too many active orders with these details. Please contact the shop.",
+        "falha-registo": "We could not confirm that your order was saved. Try again: a duplicate order will not be created."
       },
       "sucesso": {
         "titulo": "Request sent.",
@@ -319,7 +324,16 @@
         "porConfirmar": {
           "titulo": "We have received your order!",
           "texto": "Our team will review your order. You will receive an email with a response, usually within 24 hours."
+        },
+        "existente": {
+          "titulo": "This order was already saved.",
+          "texto": "No new order was created. Keep the reference and contact the shop to check where it stands or arrange a change."
         }
+      },
+      "recuperar": {
+        "titulo": "Check your previous submission",
+        "texto": "A previous submission has not yet been acknowledged. We will check it using the original details to avoid a duplicate order. Any changes you have since made to your basket will be kept.",
+        "botao": "Check previous submission"
       }
     },
     "cesto": {
@@ -414,6 +428,7 @@
     "compra": {
       "titulo": "Complete your order",
       "intro": "Choose when you'll collect, leave your details and send. We'll reply to confirm.",
+      "introBd": "Choose when to collect, leave your details and send. You pay at the shop when collecting.",
       "quando": "When you'll collect",
       "dados": "Your details",
       "resumo": "Your order",
@@ -421,6 +436,8 @@
       "precoMudou": "The price has changed: it was {antes}, now {agora}.",
       "sobOrcamento": "Priced on request — we'll tell you the amount.",
       "semPagamento": "There's no online payment yet: once you send it, we'll confirm the amount and the time with you.",
+      "semPagamentoBd": "You pay at the shop when collecting. If an item needs the shop’s confirmation, your order waits and we let you know.",
+      "semHorasBd": "We can’t book a collection time online for this order right now. Call us and we’ll arrange it:",
       "nif": "Tax number (optional)",
       "nifAjuda": "Only if you need an invoice with your tax number.",
       "observacoes": "Notes (optional)",

@@ -42,9 +42,9 @@ function Compra({ locale }: { locale: Locale }) {
           {tp("voltar")}
         </Link>
         <h1 className="titulo-display titulo-beta mt-6">{t("titulo")}</h1>
-        <p className="mt-3 max-w-[52ch] text-lg text-tinta-suave">{t("intro")}</p>
+        <p className="mt-3 max-w-[52ch] text-lg text-tinta-suave">{t(process.env.DATABASE_URL ? "introBd" : "intro")}</p>
         <div className="mt-10">
-          <Checkout locale={locale} telefone={casa.telefone} />
+          <Checkout locale={locale} telefone={casa.telefone} comBaseDeDados={Boolean(process.env.DATABASE_URL)} />
         </div>
       </div>
     </div>

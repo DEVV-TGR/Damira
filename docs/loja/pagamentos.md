@@ -11,10 +11,12 @@ e a casa disse «para já», não «nunca». Até lá, não se constrói mais na
 O `criarPedido`, em `bd-pedidos.ts`, cria levantamentos `confirmado` ou
 `por-confirmar`, com `modoPagamento: na-loja`; já não cria `pendente` do Stripe.
 A limpeza mantém a expiração dos pendentes antigos do Stripe e passa também a
-expirar os pedidos sem resposta da casa às 48 horas. **A página de compra ainda
-acaba num email à casa**: ligá-la à fonte espera pelo painel dos confirmados
-(#133, #125). O aceite do cliente, as entregas, os emails automáticos e os
-lembretes continuam por implementar; o contrato completo não está todo ligado.
+expirar os pedidos sem resposta da casa às 48 horas. **Com `DATABASE_URL`, a
+página de compra grava o pedido** nessa fonte (#126); sem base de dados continua
+a acabar num email à casa. A gerente vê-os na lista «Pedidos» da gestão e
+responde aos que esperam pela casa (#139); ⚠️ a vista do balcão ainda só conta
+os `pago` (#125). As entregas, o envio dos emails da fila e os lembretes
+continuam por ligar; o contrato completo não está todo ligado.
 
 Como o dinheiro entra e sai. O que acontece ao pedido quando é pago, expira ou é
 cancelado está em `pedidos.md`; aqui está a ligação ao Stripe.

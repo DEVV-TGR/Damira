@@ -1,6 +1,7 @@
 "use server";
 
 import { aceitarProposta, recusarProposta } from "@/lib/dados";
+import { enviarDepois } from "@/lib/emails/depois";
 import { avisarQuePedidosMudaram } from "@/lib/painel-versao";
 import { versaoDoLink } from "@/lib/proposta";
 
@@ -27,6 +28,10 @@ async function decidir(referencia: string, credencial: string, decisao: "aceitar
     const resultado =
       decisao === "aceitar" ? await aceitarProposta(referencia, versao, agora) : await recusarProposta(referencia, versao, agora);
     if (!resultado.ok) return { ok: false, erro: resultado.erro };
+    /* O aceite e a recusa gravaram os emails na mesma instrução; só agora saem.
+       Antes do aviso ao painel: o `enviarDepois` nunca lança, e uma falha do aviso
+       não pode deixar na fila os emails de uma decisão que ficou gravada. */
+    enviarDepois();
     /* O balcão e a gerente veem a mudança no próximo toque do polling. */
     avisarQuePedidosMudaram();
     return { ok: true };
