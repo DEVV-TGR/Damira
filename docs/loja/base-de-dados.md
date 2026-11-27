@@ -312,6 +312,7 @@ já não tem volta.
 | `sinal_percent` | `integer` nulo, `CHECK` 1–100 | `sinalPercent` |
 | `limite_quantidade`, `limite_modo` | `integer`, `text` (`porDia`, `total`), nulos | `limite` |
 | `arquivado`, `fora_de_venda` | `boolean` | iguais |
+| `dias_sem_encomenda` | `jsonb NOT NULL`, `[]` por defeito, `CHECK produtos_dias_sem_encomenda` (lista) | intervalos inclusivos `{de, ate}` de dias de Lisboa em que este produto não se encomenda (migração `0014`) |
 | `esgotado_no_dia` | `date` nulo | o dia de Lisboa; amanhã já não vale |
 
 **O `id` é o próprio código, e não um número.** O contrato diz que ele nunca
@@ -328,6 +329,15 @@ do `pedeConfirmacaoInicial` (`regras.ts`); é um `UPDATE` escrito à mão a segu
 à coluna que o `drizzle-kit` gera, e numa base vazia não muda nada. Daí para a
 frente é da gerente. A prova sobre uma base que já tem produtos está em
 `src/db/migracao-pede-confirmacao.test.ts`.
+
+A **0014 — dias sem encomenda** só acrescenta a coluna e o CHECK de lista.
+Nasce vazia: nenhuma data é deduzida nem altera o trabalho da gerente. O código
+anterior não a usa. Ordem: PR de esquema → ramo de segurança `antes-0014` na
+Neon → aplicar no `desenvolvimento`, depois no `production` → PR da função.
+Conferir as contagens antes e depois. **Aplicar antes de publicar o PR de esquema**:
+o ORM seleciona as colunas declaradas, e o build desse PR com base de dados já
+precisa da coluna. O código anterior em produção continua compatível. Não se
+aplicam migrações neste PR.
 
 ### `variantes`
 
