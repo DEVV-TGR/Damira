@@ -11,6 +11,7 @@ import { enviarCompra } from "./acoes";
 const dependencias = vi.hoisted(() => ({
   fonte: null as FonteDeDados | null,
   avisar: vi.fn(),
+  enviarDepois: vi.fn(),
   sessao: null as { user: { id: string } } | null,
   modoConta: "demonstracao" as string,
 }));
@@ -19,6 +20,7 @@ vi.mock("next/headers", () => ({ headers: async () => new Headers({ "x-forwarded
 vi.mock("@/lib/conta", () => ({ get MODO_CONTA() { return dependencias.modoConta; } }));
 vi.mock("@/lib/autenticacao", () => ({ auth: async () => dependencias.sessao }));
 vi.mock("@/lib/painel-versao", () => ({ avisarQuePedidosMudaram: dependencias.avisar }));
+vi.mock("@/lib/emails/depois", () => ({ enviarDepois: dependencias.enviarDepois }));
 /* Só se troca o transporte: as regras e as escritas usam Postgres verdadeiro. */
 vi.mock("@/lib/dados", () => ({
   criarPedido: (...args: Parameters<FonteDeDados["criarPedido"]>) => dependencias.fonte!.criarPedido(...args),
@@ -43,6 +45,7 @@ beforeEach(async () => {
   const vista = comExemplo(fonte, { LOJA_EM_TESTE: "1" });
   dependencias.fonte = vista;
   dependencias.avisar.mockReset();
+  dependencias.enviarDepois.mockReset();
   dependencias.sessao = null;
   dependencias.modoConta = "demonstracao";
 });
@@ -74,6 +77,17 @@ describe("o pedido do site na base de dados", () => {
     expect(pedido).toMatchObject({ estado: "confirmado", clienteTelefone: "+351912345678", clienteNif: "123456789", observacoes: "Campainha da porta", ip: "203.0.113.8", contaId: null, deTeste: true });
     expect(await base.db.select().from(emailsPorEnviar)).toHaveLength(2);
     expect(dependencias.avisar).toHaveBeenCalled();
+  });
+
+  it("pede o envio dos emails só depois de o pedido ficar gravado", async () => {
+    dependencias.enviarDepois.mockImplementation(async () => {
+      expect(await base.db.select().from(emailsPorEnviar)).toHaveLength(2);
+    });
+    expect(await enviar()).toMatchObject({ estado: "enviado" });
+    expect(dependencias.enviarDepois).toHaveBeenCalledTimes(1);
+    /* Numa repetição pede outra vez: o emissor só envia o que ainda está pendente. */
+    await enviar();
+    expect(dependencias.enviarDepois).toHaveBeenCalledTimes(2);
   });
 
   it("um artigo a confirmar fica por confirmar, sem prometer confirmação", async () => {
@@ -116,6 +130,7 @@ describe("o pedido do site na base de dados", () => {
     expect(await enviar(campos)).toMatchObject({ estado: "erro" });
     expect(await base.db.select().from(pedidos)).toHaveLength(0);
     expect(await base.db.select().from(emailsPorEnviar)).toHaveLength(0);
+    expect(dependencias.enviarDepois).not.toHaveBeenCalled();
   });
 
   it("a armadilha não grava nada", async () => {
@@ -130,6 +145,7 @@ describe("o pedido do site na base de dados", () => {
     expect(resultado).toMatchObject({ estado: "erro", campos: { geral: expect.any(String) } });
     expect(JSON.stringify(resultado)).not.toContain("segredo");
     expect(JSON.stringify(registo.mock.calls)).not.toContain("segredo");
+    expect(dependencias.enviarDepois).not.toHaveBeenCalled();
   });
 
   it("a falha da invalidação da cache não transforma um pedido gravado num erro", async () => {

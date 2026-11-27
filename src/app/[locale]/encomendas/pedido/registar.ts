@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { getLocale, getTranslations } from "next-intl/server";
 import { criarPedido, definicoesLoja } from "@/lib/dados";
 import { MODO_CONTA } from "@/lib/conta";
+import { enviarDepois } from "@/lib/emails/depois";
 import { avisarQuePedidosMudaram } from "@/lib/painel-versao";
 import { esquemaCompra, quandoVoltaALoja } from "@/lib/pedidos";
 import type { ErroCriarPedido } from "@/lib/dados/tipos";
@@ -78,10 +79,11 @@ export async function registarCompra(dados: FormData): Promise<Resultado> {
       /* Já ficou gravado. Nunca se convida a repetir um pedido por falhar cache. */
       console.error(`[pedidos] ${pedido.referencia}: falhou o aviso ao painel`);
     }
-    /* ⚠️ Os dois emails de criação já estão na fila (gravados no mesmo lote que
-       o pedido), mas ninguém os envia ainda: o PR do emissor chama aqui o
-       `enviarDepois()` (`src/lib/emails/depois.ts`) — depois da escrita, nunca
-       antes. Numa repetição também serve: o emissor só envia o que está pendente. */
+    /* Os dois emails de criação já estão na fila, gravados no mesmo lote que o
+       pedido: só agora, com a escrita feita, se pede o envio, e corre depois da
+       resposta (`after`). Numa repetição também serve: o emissor só envia o que
+       ainda está pendente, e nunca o mesmo email duas vezes. */
+    enviarDepois();
     return {
       estado: "enviado", estadoPedido: pedido.estado,
       registo: {

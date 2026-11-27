@@ -40,12 +40,64 @@ describe("dados do emissor", () => {
   it("salta lembrete depois de mudar o estado", () => {
     expect(dadosDoEmail({ ...pedidoDeEmail(), estado: "confirmado" }, { ...linhaDeEmail(), modelo: "lembrete-loja" }, { agora, modoDeTeste: false })).toEqual({ saltar: "lembrete-sem-espera" });
   });
-  it("resposta fica por suportar enquanto não entrar #139", () => {
-    expect(() => dadosDoEmail(pedidoDeEmail(), { ...linhaDeEmail(), modelo: "resposta-cliente" }, { agora, modoDeTeste: false })).toThrow("modelo-nao-suportado");
-  });
-  it("não inventa a hora anterior de um reagendamento", () => {
-    const dados = dadosDoEmail(pedidoDeEmail(), linhaDeEmail(), { agora, modoDeTeste: false });
+  it("não inventa a hora anterior de um reagendamento, nem lhe dá a de uma proposta", () => {
+    // A hora pedida que a proposta guardou não é a hora de antes de um reagendamento.
+    const pedido = { ...pedidoComProposta(), estado: "confirmado" as const, confirmadoEm: agora, aceiteEm: agora };
+    const dados = dadosDoEmail(pedido, { ...linhaDeEmail(), modelo: "reagendado-cliente" }, opcoesProposta);
+    expect(dados).not.toHaveProperty("levantamentoAnteriorEm");
     if (!("saltar" in dados)) expect(() => escreverEmail("reagendado-cliente", dados, CASA_EXEMPLO, "pt")).toThrow("levantamentoAnteriorEm");
+  });
+});
+
+/** Um pedido com a segunda versão de uma proposta: preço fixado e hora mudada. */
+function pedidoComProposta() {
+  const pedido = pedidoDeEmail();
+  return {
+    ...pedido, estado: "a-aguardar-aceite" as const, propostaVersao: 2, propostaEm: agora,
+    expiraEm: new Date(+agora + 24 * 3_600_000),
+    levantamentoAnteriorEm: pedido.levantamentoEm, levantamentoEm: new Date("2026-10-27T12:00:00Z"),
+    linhas: [{ ...pedido.linhas[0], precoDaProposta: true }],
+  };
+}
+const linhaDaProposta = () => ({ ...linhaDeEmail(), modelo: "resposta-cliente" });
+const linkDaProposta = (referencia: string, versao: number) => `https://site.example/pedido/proposta/${referencia}/${versao}-assinatura`;
+const opcoesProposta = { agora, modoDeTeste: false, linkDaProposta };
+
+describe("a proposta (T04)", () => {
+  it("leva o link da versão em vigor, a hora pedida e os preços fixados agora", () => {
+    const pedido = pedidoComProposta();
+    const dados = dadosDoEmail(pedido, linhaDaProposta(), opcoesProposta);
+    expect(dados).toMatchObject({
+      linkAceitar: "https://site.example/pedido/proposta/DAM-2410-AAAA/2-assinatura",
+      levantamentoAnteriorEm: pedido.levantamentoAnteriorEm, levantamentoEm: pedido.levantamentoEm,
+      expiraEm: pedido.expiraEm, linhas: [{ fixadoAgora: true }],
+    });
+    if ("saltar" in dados) throw new Error("não devia saltar");
+    const { texto } = escreverEmail("resposta-cliente", dados, CASA_EXEMPLO, "pt");
+    expect(texto).toContain("https://site.example/pedido/proposta/DAM-2410-AAAA/2-assinatura");
+    expect(texto).toContain("em vez das 10h00");
+  });
+  it("salta a proposta que outra mais nova substituiu: o link dela já não abre", () => {
+    const pedido = { ...pedidoComProposta(), propostaEm: new Date(+agora + 60_000) };
+    expect(dadosDoEmail(pedido, linhaDaProposta(), opcoesProposta)).toEqual({ saltar: "proposta-substituida" });
+  });
+  it.each([
+    ["aceite", { estado: "confirmado" as const, confirmadoEm: agora, aceiteEm: agora }],
+    ["cancelado", { estado: "cancelado" as const, canceladoEm: agora, canceladoPor: "gerente" as const }],
+    ["fora do prazo", { expiraEm: agora }],
+  ])("salta a proposta que já não espera o aceite: %s", (_, mudanca) => {
+    expect(dadosDoEmail({ ...pedidoComProposta(), ...mudanca }, linhaDaProposta(), opcoesProposta))
+      .toEqual({ saltar: "proposta-fechada" });
+  });
+  it("sem quem assine o link, não monta a proposta (falha, não manda um botão vazio)", () => {
+    expect(() => dadosDoEmail(pedidoComProposta(), linhaDaProposta(), { agora, modoDeTeste: false })).toThrow();
+  });
+  it("só a proposta leva a hora pedida; o aceite marca os preços fixados, para a loja", () => {
+    const pedido = { ...pedidoComProposta(), estado: "confirmado" as const, confirmadoEm: agora, aceiteEm: agora };
+    const dados = dadosDoEmail(pedido, { ...linhaDeEmail(), modelo: "aceite-loja" }, opcoesProposta);
+    expect(dados).not.toHaveProperty("levantamentoAnteriorEm");
+    expect(dados).not.toHaveProperty("linkAceitar");
+    expect(dados).toMatchObject({ linhas: [{ fixadoAgora: true }] });
   });
 });
 
