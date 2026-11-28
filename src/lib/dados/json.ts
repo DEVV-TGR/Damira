@@ -5,6 +5,7 @@ import { casa, DIAS_DA_SEMANA } from "@/data/casa";
 import { CARTAS, CATEGORIAS, ementa, SUBCATEGORIAS, type Artigo } from "@/data/ementa";
 import type { Box, KitBolo, Linha } from "@/data/encomendas";
 import { regraDe } from "@/lib/encomendavel";
+import { ALERGENIOS_POR_DEFEITO } from "@/lib/painel";
 import { PREDEFINICOES, type HorarioSemanal, type VagaOcupada } from "@/lib/horarios";
 import { PRODUTOS, type Produto as ProdutoDasEncomendas } from "@/lib/produtos";
 import mensagensEn from "../../../messages/en.json";
@@ -136,9 +137,9 @@ const daEmenta = (artigo: Artigo): SemConfirmacao => {
     multiplo: regra?.passo ?? 1,
     aVendaOnline: regra !== null,
     apareceNaEmenta: true,
-    /* O JSON escreve `[]` em todos, e ali quer dizer **por preencher** — nunca
-       «sem alergénios». Aqui passa a `null`, que é o que significa. */
-    alergenios: artigo.alergenios.length > 0 ? artigo.alergenios : null,
+    /* O JSON escreve `[]` em todos, e ali quer dizer que ninguém os preencheu —
+       nunca «sem alergénios». Levam os de partida. */
+    alergenios: artigo.alergenios.length > 0 ? artigo.alergenios : [...ALERGENIOS_POR_DEFEITO],
     vegan: artigo.vegan,
     fotos: artigo.foto ? [artigo.foto] : [],
     sinalPercent: null,
@@ -230,7 +231,7 @@ const daEncomenda = (produto: ProdutoDasEncomendas): SemConfirmacao => {
     multiplo: 1,
     aVendaOnline: true,
     apareceNaEmenta: false,
-    alergenios: null,
+    alergenios: [...ALERGENIOS_POR_DEFEITO],
     vegan: produto.vegan,
     fotos: produto.foto ? [produto.foto] : [],
     sinalPercent: null,

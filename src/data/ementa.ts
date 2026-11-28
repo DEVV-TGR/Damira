@@ -145,12 +145,10 @@ const EsquemaArtigo = z
      */
     vegan: z.boolean().default(false),
     /**
-     * **Vazio de propósito, em todos os artigos.** Os alergénios não constam de
-     * nenhum dos cinco impressos e **não se inventam**: é informação com peso
-     * legal e clínico, e uma lista adivinhada é pior do que nenhuma. Numa
-     * confeitaria com carta vegan isto pesa a dobrar — quem procura o símbolo
-     * da folha costuma ter uma razão para o procurar. Preenche-se com a
-     * pastelaria; ver o README.
+     * Vazio em todos os artigos: os alergénios não constam de nenhum dos cinco
+     * impressos. A fonte (`src/lib/dados/json.ts`) dá-lhes os
+     * `ALERGENIOS_POR_DEFEITO`, que a casa corrige no painel; aqui só se
+     * escreve o que ela confirmar artigo a artigo.
      */
     alergenios: z.array(z.string()).default([]),
     foto: z.string().startsWith("/ementa/").nullable().default(null),

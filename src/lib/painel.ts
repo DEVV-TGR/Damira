@@ -499,6 +499,14 @@ export const ALERGENIOS_UE = [
 ] as const;
 
 /**
+ * O que um produto traz marcado antes de alguém o rever: os do catálogo em JSON
+ * e os que a gerente cria. Pedido da casa (28/11): mais vale avisar a mais e
+ * retirar onde não houver do que ficar por marcar. ⚠️ **Não é uma lista
+ * verificada** — nem completa, nem certa em todos (os vegan também a trazem).
+ */
+export const ALERGENIOS_POR_DEFEITO = ["Glúten", "Ovos"] as const satisfies readonly (typeof ALERGENIOS_UE)[number][];
+
+/**
  * O produto como o formulário o grava (`EsquemaEntradaProduto`): sem o id, o
  * arquivado, o fora de venda e o esgotado, que têm funções próprias. As
  * variantes levam o seu id — é o que não as deixa trocar nos cestos de quem já

@@ -76,7 +76,7 @@ qualquer pedido, com «reembolsar parte» para os que seguem.
 |---|---|
 | Nome, descrição, fotos | fotos tiradas no telemóvel, reduzidas no browser antes de subir |
 | Carta e categoria | como hoje no `ementa.json` |
-| Alergénios | lista, ou «sem alergénios» marcado expressamente |
+| Alergénios | lista, ou «sem alergénios» marcado expressamente; um produto novo traz «Glúten» e «Ovos» |
 | Vegan, sem glúten | marcados pela gerente |
 | Unidade | à unidade ou ao quilo |
 | Quantidade mínima e múltiplo | ex.: mínimo 6, de 6 em 6 |
@@ -284,7 +284,9 @@ elas, no mesmo PR, ou o painel rebenta ao gravar:
    que a gerente percebe quando abre um artigo. A tabela de `encomendavel.ts` só
    preenche o JSON, e a migração tira dela os 70 mínimos, para ninguém os ter de
    escrever.
-3. **Alergénios vazios.** Continuam a não se deduzir. Ver o ⚠️ abaixo.
+3. **Alergénios.** Desde 28/11, a pedido da casa, trazem «Glúten» e «Ovos» por
+   defeito, e a gerente retira onde não houver. O resto continua a não se
+   deduzir. Ver o ⚠️ abaixo.
 
 ### ⚠️ Sem alergénios respondidos, não vai à venda online
 
@@ -295,6 +297,10 @@ vazio não conta como «não tem».
 Na venda à distância, a informação obrigatória dos alimentos — alergénios
 incluídos — tem de estar disponível antes da compra. Vender um bolo com o campo em
 branco é o site a não cumprir isso. A advogada confirma; até lá, a regra fica.
+
+⚠️ Com «Glúten» e «Ovos» por defeito, esta regra **já não garante que alguém
+olhou para o produto**: um produto novo passa-a sem a gerente abrir o separador,
+e o contador «sem alergénios» não o conta.
 
 ### Por preencher
 
