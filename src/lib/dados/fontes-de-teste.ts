@@ -1,5 +1,4 @@
 import { eq, sql } from "drizzle-orm";
-import { onTestFinished } from "vitest";
 import { casa as tabelaCasa, linhasPedido, pedidos as tabelaPedidos, reembolsos as tabelaReembolsos, vagas } from "@/db/esquema";
 import { loteEmTransacao } from "@/db/lote";
 import { catalogoDeTeste } from "@/db/teste";
@@ -27,20 +26,12 @@ export const NA_BASE_DE_DADOS = process.env.FONTE_DOS_TESTES === "bd";
    cópia limpa dele. */
 let modelo: ReturnType<typeof catalogoDeTeste> | undefined;
 
-/* Cada cópia é um Postgres inteiro em memória, e nada a fechava: ficavam todas
-   abertas até ao fim do ficheiro. Com os testes do #139 a suite passou de ~17 GB
-   para ~24 GB e o runner do CI (16 GB) matava-a a meio, sem um teste falhado.
-   Fecha-se no fim do teste que a abriu; uma aberta fora de um teste (num
-   `beforeAll`, que a partilha por vários) fica até ao fim do ficheiro, como antes. */
+/* A cópia fecha-se sozinha no fim do teste que a abriu: é o `copia()` de
+   `src/db/teste.ts` que trata disso, para todos os ficheiros (#139 e o CI que
+   encravava). */
 async function copiaDoModelo() {
   modelo ??= catalogoDeTeste();
-  const copia = await (await modelo).copia();
-  try {
-    onTestFinished(() => copia.cliente.close());
-  } catch {
-    // Fora de um teste: quem a abriu partilha-a, e não é aqui que se fecha.
-  }
-  return copia;
+  return (await modelo).copia();
 }
 
 /** A fonte da base de dados, numa cópia limpa do catálogo de hoje. */

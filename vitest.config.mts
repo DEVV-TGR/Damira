@@ -1,5 +1,11 @@
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
+import ReporterPresos from "./vitest.presos";
+
+/* No CI, os dois reporters de origem (o `github-actions` põe os testes falhados
+   no PR) e o que diz quem ficou preso (`vitest.presos.ts`). Ao escrever a lista
+   à mão, o Vitest deixa de acrescentar o `github-actions` sozinho. */
+const NO_CI = process.env.GITHUB_ACTIONS === "true";
 
 export default defineConfig({
   resolve: {
@@ -20,6 +26,7 @@ export default defineConfig({
        chegavam: um teste qualquer, de cada vez outro, passava o limite sem
        nada estar errado. Um teste preso a sério continua a rebentar. */
     testTimeout: 20_000,
+    ...(NO_CI && { reporters: ["default", "github-actions", new ReporterPresos()] }),
     /* Duas voltas. A primeira é a de sempre: tudo, contra a fonte dos JSON. A
        segunda corre os testes do contrato contra a fonte da base de dados, num
        PGlite (`src/lib/dados/fontes-de-teste.ts`): é a prova de que trocar a
