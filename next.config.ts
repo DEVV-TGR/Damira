@@ -118,6 +118,9 @@ const CABECALHOS = [
  */
 const nextConfig: NextConfig = {
   images: {
+    /* Os tamanhos intermédios evitam saltar de 384 para 640 px nos cartões
+       que precisam de cerca de 450 px num telemóvel de densidade 3x. */
+    imageSizes: [32, 48, 64, 96, 128, 160, 256, 320, 384, 480, 560],
     /* Só o Blob, e nenhum outro sítio. Ainda aceita qualquer loja do Blob: ver o comentário de cima. */
     remotePatterns: [{ protocol: "https", hostname: "*.public.blob.vercel-storage.com" }],
   },

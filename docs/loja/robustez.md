@@ -190,6 +190,24 @@ repetir um envio cuja resposta se perdeu fora da proteção do fornecedor.
 - Listas e painel: esqueletos com a forma do conteúdo, nunca ecrã branco.
 - Página de sucesso do pagamento: «A confirmar o pagamento…» (`pagamentos.md`).
 
+As páginas públicas e a primeira consulta do calendário na compra partilham o
+ecrã «O pão está quase a sair.». Aparece logo nas mudanças de página, incluindo
+voltar atrás e abrir um destino já em memória, e ao enviar o pedido. Fica visível pelo menos 600 ms. A
+percentagem conta duas etapas. Na navegação são a estrutura da rota e o seu
+conteúdo visível no destino, incluindo as fotografias que ainda estão a carregar
+no primeiro ecrã. Na compra são a página da compra e a resposta da consulta do cesto,
+com o preço e as vagas. Passado o mínimo visual, o ecrã sai quando chega o
+conteúdo ou o erro, ou
+ao fim de 12 segundos de visualização se a ligação ficar pendurada. As âncoras
+da própria página continuam a saltar diretamente. As edições do cesto e a
+atualização das vagas usam o feedback da própria página. Ao concluir o pedido,
+o ecrã acompanha a resposta do envio e deixa ver a confirmação ou o erro.
+
+O fundo é tijolo e o branco usa os contornos do logótipo entregue pela casa
+(`public/marca/damira-espera.svg`). Ondulam apenas os três fios do M, com o
+central em sentido oposto aos outros dois. A preferência por movimento
+reduzido deixa o logótipo estático.
+
 ## Estados vazios
 
 Cada um com uma frase e, quando faz sentido, uma saída:
@@ -235,7 +253,10 @@ calmo de um tablet desligado.
   gerente grava (`painel-gerente.md`); o número de versão do painel.
 - ⚠️ **Nunca em cache:** vagas, quantidades, o estado de um pedido, o checkout e
   tudo o que está em `/painel`. Uma vaga em cache é uma vaga vendida duas vezes,
-  ou recusada a quem a viu livre.
+  ou recusada a quem a viu livre. A consulta da página de compra usa a mesma
+  cotação para mostrar o preço e validar o cesto do calendário. Cada consulta
+  calcula o preço de novo e, com o cesto válido e uma janela de levantamento,
+  lê a ocupação atual.
 
 ## Monitorização
 

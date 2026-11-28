@@ -21,7 +21,7 @@ import type { Afluencia, DiaSemEncomendaDoCalendario, VagaDoCalendario } from "@
  * e a escolhida é **pretendida** (`aConfirmar`): o calendário di-lo, e a casa
  * confirma. **Não se inventa um prazo.**
  *
- * **Não calcula nada.** As vagas e os dias chegam do servidor (`consultarVagas`),
+ * **Não calcula nada.** As vagas e os dias chegam do servidor (`consultarCompra`),
  * já com a data e a hora de Lisboa escritas; o horário, os tempos e os degraus
  * das cores vêm de `@/lib/dados`, e a gerente muda-os no painel.
  *

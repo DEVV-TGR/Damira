@@ -1,4 +1,7 @@
 {
+  "espera": {
+    "mensagem": "The bread is nearly ready."
+  },
   "marca": {
     "nome": "Confeitaria e Pão Quente Damira",
     "assinatura": "Stories with flavour",
@@ -411,6 +414,8 @@
       "escolhido": "Collect at the shop: {quando}.",
       "horaDeLisboa": "Times are Portugal time.",
       "cheia": "full",
+      "falhaConsulta": "We couldn’t check the collection times.",
+      "repetirConsulta": "Try again",
       "aCarregar": "Checking the times…",
       "semVagas": "No times available in the next few days — call us:",
       "mesAnterior": "Previous month",

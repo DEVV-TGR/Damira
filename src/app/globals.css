@@ -164,6 +164,7 @@
      Decide-o o CSS (`:has`), para a faixa continuar a ser de servidor e não
      ter de saber que páginas abrem a tijolo. */
   .faixa-desconto {
+    min-height: var(--altura-faixa-desconto);
     background-color: var(--color-tijolo);
     color: var(--color-papel);
   }
@@ -171,10 +172,10 @@
     background-color: var(--color-papel);
     color: var(--color-tijolo);
   }
-  .faixa-desconto:has(+ main > .bloco-tijolo:first-child) {
+  :is(.faixa-desconto:has(+ main > .bloco-tijolo:first-child), .cabecalho-publico > .faixa-desconto) {
     background-color: var(--color-tinta);
   }
-  .faixa-desconto:has(+ main > .bloco-tijolo:first-child) .faixa-desconto__destaque {
+  :is(.faixa-desconto:has(+ main > .bloco-tijolo:first-child), .cabecalho-publico > .faixa-desconto) .faixa-desconto__destaque {
     background-color: var(--color-tijolo);
     color: var(--color-papel);
   }
@@ -222,19 +223,29 @@
    tokens de desenho: são medidas de composição, e o `@theme` deixa de fora do
    CSS final as variáveis que nenhum utilitário usa. */
 :root {
-  /* ⚠️ **É o `h-16` do `Cabecalho.tsx`, escrito outra vez.** O CSS não o
-     consegue ler de lá: se a barra mudar de altura, muda nos dois sítios, ou os
-     títulos fixos ficam com uma fresta ou por baixo dela. */
-  --altura-cabecalho: 4rem;
+  --altura-barra-principal: 4rem;
+  /* No telemóvel cabem duas linhas em ambas as línguas, mesmo antes de a fonte
+     Caros carregar. Em ecrãs largos basta uma. */
+  --altura-faixa-desconto: 3rem;
+  --altura-cabecalho: var(--altura-barra-principal);
   /* O `scroll-padding-top` do documento, com nome para se poder descontar (ver
      `.ancora-rente`). */
   --folga-ancoras: 8rem;
 }
 
+:root:has(.cabecalho-publico > .faixa-desconto) {
+  --altura-cabecalho: calc(var(--altura-barra-principal) + var(--altura-faixa-desconto));
+}
+
+@media (min-width: 40rem) {
+  :root {
+    --altura-faixa-desconto: 2.5rem;
+  }
+}
+
 html {
   scroll-behavior: smooth;
-  /* Cabeçalho (4rem) mais a navegação da ementa (~3rem), e uma folga. Sem isto,
-     saltar para uma secção esconde-lhe o título por baixo das duas barras. */
+  /* Até 7rem de cabeçalho com desconto, mais uma folga. */
   scroll-padding-top: var(--folga-ancoras);
 }
 
@@ -971,7 +982,7 @@ html:has(.menu-encomendas[open]) {
  * Ao passar de cartão em cartão com o `Tab` (e sobretudo com `Shift+Tab`, a
  * subir), o browser só rola se o cartão estiver fora da área à vista — e essa
  * área desconta só o `scroll-padding-top` do documento, os 8 rem. Na
- * `/encomendas` o que está colado no topo passa disso: o cabeçalho (4 rem), o
+ * `/encomendas` o que está colado no topo passa disso: o cabeçalho e a faixa, o
  * título da secção (~5 rem, duas linhas a 320 px) e, na carta por encomenda, o
  * da categoria (~3,5 rem). O cartão com o foco ficava escondido por baixo deles.
  *

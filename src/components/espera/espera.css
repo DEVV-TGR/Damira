@@ -1,0 +1,70 @@
+.espera-publica {
+  position: fixed;
+  z-index: 110;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 90ms ease-out, visibility 0s 90ms;
+  overflow: auto;
+  color: var(--color-papel);
+  background: var(--color-tijolo);
+  text-align: center;
+}
+
+/* As várias etapas partilham o mesmo elemento. Assim, passar da rota ao
+   checkout enquanto se espera pelos dados não reinicia o ecrã. */
+body:has([data-passagem], .etapa-espera-ligacao, .etapa-espera-rota, .etapa-espera-compra, .etapa-espera-imagens, .etapa-espera-envio) .espera-publica {
+  /* O limite liberta a navegação se a
+     ligação ficar pendurada. A informação de erro ou de espera vive na página. */
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: none;
+  animation: libertar-espera-publica 1ms step-end 12s forwards;
+}
+
+@keyframes libertar-espera-publica {
+  to { visibility: hidden; opacity: 0; pointer-events: none; }
+}
+
+.espera-publica__marca {
+  width: min(62vw, 430px);
+  height: auto;
+  margin-inline: auto;
+}
+
+.espera-publica__mensagem {
+  margin-block-start: 24px;
+  font-size: .94rem;
+  line-height: 1.6;
+}
+
+.espera-publica__percentagem {
+  display: block;
+  font-size: .8rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .08em;
+}
+
+.espera-publica__percentagem--inicio,
+.espera-publica__percentagem--estrutura,
+body:has([data-passagem="inicio"], .etapa-espera-ligacao, .etapa-espera-rota, .etapa-espera-compra, .etapa-espera-imagens, .etapa-espera-envio) .espera-publica__percentagem--fim,
+body:has(.etapa-espera-rota, .etapa-espera-compra, .etapa-espera-imagens, .etapa-espera-envio) .espera-publica__percentagem--inicio {
+  display: none;
+}
+
+body:has([data-passagem="inicio"], .etapa-espera-ligacao):not(:has(.etapa-espera-rota, .etapa-espera-compra, .etapa-espera-imagens, .etapa-espera-envio)) .espera-publica__percentagem--inicio,
+body:has(.etapa-espera-rota, .etapa-espera-compra, .etapa-espera-imagens, .etapa-espera-envio) .espera-publica__percentagem--estrutura {
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .espera-publica {
+    /* Esta duração só controla a visibilidade. O SVG desliga o movimento. */
+    transition-property: visibility;
+  }
+}

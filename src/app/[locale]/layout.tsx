@@ -16,6 +16,7 @@ import { ProvedorConta } from "@/components/conta/ProvedorConta";
 import { CestoProvider } from "@/components/encomendas/CestoProvider";
 import { ProvedorHistorico } from "@/components/encomendas/ProvedorHistorico";
 import { Cesto } from "@/components/encomendas/Cesto";
+import { EsperaPublica } from "@/components/espera/EsperaPublica";
 import { MODO_CONTA } from "@/lib/conta";
 import { routing, type Locale } from "@/i18n/routing";
 import { URL_SITE, urlLocalizado } from "@/lib/site";
@@ -139,10 +140,11 @@ export default async function LayoutIdioma({
           {/* O modo de teste diz-se em voz alta, no topo de todas as páginas.
               Ver `src/lib/modo-teste.ts`. */}
           <FaixaModoTeste />
-          <Cabecalho locale={locale as Locale} seccoes={seccoesDoMenu} />
-          {/* O desconto da loja, logo por baixo do cabeçalho: o aviso do modo de
-              teste fica no topo, sem lhe tirar o lugar. Sem desconto, não aparece. */}
-          <FaixaDesconto />
+          <Cabecalho
+            locale={locale as Locale}
+            seccoes={seccoesDoMenu}
+            faixaDesconto={<FaixaDesconto />}
+          />
           <main id="conteudo">{children}</main>
           <Rodape />
           {/* Fica fora do `<main>`: é navegação persistente, não conteúdo da
@@ -156,6 +158,7 @@ export default async function LayoutIdioma({
               produto, e o sinal de que se acertou tem de estar em todas. Nunca os
               dois ao mesmo tempo. */}
           <Cesto locale={locale as Locale} />
+          <EsperaPublica />
         </ProvedorHistorico>
         </CestoProvider>
         </ProvedorConta>

@@ -1,6 +1,6 @@
 import { TZDate, tz } from "@date-fns/tz";
 import { addDays, startOfDay } from "date-fns";
-import { EsquemaLinhaCesto, type ConfiguracaoDaCasa, type FonteDeDados, type Produto } from "@/lib/dados/tipos";
+import type { ConfiguracaoDaCasa, FonteDeDados, Produto, ResultadoCotacao } from "@/lib/dados/tipos";
 import { diasSemEncomendaNoCalendario, vagas, validarLevantamento, type ArtigoDoCesto, type ConfiguracaoHorarios } from "@/lib/horarios";
 import { artigosParaHorarios } from "@/lib/dados/artigos-horarios";
 import { nomeDe } from "@/lib/vista";
@@ -73,18 +73,12 @@ export type ResultadoVagas =
   /* `cesto-invalido`: um artigo que não existe, abaixo do mínimo, fora de venda. */
   | { ok: false; motivo: "cesto-invalido" };
 
-const LISBOA = { in: tz("Europe/Lisbon") };
+export type ConsultaCompra = {
+  cotacao: ResultadoCotacao;
+  vagas: ResultadoVagas;
+};
 
-/* A cotação valida as linhas antes de as transformar no cesto do motor. */
-async function preparar(linhas: unknown, fonte: Fonte) {
-  const lidas = EsquemaLinhaCesto.array().min(1).max(50).safeParse(linhas);
-  if (!lidas.success) return null;
-  const cotado = await fonte.cotarCesto(lidas.data);
-  if (!cotado.ok || !cotado.cotacao.valida) return null;
-  const produtos = await Promise.all(lidas.data.map(l => fonte.produtoPorId(l.produtoId)));
-  if (produtos.some(p => p === null)) return null;
-  return { produtos: produtos as Produto[], casa: await fonte.configuracaoDaCasa() };
-}
+const LISBOA = { in: tz("Europe/Lisbon") };
 
 type Contexto = {
   produtos: Produto[];
@@ -100,10 +94,12 @@ type Contexto = {
 
 /* Sem produção preenchida não se promete um prazo: só as horas da loja a
    partir de amanhã. Os bloqueios dos produtos continuam a valer nesse caminho. */
-async function contexto(linhas: unknown, fonte: Fonte, agora: Date): Promise<Contexto | null> {
-  const preparado = await preparar(linhas, fonte);
-  if (!preparado) return null;
-  const { casa, produtos } = preparado;
+async function contexto(cotado: ResultadoCotacao, fonte: Fonte, agora: Date): Promise<Contexto | null> {
+  // Só as linhas validadas pela cotação entram no motor de horários.
+  if (!cotado.ok || !cotado.cotacao.valida || cotado.cotacao.linhas.length === 0) return null;
+  const produtos = await Promise.all(cotado.cotacao.linhas.map(linha => fonte.produtoPorId(linha.produtoId)));
+  if (!produtos.every(produto => produto !== null)) return null;
+  const casa = await fonte.configuracaoDaCasa();
   const comTempos = casa.cozinha !== null && produtos.every(p => p.tempoProducao !== null);
   // O motor conta a partir de amanhã no percurso a confirmar: «esgotado hoje» já acabou.
   return {
@@ -118,7 +114,17 @@ async function contexto(linhas: unknown, fonte: Fonte, agora: Date): Promise<Con
 }
 
 export async function vagasDoCesto(linhas: unknown, fonte: Fonte, agora: Date, locale: Locale = "pt"): Promise<ResultadoVagas> {
-  const c = await contexto(linhas, fonte, agora);
+  return (await consultarCompraDoCesto(linhas, fonte, agora, locale)).vagas;
+}
+
+/** A mesma cotação alimenta o resumo e valida as linhas do calendário. */
+export async function consultarCompraDoCesto(linhas: unknown, fonte: Fonte, agora: Date, locale: Locale = "pt"): Promise<ConsultaCompra> {
+  const cotacao = await fonte.cotarCesto(linhas);
+  return { cotacao, vagas: await vagasDaCotacao(cotacao, fonte, agora, locale) };
+}
+
+async function vagasDaCotacao(cotacao: ResultadoCotacao, fonte: Fonte, agora: Date, locale: Locale): Promise<ResultadoVagas> {
+  const c = await contexto(cotacao, fonte, agora);
   if (!c) return { ok: false, motivo: "cesto-invalido" };
 
   if (c.semJanela) return { ok: true, aConfirmar: true, vagas: [], diasSemEncomenda: [] };
@@ -207,7 +213,7 @@ export async function confirmarLevantamento(
   fonte: Fonte,
   agora: Date,
 ): Promise<{ ok: true; aConfirmar: boolean } | { ok: false; motivo: "indisponivel" | "cesto-invalido" | "vaga-cheia" }> {
-  const c = await contexto(linhas, fonte, agora);
+  const c = await contexto(await fonte.cotarCesto(linhas), fonte, agora);
   if (!c) return { ok: false, motivo: "cesto-invalido" };
   if (c.semJanela) return { ok: false, motivo: "indisponivel" };
   const ocupadas = await fonte.ocupacao(levantamento, levantamento);

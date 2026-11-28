@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { linhasDoCesto, normalizarCesto } from "@/lib/cesto";
 import { formatarCent } from "@/lib/preco";
 import { enviarCompra } from "./acoes";
-import { consultarVagas } from "../vagas";
+import { consultarCompra } from "../vagas";
 
 vi.mock("next-intl/server", async () => (await import("./traducoes-de-teste")).nextIntlDeTeste);
 
@@ -147,7 +147,7 @@ describe("enviarCompra: o que não segue", () => {
 
 describe("enviarCompra: sem dados da cozinha, a hora é pretendida", () => {
   it("o calendário oferece as horas da loja, e o email diz que a hora é a confirmar", async () => {
-    const vagas = await consultarVagas(linhasDoCesto(CESTO));
+    const { vagas } = await consultarCompra(linhasDoCesto(CESTO));
     if (!vagas.ok) throw new Error("devia haver horas");
     expect(vagas.aConfirmar).toBe(true);
     const vaga = vagas.vagas[3];
@@ -167,7 +167,7 @@ describe("enviarCompra: sem dados da cozinha, a hora é pretendida", () => {
     process.env.RESEND_API_KEY = "re_teste";
     const enviado = vi.fn<(url: string, pedido: { body: string }) => Promise<Response>>(async () => new Response("{}", { status: 200 }));
     vi.stubGlobal("fetch", enviado);
-    const vagas = await consultarVagas(linhasDoCesto(CESTO));
+    const { vagas } = await consultarCompra(linhasDoCesto(CESTO));
     if (!vagas.ok) throw new Error("devia haver horas");
     expect((await enviar({ levantamento: vagas.vagas[3].inicio, data: "" })).estado).toBe("enviado");
     const corpo = JSON.parse(enviado.mock.calls[0][1].body);

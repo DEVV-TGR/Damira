@@ -11,7 +11,7 @@ vi.hoisted(() => {
 vi.mock("next-intl/server", async () => (await import("./traducoes-de-teste")).nextIntlDeTeste);
 
 const { enviarCompra } = await import("./acoes");
-const { consultarVagas } = await import("../vagas");
+const { consultarCompra } = await import("../vagas");
 
 afterAll(() => {
   delete process.env.LOJA_EM_TESTE;
@@ -31,7 +31,7 @@ const enviar = (campos: Record<string, string>) => {
 
 describe("o calendário na página de compra", () => {
   it("a vaga escolhida chega ao email por extenso, em hora de Lisboa, e a data é a dela", async () => {
-    const vagas = await consultarVagas(LINHAS);
+    const { vagas } = await consultarCompra(LINHAS);
     if (!vagas.ok) throw new Error("devia haver vagas");
     const vaga = vagas.vagas.find((v) => v.livre)!;
     const enviado = await enviar({ levantamento: vaga.inicio, data: "2099-01-01" });
@@ -43,7 +43,7 @@ describe("o calendário na página de compra", () => {
   });
 
   it("em modo de teste, o email avisa logo no topo — sem dizer que o pedido não é verdadeiro", async () => {
-    const vagas = await consultarVagas(LINHAS);
+    const { vagas } = await consultarCompra(LINHAS);
     if (!vagas.ok) throw new Error("devia haver vagas");
     const enviado = await enviar({ levantamento: vagas.vagas.find((v) => v.livre)!.inicio });
     if (enviado.estado !== "sem-servico") throw new Error(`esperava sem-servico, veio ${enviado.estado}`);

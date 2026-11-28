@@ -1,10 +1,11 @@
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { TAMANHOS_FOTO_CARTAO } from "@/lib/vista";
 
-/* Os cartões vão de uma coluna no telemóvel a três num ecrã largo; a página de
-   produto ocupa metade. Por excesso, que um cartão desfocado é pior do que uns
-   quilobytes a mais. */
-const TAMANHOS = "(min-width: 640px) 50vw, 100vw";
+/* Na página do produto a galeria ocupa a .envolvente inteira até ao lg.
+   Daí em diante divide-a em duas com um intervalo de 4rem. */
+const TAMANHOS_PORMENOR =
+  "(min-width: 64rem) calc((min(100vw, 78rem) - 9rem) / 2), calc(100vw - 2 * clamp(1.25rem, 4vw, 2.5rem))";
 
 /**
  * O lugar da fotografia de um produto.
@@ -30,22 +31,13 @@ export function FotoProduto({
   foto,
   alt,
   proporcao = "4 / 3",
-  discreta = false,
+  cartao = false,
 }: {
   foto: string | null;
   alt: string;
-  /** As grelhas usam 4/3; a página de produto usa 3/2, que dá mais altura. */
   proporcao?: string;
-  /**
-   * Sem a frase, só o motivo.
-   *
-   * ⚠️ **Para os setenta cartões da carta por encomenda.** «Fotografia por
-   * chegar da casa» escrito setenta vezes numa grelha ocupa mais espaço do que
-   * o nome do artigo e deixa de se ler à terceira — e num cartão estreito a
-   * frase enche a caixa toda. A explicação fica onde ela conta: nos cartões
-   * grandes e nas páginas de produto, que é onde alguém pára para olhar.
-   */
-  discreta?: boolean;
+  /** Na grelha a frase do espaço reservado iria repetir-se em cada cartão. */
+  cartao?: boolean;
 }) {
   const t = useTranslations("produto");
 
@@ -53,10 +45,10 @@ export function FotoProduto({
     /* ⚠️ **`next/image`, e nunca um `<img>` direto ao Blob.** A CSP da loja só
        deixa carregar imagens da própria origem (`next.config.ts`); pelo otimizador
        a foto do Blob chega como `/_next/image`, que é a mesma origem — e já
-       reduzida ao tamanho do cartão, em vez dos 1600 px da página de produto. */
+       reduzida para a largura e a densidade de píxeis do ecrã. */
     return (
       <div style={{ aspectRatio: proporcao }} className="relative w-full overflow-hidden rounded-2xl">
-        <Image src={foto} alt={alt} fill sizes={TAMANHOS} className="object-cover" />
+        <Image src={foto} alt={alt} fill sizes={cartao ? TAMANHOS_FOTO_CARTAO : TAMANHOS_PORMENOR} className={cartao ? "object-cover" : "object-contain"} />
       </div>
     );
   }
@@ -76,7 +68,7 @@ export function FotoProduto({
           WebkitMaskImage: "url(/marca/simbolo.svg)",
         }}
       />
-      {!discreta && (
+      {!cartao && (
         <p className="relative m-4 max-w-[24ch] text-xs uppercase tracking-widest text-tinta-suave">
           {t("semFoto")}
         </p>

@@ -11,28 +11,26 @@ import { DESCONTO_PERCENTAGEM } from "@/lib/desconto";
  *
  * A tijolo com texto a papel — sobre tijolo é a única cor legível (6,87:1;
  * tinta dá 2,36:1). O destaque é o inverso, uma pastilha a papel com o número
- * a tijolo, que tem o mesmo contraste. No fluxo da página, como a outra, para
- * não mudar as alturas de que as âncoras dependem. As cores vivem em
- * `globals.css` (`.faixa-desconto`): sobre um herói a tijolo, a faixa passa a
- * tinta.
+ * a tijolo, que tem o mesmo contraste. No índice das encomendas cola-se com
+ * o cabeçalho. A altura é reservada em `globals.css` para o texto poder mudar
+ * de linha com a fonte sem deslocar a página nem alterar as âncoras.
  */
 export function FaixaDesconto() {
   const t = useTranslations("desconto");
   if (DESCONTO_PERCENTAGEM === 0) return null;
 
-  /* No telemóvel a letra desce a 12 px e o `text-balance` reparte o texto em
-     linhas de largura parecida: cabe numa linha a partir de ~390 px e, abaixo
-     disso, em duas iguais, em vez de uma linha cheia e uma palavra sozinha. */
   return (
-    <div className="faixa-desconto px-4 py-2 text-center text-xs font-semibold leading-relaxed text-balance sm:text-sm">
-      {t.rich("faixa", {
-        n: DESCONTO_PERCENTAGEM,
-        destaque: (texto) => (
-          <span className="faixa-desconto__destaque mx-0.5 inline-block whitespace-nowrap rounded-full px-2 py-px font-bold uppercase tracking-wide sm:px-2.5 sm:py-0.5">
-            {texto}
-          </span>
-        ),
-      })}
+    <div className="faixa-desconto grid place-items-center px-4 text-center text-xs font-semibold leading-5 sm:text-sm">
+      <p className="text-balance">
+        {t.rich("faixa", {
+          n: DESCONTO_PERCENTAGEM,
+          destaque: (texto) => (
+            <span className="faixa-desconto__destaque mx-0.5 inline-block whitespace-nowrap rounded-full px-2 font-bold uppercase tracking-wide sm:px-2.5">
+              {texto}
+            </span>
+          ),
+        })}
+      </p>
     </div>
   );
 }

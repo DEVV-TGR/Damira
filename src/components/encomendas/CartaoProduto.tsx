@@ -68,7 +68,7 @@ export function CartaoProduto({
         href={caminhoDoProduto(produto.id)}
         className="flex h-full flex-col rounded-xl border border-tinta/25 bg-papel p-2.5 transition-colors hover:border-tijolo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tijolo"
       >
-        <FotoProduto foto={fotoDe(produto)} alt="" proporcao="3 / 2" discreta />
+        <FotoProduto foto={fotoDe(produto)} alt="" proporcao="3 / 2" cartao />
 
         <h3 className="mt-2.5 line-clamp-3 text-sm font-semibold leading-snug group-hover:text-tijolo">{nome}</h3>
         {produto.vegan && (
