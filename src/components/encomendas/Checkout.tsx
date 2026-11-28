@@ -13,6 +13,7 @@ import { linhasDoCesto, quantidadeEmTexto, totalDaLinha, type ItemCesto } from "
 import { itensGuardados } from "@/lib/historico";
 import { formatarCent } from "@/lib/preco";
 import type { ConsultaCompra, VagaDoCalendario } from "@/lib/vagas-servidor";
+import { mostrarEnvioDoPedido } from "@/components/espera/PassagemPublica";
 import { CalendarioLevantamento } from "./CalendarioLevantamento";
 import { useCesto } from "./CestoProvider";
 import { useHistorico } from "./ProvedorHistorico";
@@ -107,6 +108,11 @@ export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale:
       return { estado: "erro", campos: { geral: tf("erros.falha-registo") }, repetirEnvio: true };
     }
   }, INICIAL);
+
+  function enviar(dados: FormData) {
+    mostrarEnvioDoPedido();
+    startTransition(() => agir(dados));
+  }
 
   const cesto = contexto?.cesto ?? SEM_CESTO;
   const pronto = contexto?.pronto ?? false;
@@ -203,6 +209,7 @@ export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale:
   if (envioPendente && aRecuperar) {
     return (
       <div className="max-w-[40rem] rounded-2xl border border-tinta/15 p-8">
+        {aPendente && <span hidden className="etapa-espera-envio" />}
         <h2 className="titulo-display titulo-gama">{tf("recuperar.titulo")}</h2>
         <p className="mt-3 text-tinta-suave">{tf("recuperar.texto")}</p>
         {erros.geral && <Erro>{erros.geral}</Erro>}
@@ -210,7 +217,7 @@ export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale:
           const dados = new FormData();
           for (const [campo, valor] of Object.entries(envioPendente.dados)) dados.set(campo, valor);
           dados.set("chaveIdempotencia", envioPendente.chave);
-          startTransition(() => agir(dados));
+          enviar(dados);
         }}>{aPendente ? tf("aEnviar") : tf("recuperar.botao")}</button>
       </div>
     );
@@ -262,9 +269,10 @@ export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale:
           setEnvioPendente(pendente);
           guardarTentativa(armazenamento, pendente);
         }
-        startTransition(() => agir(dados));
+        enviar(dados);
       }}
       className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:items-start lg:gap-14">
+      {aPendente && <span hidden className="etapa-espera-envio" />}
       {/* ── O resumo: primeiro no telemóvel, ao lado e colado no computador ── */}
       <aside className="min-w-0 rounded-2xl border border-tinta/15 p-5 lg:sticky lg:top-24 lg:order-2">
         <div className="flex items-baseline justify-between gap-4">

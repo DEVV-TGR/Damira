@@ -15,25 +15,20 @@
   text-align: center;
 }
 
-/* As três etapas partilham o mesmo elemento. Assim, passar da rota ao
+/* As várias etapas partilham o mesmo elemento. Assim, passar da rota ao
    checkout enquanto se espera pelos dados não reinicia o ecrã. */
-body:has(.etapa-espera-ligacao, .etapa-espera-rota, .etapa-espera-compra, .etapa-espera-imagens) .espera-publica {
-  /* A espera curta nunca é desenhada. O limite liberta a navegação se a
+body:has([data-passagem], .etapa-espera-ligacao, .etapa-espera-rota, .etapa-espera-compra, .etapa-espera-imagens, .etapa-espera-envio) .espera-publica {
+  /* O limite liberta a navegação se a
      ligação ficar pendurada. A informação de erro ou de espera vive na página. */
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
-  transition: opacity 0s 130ms, visibility 0s 130ms;
+  transition: none;
   animation: libertar-espera-publica 1ms step-end 12s forwards;
 }
 
 @keyframes libertar-espera-publica {
   to { visibility: hidden; opacity: 0; pointer-events: none; }
-}
-
-/* Uma pessoa a navegar por teclado continua a poder ver o controlo focado. */
-body:has(a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible) .espera-publica {
-  visibility: hidden !important;
 }
 
 .espera-publica__marca {
@@ -57,13 +52,13 @@ body:has(a:focus-visible, button:focus-visible, input:focus-visible, select:focu
 
 .espera-publica__percentagem--inicio,
 .espera-publica__percentagem--estrutura,
-body:has(.etapa-espera-ligacao, .etapa-espera-rota, .etapa-espera-compra, .etapa-espera-imagens) .espera-publica__percentagem--fim,
-body:has(.etapa-espera-rota, .etapa-espera-compra, .etapa-espera-imagens) .espera-publica__percentagem--inicio {
+body:has([data-passagem="inicio"], .etapa-espera-ligacao, .etapa-espera-rota, .etapa-espera-compra, .etapa-espera-imagens, .etapa-espera-envio) .espera-publica__percentagem--fim,
+body:has(.etapa-espera-rota, .etapa-espera-compra, .etapa-espera-imagens, .etapa-espera-envio) .espera-publica__percentagem--inicio {
   display: none;
 }
 
-body:has(.etapa-espera-ligacao):not(:has(.etapa-espera-rota, .etapa-espera-compra, .etapa-espera-imagens)) .espera-publica__percentagem--inicio,
-body:has(.etapa-espera-rota, .etapa-espera-compra, .etapa-espera-imagens) .espera-publica__percentagem--estrutura {
+body:has([data-passagem="inicio"], .etapa-espera-ligacao):not(:has(.etapa-espera-rota, .etapa-espera-compra, .etapa-espera-imagens, .etapa-espera-envio)) .espera-publica__percentagem--inicio,
+body:has(.etapa-espera-rota, .etapa-espera-compra, .etapa-espera-imagens, .etapa-espera-envio) .espera-publica__percentagem--estrutura {
   display: block;
 }
 

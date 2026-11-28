@@ -1,6 +1,7 @@
 import Imagem from "next/image";
 import { useTranslations } from "next-intl";
 import { ImagensDoDestino } from "./ImagensDoDestino";
+import { PassagemPublica } from "./PassagemPublica";
 import "./espera.css";
 
 export function EsperaPublica() {
@@ -8,6 +9,7 @@ export function EsperaPublica() {
 
   return (
     <>
+      <PassagemPublica />
       <ImagensDoDestino />
       <div className="espera-publica" role="status">
         <div>
