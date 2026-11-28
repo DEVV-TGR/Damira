@@ -101,6 +101,9 @@ export const PREDEFINICOES = {
  */
 export type TempoProducao = { unidade: "horas" | "dias"; valor: number };
 
+/** Intervalo inclusivo de dias de Lisboa, escrito como `yyyy-MM-dd`. */
+export type DiasSemEncomenda = { de: string; ate: string };
+
 export type ArtigoDoCesto = {
   tempo: TempoProducao;
   /** «Esgotado hoje», do balcão: tira as vagas de hoje ao cesto inteiro. */

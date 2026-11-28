@@ -99,6 +99,13 @@
       "when": 1795804627293,
       "tag": "0013_desconto",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1795811439003,
+      "tag": "0014_dias_sem_encomenda",
+      "breakpoints": true
     }
   ]
 }

@@ -286,3 +286,21 @@ describe("a entrada no painel: cada regra recusa o que é para recusar", () => {
     expect(await recusado(negativo)).toBe("limites_contagem");
   });
 });
+
+describe("dias sem encomenda do produto", () => {
+  it("nascem vazios e guardam os intervalos sem mudar o produto", async () => {
+    await db.insert(produtos).values(NATA);
+    const [antes] = await db.select().from(produtos).where(eq(produtos.id, "nata"));
+    expect(antes.diasSemEncomenda).toEqual([]);
+    const intervalos = [{ de: "2026-12-23", ate: "2026-12-24" }];
+    await db.update(produtos).set({ diasSemEncomenda: intervalos }).where(eq(produtos.id, "nata"));
+    const [depois] = await db.select().from(produtos).where(eq(produtos.id, "nata"));
+    expect(depois.diasSemEncomenda).toEqual(intervalos);
+    expect(depois.nomePt).toBe(antes.nomePt);
+  });
+
+  it("recusa conteúdo que não seja uma lista", async () => {
+    await db.insert(produtos).values(NATA);
+    expect(await recusado(db.execute(sql`update produtos set dias_sem_encomenda = '{}'::jsonb where id = 'nata'`))).toBe("produtos_dias_sem_encomenda");
+  });
+});

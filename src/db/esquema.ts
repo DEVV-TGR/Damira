@@ -36,7 +36,7 @@ import {
   MODOS_PAGAMENTO,
   type OrdemEmenta,
 } from "../lib/dados/tipos";
-import type { DiaFechado, HorarioSemanal } from "@/lib/horarios";
+import type { DiaFechado, DiasSemEncomenda, HorarioSemanal } from "@/lib/horarios";
 
 /**
  * # O esquema da base de dados
@@ -287,8 +287,11 @@ export const produtos = pgTable(
     foraDeVenda: boolean("fora_de_venda").notNull().default(false),
     /** O dia de Lisboa em que o balcão o esgotou. Amanhã já não vale. */
     esgotadoNoDia: date("esgotado_no_dia", { mode: "string" }),
+    /** Nasce vazio: só a gerente conhece os dias em que não aceita este produto. */
+    diasSemEncomenda: jsonb("dias_sem_encomenda").$type<DiasSemEncomenda[]>().notNull().default(sql`'[]'::jsonb`),
   },
   (t) => [
+    check("produtos_dias_sem_encomenda", sql`jsonb_typeof(${t.diasSemEncomenda}) = 'array'`),
     check("produtos_id_formato", sql`${t.id} ~ '^[a-z0-9-]+$'`),
     check("produtos_origem", sql`${t.origem} in (${umDe(["ementa", "encomendas"])})`),
     check("produtos_familia", sql`${t.familia} in (${umDe(["ementa", "festa", "bolo", "box", "medida"])})`),
