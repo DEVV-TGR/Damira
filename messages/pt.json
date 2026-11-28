@@ -1,4 +1,7 @@
 {
+  "espera": {
+    "mensagem": "O pão está quase a sair."
+  },
   "marca": {
     "nome": "Confeitaria e Pão Quente Damira",
     "assinatura": "Histórias com sabor",
@@ -411,6 +414,8 @@
       "escolhido": "Levanta na loja: {quando}.",
       "horaDeLisboa": "Horas de Portugal.",
       "cheia": "cheia",
+      "falhaConsulta": "Não foi possível consultar as horas de levantamento.",
+      "repetirConsulta": "Tentar novamente",
       "aCarregar": "A ver as vagas…",
       "semVagas": "Sem vagas nos próximos dias — ligue-nos:",
       "mesAnterior": "Mês anterior",

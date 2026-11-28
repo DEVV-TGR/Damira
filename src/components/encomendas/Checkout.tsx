@@ -4,17 +4,15 @@ import { startTransition, useActionState, useEffect, useId, useMemo, useRef, use
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import { cotarPedido } from "@/app/[locale]/encomendas/pedido/cotacao";
 import { enviarCompra, type Resultado } from "@/app/[locale]/encomendas/pedido/acoes";
-import { consultarVagas } from "@/app/[locale]/encomendas/vagas";
+import { consultarCompra } from "@/app/[locale]/encomendas/vagas";
 import { useConta } from "@/components/conta/ProvedorConta";
 import { pausaDaLoja } from "@/app/[locale]/encomendas/pedido/pausa";
 import { CampoTelefone } from "./CampoTelefone";
 import { linhasDoCesto, quantidadeEmTexto, totalDaLinha, type ItemCesto } from "@/lib/cesto";
-import type { ResultadoCotacao } from "@/lib/dados/tipos";
 import { itensGuardados } from "@/lib/historico";
 import { formatarCent } from "@/lib/preco";
-import type { ResultadoVagas, VagaDoCalendario } from "@/lib/vagas-servidor";
+import type { ConsultaCompra, VagaDoCalendario } from "@/lib/vagas-servidor";
 import { CalendarioLevantamento } from "./CalendarioLevantamento";
 import { useCesto } from "./CestoProvider";
 import { useHistorico } from "./ProvedorHistorico";
@@ -30,10 +28,10 @@ import { DetalhesDoBolo } from "./DetalhesDoBolo";
  *
  * Três coisas que o servidor decide e o browser só mostra:
  *
- * - **o preço** — o total ao lado é o do servidor (`cotarPedido`), comparado
+ * - **o preço** — o total ao lado é o do servidor, comparado
  *   linha a linha com o que o cesto guardou: se mudou, diz-se antes de enviar;
- * - **as vagas** — o calendário pede-as ao servidor (`consultarVagas`) sempre
- *   que o cesto muda, e nunca vão para cache;
+ * - **as vagas** — a mesma consulta traz o preço e as vagas sempre que
+ *   o cesto muda, com a ocupação lida de novo;
  * - **o pedido** — com BD, a fonte reserva a vaga e grava o pedido e os emails
  *   por enviar; sem ela mantém-se o percurso provisório por email.
  *
@@ -45,20 +43,26 @@ import { DetalhesDoBolo } from "./DetalhesDoBolo";
 const INICIAL: Resultado = { estado: "inicial" };
 const SEM_CESTO: ItemCesto[] = [];
 
-/** Pede ao servidor, de novo, sempre que a chave muda; esquece a resposta antiga. */
-function useDoServidor<T>(chave: string, ativo: boolean, pedir: (linhas: unknown) => Promise<T>, revisao = 0) {
-  const [resposta, setResposta] = useState<{ chave: string; revisao: number; valor: T } | null>(null);
+function useConsultaCompra(chave: string, ativo: boolean, revisao: number) {
+  const [resposta, setResposta] = useState<{ chave: string; revisao: number; valor: ConsultaCompra | null } | null>(null);
   useEffect(() => {
     if (!ativo) return;
-    let actual = true;
-    pedir(JSON.parse(chave)).then((valor) => {
-      if (actual) setResposta({ chave, revisao, valor });
-    });
-    return () => {
-      actual = false;
+    let atual = true;
+    const guardar = (valor: ConsultaCompra | null) => {
+      if (atual) setResposta({ chave, revisao, valor });
     };
-  }, [chave, ativo, pedir, revisao]);
-  return resposta?.chave === chave && resposta.revisao === revisao ? resposta.valor : null;
+    void consultarCompra(JSON.parse(chave)).then(guardar, () => guardar(null));
+    return () => {
+      atual = false;
+    };
+  }, [chave, ativo, revisao]);
+  const desteCesto = ativo && resposta?.chave === chave ? resposta : null;
+  const destaRevisao = desteCesto?.revisao === revisao ? desteCesto : null;
+  return {
+    vagas: destaRevisao?.valor?.vagas ?? null,
+    cotacao: desteCesto?.valor?.cotacao ?? null,
+    falhaConsulta: destaRevisao?.valor === null,
+  };
 }
 
 export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale: Locale; telefone: string | null; comBaseDeDados?: boolean }) {
@@ -109,8 +113,7 @@ export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale:
   const comCesto = pronto && cesto.length > 0;
   const linhas = useMemo(() => JSON.stringify(linhasDoCesto(cesto)), [cesto]);
 
-  const vagas = useDoServidor<ResultadoVagas>(linhas, comCesto, consultarVagas, revisaoVagas);
-  const cotacao = useDoServidor<ResultadoCotacao>(linhas, comCesto, cotarPedido);
+  const { vagas, cotacao, falhaConsulta } = useConsultaCompra(linhas, comCesto, revisaoVagas);
   /* ⚠️ **Com BD, uma hora «pretendida» não se pode gravar.** Sem a cozinha ou sem
      o tempo de um produto, o calendário oferece as horas da loja a confirmar,
      mas o `criarPedido` recusa-as (`indisponivel`): a pessoa escolhia, enviava e
@@ -186,6 +189,12 @@ export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale:
   }, [registo, enviado, historico, cesto, contexto, envioPendente, utilizador?.id]);
 
   const erros = resultado.estado === "erro" ? resultado.campos : {};
+  const [primeiraConsultaTerminou, setPrimeiraConsultaTerminou] = useState(false);
+  const primeiraConsultaResolvida = pronto && (!comCesto || vagas !== null || falhaConsulta);
+  if (!primeiraConsultaTerminou && primeiraConsultaResolvida) {
+    setPrimeiraConsultaTerminou(true);
+  }
+  const esperaPelaPrimeiraConsulta = !primeiraConsultaTerminou && !primeiraConsultaResolvida;
 
   if (resultado.estado === "enviado" || resultado.estado === "sem-servico") {
     return <Enviado resultado={resultado} />;
@@ -208,7 +217,11 @@ export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale:
   }
 
   if (!pronto || (comBaseDeDados && !tentativaLida)) {
-    return <div aria-busy className="h-96 animate-pulse rounded-2xl bg-tinta/5" />;
+    return (
+      <div aria-busy className="h-96 animate-pulse rounded-2xl bg-tinta/5">
+        {esperaPelaPrimeiraConsulta && <span hidden className="etapa-espera-compra" />}
+      </div>
+    );
   }
 
   if (!comCesto) {
@@ -227,7 +240,7 @@ export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale:
   }
 
   const cotadas = cotacao?.ok ? cotacao.cotacao.linhas : null;
-  /* Os três números são os do servidor (`cotarPedido`): o subtotal, o desconto da loja e o total a
+  /* Os três números são os do servidor: o subtotal, o desconto da loja e o total a
      pagar, que é o que o pedido grava. O browser não faz conta nenhuma ao dinheiro. */
   const totalCent = cotacao?.ok ? cotacao.cotacao.totalCent : null;
   const desconto = cotacao?.ok && cotacao.cotacao.descontoCent > 0 ? cotacao.cotacao : null;
@@ -335,6 +348,7 @@ export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale:
       <div className="grid min-w-0 gap-12 lg:order-1">
         {/* ── 1 · Quando levanta ───────────────────────────────────────── */}
         <section aria-labelledby={`${id}-quando`} className="grid gap-4">
+          {esperaPelaPrimeiraConsulta && !aPendente && <span hidden className="etapa-espera-compra" />}
           <h2 id={`${id}-quando`} className="titulo-display titulo-gama">
             <span className="text-tijolo">1</span> · {t("quando")}
           </h2>
@@ -344,7 +358,14 @@ export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale:
               eles (a casa ainda não os deu e o modo de teste está desligado), são
               as horas em que a loja abre, como hora **pretendida**, e o
               calendário di-lo — confirma-se com a pessoa. */}
-          {vagas === null ? (
+          {falhaConsulta ? (
+            <div role="alert" className="grid justify-items-start gap-3">
+              <p>{tcal("falhaConsulta")}</p>
+              <button type="button" className="min-h-11 underline" onClick={() => setRevisaoVagas(revisao => revisao + 1)}>
+                {tcal("repetirConsulta")}
+              </button>
+            </div>
+          ) : vagas === null ? (
             <p className="text-sm text-tinta-suave" aria-live="polite">
               {tcal("aCarregar")}
             </p>

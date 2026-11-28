@@ -1,14 +1,43 @@
 import { TZDate } from "@date-fns/tz";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { fonteDeExemplo } from "./dados/exemplo";
 import { CATALOGO_JSON, CONFIGURACAO_JSON, criarFonteJson } from "./dados/json";
-import { horasParaPedido, afluenciaDe, confirmarLevantamento, vagasDoCesto } from "./vagas-servidor";
+import { horasParaPedido, afluenciaDe, confirmarLevantamento, consultarCompraDoCesto, vagasDoCesto } from "./vagas-servidor";
 
 /* Segunda, 5 de outubro de 2026, às 10h00 de Lisboa. Com a cozinha da casa
    (6h–11h) e um kit de festa de 2 dias, o primeiro levantamento é quarta às
    7h30, à abertura da loja. */
 const AGORA = new TZDate(2026, 9, 5, 10, 0, "Europe/Lisbon");
 const KIT = [{ produtoId: "festa-premium", varianteId: "20", quantidade: 1 }];
+
+describe("a consulta de compra", () => {
+  it("cota uma vez por chamada e volta a ler a ocupação com o mesmo cesto", async () => {
+    const fonte = fonteDeExemplo();
+    const cotarCesto = vi.spyOn(fonte, "cotarCesto");
+    const ocupacao = vi.spyOn(fonte, "ocupacao");
+
+    const primeira = await consultarCompraDoCesto(KIT, fonte, AGORA);
+    expect(primeira.cotacao).toMatchObject({ ok: true, cotacao: { valida: true } });
+    expect(primeira.vagas.ok).toBe(true);
+    expect(cotarCesto).toHaveBeenCalledExactlyOnceWith(KIT);
+    expect(ocupacao).toHaveBeenCalledTimes(1);
+
+    await consultarCompraDoCesto(KIT, fonte, AGORA);
+    expect(cotarCesto).toHaveBeenCalledTimes(2);
+    expect(ocupacao).toHaveBeenCalledTimes(2);
+  });
+
+  it("devolve o erro das linhas sem consultar a ocupação", async () => {
+    const fonte = fonteDeExemplo();
+    const ocupacao = vi.spyOn(fonte, "ocupacao");
+    const resultado = await consultarCompraDoCesto([{ ...KIT[0], produtoId: "nao-existe" }], fonte, AGORA);
+    expect(resultado.cotacao).toMatchObject({
+      ok: true, cotacao: { valida: false, linhas: [{ erro: "produto-desconhecido" }] },
+    });
+    expect(resultado.vagas).toEqual({ ok: false, motivo: "cesto-invalido" });
+    expect(ocupacao).not.toHaveBeenCalled();
+  });
+});
 
 describe("as vagas de um cesto", () => {
   it("sem tempos de produção, as horas são as da loja, a partir de amanhã, e a confirmar", async () => {

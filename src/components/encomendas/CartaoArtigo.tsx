@@ -87,7 +87,7 @@ export function CartaoArtigo({
      (`focus-within`), para quem chega pelo teclado. */
   return (
     <li className="flex flex-col rounded-xl border border-tinta/25 bg-papel p-2.5 transition-colors hover:border-tijolo focus-within:border-tijolo" data-procura={textoDeProcura(artigo)}>
-      <FotoProduto foto={fotoDe(artigo)} alt="" proporcao="3 / 2" discreta />
+      <FotoProduto foto={fotoDe(artigo)} alt="" proporcao="3 / 2" cartao />
       {/* O nome leva à página do artigo, que desde 26/11 todos os que se
           encomendam têm. */}
       <h4 className="mt-2.5 text-sm font-semibold leading-snug">

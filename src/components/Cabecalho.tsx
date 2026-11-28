@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
@@ -18,7 +19,15 @@ import { MenuEncomendas, type SeccaoDoMenu } from "./MenuEncomendas";
  * está para trocar de língua **sem sair dela** — mandar sempre para a homepage é
  * o erro clássico, e faz o visitante perder o sítio onde ia.
  */
-export function Cabecalho({ locale, seccoes }: { locale: Locale; seccoes: SeccaoDoMenu[] }) {
+export function Cabecalho({
+  locale,
+  seccoes,
+  faixaDesconto,
+}: {
+  locale: Locale;
+  seccoes: SeccaoDoMenu[];
+  faixaDesconto?: ReactNode;
+}) {
   const t = useTranslations("nav");
   const marca = useTranslations("marca");
   /**
@@ -32,6 +41,7 @@ export function Cabecalho({ locale, seccoes }: { locale: Locale; seccoes: Seccao
    * no sentido contrário não há prefixo para duplicar e parecia tudo bem.
    */
   const caminho = usePathname();
+  const noCatalogo = caminho === "/encomendas";
   const outra = routing.locales.find((l) => l !== locale) ?? routing.defaultLocale;
 
   return (
@@ -42,7 +52,9 @@ export function Cabecalho({ locale, seccoes }: { locale: Locale; seccoes: Seccao
        `backdrop-blur` com o papel a 80%: a barra deixa adivinhar o que passa por
        baixo em vez de a cortar a direito, que é o que a faz parecer pousada
        sobre a página e não colada em cima dela. */
-    <header className="barra-vidro sticky top-0 z-50 h-16 border-b border-tinta/10 bg-papel/80 backdrop-blur-md">
+    <>
+    <header className="cabecalho-publico sticky top-0 z-50">
+      <div className="barra-vidro h-[var(--altura-barra-principal)] border-b border-tinta/10 bg-papel/80 backdrop-blur-md">
       {/* ⚠️ **As folgas abaixo do `sm` foram apertadas quando a conta entrou.**
           A barra passou de quatro para cinco elementos e, a 320 px, o conteúdo
           somava 380 px — a página inteira ganhava rolagem horizontal, que é o
@@ -86,7 +98,7 @@ export function Cabecalho({ locale, seccoes }: { locale: Locale; seccoes: Seccao
               não traz desenho novo, usa o que a casa tem. */}
           {/* As encomendas abrem um menu com as secções da página (#82). Ver
               `MenuEncomendas.tsx`. */}
-          <MenuEncomendas actual={caminho === "/encomendas"} seccoes={seccoes} />
+          <MenuEncomendas actual={noCatalogo} seccoes={seccoes} />
           {/* ⚠️ **A conta fica antes do idioma e depois das secções.** É
               navegação pessoal e não navegação do site: pô-la antes das
               encomendas dava-lhe o mesmo peso que à página que a casa quer que
@@ -115,6 +127,10 @@ export function Cabecalho({ locale, seccoes }: { locale: Locale; seccoes: Seccao
           </Link>
         </nav>
       </div>
+      </div>
+      {noCatalogo && faixaDesconto}
     </header>
+    {!noCatalogo && faixaDesconto}
+    </>
   );
 }

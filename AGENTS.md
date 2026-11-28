@@ -525,6 +525,10 @@ montra vista da rua é anunciar uma coisa e entregar outra, e é a mesma regra q
 proíbe banco de imagens no resto do site. O `FotoProduto` guarda o espaço e diz
 que a fotografia está por chegar.
 
+Nos cartões, o browser escolhe a variante da imagem pela largura da coluna e
+pela densidade do ecrã. O recorte é de apresentação. Na página do produto, a
+galeria mostra o enquadramento completo da fotografia enviada pela gerente.
+
 **A gerente pode pôr várias por produto**, e a página mostra-as numa galeria
 (`GaleriaProduto`). Cada escolha de uma variância pode ter a sua (o bolo de
 morango, o de chocolate): ao escolhê-la, a galeria mostra-a. ⚠️ Uma foto que

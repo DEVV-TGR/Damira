@@ -178,6 +178,17 @@ export const paraProcura = (texto: string): string =>
  */
 export const GRELHA_CARTOES = "grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6";
 
+/* A largura da fotografia é a coluna da grelha menos o rebordo e o espaço
+   interior do cartão (22 px). Se mudarem as colunas ou a .envolvente, ajustar
+   aqui também para o browser não pedir a fotografia à largura do ecrã. */
+export const TAMANHOS_FOTO_CARTAO = [
+  "(min-width: 80rem) 163px",
+  "(min-width: 64rem) calc((min(100vw, 78rem) - 8rem) / 5 - 22px)",
+  "(min-width: 48rem) calc((92vw - 2.25rem) / 4 - 22px)",
+  "(min-width: 40rem) calc((92vw - 1.5rem) / 3 - 22px)",
+  "calc((100vw - 2 * max(1.25rem, 4vw) - 0.75rem) / 2 - 22px)",
+].join(", ");
+
 /** As cartas que têm mesmo artigos, pela ordem da ementa. */
 export const cartasComArtigos = (artigos: readonly Produto[], ordem: OrdemEmenta): string[] =>
   ordem.cartas.filter((carta) => daCarta(artigos, carta).length > 0);
