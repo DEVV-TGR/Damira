@@ -85,6 +85,22 @@ const CSP_DO_PAINEL = CSP.replace("img-src 'self' data: blob:", `img-src 'self' 
   `connect-src 'self' https://vercel.com ${BLOB}`,
 );
 
+/**
+ * A página de teste da impressora (`/painel/talao`) é a única que fala com
+ * outro endereço: o browser manda o talão direto ao IP da impressora, que é
+ * como o tablet imprime com a TM-m30II base (`impressao.md`). Com o
+ * `connect-src` do painel o pedido nem sai. Os IPs da loja não se conhecem
+ * aqui, e o CSP não aceita intervalos de IPs, por isso abre-se a qualquer
+ * `http:`/`https:` — só nesta página, que está atrás da entrada do painel e não
+ * mostra conteúdo de ninguém. O `http:` só serve no portátil: numa página em
+ * https o browser recusa-o de qualquer forma.
+ *
+ * ⚠️ **Parte da CSP do painel, e não da geral**, senão a página perdia o Blob.
+ * Quando o talão passar a sair do balcão (#47), troca-se o `http: https:` pelo
+ * endereço da impressora, que nessa altura já tem IP fixo.
+ */
+const CSP_TESTE_IMPRESSORA = CSP_DO_PAINEL.replace("connect-src 'self'", "connect-src 'self' http: https:");
+
 const CABECALHOS = [
   { key: "Content-Security-Policy", value: CSP },
   /* Impede o browser de adivinhar o tipo de um ficheiro em vez de acreditar no
@@ -126,6 +142,8 @@ const nextConfig: NextConfig = {
       { source: "/:caminho*", headers: CABECALHOS },
       /* Depois da geral: entre regras iguais, ganha a última. */
       { source: "/painel/:caminho*", headers: [{ key: "Content-Security-Policy", value: CSP_DO_PAINEL }] },
+      /* E esta depois da do painel, pela mesma razão. */
+      { source: "/painel/talao", headers: [{ key: "Content-Security-Policy", value: CSP_TESTE_IMPRESSORA }] },
     ];
   },
 };
