@@ -1,6 +1,13 @@
 import { TZDate, tz } from "@date-fns/tz";
 import { addDays, format, getDay } from "date-fns";
-import type { AvisoAtencao, ConfiguracaoDaCasa, EntradaProduto, Pedido, Produto } from "@/lib/dados/tipos";
+import type {
+  AvisoAtencao,
+  ConfiguracaoDaCasa,
+  EntradaProduto,
+  IniciativaCancelamento,
+  Pedido,
+  Produto,
+} from "@/lib/dados/tipos";
 import { FUSO, inicioDaProducao } from "@/lib/horarios";
 import { formatarCent } from "@/lib/preco";
 
@@ -97,6 +104,25 @@ export const faltaPagarCent = (pedido: Pick<Pedido, "totalCent" | "pagoOnlineCen
  */
 export const porDevolverCent = (pedido: Pick<Pedido, "pagoOnlineCent" | "reembolsos">): number =>
   pedido.pagoOnlineCent - pedido.reembolsos.filter((r) => r.estado !== "falhado").reduce((s, r) => s + r.valorCent, 0);
+
+/**
+ * Cancelar é recusar quando a casa desiste de um pedido pago na loja que nunca confirmou: um
+ * `por-confirmar`, ou um `a-aguardar-aceite` cuja proposta o cliente ainda não aceitou. O cliente
+ * recebe o T16 («não conseguimos dar resposta nas condições solicitadas») e não o T12, que fala
+ * de uma encomenda que já estava combinada. É o que o painel usa para chamar ao botão «Recusar».
+ *
+ * Não há estado nem coluna para isto (`base-de-dados.md`, migração `0015`): o `confirmadoEm` fica
+ * depois de cancelado, e é por ele que se distingue. Com o Stripe nunca há `confirmadoEm`, por
+ * isso o modo entra na conta.
+ */
+export const eRecusa = (
+  pedido: Pick<Pedido, "modoPagamento" | "confirmadoEm">,
+  iniciativa: IniciativaCancelamento,
+): boolean => iniciativa === "gerente" && pedido.modoPagamento === "na-loja" && pedido.confirmadoEm === null;
+
+/** Um cancelado que foi uma recusa da casa (ver `eRecusa`): para o histórico e o detalhe. */
+export const foiRecusado = (pedido: Pick<Pedido, "estado" | "canceladoPor" | "modoPagamento" | "confirmadoEm">): boolean =>
+  pedido.estado === "cancelado" && pedido.canceladoPor !== null && eRecusa(pedido, pedido.canceladoPor);
 
 export type EventoHistorico = {
   quando: Date;

@@ -59,7 +59,7 @@ stateDiagram-v2
     [*] --> por_confirmar: compra com análise (T02) ❌ não grava
     por_confirmar --> confirmado: loja confirma (T03) ✅
     por_confirmar --> a_aguardar_aceite: loja propõe (T04/T05) ✅ / entrega ❌
-    por_confirmar --> cancelado: loja recusa (T16) ❌
+    por_confirmar --> cancelado: loja recusa (T16) 🟡 fonte ✅, botão ❌
     por_confirmar --> expirado: 48 h sem resposta (T10) 🟡
     a_aguardar_aceite --> a_aguardar_aceite: loja revê a proposta ✅
     a_aguardar_aceite --> confirmado: cliente aceita, levantamento (T06) ✅
@@ -68,8 +68,8 @@ stateDiagram-v2
     a_aguardar_aceite --> expirado: 24 h sem aceite (T14) 🟡
     aguarda_transferencia --> confirmado: transferência recebida (T08) ❌
     aguarda_transferencia --> cancelado: sem pagamento (T15) ❌
-    confirmado --> confirmado: reagendar (T09) 🟡 / alterar produtos (T17) ❌
-    confirmado --> cancelado: cliente, por contacto (T11) ❌ / loja (T12) 🟡
+    confirmado --> confirmado: reagendar (T09) 🟡 fonte ✅, botão ❌ / alterar produtos (T17) ❌
+    confirmado --> cancelado: cliente, por contacto (T11) / loja (T12) 🟡 fonte ✅, botão ❌
     confirmado --> entregue: balcão entrega 🟡
     entregue --> [*]
     cancelado --> [*]
@@ -332,31 +332,31 @@ flowchart TB
         R12["Recebe T12 «não nos será possível»"]
     end
     subgraph LOJ["Loja — Detalhe do pedido › «Decisões»"]
-        B1["Mudar a data 🟡<br/>a fonte aceita «confirmado»; o botão só aparece em «pago»"]
+        B1["Mudar a data 🟡<br/>a fonte aceita «confirmado» e grava os emails; o botão só aparece em «pago»"]
         B2["Alterar produtos ❌<br/>não há operação nem interface (Em aberto 6)"]
-        B3["Cancelar a pedido do cliente ❌<br/>a fonte não sabe de quem é a iniciativa"]
-        B4["Cancelar pela loja 🟡<br/>a fonte aceita; o botão só aparece em «pago»"]
+        B3["Cancelar a pedido do cliente 🟡<br/>a fonte recebe a iniciativa; a interface ainda não a pergunta"]
+        B4["Cancelar pela loja 🟡<br/>a fonte aceita e grava o email; o botão só aparece em «pago»"]
         B5["Talão de alteração / cancelamento ❌ #47"]
     end
     A0 --> B1 & B2 & B3
-    B1 -- "reagendado-cliente + reagendado-loja ❌ ninguém os grava" --> R9
+    B1 -- "reagendado-cliente + reagendado-loja ✅ com a hora de antes (0015)" --> R9
     B2 -- "alterado-cliente ❌" --> R17
-    B3 -- "cancelado-cliente, canceladoPor=cliente ❌" --> R11
-    B4 -- "cancelado-cliente, canceladoPor=gerente ❌ não grava email" --> R12
+    B3 -- "cancelado-cliente, canceladoPor=cliente ✅" --> R11
+    B4 -- "cancelado-cliente, canceladoPor=gerente ✅" --> R12
     B1 & B2 & B4 --- B5
 
     classDef parcial fill:#fff6db,stroke:#b58900,color:#4a3a00
     classDef falta fill:#fde8e8,stroke:#c62828,color:#5a1414
     classDef ok fill:#e6f4ea,stroke:#2e7d32,color:#1b3d1f
     class A0 ok
-    class B1,B4 parcial
-    class B2,B3,B5 falta
+    class B1,B3,B4 parcial
+    class B2,B5 falta
 ```
 
 **Onde está no código:**
-- `reagendarPedido` em `bd-painel-pedidos.ts:314`, com `REAGENDAVEIS = ["pago", "confirmado"]` em `regras.ts`.
-- `cancelarPedido` em `:352`, com `CANCELAVEIS_NA_LOJA = ["por-confirmar", "a-aguardar-aceite", "confirmado"]` em `regras.ts`. Grava sempre `cancelado_por = 'gerente'` (`:362`) e não grava nenhum email.
-- Os botões estão em `src/components/painel/gestao/Decisoes.tsx:249` (Mudar a data) e `:264` (Cancelar), os dois presos a `pedido.estado === "pago"`.
+- `reagendarPedido` em `bd-painel-pedidos.ts`, com `REAGENDAVEIS = ["pago", "confirmado"]` em `regras.ts`. Grava a hora de antes (`reagendado_de`, `0015`) e, na loja, o `reagendado-cliente` e o `reagendado-loja` na mesma instrução. A mesma hora não grava nada.
+- `cancelarPedido(id, reembolsoCent, iniciativa, ctx)`, com `CANCELAVEIS_NA_LOJA = ["por-confirmar", "a-aguardar-aceite", "confirmado"]` em `regras.ts`. Grava `cancelado_por` com a iniciativa e, na loja, o email ao cliente: `recusado-cliente` (T16) quando a casa cancela o que nunca confirmou (`eRecusa`), senão `cancelado-cliente` (T11/T12).
+- Os botões estão em `src/components/painel/gestao/Decisoes.tsx` (Mudar a data e Cancelar), os dois presos a `pedido.estado === "pago"`. O cancelar passa `"gerente"` até a interface perguntar a iniciativa; o «ficar com este» dos duplicados (`Comparar.tsx`) passa `"cliente"`.
 
 ### C6. 💡 Propostas: o cliente pede alterações, e o pedido relacionado
 
@@ -412,16 +412,16 @@ que o modelo exige. Os textos estão em `src/lib/emails/textos.ts`, e a lista em
 | — | `aceite-loja` | loja | cliente aceita | ✅ `bd-pedidos.ts:373` | ✅ | ✅ |
 | T07 | *(não existe)* | cliente | aceite com entrega: IBAN | ❌ | ❌ | ❌ |
 | T08 | *(não existe)* | cliente | transferência recebida | ❌ | ❌ | ❌ |
-| T09 | `reagendado-cliente` | cliente | loja muda a data | ❌ ninguém | ❌ sem `levantamentoAnteriorEm` | ❌ |
-| — | `reagendado-loja` | loja | loja muda a data | ❌ ninguém | ❌ sem `levantamentoAnteriorEm` | ❌ |
+| T09 | `reagendado-cliente` | cliente | loja muda a data | ✅ `reagendarPedido` | ✅ com o `reagendadoDe` | 🟡 falta o botão em «confirmado» |
+| — | `reagendado-loja` | loja | loja muda a data | ✅ `reagendarPedido` | ✅ com o `reagendadoDe` | 🟡 falta o botão em «confirmado» |
 | — | `lembrete-loja` | loja | por-confirmar perto das 48 h | ❌ ninguém | ✅ (salta se já respondido) | ❌ |
 | T10 | `expirado-cliente` | cliente | 48 h sem resposta | ✅ `bd-pedidos.ts:105` | ✅ | 🟡 só com visitas |
-| T11 | `cancelado-cliente` (`canceladoPor=cliente`) | cliente | loja regista o cancelamento pedido pelo cliente | ❌ | ✅ | ❌ |
-| T12 | `cancelado-cliente` (`canceladoPor=gerente`) | cliente | loja cancela | ❌ (`cancelarPedido` não grava email) | ✅ | ❌ |
+| T11 | `cancelado-cliente` (`canceladoPor=cliente`) | cliente | loja regista o cancelamento pedido pelo cliente | ✅ `cancelarPedido` com `cliente` | ✅ | 🟡 falta a pergunta na interface |
+| T12 | `cancelado-cliente` (`canceladoPor=gerente`) | cliente | loja cancela | ✅ `cancelarPedido` com `gerente` | ✅ | 🟡 falta o botão em «confirmado» |
 | T13 | `proposta-recusada-cliente` | cliente | cliente recusa | ✅ `bd-pedidos.ts:386` | ✅ | ✅ |
 | T14 | `proposta-expirada-cliente` | cliente | 24 h sem aceite | ✅ `bd-pedidos.ts:105` | ✅ | 🟡 só com visitas |
 | T15 | `cancelado-sem-pagamento-cliente` | cliente | prazo da transferência passou | ❌ | ✅ | ❌ |
-| T16 | `recusado-cliente` | cliente | loja recusa antes de confirmar | ❌ (não há operação) | ✅ | ❌ |
+| T16 | `recusado-cliente` | cliente | loja recusa antes de confirmar | ✅ `cancelarPedido` com `gerente`, sem `confirmadoEm` | ✅ | 🟡 falta o botão «Recusar» |
 | T17 | `alterado-cliente` | cliente | loja altera produtos | ❌ (não há operação) | ✅ | ❌ |
 
 **Os textos.** Os 17 modelos do código seguem o PDF, com duas diferenças
@@ -471,11 +471,11 @@ emails com o ponto 5.
 Feito para a proposta, como se descreve abaixo. Uma proposta substituída é
 reconhecida pelo instante: a linha da fila entra na mesma instrução que grava o
 `proposta_em`, por isso uma linha mais antiga do que o `proposta_em` do pedido é
-de uma versão anterior. **O reagendamento fica para o ponto 5:** o
+de uma versão anterior. **O reagendamento ficou feito com o ponto 5 (28/11):** o
 `levantamentoAnteriorEm` é a hora pedida antes da proposta, não a de antes de um
-reagendamento, e por isso não vai nos `reagendado-*`. O `reagendarPedido` tem de
-gravar a hora anterior dele (uma coluna nova, num PR de esquema) para esses
-emails saírem.
+reagendamento, e por isso não vai nos `reagendado-*`. O `reagendarPedido` grava a
+dele em `reagendado_de` (migração `0015`), e o emissor reconhece um reagendamento
+ultrapassado da mesma forma, pelo `reagendado_em`.
 
 **Para o Sobral:**
 - **Em `dadosDoEmail`** (`src/lib/emails/emissor.ts:22`), passar:
@@ -486,16 +486,18 @@ emails saírem.
 - **Saltar as propostas substituídas** (versão antiga) e as de pedidos que já não esperam o aceite.
 - **Pronto quando:** propor no painel faz chegar um T04 com o botão, e o botão abre a página certa.
 
-### 5. O painel faz tudo o que a fonte já deixa — fonte: Sobral; interface: Gonçalo
+### 5. O painel faz tudo o que a fonte já deixa — fonte: Sobral ✅ (28/11); interface: Gonçalo
 
-**Para o Sobral (fonte):**
-- `cancelarPedido` (`bd-painel-pedidos.ts:352`) recebe a iniciativa (`cliente` ou `gerente`) e grava o `cancelado-cliente` na mesma instrução. Hoje grava sempre `gerente` (`:362`) e nenhum email. Isto é o T11 e o T12.
-- **Recusar antes de confirmar (T16):** uma operação nova, ou o `cancelarPedido` com a iniciativa `recusado`, que grava o `recusado-cliente`.
-- `reagendarPedido` (`:314`) grava o `reagendado-cliente` e o `reagendado-loja`.
+**Feito na fonte (28/11, migração `0015` e o PR seguinte):**
+- `cancelarPedido(id, reembolsoCent, iniciativa, ctx)` recebe a iniciativa (`INICIATIVAS_CANCELAMENTO`: `cliente` ou `gerente`), grava-a no `cancelado_por` e põe na fila, na mesma instrução, o `cancelado-cliente` (T11, T12). Outra iniciativa é `dados-invalidos` com `campos: ["iniciativa"]`.
+- **Recusar (T16) é a mesma ação:** a iniciativa `gerente` num pedido na loja que nunca confirmou grava o `recusado-cliente`. A escolha é feita em SQL, com o pedido como a instrução o encontra. Para a interface: `eRecusa(pedido, "gerente")` diz se o botão é «Recusar»; `foiRecusado(pedido)` diz se um cancelado foi recusa (`src/lib/painel.ts`).
+- `reagendarPedido` grava a hora de antes (`reagendado_de`) e o `reagendado-cliente` e o `reagendado-loja`; o emissor passa-lhes essa hora e salta os de um reagendamento ultrapassado. A mesma hora não grava nada.
+- Com o Stripe, que dorme, nenhum destes grava email.
 
 **Para o Gonçalo (interface):**
 - «Mudar a data» e «Cancelar» em `Decisoes.tsx:249,264` passam a aparecer em `confirmado` (e o cancelar também em `por-confirmar` e `a-aguardar-aceite`), seguindo o `podeCancelar` e o `REAGENDAVEIS` de `regras.ts`.
-- O cancelar pergunta de quem foi a iniciativa.
+- O cancelar pergunta de quem foi a iniciativa e passa-a a `cancelar(id, reembolsoCent, iniciativa)` (hoje passa sempre `"gerente"`).
+- Um botão «Recusar» nos que ainda esperam pela casa (`eRecusa(pedido, "gerente")`), que é o mesmo `cancelar` com `"gerente"`.
 
 ### 6. O balcão com os pedidos pagos na loja — Gonçalo (#125)
 

@@ -57,6 +57,23 @@ function propostaPorEnviar(pedido: Pedido, linha: LinhaEmail, agora: Date): { sa
   return null;
 }
 
+/**
+ * O mesmo para os dois emails de um reagendamento (o T09 e o aviso à loja), que também se
+ * escrevem com o pedido como está agora:
+ *
+ * - **Substituído** — a gerente voltou a mudar a hora depois de este email entrar na fila. A
+ *   linha entrou na mesma instrução que gravou o `reagendado_em`, com o mesmo instante; uma
+ *   mais antiga é de um reagendamento ultrapassado, e o mais novo tem os seus emails. Sair esta
+ *   punha no «antes» a hora do reagendamento intermédio, que o cliente nunca viu.
+ * - **Fechado** — o pedido já não está por levantar (foi cancelado ou entregue): avisar agora de
+ *   uma data nova era falso, e o cancelamento tem o seu email.
+ */
+function reagendamentoPorEnviar(pedido: Pedido, linha: LinhaEmail): { saltar: string } | null {
+  if (pedido.reagendadoEm !== null && +pedido.reagendadoEm > +linha.criadoEm) return { saltar: "reagendamento-substituido" };
+  if (pedido.estado !== "confirmado" && pedido.estado !== "pago") return { saltar: "reagendamento-fechado" };
+  return null;
+}
+
 export function dadosDoEmail(
   pedido: Pedido,
   linha: LinhaEmail,
@@ -64,6 +81,11 @@ export function dadosDoEmail(
 ): DadosEmailPedido | { saltar: string } {
   if (linha.modelo === "lembrete-loja" && pedido.estado !== "por-confirmar") {
     return { saltar: "lembrete-sem-espera" };
+  }
+  const reagendamento = linha.modelo === "reagendado-cliente" || linha.modelo === "reagendado-loja";
+  if (reagendamento) {
+    const saltar = reagendamentoPorEnviar(pedido, linha);
+    if (saltar) return saltar;
   }
   const proposta = linha.modelo === "resposta-cliente";
   if (proposta) {
@@ -97,14 +119,16 @@ export function dadosDoEmail(
     reagendadoEm: pedido.reagendadoEm ?? undefined,
     canceladoPor: pedido.canceladoPor ?? undefined,
     observacoes: pedido.observacoes, modoDeTeste,
-    /* ⚠️ A hora pedida só vai na proposta. O `levantamento_anterior_em` é a hora que o cliente
-       pediu antes de a proposta a mudar, não a de antes de um reagendamento: dá-la ao
-       `reagendado-*` punha no email uma «data inicialmente prevista» que não era a anterior.
-       O reagendar ainda não grava a sua (`fluxo-do-pedido.md` › 6, ponto 5). */
+    /* ⚠️ Duas horas «de antes», cada uma no seu email. Na proposta, a hora que o cliente pediu
+       antes de a casa a mudar (`levantamento_anterior_em`); num reagendamento, a de antes dele
+       (`reagendado_de`, migração `0015`). Trocá-las punha no email uma «data inicialmente
+       prevista» que não era a anterior. Sem `reagendadoDe` (reagendado antes da 0015), o modelo
+       falha com `dados-do-modelo` em vez de inventar uma. */
     ...(proposta ? {
       linkAceitar: linkDaProposta!(pedido.referencia, pedido.propostaVersao),
       levantamentoAnteriorEm: pedido.levantamentoAnteriorEm ?? undefined,
     } : {}),
+    ...(reagendamento && pedido.reagendadoDe ? { levantamentoAnteriorEm: pedido.reagendadoDe } : {}),
   };
 }
 

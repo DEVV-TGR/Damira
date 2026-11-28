@@ -685,6 +685,14 @@ export const EsquemaReembolso = z.object({
 /** Os avisos que a gerente pode dar por tratados (`pedidos.md` › Avisos tratados). */
 export const AVISOS_TRATAVEIS = ["chegou-tarde", "possivel-duplicado", "dia-fechado", "reembolso-falhado"] as const;
 
+/**
+ * De quem foi a iniciativa de cancelar (`pedidos.md` › Desistir, cancelar e alterar): o cliente,
+ * que ligou ou passou na loja, ou a casa. Decide o email: «conforme solicitado» (T11) ou «não nos
+ * será possível» (T12); e a casa a cancelar um pedido que nunca confirmou é recusá-lo (T16).
+ */
+export const INICIATIVAS_CANCELAMENTO = ["cliente", "gerente"] as const;
+export type IniciativaCancelamento = (typeof INICIATIVAS_CANCELAMENTO)[number];
+
 export const EsquemaPedido = z.object({
   id: z.string(),
   referencia: z.string().regex(FORMATO_REFERENCIA),
@@ -746,9 +754,15 @@ export const EsquemaPedido = z.object({
   impressoEm: z.date().nullable(),
   entregueEm: z.date().nullable(),
   canceladoEm: z.date().nullable(),
-  canceladoPor: z.enum(["cliente", "gerente"]).nullable(),
+  canceladoPor: z.enum(INICIATIVAS_CANCELAMENTO).nullable(),
   /** A última vez que a gerente mudou o levantamento (`pedidos.md` › Mudar o levantamento). */
   reagendadoEm: z.date().nullable(),
+  /**
+   * A hora de levantamento antes do último reagendamento: o «inicialmente previsto» dos emails
+   * `reagendado-*`. `null` se nunca foi reagendado, ou se o foi antes da migração `0015`. Não é o
+   * `levantamentoAnteriorEm`, que é a hora pedida antes de uma proposta.
+   */
+  reagendadoDe: z.date().nullable().default(null),
 });
 
 export type EstadoPedido = (typeof ESTADOS_PEDIDO)[number];
@@ -1262,11 +1276,13 @@ export type FontePainel = {
   /** Dá um aviso por tratado. O facto (`chegouTarde`, o dia fechado) fica. */
   tratarAviso(id: string, tipo: AvisoTratavel, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
   /**
-   * Muda o levantamento de um pedido `confirmado` ou `pago`. `levantamentoEm` em ISO; tem de ser
-   * uma hora em que a loja abre e com vaga (`validarLevantamento` com o horário
-   * da loja), e no futuro. A vaga antiga liberta-se na mesma transação.
-   * Provisório: ainda não regista o acordo nem emite os avisos ou o talão de
-   * alteração exigidos pelo contrato (`pedidos.md` › Mudar o levantamento).
+   * Muda o levantamento de um pedido `confirmado` ou `pago`, depois de acordado com o cliente.
+   * `levantamentoEm` em ISO; tem de ser uma hora em que a loja abre e com vaga
+   * (`validarLevantamento` com o horário da loja), e no futuro. A vaga antiga liberta-se na mesma
+   * transação, e a hora de antes fica em `reagendadoDe`. Pago na loja, grava na mesma instrução o
+   * `reagendado-cliente` e o `reagendado-loja` (T09). A mesma hora não é um reagendamento:
+   * devolve o pedido como está, sem gravar nada nem avisar ninguém. Falta o talão de alteração
+   * (`impressao.md`, #47).
    */
   reagendarPedido(id: string, levantamentoEm: unknown, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
   /**
@@ -1274,10 +1290,20 @@ export type FontePainel = {
    * `a-aguardar-aceite` ou `confirmado`, ou um `pago` do Stripe. Com o reembolso
    * escolhido: `0` é nenhum, e nunca mais do que o pago online ainda por
    * devolver — pago na loja, só `0`. Liberta a vaga. Um `por-confirmar` com
-   * prazo terminado é recusado, mesmo antes da limpeza. Ainda regista sempre
-   * iniciativa da gerente; distinguir a do cliente depende do novo parâmetro.
+   * prazo terminado é recusado, mesmo antes da limpeza.
+   *
+   * `iniciativa` (`INICIATIVAS_CANCELAMENTO`) vai para o `canceladoPor`; outra coisa é
+   * `dados-invalidos` com `campos: ["iniciativa"]`. **Recusar é esta mesma ação**: a casa a
+   * cancelar um pedido pago na loja que nunca confirmou (`eRecusa`, em `src/lib/painel.ts`). Pago na
+   * loja, grava na mesma instrução o email ao cliente: `recusado-cliente` (T16) numa recusa, senão
+   * `cancelado-cliente` (T11 com `cliente`, T12 com `gerente`). Com o Stripe, que dorme, nenhum.
    */
-  cancelarPedido(id: string, reembolsoCent: number, ctx: ContextoPainel): Promise<ResultadoPainel<Pedido>>;
+  cancelarPedido(
+    id: string,
+    reembolsoCent: number,
+    iniciativa: unknown,
+    ctx: ContextoPainel,
+  ): Promise<ResultadoPainel<Pedido>>;
   /**
    * A resposta da casa (`EsquemaResposta`): confirma um `por-confirmar`, ou faz uma proposta com
    * preços ou hora novos e passa-o a `a-aguardar-aceite` — ou revê a proposta de um que já espera

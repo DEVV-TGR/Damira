@@ -5,6 +5,7 @@ import { erroDoPostgres } from "@/db/erros";
 import { pedidos } from "@/db/esquema";
 import { validarLevantamento, type VagaOcupada } from "@/lib/horarios";
 import { avisosDosPedidos, porDevolverCent } from "@/lib/painel";
+import { DESTINO_PEDIDOS } from "@/lib/pedidos";
 import { lerPedidos } from "./bd-pedidos";
 import {
   invalido,
@@ -19,7 +20,9 @@ import {
   AVISOS_TRATAVEIS,
   EsquemaFiltroPedidos,
   EsquemaResposta,
+  INICIATIVAS_CANCELAMENTO,
   type ConfiguracaoDaCasa,
+  type IniciativaCancelamento,
   type ContextoPainel,
   type FontePainel,
   type Pedido,
@@ -112,7 +115,7 @@ export function criarPedidosDoPainelBd(db: BaseDeDados, leituras: LeiturasDoPain
       with mudado as (
         update pedidos set ${mudanca}
         where id = ${id}::uuid and ${condicao}
-        returning id, levantamento_em, cliente_email
+        returning id, levantamento_em, cliente_email, modo_pagamento, confirmado_em
       ),
       ${passos}
       versao as (
@@ -175,6 +178,23 @@ export function criarPedidosDoPainelBd(db: BaseDeDados, leituras: LeiturasDoPain
     email_por_enviar as (
       insert into emails_por_enviar (pedido_id, modelo, destinatario, criado_em)
       select mudado.id, ${modelo}, mudado.cliente_email, ${instante(agora)} from mudado
+      returning 1
+    )`;
+
+  /* Os emails de uma decisão do painel sobre um pedido pago na loja, na mesma instrução, como o
+     `emailAoCliente`. Só na loja: os textos são os do pagamento na loja («não será necessário
+     efetuar qualquer pagamento»), e o Stripe, que dorme, terá os seus. Cada par é o modelo e o
+     destinatário, em SQL, lidos do `mudado` — o modelo pode depender do pedido como ficou. */
+  const emailsNaLoja = (agora: Date, pares: [modelo: SQL, destinatario: SQL][]) => sql`
+    emails_na_loja as (
+      insert into emails_por_enviar (pedido_id, modelo, destinatario, criado_em)
+      ${sql.join(
+        pares.map(
+          ([modelo, destinatario]) =>
+            sql`select mudado.id, ${modelo}, ${destinatario}, ${instante(agora)} from mudado where mudado.modo_pagamento = 'na-loja'`,
+        ),
+        sql` union all `,
+      )}
       returning 1
     )`;
 
@@ -320,28 +340,34 @@ export function criarPedidosDoPainelBd(db: BaseDeDados, leituras: LeiturasDoPain
       const novo = typeof entrada === "string" ? new Date(entrada) : null;
       if (!novo || Number.isNaN(novo.getTime())) return recusar;
       const anterior = pedido.levantamentoEm;
-      const mesmaHora = novo.getTime() === anterior.getTime();
+      /* A mesma hora não é um reagendamento: nada a gravar, e um email «nova data» com a data de
+         sempre só confundia. Também deixava o `reagendado_em` mais novo do que um email de um
+         reagendamento verdadeiro ainda na fila, e o emissor saltava-o como ultrapassado. */
+      if (novo.getTime() === anterior.getTime()) return { ok: true, valor: pedido };
 
       /* Uma hora da loja, com vaga, no futuro: o motor do calendário, com o horário
-         da loja no lugar do da cozinha — a gerente sabe se a cozinha consegue. O
-         próprio pedido não conta para a ocupação da hora dele. */
+         da loja no lugar do da cozinha — a gerente sabe se a cozinha consegue. */
       const casa = await leituras.configuracao(ctx);
-      const ocupadas = (await leituras.ocupacao(novo, novo)).map((o) =>
-        mesmaHora ? { ...o, pedidos: o.pedidos - 1 } : o,
-      );
+      const ocupadas = await leituras.ocupacao(novo, novo);
       const validacao = validarLevantamento([], novo, agora, { ...casa, cozinha: casa.loja }, ocupadas);
       if (!validacao.ok) return recusar;
 
       /* ⚠️ `levantamento_em = anterior` na condição: outro aparelho que o tenha
-         movido primeiro não pode ver a vaga errada descontada. */
+         movido primeiro não pode ver a vaga errada descontada. O `reagendado_de` lê o
+         `levantamento_em` de antes da instrução (é assim o `UPDATE` do Postgres), que a condição
+         garante ser o `anterior`. */
       const condicao = sql`estado in ('pago', 'confirmado') and levantamento_em = ${instante(anterior)}`;
-      const mudanca = sql`levantamento_em = ${instante(novo)}, reagendado_em = ${instante(agora)}`;
+      const mudanca = sql`levantamento_em = ${instante(novo)}, reagendado_de = levantamento_em,
+                          reagendado_em = ${instante(agora)}`;
       try {
-        /* A vaga é a mesma: nada a mover, e duas escritas na mesma linha na mesma
-           instrução são recusadas pelo Postgres. */
-        const mudou = mesmaHora
-          ? await mudar(mudanca, condicao, id)
-          : await mudar(mudanca, condicao, id, moverVaga(anterior, novo, casa.limitePorVaga));
+        const mudou = await mudar(mudanca, condicao, id, [
+          ...moverVaga(anterior, novo, casa.limitePorVaga),
+          /* O T09 ao cliente e o aviso à loja: o talão da hora antiga já não vale. */
+          emailsNaLoja(agora, [
+            [sql`'reagendado-cliente'`, sql`mudado.cliente_email`],
+            [sql`'reagendado-loja'`, sql`${DESTINO_PEDIDOS}`],
+          ]),
+        ]);
         return mudou ? depoisDeMudar(id) : { ok: false, erro: "estado-mudou" };
       } catch (erro) {
         if (erroDoPostgres(erro).constraint === "vagas_no_limite") return recusar;
@@ -349,7 +375,11 @@ export function criarPedidosDoPainelBd(db: BaseDeDados, leituras: LeiturasDoPain
       }
     },
 
-    async cancelarPedido(id, reembolsoCent, { agora }) {
+    async cancelarPedido(id, reembolsoCent, iniciativa, { agora }) {
+      if (!INICIATIVAS_CANCELAMENTO.includes(iniciativa as IniciativaCancelamento)) {
+        return { ok: false, erro: "dados-invalidos", campos: ["iniciativa"] };
+      }
+      const de = iniciativa as IniciativaCancelamento;
       const pedido = await lerUm(id);
       if (!pedido) return naoExiste;
       if (!podeCancelarPedido(pedido, agora)) return { ok: false, erro: "estado-mudou" };
@@ -357,13 +387,23 @@ export function criarPedidosDoPainelBd(db: BaseDeDados, leituras: LeiturasDoPain
       const recusar: ResultadoPainel<Pedido> = { ok: false, erro: "dados-invalidos", campos: ["reembolsoCent"] };
       if (!centValido(reembolsoCent, porDevolverCent(pedido), true)) return recusar;
 
+      /* ⚠️ Recusa ou cancelamento decide-o o pedido **como a instrução o encontra**, e não a leitura
+         de antes: o balcão pode tê-lo confirmado entretanto, e então já é o T12 e não o T16. É a
+         mesma conta do `eRecusa`, em SQL. */
+      const modelo = de === "gerente"
+        ? sql`case when mudado.confirmado_em is null then 'recusado-cliente' else 'cancelado-cliente' end`
+        : sql`'cancelado-cliente'`;
       try {
         const mudou = await mudar(
-          sql`estado = 'cancelado', cancelado_em = ${instante(agora)}, cancelado_por = 'gerente',
+          sql`estado = 'cancelado', cancelado_em = ${instante(agora)}, cancelado_por = ${de},
               reembolso_reservado_cent = reembolso_reservado_cent + ${reembolsoCent}::integer`,
           podeCancelar(agora),
           id,
-          [descontarVaga, ...(reembolsoCent > 0 ? [novoReembolso(reembolsoCent, agora)] : [])],
+          [
+            descontarVaga,
+            ...(reembolsoCent > 0 ? [novoReembolso(reembolsoCent, agora)] : []),
+            emailsNaLoja(agora, [[modelo, sql`mudado.cliente_email`]]),
+          ],
         );
         return mudou ? depoisDeMudar(id) : { ok: false, erro: "estado-mudou" };
       } catch (erro) {

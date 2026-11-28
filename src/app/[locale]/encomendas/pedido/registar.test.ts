@@ -111,7 +111,7 @@ describe("o pedido do site na base de dados", () => {
   it("repetir um pedido que a loja entretanto cancelou diz o estado de agora, não «confirmado»", async () => {
     await enviar();
     const [gravado] = await base.db.select().from(pedidos);
-    expect(await dependencias.fonte!.cancelarPedido(gravado.id, 0, { papel: "gerente", agora: AGORA })).toMatchObject({ ok: true });
+    expect(await dependencias.fonte!.cancelarPedido(gravado.id, 0, "gerente", { papel: "gerente", agora: AGORA })).toMatchObject({ ok: true });
     expect(await enviar()).toMatchObject({ estado: "enviado", estadoPedido: "cancelado", registo: { referencia: gravado.referencia } });
     expect(await base.db.select().from(pedidos)).toHaveLength(1);
   });

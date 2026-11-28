@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 import { casa, emailsPorEnviar, pedidos, reembolsos, vagas } from "@/db/esquema";
 import { porDevolverCent } from "@/lib/painel";
 import { criarPedidosDoPainelBd } from "./bd-painel-pedidos";
+import { executarEmissor } from "@/lib/emails/executar";
+import { criarEmailsBd } from "./bd-emails";
 import { limparExpirados } from "./bd-pedidos";
 import { baseComPedidos, idDeTeste as u, type CasaDeTeste } from "./fontes-de-teste";
 import type { ContextoPainel, Pedido } from "./tipos";
@@ -64,6 +66,7 @@ const pedido = (nome: string, alteracoes: Partial<Pedido> = {}): Pedido => ({
   reembolsos: [],
   avisosTratados: [],
   reagendadoEm: null,
+  reagendadoDe: null,
   confirmadoEm: null,
   expiraEm: null,
   aceiteEm: null,
@@ -94,8 +97,8 @@ describe("duas ações ao mesmo tempo", () => {
   it("dois a cancelar libertam a vaga uma vez", async () => {
     const { fonte, ocupadas } = await montar([pedido("a"), pedido("b")]);
     const [um, outro] = await Promise.all([
-      fonte.cancelarPedido(u("a"), 0, GERENTE),
-      fonte.cancelarPedido(u("a"), 0, GERENTE),
+      fonte.cancelarPedido(u("a"), 0, "gerente", GERENTE),
+      fonte.cancelarPedido(u("a"), 0, "gerente", GERENTE),
     ]);
     expect([um.ok, outro.ok].sort()).toEqual([false, true]);
     expect(await ocupadas(QUINTA)).toBe(1);
@@ -124,7 +127,7 @@ describe("a decisão é da base de dados, mesmo com a leitura desatualizada", ()
       erro: "dados-invalidos",
       campos: ["valorCent"],
     });
-    expect(await fonte.cancelarPedido(u("a"), 1000, GERENTE)).toEqual({
+    expect(await fonte.cancelarPedido(u("a"), 1000, "gerente", GERENTE)).toEqual({
       ok: false,
       erro: "dados-invalidos",
       campos: ["reembolsoCent"],
@@ -180,17 +183,19 @@ describe("os contadores", () => {
     expect(await versao()).toBe(antes + 1);
   });
 
-  it("reagendar para a mesma hora não mexe na vaga, mesmo com ela cheia", async () => {
-    const { fonte, ocupadas } = await montar([pedido("a")], { limitePorVaga: 1 });
+  it("reagendar para a mesma hora não grava nada, nem mexe na vaga, mesmo com ela cheia", async () => {
+    const { fonte, ocupadas, versao } = await montar([pedido("a")], { limitePorVaga: 1 });
+    const antes = await versao();
     const resultado = await fonte.reagendarPedido(u("a"), QUINTA.toISOString(), GERENTE);
-    expect(resultado.ok && resultado.valor.reagendadoEm).toEqual(AGORA);
+    expect(resultado.ok && resultado.valor).toMatchObject({ reagendadoEm: null, reagendadoDe: null });
     expect(await ocupadas(QUINTA)).toBe(1);
+    expect(await versao()).toBe(antes);
   });
 
   it("baixar o limite e depois cancelar nunca falha: descontar não mexe no limite", async () => {
     const { db, fonte, ocupadas } = await montar([pedido("a"), pedido("b")], { limitePorVaga: 2 });
     await db.update(casa).set({ limitePorVaga: 1 });
-    expect((await fonte.cancelarPedido(u("a"), 0, GERENTE)).ok).toBe(true);
+    expect((await fonte.cancelarPedido(u("a"), 0, "gerente", GERENTE)).ok).toBe(true);
     expect(await ocupadas(QUINTA)).toBe(1);
   });
 
@@ -211,7 +216,7 @@ describe("os contadores", () => {
 describe("o reembolso", () => {
   it("nasce pendente: o estado vem do webhook, e o reembolsado só soma os concluídos", async () => {
     const { db, fonte, ocupadas } = await montar([pedido("a")]);
-    const resultado = await fonte.cancelarPedido(u("a"), 10000, GERENTE);
+    const resultado = await fonte.cancelarPedido(u("a"), 10000, "gerente", GERENTE);
     if (!resultado.ok) throw new Error("devia cancelar");
     expect(resultado.valor).toMatchObject({
       estado: "cancelado",
@@ -228,7 +233,7 @@ describe("o reembolso", () => {
 
   it("cancelar sem reembolso não cria reembolso nenhum", async () => {
     const { db, fonte } = await montar([pedido("a")]);
-    await fonte.cancelarPedido(u("a"), 0, GERENTE);
+    await fonte.cancelarPedido(u("a"), 0, "gerente", GERENTE);
     expect(await db.select().from(reembolsos)).toHaveLength(0);
   });
 
@@ -329,7 +334,7 @@ describe("um id que não é um uuid vem de um browser a inventar", () => {
       fonte.desfazerEntregue(inventado, GERENTE),
       fonte.tratarAviso(inventado, "chegou-tarde", GERENTE),
       fonte.reagendarPedido(inventado, SEXTA.toISOString(), GERENTE),
-      fonte.cancelarPedido(inventado, 0, GERENTE),
+      fonte.cancelarPedido(inventado, 0, "gerente", GERENTE),
       fonte.reembolsarPedido(inventado, 1, GERENTE),
     ]) {
       expect(await tentativa).toEqual({ ok: false, erro: "nao-existe" });
@@ -434,5 +439,138 @@ describe("a resposta e o aceite deixam o email por enviar, na mesma instrução 
     const { db, fonte } = await montar([{ ...base, linhas: [base.linhas[0]] }]);
     expect((await fonte.responderPedido(u("a"), { precos: [], levantamentoEm: null }, BALCAO)).ok).toBe(true);
     expect(await modelos(db)).toEqual(["confirmado-cliente → teste@example.com"]);
+  });
+});
+
+describe("cancelar, recusar e reagendar deixam os emails por enviar, na mesma instrução (ponto 5)", () => {
+  const naLoja = (nome: string, alteracoes: Partial<Pedido> = {}): Pedido =>
+    pedido(nome, {
+      estado: "confirmado", modoPagamento: "na-loja", pagoOnlineCent: 0, pagoEm: null, confirmadoEm: lisboa(6, 9),
+      ...alteracoes,
+    });
+  const porConfirmar = (nome: string) =>
+    naLoja(nome, { estado: "por-confirmar", confirmadoEm: null, expiraEm: new Date("2099-01-01T00:00:00Z") });
+  const fila = async (db: Awaited<ReturnType<typeof montar>>["db"]) =>
+    (await db.select().from(emailsPorEnviar)).map((e) => ({ modelo: e.modelo, para: e.destinatario, criadoEm: e.criadoEm }));
+
+  it("a casa recusa um por-confirmar: o T16 ao cliente", async () => {
+    const { db, fonte } = await montar([porConfirmar("a")]);
+    expect((await fonte.cancelarPedido(u("a"), 0, "gerente", GERENTE)).ok).toBe(true);
+    expect(await fila(db)).toEqual([{ modelo: "recusado-cliente", para: "teste@example.com", criadoEm: AGORA }]);
+  });
+
+  it("a casa desiste de uma proposta por aceitar: também é recusar", async () => {
+    const aguarda = naLoja("a", {
+      estado: "a-aguardar-aceite", confirmadoEm: null, expiraEm: new Date("2099-01-01T00:00:00Z"),
+      propostaVersao: 1, propostaEm: lisboa(7, 9),
+    });
+    const { db, fonte } = await montar([aguarda]);
+    expect((await fonte.cancelarPedido(u("a"), 0, "gerente", GERENTE)).ok).toBe(true);
+    expect((await fila(db)).map((e) => e.modelo)).toEqual(["recusado-cliente"]);
+  });
+
+  it("o cliente desiste antes da resposta, ou cancela um confirmado: o T11", async () => {
+    const { db, fonte } = await montar([porConfirmar("a"), { ...naLoja("b"), referencia: "DAM-0710-BBBB" }]);
+    expect((await fonte.cancelarPedido(u("a"), 0, "cliente", GERENTE)).ok).toBe(true);
+    expect((await fonte.cancelarPedido(u("b"), 0, "cliente", GERENTE)).ok).toBe(true);
+    expect((await fila(db)).map((e) => e.modelo)).toEqual(["cancelado-cliente", "cancelado-cliente"]);
+    const [a] = await db.select().from(pedidos).where(eq(pedidos.id, u("a")));
+    expect(a.canceladoPor).toBe("cliente");
+  });
+
+  it("a casa cancela um confirmado: o T12, o mesmo modelo com canceladoPor gerente", async () => {
+    const { db, fonte } = await montar([naLoja("a")]);
+    expect((await fonte.cancelarPedido(u("a"), 0, "gerente", GERENTE)).ok).toBe(true);
+    expect((await fila(db)).map((e) => e.modelo)).toEqual(["cancelado-cliente"]);
+    const [a] = await db.select().from(pedidos).where(eq(pedidos.id, u("a")));
+    expect(a.canceladoPor).toBe("gerente");
+  });
+
+  it("confirmado por outro aparelho entre a leitura e a escrita: já não é recusa, é o T12", async () => {
+    const { db, fonte } = await montar([porConfirmar("a")]);
+    const original = db.execute.bind(db);
+    /* A primeira instrução crua é a do cancelar: o balcão confirma mesmo antes dela. */
+    const confirmadoAntes = async (consulta: Parameters<typeof db.execute>[0]) => {
+      await db.update(pedidos).set({ estado: "confirmado", confirmadoEm: lisboa(7, 9, 59) }).where(eq(pedidos.id, u("a")));
+      return original(consulta);
+    };
+    /* O Drizzle devolve uma consulta preguiçosa; aqui basta o que se espera dela. */
+    vi.spyOn(db, "execute").mockImplementationOnce(confirmadoAntes as unknown as typeof db.execute);
+    expect((await fonte.cancelarPedido(u("a"), 0, "gerente", GERENTE)).ok).toBe(true);
+    expect((await fila(db)).map((e) => e.modelo)).toEqual(["cancelado-cliente"]);
+  });
+
+  it("com o Stripe, que dorme, cancelar não põe email nenhum na fila", async () => {
+    const { db, fonte } = await montar([pedido("a")]);
+    expect((await fonte.cancelarPedido(u("a"), 0, "gerente", GERENTE)).ok).toBe(true);
+    expect(await fila(db)).toEqual([]);
+  });
+
+  it("uma iniciativa que não existe não cancela nem grava email", async () => {
+    const { db, fonte, ocupadas } = await montar([naLoja("a")]);
+    expect(await fonte.cancelarPedido(u("a"), 0, "balcao", GERENTE)).toEqual({
+      ok: false, erro: "dados-invalidos", campos: ["iniciativa"],
+    });
+    expect(await fila(db)).toEqual([]);
+    expect(await ocupadas(QUINTA)).toBe(1);
+  });
+
+  it("reagendar um confirmado: a hora de antes, o T09 ao cliente e o aviso à loja", async () => {
+    const { db, fonte, ocupadas } = await montar([naLoja("a")]);
+    const mudado = await fonte.reagendarPedido(u("a"), SEXTA.toISOString(), GERENTE);
+    expect(mudado.ok && mudado.valor).toMatchObject({ levantamentoEm: SEXTA, reagendadoDe: QUINTA, reagendadoEm: AGORA });
+    const emails = await fila(db);
+    expect(emails).toHaveLength(2);
+    expect(emails).toContainEqual({ modelo: "reagendado-cliente", para: "teste@example.com", criadoEm: AGORA });
+    expect(emails.find((e) => e.modelo === "reagendado-loja")).toMatchObject({ criadoEm: AGORA });
+    expect(emails.find((e) => e.modelo === "reagendado-loja")?.para).not.toBe("teste@example.com");
+    expect([await ocupadas(QUINTA), await ocupadas(SEXTA)]).toEqual([0, 1]);
+  });
+
+  it("reagendar para a mesma hora não avisa ninguém", async () => {
+    const { db, fonte } = await montar([naLoja("a")]);
+    expect((await fonte.reagendarPedido(u("a"), QUINTA.toISOString(), GERENTE)).ok).toBe(true);
+    expect(await fila(db)).toEqual([]);
+  });
+
+  it("reagendar com o Stripe guarda a hora de antes, sem emails", async () => {
+    const { db, fonte } = await montar([pedido("a")]);
+    const mudado = await fonte.reagendarPedido(u("a"), SEXTA.toISOString(), GERENTE);
+    expect(mudado.ok && mudado.valor.reagendadoDe).toEqual(QUINTA);
+    expect(await fila(db)).toEqual([]);
+  });
+
+  it("um reagendamento recusado pela última vaga não deixa email nenhum", async () => {
+    const { db, fonte } = await montar([naLoja("a"), { ...naLoja("b"), referencia: "DAM-0710-BBBB", levantamentoEm: SEXTA }], {
+      limitePorVaga: 1,
+    });
+    const desatualizada = criarPedidosDoPainelBd(db, { configuracao: fonte.configuracaoDoPainel, ocupacao: async () => [] });
+    expect((await desatualizada.reagendarPedido(u("a"), SEXTA.toISOString(), GERENTE)).ok).toBe(false);
+    expect(await fila(db)).toEqual([]);
+  });
+
+  it("dois reagendamentos seguidos: o emissor só manda os do último, com a hora de antes dele", async () => {
+    const { db, fonte } = await montar([naLoja("a")]);
+    expect((await fonte.reagendarPedido(u("a"), SEXTA.toISOString(), GERENTE)).ok).toBe(true);
+    const depois = lisboa(7, 11);
+    const SABADO = lisboa(10, 11);
+    expect((await fonte.reagendarPedido(u("a"), SABADO.toISOString(), { ...GERENTE, agora: depois })).ok).toBe(true);
+
+    const buscar = vi.fn<typeof fetch>().mockResolvedValue(new Response('{"id":"inventado"}', { status: 200 }));
+    const resumo = await executarEmissor({ agora: depois, limite: 10 }, {
+      fonte: criarEmailsBd(db),
+      ambiente: { VERCEL_ENV: "preview", EMAILS_SO_PARA: "ensaio@example.com", RESEND_API_KEY: "chave-inventada", LOJA_EM_TESTE: "1" },
+      casa: { nome: "Casa", morada: "Rua Exemplo", localidade: "Localidade", telefone: "+351 229 730 939", email: "casa@example.com" },
+      buscar, esperar: async () => {}, decorrido: () => 0, corte: new Date(0),
+    });
+    expect(resumo).toMatchObject({ enviados: 2, saltados: 2, falhados: 0 });
+    const textos = buscar.mock.calls.map((c) => JSON.parse(c[1]!.body as string).text as string);
+    /* O «antes» é sexta (a hora do primeiro reagendamento, que o cliente recebeu primeiro), e
+       nunca quinta, a de origem: o email do primeiro reagendamento ficou ultrapassado. */
+    for (const texto of textos) {
+      expect(texto).toMatch(/sexta/i);
+      expect(texto).toMatch(/s[áa]bado/i);
+      expect(texto).not.toMatch(/quinta/i);
+    }
   });
 });

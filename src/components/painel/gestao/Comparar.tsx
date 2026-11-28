@@ -29,7 +29,9 @@ export function Comparar({ a, b, onFechar }: { a: Pedido; b: Pedido; onFechar: (
   const confirmar = () =>
     iniciar(async () => {
       if (!ficar || !outro) return;
-      const cancelado = await cancelar(outro.id, porDevolverCent(outro));
+      /* Um duplicado é do cliente (dois separadores, dois envios): o email diz «conforme
+         solicitado», e não que a casa não consegue fazer a encomenda. */
+      const cancelado = await cancelar(outro.id, porDevolverCent(outro), "cliente");
       if (!cancelado.ok) return setErro(MENSAGENS[cancelado.erro]);
       await tratar(ficar.id, "possivel-duplicado");
       router.refresh();

@@ -72,8 +72,8 @@ export function protegerPainel(fonte: FontePainel): FontePainel {
     reagendarPedido: exigirPapel(SO_GERENTE, (id: string, levantamentoEm: unknown, ctx) =>
       fonte.reagendarPedido(id, levantamentoEm, ctx),
     ),
-    cancelarPedido: exigirPapel(SO_GERENTE, (id: string, reembolsoCent: number, ctx) =>
-      fonte.cancelarPedido(id, reembolsoCent, ctx),
+    cancelarPedido: exigirPapel(SO_GERENTE, (id: string, reembolsoCent: number, iniciativa: unknown, ctx) =>
+      fonte.cancelarPedido(id, reembolsoCent, iniciativa, ctx),
     ),
     reembolsarPedido: exigirPapel(SO_GERENTE, (id: string, valorCent: number, ctx) =>
       fonte.reembolsarPedido(id, valorCent, ctx),

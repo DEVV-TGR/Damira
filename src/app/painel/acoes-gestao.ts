@@ -19,7 +19,12 @@ import {
   responderPedido,
   tratarAviso,
 } from "@/lib/dados";
-import { ESTADOS_PEDIDO, type AvisoTratavel, type EstadoPedido } from "@/lib/dados/tipos";
+import {
+  ESTADOS_PEDIDO,
+  type AvisoTratavel,
+  type EstadoPedido,
+  type IniciativaCancelamento,
+} from "@/lib/dados/tipos";
 import { apagarFotos, fotosQueSairam } from "@/lib/fotos";
 import { intervaloDeDias } from "@/lib/painel";
 import { comSessao, contextoDoPainel } from "@/lib/painel-servidor";
@@ -92,9 +97,6 @@ export async function gravarDefinicoes(entrada: unknown) {
  * e um email nunca sai de uma mudança que falhou. Sem emails novos, o emissor lê a
  * fila e não envia nada — a base já estava acordada pela decisão.
  *
- * O cancelar e o reagendar ainda não gravam emails (o T11, o T12 e o T09 são da
- * fonte, `fluxo-do-pedido.md` › 6, ponto 5); ficam já ligados para esse PR só ter
- * de mexer na fronteira.
  */
 async function eEnviaEmails<T extends { ok: boolean }>(resultado: Promise<T>): Promise<T> {
   const lido = await resultado;
@@ -111,8 +113,12 @@ export async function reagendar(id: string, levantamentoEm: string) {
   return eEnviaEmails(comSessao((ctx) => reagendarPedido(id, levantamentoEm, ctx), true));
 }
 
-export async function cancelar(id: string, reembolsoCent: number) {
-  return eEnviaEmails(comSessao((ctx) => cancelarPedido(id, reembolsoCent, ctx), true));
+/**
+ * Cancelar, ou recusar (a casa a desistir de um pedido que nunca confirmou: `eRecusa`). A
+ * iniciativa decide o email ao cliente, e a fonte recusa outra coisa que não as do contrato.
+ */
+export async function cancelar(id: string, reembolsoCent: number, iniciativa: IniciativaCancelamento) {
+  return eEnviaEmails(comSessao((ctx) => cancelarPedido(id, reembolsoCent, iniciativa, ctx), true));
 }
 
 export async function reembolsar(id: string, valorCent: number) {

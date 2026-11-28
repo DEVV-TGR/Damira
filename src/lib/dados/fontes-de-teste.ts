@@ -105,6 +105,7 @@ async function guardarPedido(db: BaseDeTeste, pedido: Pedido, limite: number | n
     canceladoEm: pedido.canceladoEm,
     canceladoPor: pedido.canceladoPor,
     reagendadoEm: pedido.reagendadoEm,
+    reagendadoDe: pedido.reagendadoDe,
     confirmadoEm: pedido.confirmadoEm,
     expiraEm: pedido.expiraEm,
     aceiteEm: pedido.aceiteEm,

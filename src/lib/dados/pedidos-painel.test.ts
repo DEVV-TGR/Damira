@@ -1,6 +1,6 @@
 import { TZDate } from "@date-fns/tz";
 import { describe, expect, it } from "vitest";
-import { porDevolverCent } from "@/lib/painel";
+import { foiRecusado, porDevolverCent } from "@/lib/painel";
 import { fonteComPedidos, idDeTeste as u, type CasaDeTeste } from "./fontes-de-teste";
 import { protegerPainel } from "./papeis";
 import type { ContextoPainel, FonteDeDados, Papel, Pedido } from "./tipos";
@@ -57,6 +57,7 @@ const pedido = (nome: string, alteracoes: Partial<Pedido> = {}): Pedido => ({
   reembolsos: [],
   avisosTratados: [],
   reagendadoEm: null,
+  reagendadoDe: null,
   confirmadoEm: null,
   expiraEm: null,
   aceiteEm: null,
@@ -240,7 +241,7 @@ describe("as decisões da gerente", () => {
   it("só a gerente decide: o balcão não cancela, não reembolsa, não muda datas nem trata avisos", async () => {
     const f = await fonte([pedido("a", { chegouTarde: true })]);
     for (const tentativa of [
-      await f.cancelarPedido(u("a"), 0, BALCAO),
+      await f.cancelarPedido(u("a"), 0, "gerente", BALCAO),
       await f.reembolsarPedido(u("a"), 100, BALCAO),
       await f.reagendarPedido(u("a"), lisboa(9, 10).toISOString(), BALCAO),
       await f.tratarAviso(u("a"), "chegou-tarde", BALCAO),
@@ -258,7 +259,7 @@ describe("as decisões da gerente", () => {
 
   it("cancelar com reembolso total: cancelado, reembolsado e a vaga livre", async () => {
     const f = await fonte([pedido("a")]);
-    const resultado = await f.cancelarPedido(u("a"), 33500, GERENTE);
+    const resultado = await f.cancelarPedido(u("a"), 33500, "gerente", GERENTE);
     if (!resultado.ok) throw new Error("devia cancelar");
     expect(resultado.valor).toMatchObject({
       estado: "cancelado",
@@ -271,9 +272,9 @@ describe("as decisões da gerente", () => {
 
   it("cancelar sem reembolso, e nunca reembolsar mais do que foi pago", async () => {
     const f = await fonte([pedido("a"), pedido("b")]);
-    expect((await f.cancelarPedido(u("a"), 0, GERENTE)).ok).toBe(true);
-    expect(await f.cancelarPedido(u("b"), 33501, GERENTE)).toEqual({ ok: false, erro: "dados-invalidos", campos: ["reembolsoCent"] });
-    expect(await f.cancelarPedido(u("b"), 10.5, GERENTE)).toMatchObject({ ok: false });
+    expect((await f.cancelarPedido(u("a"), 0, "gerente", GERENTE)).ok).toBe(true);
+    expect(await f.cancelarPedido(u("b"), 33501, "gerente", GERENTE)).toEqual({ ok: false, erro: "dados-invalidos", campos: ["reembolsoCent"] });
+    expect(await f.cancelarPedido(u("b"), 10.5, "gerente", GERENTE)).toMatchObject({ ok: false });
   });
 
   it("um reembolso parcial sem cancelar, e o que sobra para devolver diminui", async () => {
@@ -286,7 +287,7 @@ describe("as decisões da gerente", () => {
 
   it("cancelar um pedido que já não está pago diz que mudou", async () => {
     const f = await fonte([pedido("a", { estado: "entregue", entregueEm: AGORA })]);
-    expect(await f.cancelarPedido(u("a"), 0, GERENTE)).toEqual({ ok: false, erro: "estado-mudou" });
+    expect(await f.cancelarPedido(u("a"), 0, "gerente", GERENTE)).toEqual({ ok: false, erro: "estado-mudou" });
   });
 
   it("mudar o levantamento para uma hora da loja, no futuro", async () => {
@@ -338,7 +339,7 @@ describe("os pedidos pagos na loja", () => {
     const f = await fonte([naLoja("a", {
       estado: "por-confirmar", confirmadoEm: null, expiraEm: new Date(AGORA.getTime() + desvio),
     })]);
-    expect(await f.cancelarPedido(u("a"), 0, GERENTE)).toEqual({ ok: false, erro: "estado-mudou" });
+    expect(await f.cancelarPedido(u("a"), 0, "gerente", GERENTE)).toEqual({ ok: false, erro: "estado-mudou" });
     const resultado = await f.pedidoDoPainel(u("a"), GERENTE);
     expect(resultado.ok && resultado.valor.canceladoEm).toBeNull();
   });
@@ -347,7 +348,7 @@ describe("os pedidos pagos na loja", () => {
     const f = await fonte([naLoja("a", {
       estado: "por-confirmar", confirmadoEm: null, expiraEm: new Date(AGORA.getTime() + 1),
     })]);
-    expect((await f.cancelarPedido(u("a"), 0, GERENTE)).ok).toBe(true);
+    expect((await f.cancelarPedido(u("a"), 0, "gerente", GERENTE)).ok).toBe(true);
   });
 
   it("o balcão entrega um confirmado com um toque: paga-se na loja, nesse toque", async () => {
@@ -380,12 +381,12 @@ describe("os pedidos pagos na loja", () => {
     const f = await fonte([naLoja("a")]);
     expect(await f.ocupacao(quando, quando)).toEqual([{ inicio: quando, pedidos: 1 }]);
     /* Nada se pagou online: não há nada a devolver. */
-    expect(await f.cancelarPedido(u("a"), 100, GERENTE)).toEqual({
+    expect(await f.cancelarPedido(u("a"), 100, "gerente", GERENTE)).toEqual({
       ok: false,
       erro: "dados-invalidos",
       campos: ["reembolsoCent"],
     });
-    const cancelado = await f.cancelarPedido(u("a"), 0, GERENTE);
+    const cancelado = await f.cancelarPedido(u("a"), 0, "gerente", GERENTE);
     expect(cancelado.ok && cancelado.valor).toMatchObject({ estado: "cancelado", canceladoEm: AGORA, canceladoPor: "gerente" });
     expect(cancelado.ok && cancelado.valor.reembolsos).toEqual([]);
     expect(await f.ocupacao(quando, quando)).toEqual([]);
@@ -397,15 +398,47 @@ describe("os pedidos pagos na loja", () => {
       naLoja("b", { estado: "a-aguardar-aceite", confirmadoEm: null, expiraEm: lisboa(8, 9), propostaVersao: 1, propostaEm: lisboa(7, 9) }),
     ]);
     for (const nome of ["a", "b"]) {
-      const cancelado = await f.cancelarPedido(u(nome), 0, GERENTE);
+      const cancelado = await f.cancelarPedido(u(nome), 0, "gerente", GERENTE);
       expect(cancelado.ok && cancelado.valor.estado).toBe("cancelado");
     }
   });
 
-  it("a gerente muda a hora de um confirmado", async () => {
+  it("a gerente muda a hora de um confirmado, e a hora de antes fica (0015)", async () => {
     const f = await fonte([naLoja("a")]);
     const mudado = await f.reagendarPedido(u("a"), lisboa(9, 11).toISOString(), GERENTE);
-    expect(mudado.ok && mudado.valor).toMatchObject({ estado: "confirmado", levantamentoEm: lisboa(9, 11), reagendadoEm: AGORA });
+    expect(mudado.ok && mudado.valor).toMatchObject({
+      estado: "confirmado", levantamentoEm: lisboa(9, 11), reagendadoEm: AGORA, reagendadoDe: lisboa(8, 15),
+    });
+    /* Uma segunda vez: a hora de antes é a do reagendamento anterior, e não a primeira de todas. */
+    const outraVez = await f.reagendarPedido(u("a"), lisboa(9, 12).toISOString(), { ...GERENTE, agora: lisboa(7, 11) });
+    expect(outraVez.ok && outraVez.valor).toMatchObject({ levantamentoEm: lisboa(9, 12), reagendadoDe: lisboa(9, 11) });
+  });
+
+  it("reagendar para a mesma hora não é reagendar: nada muda", async () => {
+    const f = await fonte([naLoja("a")]);
+    const mesma = await f.reagendarPedido(u("a"), lisboa(8, 15).toISOString(), GERENTE);
+    expect(mesma.ok && mesma.valor).toMatchObject({ levantamentoEm: lisboa(8, 15), reagendadoEm: null, reagendadoDe: null });
+    expect(await f.ocupacao(lisboa(8, 15), lisboa(8, 15))).toEqual([{ inicio: lisboa(8, 15), pedidos: 1 }]);
+  });
+
+  it("cancelar guarda de quem foi a iniciativa, e recusa outra que não as do contrato", async () => {
+    const f = await fonte([naLoja("a"), naLoja("b")]);
+    const doCliente = await f.cancelarPedido(u("a"), 0, "cliente", GERENTE);
+    expect(doCliente.ok && doCliente.valor).toMatchObject({ estado: "cancelado", canceladoPor: "cliente" });
+    for (const iniciativa of ["balcao", undefined, null, 1]) {
+      expect(await f.cancelarPedido(u("b"), 0, iniciativa, GERENTE)).toEqual({
+        ok: false, erro: "dados-invalidos", campos: ["iniciativa"],
+      });
+    }
+    const b = await f.pedidoDoPainel(u("b"), GERENTE);
+    expect(b.ok && b.valor.estado).toBe("confirmado");
+  });
+
+  it("recusar é a casa a cancelar o que nunca confirmou: fica cancelado, sem confirmadoEm", async () => {
+    const f = await fonte([naLoja("a", { estado: "por-confirmar", confirmadoEm: null, expiraEm: lisboa(8, 9) })]);
+    const recusado = await f.cancelarPedido(u("a"), 0, "gerente", GERENTE);
+    expect(recusado.ok && recusado.valor).toMatchObject({ estado: "cancelado", canceladoPor: "gerente", confirmadoEm: null });
+    expect(recusado.ok && foiRecusado(recusado.valor)).toBe(true);
   });
 
   it("um entregue ou um expirado não se cancela por aqui", async () => {
@@ -413,8 +446,8 @@ describe("os pedidos pagos na loja", () => {
       naLoja("a", { estado: "entregue", entregueEm: lisboa(7, 9) }),
       naLoja("b", { estado: "expirado", confirmadoEm: null, expiraEm: lisboa(7, 9), causaExpiracao: "sem-resposta-da-casa" }),
     ]);
-    expect(await f.cancelarPedido(u("a"), 0, GERENTE)).toEqual({ ok: false, erro: "estado-mudou" });
-    expect(await f.cancelarPedido(u("b"), 0, GERENTE)).toEqual({ ok: false, erro: "estado-mudou" });
+    expect(await f.cancelarPedido(u("a"), 0, "gerente", GERENTE)).toEqual({ ok: false, erro: "estado-mudou" });
+    expect(await f.cancelarPedido(u("b"), 0, "gerente", GERENTE)).toEqual({ ok: false, erro: "estado-mudou" });
   });
 });
 
@@ -504,7 +537,7 @@ describe("a resposta da casa e o aceite do cliente (pedidos.md › O aceite do c
     const f = await fonte([
       comBolo("a", { estado: "a-aguardar-aceite", propostaVersao: 1, propostaEm: lisboa(6, 9), expiraEm: lisboa(7, 9) }),
     ]);
-    expect(await f.cancelarPedido(u("a"), 0, GERENTE)).toEqual({ ok: false, erro: "estado-mudou" });
+    expect(await f.cancelarPedido(u("a"), 0, "gerente", GERENTE)).toEqual({ ok: false, erro: "estado-mudou" });
   });
 
   it("rever a proposta de volta à hora pedida deixa de mudar a hora", async () => {
