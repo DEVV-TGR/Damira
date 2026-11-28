@@ -258,6 +258,33 @@ describe("o que é válido entra", () => {
     expect(await db.select().from(pedidos)).toHaveLength(6);
   });
 
+  it("reagendado com a hora de antes, reagendado antes da 0015 sem ela, e recusado pela casa", async () => {
+    await db.insert(produtos).values(NATA);
+    const outro = (n: number) => ({
+      id: `9f1c1f5e-8c1b-4d5a-9a43-1d2f3c4b5a6${n}`,
+      referencia: `DAM-0311-DDD${n + 2}`,
+      chaveIdempotencia: `5b7e1516-28ae-4d2a-8f15-0a1b2c3d4e5${n}`,
+    });
+    const NOVA_HORA = new Date("2026-11-08T10:00:00Z");
+    await db.insert(pedidos).values([
+      /* Combinado ao telefone: a hora de antes fica para os dois emails do reagendamento. */
+      { ...NA_LOJA, ...outro(1), levantamentoEm: NOVA_HORA, reagendadoEm: PAGO, reagendadoDe: PENDENTE.levantamentoEm },
+      /* Reagendado antes de a 0015 existir: não sabe a hora de antes, e continua válido. */
+      { ...NA_LOJA, ...outro(2), levantamentoEm: NOVA_HORA, reagendadoEm: PAGO },
+      /* Uma proposta mudou a hora pedida e, já confirmado, um reagendamento mudou-a outra vez:
+         as duas horas de antes convivem, cada uma no seu email. */
+      {
+        ...POR_CONFIRMAR, ...outro(3), estado: "confirmado", aceiteEm: PAGO, confirmadoEm: PAGO, ...PROPOSTA,
+        levantamentoAnteriorEm: PENDENTE.levantamentoEm, levantamentoEm: NOVA_HORA,
+        reagendadoEm: PAGO, reagendadoDe: new Date("2026-11-07T16:00:00Z"),
+      },
+      /* Recusado: a casa cancelou antes de confirmar. Não tem coluna própria — é o cancelado
+         pela casa sem `confirmado_em`. */
+      { ...POR_CONFIRMAR, ...outro(4), estado: "cancelado", canceladoEm: PAGO, canceladoPor: "gerente" },
+    ]);
+    expect(await db.select().from(pedidos)).toHaveLength(4);
+  });
+
   it("um reembolso com o estado do Stripe, de cada um dos cinco", async () => {
     await comPedido(PAGO_ONLINE);
     await db.insert(reembolsos).values([
@@ -428,6 +455,10 @@ describe("um pedido recusa", () => {
 
   it("um entregue sem data de entrega", async () => {
     expect(await tenta({ ...PAGO_ONLINE, estado: "entregue" })).toBe("pedidos_entregue_em");
+  });
+
+  it("a hora de antes de um reagendamento sem ter havido reagendamento", async () => {
+    expect(await tenta({ ...NA_LOJA, reagendadoDe: PENDENTE.levantamentoEm })).toBe("pedidos_reagendado_de");
   });
 
   it("um cancelado sem dizer quando ou por quem, e o contrário", async () => {

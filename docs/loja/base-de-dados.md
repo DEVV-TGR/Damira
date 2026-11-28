@@ -459,6 +459,7 @@ ordem — ficava órfã, fora da «Da carta» (e, até 12/11, da `/ementa`).
 | `proposta_versao` | `integer` `>= 0`, por defeito `0` | `propostaVersao` — sobe a cada resposta com preço ou hora novos; `0` é nunca houve proposta (migração `0009`) |
 | `proposta_em` | `timestamptz` nulo | `propostaEm` — quando a casa fez a última proposta |
 | `levantamento_anterior_em` | `timestamptz` nulo | `levantamentoAnteriorEm` — a hora que o cliente pediu, quando a proposta a mudou |
+| `reagendado_de` | `timestamptz` nulo, `CHECK pedidos_reagendado_de` | `reagendadoDe` — a hora de levantamento antes do último reagendamento (migração `0015`, 28/11); só com `reagendado_em` — ver abaixo |
 | `causa_expiracao` | `text` nulo `CHECK` (`sem-resposta-da-casa`, `sem-pagamento`, `sem-aceite-do-cliente`) | `causaExpiracao` — só num `expirado`, e sempre nele; a terceira desde a `0010` |
 | `cliente_nome`, `cliente_email`, `cliente_telefone` | `text` | `cliente` — o telefone é obrigatório, em E.164 (`CHECK ^\+[1-9][0-9]{6,14}$`), como no `EsquemaCliente` |
 | `cliente_nif`, `conta_id` | `text` nulo | `cliente` |
@@ -493,6 +494,18 @@ para cima — `(subtotal × percentagem + 50) / 100`, em inteiros e em `bigint`,
 mesma conta de `src/lib/desconto.ts`. Quem muda o total sem refazer o desconto é
 recusado pela base, em vez de gravar um email e um talão com contas que não
 batem. Os pedidos de antes ficam com `0` e `0`.
+
+**Duas horas «de antes», e não são a mesma** (`0015`, 28/11). O
+`levantamento_anterior_em` é a hora que o cliente **pediu**, quando a proposta da
+casa a mudou, e só vai no email da proposta. O `reagendado_de` é a hora **antes do
+último reagendamento** — o «inicialmente previsto» do `reagendado-cliente` e o
+«Antes» do `reagendado-loja` —, e grava-se na mesma instrução que muda o
+`levantamento_em` e o `reagendado_em`, com as linhas da fila. Um pedido pode ter as
+duas. O `pedidos_reagendado_de` só obriga num sentido (quem tem a hora de antes
+foi reagendado): os pedidos reagendados antes da `0015` não a sabem, e ficam
+válidos. ⚠️ **Recusar não tem coluna**: uma recusa é um `cancelado` com
+`cancelado_por = 'gerente'` e sem `confirmado_em` — a casa desistiu de um pedido
+que nunca confirmou —, e o `confirmado_em` fica depois de cancelado.
 
 **O cliente vive no pedido** e não numa tabela `clientes`. É a fotografia do
 momento: quem muda de telefone não muda o pedido de ontem. E a conta de cliente
