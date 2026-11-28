@@ -104,7 +104,11 @@ o painel, não a caixa de correio.
 
 ### As tentativas do emissor dos pedidos (#119)
 
-A fila só se lê por chamada explícita, após uma ação que já acordou a base.
+O envio imediato continua por chamada explícita, após uma ação que já acordou
+a base. Está também preparada uma recuperação horária, independente de visitas,
+**desligada por defeito**. A exceção proposta à regra da base dormir, a ativação
+e os limites estão em `recuperacao-emails.md`: 24 execuções/dia, mesmo vazias,
+com alerta externo obrigatório antes de uso real. Não foi ativada em produção.
 Reserva de **2 minutos** e espera crescente entre tentativas: **2, 4, 8 e 16
 minutos**, até **5 tentativas**. Rede, timeout de 10 segundos, 401/403, 429 e
 5xx podem repetir numa volta posterior; os restantes 4xx (incluindo 400/422)
@@ -125,8 +129,15 @@ linhas e espera pela tentativa seguinte. As cinco tentativas também se aplicam
 a quotas esgotadas: se a indisponibilidade durar mais do que as esperas, ficam
 falhadas e exigem revisão, sem desaparecerem.
 O limite de 10 envios e a paragem antes de iniciar outra linha após 45 s limitam
-a duração (um último timeout pode levar mais 10 s). As ações chamam-no pelo `after()`,
-depois de responder; a rota da volta horária é do #149.
+a duração de cada lote (um último timeout pode levar mais 10 s). As ações
+chamam-no pelo `after()`, depois de responder. A rota de recuperação (#149,
+desligada por defeito) tem 300 s, no máximo 12 lotes de dez e não inicia outro
+lote após 180 s. Uma avaria interrompe novos lotes. Sem elegíveis, confere ainda
+falhas definitivas por uma leitura booleana filtrada antes do limite; se houver,
+devolve `intervencao-necessaria`, em vez de anunciar sucesso. Só contam as
+falhas da última hora (65 minutos): cada uma avisa uma vez, sem pôr o cron a
+vermelho a cada hora até alguém mexer na base. Saltados e a última reserva ainda
+em curso não contam como avaria. Ver `recuperacao-emails.md`.
 
 Os logs e `ultimo_erro` só recebem códigos controlados: `resend-503`,
 `resend-rede`, `dados-do-modelo`, etc. Nunca o corpo do Resend, a mensagem do
@@ -145,12 +156,16 @@ Production, exige `LOJA_EM_TESTE=1` e confere o servidor da ligação com o
 hostname do desenvolvimento confirmado pelo utilizador na Neon, antes de
 qualquer consulta. Não carrega `.env`.
 
-**Bloqueador do lançamento:** uma falha recuperável ainda só se repete quando
-outra ação chama o emissor. O emissor está ligado às ações desde 26/11, mas em modo
-de teste tudo vai para a caixa de ensaio; antes de os emails ao cliente dependerem
-disto a sério, a etapa 2 (#149) tem de garantir tentativas automáticas antes das
-24 h desde a criação da linha, mesmo sem visitas. Uma volta diária só chega se respeitar essa
-margem; não se deve assumir que o próximo pedido chega a tempo.
+**Bloqueador do lançamento:** até a recuperação horária do #149 estar ativada,
+uma falha recuperável só se repete quando outra ação chama o emissor. A rota
+existe, desligada por defeito; tem de estar revista, configurada e
+operacionalmente confirmada, com alerta de erro/ausência, antes de os emails ao
+cliente dependerem dela a sério (em modo de teste tudo vai para a caixa de
+ensaio). Só ter a rota ou os testes verdes não comprova que o agendador corre.
+Cada falha pode esperar cerca de uma hora; indisponibilidade prolongada, cinco
+tentativas ou backlog podem exigir intervenção. Não se deve assumir que o
+próximo pedido chega a tempo nem que uma volta diária respeita as 24 h. A
+ativação ainda está pendente (`recuperacao-emails.md`).
 
 A idempotência do Resend dura 24 horas. Uma linha já tentada que chegue às 24 h
 desde a sua criação fica terminal para revisão manual (`idempotencia-expirada`),

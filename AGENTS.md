@@ -218,8 +218,8 @@ Três coisas que se desfazem sem querer:
   tentativa. Não se adianta a data.
 - **A expiração às 48 h e às 24 h** grava o email na limpeza; sai no próximo
   envio pedido (uma compra cria sempre um, porque a limpeza corre dentro do
-  `criarPedido`) ou na volta horária do #149. Ainda não sai sozinho sem visitas
-  (`fluxo-do-pedido.md` › 6, ponto 3).
+  `criarPedido`) ou, quando estiver ativada, na volta horária. Ainda não sai
+  sozinho sem visitas (`fluxo-do-pedido.md` › 6, ponto 3).
 - ⚠️ **A proposta (`resposta-cliente`) escreve-se com o pedido como está
   agora**, com o link assinado da versão em vigor. Por isso só sai a proposta
   em vigor: a que outra mais nova substituiu sai como
@@ -228,6 +228,15 @@ Três coisas que se desfazem sem querer:
   (`dados-do-modelo`) em vez de sair sem botão. A hora pedida
   (`levantamentoAnteriorEm`) **só vai na proposta**: não é a hora de antes de
   um reagendamento.
+
+⚠️ **A recuperação horária (#149) existe e está desligada por defeito**, em
+`/api/tarefas/emails`: só corre em Production com `EMAILS_RECUPERACAO_ATIVA=1`,
+e o `crons` ainda não está no `vercel.json`. Até ser ativada, uma falha
+recuperável só se repete quando outra ação chama o emissor. A ativação é um PR
+à parte e exige rever a exceção de 24 verificações/dia à regra 6, configurar o
+`CRON_SECRET` e o alerta de erro/ausência (`docs/loja/recuperacao-emails.md`).
+**É um bloqueador do lançamento.** Não criar outros despertadores ou cadências a
+partir desta exceção.
 
 Não se promete entrega de um email só porque entrou na fila.
 

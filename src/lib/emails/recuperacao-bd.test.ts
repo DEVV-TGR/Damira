@@ -1,0 +1,145 @@
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { eq } from "drizzle-orm";
+import { emailsPorEnviar } from "@/db/esquema";
+import { baseComPedidos } from "@/lib/dados/fontes-de-teste";
+import { criarEmailsBd, haEmailsDefinitivamenteFalhados, JANELA_ALERTA_FALHA_MS } from "@/lib/dados/bd-emails";
+import { executarEmissor } from "./executar";
+import { recuperarEmailsAutomaticamente } from "./recuperacao";
+import { agora, pedidoDeEmail, linhaDeEmail } from "./exemplo-emissor-teste";
+
+let base: Awaited<ReturnType<typeof baseComPedidos>>;
+let fonte: ReturnType<typeof criarEmailsBd>;
+const ambiente = { VERCEL_ENV: "preview", EMAILS_SO_PARA: "ensaio@example.com", RESEND_API_KEY: "inventada", LOJA_EM_TESTE: "1" };
+const casa = { nome: "Casa", morada: "Rua", localidade: "Local", telefone: "+351912000000", email: "casa@example.com" };
+const sucesso = () => vi.fn<typeof fetch>().mockImplementation(async () => new Response('{"id":"inventado"}', { status: 200 }));
+const hora = (n: number) => new Date(+agora + n * 3_600_000);
+const recuperar = (data: Date, buscar: typeof fetch) => recuperarEmailsAutomaticamente(data, {
+  /* As datas de exemplo (outubro) são anteriores ao corte da fila: sem um corte antigo,
+     todas as linhas sairiam como `saltado: anterior-ao-emissor`. */
+  enviar: opcoes => executarEmissor(opcoes, { fonte, ambiente, casa, buscar, decorrido: () => 0, esperar: async () => {}, corte: new Date(0) }),
+  decorrido: () => 0, esperar: async () => {},
+});
+async function preparar(quantas = 1) {
+  await base.db.delete(emailsPorEnviar);
+  await base.db.insert(emailsPorEnviar).values(Array.from({ length: quantas }, (_, i) => ({ ...linhaDeEmail(),
+    id: `00000000-0000-4000-8000-${String(i + 2).padStart(12, "0")}`, criadoEm: new Date(+agora + i),
+  })));
+}
+beforeAll(async () => { base = await baseComPedidos([pedidoDeEmail()]); fonte = criarEmailsBd(base.db); });
+afterAll(() => vi.restoreAllMocks());
+
+describe("recuperação horária com Postgres e emissor reais", () => {
+  it("a quinta reserva real limpa a falha anterior e só é terminal se for abandonada", async () => {
+    await preparar();
+    for (const n of [0, 1, 2, 3]) {
+      const reserva = (await fonte.reservarEmail(linhaDeEmail().id, hora(n)))!;
+      await fonte.registarFalhaEmail(reserva, "resend-503", false);
+    }
+    const quinta = (await fonte.reservarEmail(linhaDeEmail().id, hora(4)))!;
+    expect(quinta).toMatchObject({ tentativas: 5, ultimoErro: null });
+    expect(await haEmailsDefinitivamenteFalhados(base.db, hora(4))).toBe(false);
+    expect(await haEmailsDefinitivamenteFalhados(base.db, new Date(+hora(4) + 120_000))).toBe(true);
+  });
+  it("uma falha terminal não fica escondida atrás de mais de 100 transitórias", async () => {
+    await preparar(102);
+    await base.db.update(emailsPorEnviar).set({ tentativas: 1, ultimaTentativaEm: agora, ultimoErro: "resend-503" });
+    await base.db.update(emailsPorEnviar).set({ tentativas: 5, ultimoErro: "resend-422" })
+      .where(eq(emailsPorEnviar.id, "00000000-0000-4000-8000-000000000103"));
+    expect(await haEmailsDefinitivamenteFalhados(base.db, hora(1))).toBe(true);
+  });
+  it("uma proposta falhada também avisa; uma proposta saltada não", async () => {
+    /* Desde o #158 a proposta (T04) sai pelo emissor: se falhar de vez, o cliente
+       nunca recebe o botão para aceitar, e isso tem de dar alerta como os outros. */
+    await preparar();
+    await base.db.update(emailsPorEnviar).set({
+      modelo: "resposta-cliente", tentativas: 5, ultimaTentativaEm: agora, ultimoErro: "dados-do-modelo",
+    });
+    expect(await haEmailsDefinitivamenteFalhados(base.db, hora(1))).toBe(true);
+    // A que outra mais nova substituiu não é avaria: a proposta em vigor sai na mesma.
+    await base.db.update(emailsPorEnviar).set({ ultimoErro: "saltado: proposta-substituida" });
+    expect(await haEmailsDefinitivamenteFalhados(base.db, hora(1))).toBe(false);
+  });
+  it("uma falha definitiva avisa na execução seguinte e não em todas as outras", async () => {
+    await preparar();
+    expect(await haEmailsDefinitivamenteFalhados(base.db, agora)).toBe(false);
+    const reserva = (await fonte.reservarEmail(linhaDeEmail().id, agora))!;
+    await fonte.registarFalhaEmail(reserva, "resend-422", true);
+    expect(await haEmailsDefinitivamenteFalhados(base.db, hora(1))).toBe(true);
+    expect(await haEmailsDefinitivamenteFalhados(base.db, new Date(+agora + JANELA_ALERTA_FALHA_MS - 1))).toBe(true);
+    // Fora da janela, a linha continua falhada na fila (para o ecrã dos falhados),
+    // mas o cron vazio volta a dar verde: não insiste a cada hora.
+    expect(await haEmailsDefinitivamenteFalhados(base.db, new Date(+agora + JANELA_ALERTA_FALHA_MS))).toBe(false);
+    await recuperar(hora(2), sucesso());
+    expect(await haEmailsDefinitivamenteFalhados(base.db, hora(2))).toBe(false);
+    expect((await base.db.select().from(emailsPorEnviar))[0]).toMatchObject({ enviadoEm: null, tentativas: 5, ultimoErro: "resend-422" });
+  });
+  it("uma quinta reserva abandonada fica mais de uma hora na janela de aviso", async () => {
+    await preparar();
+    await base.db.update(emailsPorEnviar).set({ tentativas: 5, ultimaTentativaEm: agora });
+    // Abandonada aos dois minutos; uma execução horária cai sempre antes dos 65.
+    expect(await haEmailsDefinitivamenteFalhados(base.db, new Date(+agora + 120_000 + 3_600_000))).toBe(true);
+    expect(await haEmailsDefinitivamenteFalhados(base.db, new Date(+agora + JANELA_ALERTA_FALHA_MS))).toBe(false);
+  });
+  it("um email saltado não é uma avaria e uma última reserva ainda ativa também não", async () => {
+    await preparar();
+    const reserva = (await fonte.reservarEmail(linhaDeEmail().id, agora))!;
+    await fonte.registarFalhaEmail(reserva, "saltado: lembrete-sem-espera", true);
+    expect(await haEmailsDefinitivamenteFalhados(base.db, hora(1))).toBe(false);
+    await preparar();
+    await base.db.update(emailsPorEnviar).set({ tentativas: 5, ultimaTentativaEm: agora });
+    expect(await haEmailsDefinitivamenteFalhados(base.db, new Date(+agora + 119_999))).toBe(false);
+    expect(await haEmailsDefinitivamenteFalhados(base.db, new Date(+agora + 120_000))).toBe(true);
+  });
+  it("recupera uma linha cujo produtor morreu antes de chamar after", async () => {
+    await preparar(); const buscar = sucesso();
+    const resumo = await recuperar(hora(1), buscar);
+    expect(resumo).toMatchObject({ enviados: 1, falhados: 0, paragem: "sem-trabalho" });
+    expect((await base.db.select().from(emailsPorEnviar))[0]).toMatchObject({ enviadoEm: hora(1), tentativas: 1, ultimoErro: null });
+    await recuperar(hora(2), buscar); expect(buscar).toHaveBeenCalledTimes(1);
+  });
+  it("um 503 recupera na hora seguinte, sem nova visita nem mudança de chave", async () => {
+    await preparar(); const buscar = sucesso(); buscar.mockResolvedValueOnce(new Response("", { status: 503 }));
+    expect(await recuperar(agora, buscar)).toMatchObject({ falhados: 1, paragem: "falha" });
+    expect((await base.db.select().from(emailsPorEnviar))[0]).toMatchObject({ tentativas: 1, enviadoEm: null, ultimoErro: "resend-503" });
+    expect(await recuperar(hora(1), buscar)).toMatchObject({ enviados: 1, falhados: 0 });
+    const [linha] = await base.db.select().from(emailsPorEnviar);
+    expect(linha).toMatchObject({ tentativas: 2, enviadoEm: hora(1), ultimoErro: null });
+    expect(buscar.mock.calls.map(([, o]) => new Headers(o?.headers).get("Idempotency-Key"))).toEqual([linhaDeEmail().id, linhaDeEmail().id]);
+  });
+  it("uma reserva abandonada fica recuperável sem a repor artificialmente", async () => {
+    await preparar(); const buscar = sucesso();
+    await fonte.reservarEmail(linhaDeEmail().id, agora);
+    await recuperar(new Date(+agora + 119_999), buscar); expect(buscar).not.toHaveBeenCalled();
+    await recuperar(hora(1), buscar);
+    expect((await base.db.select().from(emailsPorEnviar))[0]).toMatchObject({ enviadoEm: hora(1), tentativas: 2 });
+  });
+  it("25 emails escoam em vários lotes, sem a ordem se perder", async () => {
+    await preparar(25); const buscar = sucesso();
+    expect(await recuperar(hora(1), buscar)).toMatchObject({ enviados: 25, falhados: 0, voltas: 4, paragem: "sem-trabalho" });
+    const linhas = await base.db.select().from(emailsPorEnviar);
+    expect(linhas.every(l => l.enviadoEm && l.tentativas === 1)).toBe(true);
+    expect(buscar.mock.calls.map(([, o]) => new Headers(o?.headers).get("Idempotency-Key")))
+      .toEqual(Array.from({ length: 25 }, (_, i) => `00000000-0000-4000-8000-${String(i + 2).padStart(12, "0")}`));
+  });
+  it("duas recuperações sobrepostas não enviam a mesma linha duas vezes", async () => {
+    await preparar(); const buscar = sucesso();
+    await Promise.all([recuperar(hora(1), buscar), recuperar(hora(1), buscar)]);
+    expect(buscar).toHaveBeenCalledTimes(1);
+    expect((await base.db.select().from(emailsPorEnviar))[0].tentativas).toBe(1);
+  });
+  it("cinco horas com falha esgotam as tentativas, sem apagar a linha", async () => {
+    await preparar(); const buscar = vi.fn<typeof fetch>().mockRejectedValue(new Error("rede-simulada"));
+    for (const n of [0, 1, 2, 3, 4, 5]) await recuperar(hora(n), buscar);
+    expect(buscar).toHaveBeenCalledTimes(5);
+    expect((await fonte.emailsFalhados(10))[0]).toMatchObject({ tentativas: 5, enviadoEm: null, ultimoErro: "resend-rede" });
+  });
+  it("não contorna a janela de idempotência quando a tarefa esteve parada mais de 24 h", async () => {
+    await preparar(); const buscar = sucesso();
+    const reserva = (await fonte.reservarEmail(linhaDeEmail().id, agora))!;
+    await fonte.registarFalhaEmail(reserva, "falha-interna", false);
+    expect(await recuperar(hora(25), buscar)).toMatchObject({ falhados: 1, enviados: 0 });
+    expect(buscar).not.toHaveBeenCalled();
+    const [linha] = await base.db.select().from(emailsPorEnviar).where(eq(emailsPorEnviar.id, reserva.id));
+    expect(linha).toMatchObject({ tentativas: 5, enviadoEm: null, ultimoErro: "idempotencia-expirada" });
+  });
+});

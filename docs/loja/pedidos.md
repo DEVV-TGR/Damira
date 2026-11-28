@@ -590,17 +590,26 @@ instrução da tarefa que os decide.
 com o logótipo embutido, até 10 por volta. `enviarDepois()` usa `after()` do Next:
 chama-se **depois da transação bem-sucedida**, na ação que acabou de pôr emails na
 fila. **Ligado desde 26/11** na compra, no aceite e na recusa da proposta e nas
-decisões do painel (responder, reagendar, cancelar). Os despertadores, os lembretes
-e a volta horária são da etapa 2 (#149); o ecrã dos falhados é do painel.
+decisões do painel e do balcão (responder, confirmar, reagendar, cancelar). O
+ecrã dos falhados é do painel.
 
-⚠️ **Bloqueador do lançamento, já não de ligar:** com um 503 e sem mais ações, a
-linha pode chegar a `idempotencia-expirada` sem ter sido repetida. Enquanto o site
-está em modo de teste, todos os emails vão para a caixa de ensaio, e o risco é só
-de ensaio; **a loja não abre sem as tentativas automáticas do #149**. Antes do
-lançamento, confirmar na Vercel `RESEND_API_KEY`, `EMAIL_REMETENTE` e
-`EMAILS_SO_PARA` (vazia em Production, para os emails chegarem aos destinatários
-gravados). A existência da integração ou do domínio verificado não confirma estas
-variáveis.
+**A recuperação horária independente de visitas** está em `/api/tarefas/emails`
+(#149), **desligada por defeito**. Reutiliza o emissor e recupera também o caso
+de morte depois do commit e antes do `after()`. A cadência pode acrescentar
+cerca de uma hora entre tentativas; preserva os mínimos, as cinco tentativas e
+as 24 h. A exceção à regra da base dormir e a ativação com alerta operacional
+exigem revisão (`recuperacao-emails.md`). Os lembretes e a expiração sem visitas
+ainda não correm nela.
+
+⚠️ **Bloqueador do lançamento, já não de ligar:** até a recuperação estar
+ativada, com um 503 e sem mais ações a linha pode chegar a
+`idempotencia-expirada` sem ter sido repetida. Enquanto o site está em modo de
+teste, todos os emails vão para a caixa de ensaio, e o risco é só de ensaio;
+**a loja não abre sem a recuperação do #149 ativada e confirmada** — testes da
+rota não provam agendamento real. Antes do lançamento, confirmar na Vercel
+`RESEND_API_KEY`, `EMAIL_REMETENTE` e `EMAILS_SO_PARA` (vazia em Production,
+para os emails chegarem aos destinatários gravados). A existência da integração
+ou do domínio verificado não confirma estas variáveis.
 
 **O modo de teste prende os envios** (`executar.ts`): com `LOJA_EM_TESTE=1`, sem
 `EMAILS_SO_PARA` válida o emissor não consulta nem envia, também em produção.

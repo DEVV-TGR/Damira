@@ -105,7 +105,8 @@ describe("emissor com Postgres", () => {
   });
   it("o limite temporal deixa a fila por tentar e não gasta reservas", async () => {
     await preparar(); const buscar = sucesso();
-    await executarEmissor({ agora }, { fonte, ambiente, casa, buscar, decorrido: () => 45000, corte });
+    const resumo = await executarEmissor({ agora }, { fonte, ambiente, casa, buscar, decorrido: () => 45000, corte });
+    expect(resumo).toMatchObject({ enviados: 0, adiados: 1 });
     expect(buscar).not.toHaveBeenCalled();
     expect((await base.db.select().from(emailsPorEnviar))[0].tentativas).toBe(0);
   });

@@ -10,7 +10,7 @@ import { enviarPeloResend } from "./resend";
 import { NOME_REMETENTE } from "./textos";
 import { MODELOS_EMAIL, type DadosCasa, type ModeloEmail } from "./tipos";
 
-export type ResumoEmissor = { enviados: number; falhados: number; saltados: number; bloqueado?: string };
+export type ResumoEmissor = { enviados: number; falhados: number; saltados: number; bloqueado?: string; adiados?: number };
 export type OpcoesEmissor = { agora: Date; limite?: number };
 export type DependenciasEmissor = {
   fonte: Omit<FonteEmails, "emailsFalhados">; ambiente: Ambiente; casa: DadosCasa & { email: string | null };
@@ -58,9 +58,9 @@ export async function executarEmissor(
     const remetente = ambiente.EMAIL_REMETENTE?.trim() || REMETENTE_PEDIDOS;
     if (!z.email().safeParse(remetente).success) return { ...resumo, bloqueado: "sem-remetente" };
     const linhas = await fonte.emailsPendentes({ agora, limite: Math.max(1, Math.min(10, Math.trunc(limite) || 10)) });
-    for (const linha of linhas) {
+    for (const [indice, linha] of linhas.entries()) {
       // Deixa margem para o último timeout e as escritas num chamador de 60 s.
-      if (tempo() >= 45_000) break;
+      if (tempo() >= 45_000) { resumo.adiados = linhas.length - indice; break; }
       let reserva: LinhaEmail | null = null;
       let referencia: string | undefined;
       try {
