@@ -121,9 +121,9 @@ describe.skipIf(NA_BASE_DE_DADOS)("o catálogo, tal como sai dos JSON", () => {
   it("o que a casa não deu fica por preencher, e não se inventa", () => {
     for (const produto of CATALOGO_JSON) {
       expect(produto.tempoProducao).toBeNull();
-      // `null` e não `[]`: o JSON diz «por preencher», não «sem alergénios».
-      expect(produto.alergenios).toBeNull();
       expect(produto.sinalPercent).toBeNull();
+      // Os de partida (pedido de 28/11), não uma lista verificada.
+      expect(produto.alergenios).toEqual(["Glúten", "Ovos"]);
     }
   });
 

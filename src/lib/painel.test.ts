@@ -56,9 +56,9 @@ describe("por preencher", () => {
     expect(contas.produtos).not.toContain("arquivado");
   });
 
-  it("hoje, nos JSON, falta tudo: os 107 sem alergénios e sem tempo", () => {
+  it("hoje, nos JSON, os 107 estão sem tempo; os alergénios são os de partida", () => {
     const contas = contarPorPreencher(CATALOGO_JSON);
-    expect(contas.semAlergenios).toBe(107);
+    expect(contas.semAlergenios).toBe(0);
     expect(contas.semTempo).toBe(107);
   });
 });

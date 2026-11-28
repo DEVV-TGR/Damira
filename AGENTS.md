@@ -409,11 +409,15 @@ com o cliente à frente. O `superRefine` obriga `bolos-inteiros` a ser `kg`.
 impresso; **os impressos da Damira não marcam nada**. As combinações recomendadas
 pela casa estão no menu impresso.
 
-⚠️ **Os alergénios estão vazios nos 95 e ficam assim** até a pastelaria os
-preencher. É informação com peso legal e clínico, e uma lista deduzida da
-descrição ("tem queijo, logo tem lactose") é pior do que nenhuma, porque parece
-autoridade. Numa casa com carta vegan isto pesa a dobrar: quem procura a folha
-verde costuma ter uma razão para a procurar.
+⚠️ **Os produtos trazem «Glúten» e «Ovos» por defeito** (decidido a 28/11, a
+pedido da casa): mais vale avisar a mais, e a gerente retira onde não houver.
+Valem para o catálogo em JSON e para um produto novo no painel
+(`ALERGENIOS_POR_DEFEITO`, em `src/lib/painel.ts`); a base de dados só os tem no
+que lá for gravado. **Não é uma lista verificada**: não diz que não há leite nem
+frutos de casca rija, e pode estar errada, sobretudo nos vegan. Hoje o site
+público não a mostra; antes de a mostrar, a casa tem de a rever produto a
+produto. Fora estes dois, **nada se deduz** da descrição ("tem queijo, logo tem
+lactose").
 
 ⚠️ **O vegan marca-o a casa, nunca o site.** Desde a edição de produtos (#40) a
 gerente marca «vegan» em qualquer artigo, e por isso saiu a regra que recusava

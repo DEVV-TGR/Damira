@@ -5,7 +5,7 @@ import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { arquivar, gravarProduto } from "@/app/painel/acoes-gestao";
 import { DiasSemEncomenda } from "./DiasSemEncomenda";
 import type { EntradaProduto, Familia, OrdemEmenta, Produto } from "@/lib/dados/tipos";
-import { ALERGENIOS_UE, entradaDoProduto, paraCent } from "@/lib/painel";
+import { ALERGENIOS_POR_DEFEITO, ALERGENIOS_UE, entradaDoProduto, paraCent } from "@/lib/painel";
 import { Ajuda, Rotulo } from "../Ajuda";
 import { ExemploLoja } from "../ExemploLoja";
 import { BOTAO, BOTAO_PRINCIPAL, BOTAO_SECUNDARIO, MENSAGENS } from "../balcao/comum";
@@ -133,7 +133,7 @@ const NOVO: EntradaProduto = {
   multiplo: 1,
   aVendaOnline: false,
   apareceNaEmenta: false,
-  alergenios: null,
+  alergenios: [...ALERGENIOS_POR_DEFEITO],
   vegan: false,
   semGluten: false,
   /* Desligada, como o «sob orçamento» da variante de um produto novo: é a
@@ -174,8 +174,8 @@ function estadoInicial(produto: Produto | null) {
   }));
   const pecas: PecasForm = pecasParaForm(e);
   /* O modo à parte da lista: «tem alergénios» com nenhum marcado ainda não é
-     «sem alergénios» — e nunca se marca um por defeito (seria o site a
-     inventar um alergénio). */
+     «sem alergénios». Um produto novo já traz os `ALERGENIOS_POR_DEFEITO`; um
+     gravado mostra o que tiver. */
   const modo: ModoAlergenios = e.alergenios === null ? "por-responder" : e.alergenios.length === 0 ? "nenhum" : "lista";
   return { e, variantes, modo, pecas };
 }
