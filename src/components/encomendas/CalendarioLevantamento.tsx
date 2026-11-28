@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { Locale } from "@/i18n/routing";
-import type { Afluencia, VagaDoCalendario } from "@/lib/vagas-servidor";
+import type { Afluencia, DiaSemEncomendaDoCalendario, VagaDoCalendario } from "@/lib/vagas-servidor";
 
 /**
  * # O calendário de levantamento
@@ -86,6 +86,7 @@ type Props = {
   telefone: string | null;
   comTitulo?: boolean;
   vagas: VagaDoCalendario[];
+  diasSemEncomenda?: DiaSemEncomendaDoCalendario[];
   /** As horas são as da loja, e a escolhida confirma-se com a pessoa. */
   aConfirmar?: boolean;
   escolhida: string | null;
@@ -107,6 +108,7 @@ export function CalendarioLevantamento({
   telefone,
   comTitulo = true,
   vagas,
+  diasSemEncomenda = [],
   aConfirmar = false,
   escolhida: escolhidaVaga,
   aoEscolher,
@@ -114,7 +116,13 @@ export function CalendarioLevantamento({
   const t = useTranslations("encomendas.calendario");
   const lingua = locale === "pt" ? "pt-PT" : "en-GB";
 
-  const dias = useMemo(() => mapaDeDias(vagas), [vagas]);
+  const dias = useMemo(() => {
+    const mapa = mapaDeDias(vagas);
+    for (const dia of diasSemEncomenda) mapa.set(dia.data, { ativo: false, afluencia: null });
+    return mapa;
+  }, [vagas, diasSemEncomenda]);
+  const lista = new Intl.ListFormat(lingua, { style: "long", type: "conjunction" });
+  const motivo = (produtos: string[]) => t(produtos.length === 1 ? "produtoBloqueado" : "produtosBloqueados", { produtos: lista.format(produtos) });
   const vagaEscolhida = vagas.find((v) => v.inicio === escolhidaVaga);
   const diaEscolhido = vagaEscolhida?.data ?? null;
   const primeiro = [...dias].find(([, d]) => d.ativo)?.[0] ?? null;
@@ -149,7 +157,7 @@ export function CalendarioLevantamento({
     [lingua],
   );
 
-  if (!primeiro) {
+  if (!primeiro && diasSemEncomenda.length === 0) {
     return (
       <p className="rounded-2xl bg-papel px-5 py-4 text-sm text-tinta">
         {t("semVagas")}{" "}
@@ -203,15 +211,17 @@ export function CalendarioLevantamento({
                 </span>
               );
             }
+            const bloqueio = diasSemEncomenda.find(d => d.data === data);
             const marcado = data === (diaEscolhido ?? diaAberto);
-            const cor = dia.afluencia ? CIRCULO[dia.afluencia] : CIRCULO_NEUTRO;
+            const cor = bloqueio ? "bg-tinta/10 text-tinta/50 line-through" : dia.afluencia ? CIRCULO[dia.afluencia] : CIRCULO_NEUTRO;
             return (
               <span key={data} className="grid place-items-center">
                 <button
                   type="button"
                   disabled={!dia.ativo}
+                  title={bloqueio ? motivo(bloqueio.produtos) : undefined}
                   aria-pressed={marcado}
-                  aria-label={`${formato.diaLongo.format(utc(data))}${dia.afluencia ? ` — ${rotulo(dia.afluencia)}` : ""}`}
+                  aria-label={`${formato.diaLongo.format(utc(data))}${bloqueio ? ` — ${motivo(bloqueio.produtos)}` : dia.afluencia ? ` — ${rotulo(dia.afluencia)}` : ""}`}
                   onClick={() => escolherDia(data)}
                   className={`premivel grid aspect-square w-full max-w-10 place-items-center justify-self-center rounded-full text-sm font-bold tabular-nums focus-visible:outline-2 focus-visible:-outline-offset-4 ${cor} ${
                     marcado ? "ring-2 ring-inset ring-tinta" : ""
@@ -273,6 +283,14 @@ export function CalendarioLevantamento({
           {meses[indice + 1] && <div className="hidden lg:grid">{grelha(meses[indice + 1])}</div>}
         </div>
       </div>
+
+      {diasSemEncomenda.length > 0 && (
+        <ul className="grid gap-2 border-t border-tinta/10 pt-4 text-sm text-tinta-suave">
+          {diasSemEncomenda.map(d => (
+            <li key={d.data}><strong className="font-semibold text-tinta">{d.data.slice(8, 10)}/{d.data.slice(5, 7)}</strong> — {motivo(d.produtos)}</li>
+          ))}
+        </ul>
+      )}
 
       {diaAberto && (
         <div className="grid gap-3 border-t border-tinta/10 pt-4">

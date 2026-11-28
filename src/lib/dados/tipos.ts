@@ -37,6 +37,16 @@ const Texto = z.object({ pt: z.string().min(1), en: z.string().min(1).nullable()
 
 // ——— Produto ———
 
+/** `iso.date` recusa também dias impossíveis, como 30 de fevereiro. */
+export const EsquemaDiasSemEncomenda = z.array(
+  z.object({ de: z.iso.date(), ate: z.iso.date() }).strict().refine(
+    ({ de, ate }) => de <= ate, { message: "O fim tem de ser igual ou posterior ao início.", path: ["ate"] },
+  ),
+).max(50).refine(
+  dias => new Set(dias.map(({ de, ate }) => `${de}/${ate}`)).size === dias.length,
+  { message: "Há intervalos repetidos." },
+);
+
 const EsquemaTempoProducao = z.object({
   unidade: z.enum(["horas", "dias"]),
   valor: z.number().nonnegative(),
@@ -188,6 +198,7 @@ export const EsquemaProduto = z.object({
   extras: z.array(EsquemaExtra).default([]),
   /** `null` é **por preencher** — a casa ainda não o deu. Não se inventa. */
   tempoProducao: EsquemaTempoProducao.nullable(),
+  diasSemEncomenda: EsquemaDiasSemEncomenda.default([]),
   quantidadeMinima: z.number().positive(),
   /** De quanto em quanto sobe, a partir do mínimo. À dúzia, de 6 em 6. */
   multiplo: z.number().positive(),
@@ -528,7 +539,12 @@ export type LinhaCotada = {
  */
 export type Cotacao = {
   linhas: LinhaCotada[];
-  /** Só as linhas válidas e com preço. */
+  /** A soma das linhas válidas e com preço, **antes** do desconto. É sobre ele que se confere o mínimo da loja. */
+  subtotalCent: number;
+  /** A percentagem do desconto da loja de agora (`DESCONTO_PERCENTAGEM`), `0` sem desconto. */
+  descontoPercentagem: number;
+  descontoCent: number;
+  /** O que se paga pelas linhas com preço: o subtotal menos o desconto. É o que o pedido grava. */
   totalCent: number;
   /** Linhas válidas sob orçamento. Contam-se à parte, nunca como zero. */
   semPreco: number;
@@ -678,7 +694,19 @@ export const EsquemaPedido = z.object({
   cliente: EsquemaCliente.extend({ contaId: z.string().nullable() }),
   linhas: z.array(EsquemaLinhaPedido).min(1),
   observacoes: z.string().nullable(),
+  /**
+   * O que o cliente paga, **já com o desconto da loja**: o subtotal é
+   * `totalCent + descontoCent` (`src/lib/desconto.ts`, migração `0013`).
+   */
   totalCent: Cent,
+  /**
+   * A percentagem do desconto com que o pedido nasceu (`0` sem desconto). Fica no
+   * pedido, e não se lê do código, porque a resposta da casa que fixa um preço sob
+   * orçamento recalcula o desconto com ela, mesmo que a loja já o tenha desligado.
+   */
+  descontoPercentagem: z.number().int().min(0).max(100),
+  /** O desconto em cêntimos, sobre o subtotal (`descontoCent` em `src/lib/desconto.ts`). */
+  descontoCent: Cent,
   modoPagamento: z.enum(MODOS_PAGAMENTO),
   pagoOnlineCent: Cent,
   /** Só reembolsos `concluido`. O que falta pagar na loja calcula-se, não se guarda. */

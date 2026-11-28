@@ -66,7 +66,7 @@ export function CartaoProduto({
     <li className="group h-full" data-procura={textoDeProcura(produto)}>
       <Link
         href={caminhoDoProduto(produto.id)}
-        className="flex h-full flex-col rounded-xl border border-tinta/15 bg-papel p-2.5 transition-colors hover:border-tijolo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tijolo"
+        className="flex h-full flex-col rounded-xl border border-tinta/25 bg-papel p-2.5 transition-colors hover:border-tijolo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tijolo"
       >
         <FotoProduto foto={fotoDe(produto)} alt="" proporcao="3 / 2" discreta />
 

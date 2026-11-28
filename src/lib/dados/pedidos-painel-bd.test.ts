@@ -52,6 +52,7 @@ const pedido = (nome: string, alteracoes: Partial<Pedido> = {}): Pedido => ({
   totalCent: 33500,
   modoPagamento: "total",
   pagoOnlineCent: 33500,
+  descontoPercentagem: 0, descontoCent: 0,
   reembolsadoCent: 0,
   chegouTarde: false,
   propostaVersao: 0, propostaEm: null, levantamentoAnteriorEm: null,
@@ -214,6 +215,7 @@ describe("o reembolso", () => {
     if (!resultado.ok) throw new Error("devia cancelar");
     expect(resultado.valor).toMatchObject({
       estado: "cancelado",
+      descontoPercentagem: 0, descontoCent: 0,
       reembolsadoCent: 0,
       reembolsos: [expect.objectContaining({ valorCent: 10000, estado: "pendente", pedidoEm: AGORA })],
     });
@@ -405,6 +407,26 @@ describe("a resposta e o aceite deixam o email por enviar, na mesma instrução 
     expect((await fonte.recusarProposta(referencia, 1, lisboa(7, 11))).ok).toBe(true);
     expect(await ocupadas(vaga)).toBe(0);
     expect(await modelos(db)).toContain("proposta-recusada-cliente → teste@example.com");
+  });
+
+  it("com desconto, a proposta recalcula-o com a percentagem do pedido, e a base aceita (0013)", async () => {
+    /* O pedido nasceu com 10 %: só o kit tinha preço (335,00 € → 33,50 € de desconto). A gerente
+       fixa o bolo a 45,00 €: o subtotal passa a 380,00 €, o desconto a 38,00 €, e paga-se 342,00 €.
+       Se o UPDATE mudasse o total sem o desconto, o CHECK pedidos_desconto recusava-o. */
+    const comDesconto = { ...porConfirmar("a"), totalCent: 30150, descontoPercentagem: 10, descontoCent: 3350 };
+    const { db, fonte } = await montar([comDesconto]);
+    const proposta = await fonte.responderPedido(u("a"), { precos: [{ posicao: 1, precoUnitarioCent: 4500 }], levantamentoEm: null }, GERENTE);
+    expect(proposta.ok && proposta.valor).toMatchObject({ totalCent: 34200, descontoPercentagem: 10, descontoCent: 3800 });
+    const [gravado] = await db.select().from(pedidos);
+    expect(gravado).toMatchObject({ totalCent: 34200, descontoPercentagem: 10, descontoCent: 3800 });
+  });
+
+  it("a percentagem é a do pedido, e não a de agora: um pedido de 20 % fica com 20 %", async () => {
+    /* Se a loja mudar ou desligar o desconto, quem encomendou com ele mantém-no na resposta. */
+    const de20 = { ...porConfirmar("a"), totalCent: 26800, descontoPercentagem: 20, descontoCent: 6700 };
+    const { fonte } = await montar([de20]);
+    const proposta = await fonte.responderPedido(u("a"), { precos: [{ posicao: 1, precoUnitarioCent: 4500 }], levantamentoEm: null }, GERENTE);
+    expect(proposta.ok && proposta.valor).toMatchObject({ totalCent: 30400, descontoPercentagem: 20, descontoCent: 7600 });
   });
 
   it("o «sim» do balcão deixa a confirmação ao cliente", async () => {

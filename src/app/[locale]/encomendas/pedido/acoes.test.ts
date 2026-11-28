@@ -55,8 +55,11 @@ describe("enviarCompra: o email por secções, com os preços do servidor", () =
     const { corpo, registo } = await corpoDe({ linhas: JSON.stringify(adulterado) });
     expect(corpo).toContain(`- 1× Kit Premium (20 pessoas) — ${formatarCent(33500, "pt")}`);
     expect(corpo).toContain(`- 12× Bolo de Cenoura — ${formatarCent(3600, "pt")}`);
-    expect(corpo).toContain(`Estimativa: ${formatarCent(37100, "pt")}`);
-    expect(registo).toMatchObject({ totalCent: 37100, semPreco: 0, tipo: "outro", pessoas: 20, data: "2099-01-15" });
+    // O desconto da loja também sem base de dados: 371,00 € − 37,10 € = 333,90 €.
+    expect(corpo).toContain(`Subtotal: ${formatarCent(37100, "pt")}`);
+    expect(corpo).toContain(`Desconto (10%): −${formatarCent(3710, "pt")}`);
+    expect(corpo).toContain(`Estimativa: ${formatarCent(33390, "pt")}`);
+    expect(registo).toMatchObject({ totalCent: 33390, semPreco: 0, tipo: "outro", pessoas: 20, data: "2099-01-15" });
   });
 
   it("começa pela referência, e tem as secções todas, pela ordem", async () => {

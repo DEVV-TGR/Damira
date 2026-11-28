@@ -267,3 +267,62 @@ it.each(["cliente", "gerente"] as const)("gera a variante de cancelamento por %s
       : locale === "pt" ? "Lamentamos informar" : "We regret");
   }
 });
+
+describe("o desconto da loja nos emails (27/11)", () => {
+  /* 49,60 € de subtotal com 10 %: 4,96 € de desconto, 44,64 € a pagar. O total gravado já vem
+     descontado, e o email não recalcula nada. */
+  const comDesconto = (modelo: ModeloEmail) => ({
+    ...exemploEmail(modelo),
+    ...(modelo === "criado-loja" ? { estado: "confirmado" as const } : {}),
+    linhas: exemploEmail("criado-confirmado-cliente").linhas,
+    faltamPrecos: false,
+    totalCent: 4464,
+    descontoPercentagem: 10,
+    descontoCent: 496,
+  });
+
+  it.each(LINGUAS)("o cliente vê o subtotal, o desconto e o total a pagar, em %s", (locale) => {
+    const { texto, html } = escreverEmail("criado-confirmado-cliente", comDesconto("criado-confirmado-cliente"), CASA_EXEMPLO, locale);
+    const subtotal = formatarCent(4960, locale);
+    const desconto = formatarCent(496, locale);
+    const total = formatarCent(4464, locale);
+    expect(texto).toContain(`Subtotal: ${subtotal}`);
+    expect(texto).toContain(locale === "pt" ? `Desconto (10%): −${desconto}` : `Discount (10%): −${desconto}`);
+    expect(texto).toContain(`Total: ${total}`);
+    // A ordem lê-se de cima para baixo: subtotal, desconto, total.
+    expect(texto.indexOf("Subtotal")).toBeLessThan(texto.indexOf(`Total: ${total}`));
+    expect(html).toContain('class="linha-desconto"');
+    expect(html).toContain(subtotal);
+    expect(html.match(/class="linha-desconto"/g)).toHaveLength(2);
+  });
+
+  it("a loja vê o desconto por cima do «Na loja, ao levantar», no texto e no HTML", () => {
+    const { texto, html } = escreverEmail("criado-loja", comDesconto("criado-loja"), CASA_EXEMPLO, "pt");
+    expect(texto).toContain(`Subtotal: ${formatarCent(4960, "pt")}`);
+    expect(texto).toContain(`Desconto (10%): −${formatarCent(496, "pt")}`);
+    expect(texto).toContain(`Na loja, ao levantar: ${formatarCent(4464, "pt")}`);
+    expect(html.match(/class="linha-desconto"/g)).toHaveLength(2);
+    // No HTML não se repete: as linhas vão na tabela, e não outra vez no rodapé.
+    expect(html.split("Subtotal").length - 1).toBe(1);
+  });
+
+  it("com preços por fixar, diz que o desconto se aplica ao total final, sem inventar um subtotal", () => {
+    const dados = { ...exemploEmail("criado-por-confirmar-cliente"), descontoPercentagem: 10, descontoCent: 156, totalCent: 1404 };
+    const { texto, html } = escreverEmail("criado-por-confirmar-cliente", dados, CASA_EXEMPLO, "pt");
+    expect(texto).toContain("Desconto de 10% aplicado ao total final");
+    expect(texto).not.toContain("Subtotal");
+    expect(html).toContain("Desconto de 10% aplicado ao total final");
+  });
+
+  it("sem desconto, o email fica exatamente como antes", () => {
+    for (const modelo of ["criado-confirmado-cliente", "criado-loja", "resposta-cliente"] as const) {
+      const sem = exemploEmail(modelo);
+      sem.linkAceitar = "https://example.com/aceitar/exemplo";
+      const antes = escreverEmail(modelo, sem, CASA_EXEMPLO, "pt");
+      const comZero = escreverEmail(modelo, { ...sem, descontoPercentagem: 0, descontoCent: 0 }, CASA_EXEMPLO, "pt");
+      expect(comZero).toEqual(antes);
+      expect(antes.texto).not.toMatch(/Subtotal|Desconto/);
+      expect(antes.html).not.toContain("linha-desconto");
+    }
+  });
+});

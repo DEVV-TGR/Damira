@@ -4,6 +4,7 @@ import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
 import { getLocale, getTranslations } from "next-intl/server";
 import { cestoEmTexto, estimativa, pessoasSugeridas, tipoSugerido } from "@/lib/cesto";
+import { aplicarDesconto } from "@/lib/desconto";
 import { configuracaoDaCasa, cotarCesto, definicoesLoja, ocupacao, produtoPorId } from "@/lib/dados";
 import { enviarEmailDePedido } from "@/lib/email";
 import { emailDaCompraParaLoja } from "@/lib/emails/compra";
@@ -64,6 +65,7 @@ export async function enviarCompra(_anterior: Resultado, dados: FormData): Promi
      a casa. */
   const t = await getTranslations("encomendas.formulario");
   const tc = await getTranslations({ locale: "pt", namespace: "encomendas.cesto" });
+  const td = await getTranslations({ locale: "pt", namespace: "desconto" });
   const agora = new Date();
 
   /* A armadilha primeiro: para o robô, o pedido foi aceite. Dizer-lhe que foi
@@ -131,10 +133,13 @@ export async function enviarCompra(_anterior: Resultado, dados: FormData): Promi
 
   const referencia = gerarReferencia(agora);
   const { somaCent, semPreco } = estimativa(refeito.itens);
+  /* O total do histórico e do email é o do servidor, com o desconto da loja (`src/lib/desconto.ts`). */
+  const { totalCent, descontoPercentagem } = aplicarDesconto(somaCent);
   const cesto = cestoEmTexto(refeito.itens, "pt", {
     semPreco: tc("semPreco"),
     estimativa: tc("estimativa"),
     aPartirDe: tc("aPartirDe"),
+    desconto: { subtotal: td("subtotal"), linha: td("linha", { n: descontoPercentagem }) },
   });
   const corpo = corpoDaCompra({
     referencia,
@@ -174,7 +179,7 @@ export async function enviarCompra(_anterior: Resultado, dados: FormData): Promi
     tipo: tipoSugerido(refeito.itens) ?? "outro",
     data,
     pessoas: pessoasSugeridas(refeito.itens),
-    totalCent: somaCent,
+    totalCent,
     semPreco,
   };
 

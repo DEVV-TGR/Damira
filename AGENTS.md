@@ -83,6 +83,9 @@ esquecerem:
    no servidor. (`painel.md`)
 9. **Um pedido pago nunca se perde e nunca se apaga.** (`pedidos.md`)
 
+Os dias sem encomenda são do **produto**, não da casa: não são dias fechados,
+os kits não os herdam, e os pedidos existentes não mudam (`horarios.md`).
+
 ### O modo de teste — e é um bloqueador de lançamento
 
 Até a casa dar os tempos de produção (o horário da cozinha já deu: das 6h00
@@ -168,6 +171,32 @@ alterado. A chave é gerada no primeiro envio e reutilizada nas tentativas segui
 ⚠️ Os campos são controlados e o envio é feito à mão, sem o
 reinício automático do `<form action>` do React 19: um erro do servidor nunca
 apaga o que a pessoa escreveu (`robustez.md` › Erros).
+
+### O desconto da loja — 10 % em toda a loja (decidido a 27/11)
+
+**Toda a loja está com 10 % de desconto, para toda a gente**, até a casa dizer
+que acabou. Não há códigos nem «primeiras N encomendas»: a Andreia faz
+encomendas de teste, e isso não pode gastar descontos. Os produtos mostram o
+preço normal; o desconto aparece na faixa por baixo do cabeçalho
+(`FaixaDesconto`), no cesto, na confirmação da encomenda, nos emails ao cliente e
+à casa, no painel e no talão: subtotal, desconto e total.
+
+Três coisas que se desfazem sem querer:
+
+- ⚠️ **Calcula-o o servidor** (regra 1). A percentagem vive num sítio só,
+  `DESCONTO_PERCENTAGEM` em `src/lib/desconto.ts`; a cotação devolve o subtotal,
+  o desconto e o total, e o `criarPedido` grava-os. O cesto, que ainda não tem a
+  cotação, mostra uma estimativa com a mesma conta. **Desligar é pôr `0` lá e
+  fazer deploy**: a faixa e as linhas desaparecem, e os pedidos já feitos
+  guardam o desconto que tiveram.
+- ⚠️ **O `total_cent` do pedido é o que se paga, já com o desconto**; o subtotal
+  é `total_cent + desconto_cent` (migração `0013`). O balcão, o talão e o
+  dinheiro em falta leem o total e ficam certos sem saberem do desconto.
+- ⚠️ **A percentagem fica gravada no pedido** (`desconto_percentagem`): a
+  resposta da gerente que fixa um preço sob orçamento recalcula o desconto com a
+  percentagem com que o pedido nasceu, mesmo depois de o desconto da loja
+  desligar. O `CHECK pedidos_desconto` recusa um total mudado sem o desconto
+  refeito. O mínimo da loja confere-se sobre o subtotal, antes do desconto.
 
 ### Os emails dos pedidos — o emissor (#119)
 

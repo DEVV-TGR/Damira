@@ -2,7 +2,7 @@ import { TZDate } from "@date-fns/tz";
 import { describe, expect, it } from "vitest";
 import { fonteDeExemplo } from "./dados/exemplo";
 import { CATALOGO_JSON, CONFIGURACAO_JSON, criarFonteJson } from "./dados/json";
-import { afluenciaDe, confirmarLevantamento, vagasDoCesto } from "./vagas-servidor";
+import { horasParaPedido, afluenciaDe, confirmarLevantamento, vagasDoCesto } from "./vagas-servidor";
 
 /* Segunda, 5 de outubro de 2026, às 10h00 de Lisboa. Com a cozinha da casa
    (6h–11h) e um kit de festa de 2 dias, o primeiro levantamento é quarta às
@@ -161,4 +161,53 @@ describe("a afluência, em percentagem do limite", () => {
     const exigente = { limitePorVaga: 4, limiaresAfluencia: { livre: 0, media: 25 } };
     expect(afluenciaDe(1, true, exigente)).toBe("media");
   });
+});
+
+describe("os dias bloqueados do cesto", () => {
+  const diasSemEncomenda = [{ de: "2026-10-07", ate: "2026-10-08" }];
+  const catalogo = CATALOGO_JSON.map(p => p.id === "festa-premium" ? { ...p, diasSemEncomenda } : p);
+  it.each([false, true])("inclui nomes e recusa a hora, também sem produção preenchida (%s)", async comTempos => {
+    const fonte = comTempos ? fonteDeExemplo({ catalogo }) : criarFonteJson({ catalogo });
+    const resultado = await vagasDoCesto(KIT, fonte, AGORA, "en");
+    expect(resultado.ok && resultado.diasSemEncomenda).toEqual([
+      { data: "2026-10-07", produtos: [catalogo.find(p => p.id === "festa-premium")!.nome.en ?? "Kit Premium"] },
+      { data: "2026-10-08", produtos: [catalogo.find(p => p.id === "festa-premium")!.nome.en ?? "Kit Premium"] },
+    ]);
+    expect(resultado.ok && resultado.vagas.some(v => v.data === "2026-10-07")).toBe(false);
+    expect(await confirmarLevantamento(KIT, new TZDate(2026, 9, 7, 15, 0, "Europe/Lisbon"), fonte, AGORA)).toEqual({ ok: false, motivo: "indisponivel" });
+    const semProduto = await vagasDoCesto([{ produtoId: "bolo-de-cenoura", varianteId: "unica", quantidade: 12 }], fonte, AGORA);
+    expect(semProduto.ok && semProduto.vagas.some(v => v.data === "2026-10-07")).toBe(true);
+  });
+});
+
+describe("aviso de bloqueio à gerente", () => {
+  it("informa os produtos do pedido sem tirar as horas da loja", async () => {
+    const fonte = fonteDeExemplo({ catalogo: CATALOGO_JSON.map(p => p.id === "festa-premium" ? { ...p, diasSemEncomenda: [{ de: "2026-10-07", ate: "2026-10-07" }] } : p) });
+    const resultado = await horasParaPedido("2026-10-07", ["festa-premium"], fonte, AGORA);
+    expect(resultado.produtosBloqueados).toEqual(["Kit Premium"]);
+    expect(resultado.horas.some(h => h.livre)).toBe(true);
+    expect((await horasParaPedido("2026-10-08", ["festa-premium"], fonte, AGORA)).produtosBloqueados).toEqual([]);
+  });
+});
+
+describe("a janela sem tempos de produção", () => {
+  it("não acrescenta um dia ao fim da janela ao começar amanhã", async () => {
+    const catalogo = CATALOGO_JSON.map(p => p.id === "festa-premium" ? { ...p, diasSemEncomenda: [{ de: "2026-10-07", ate: "2026-10-08" }] } : p);
+    const fonte = criarFonteJson({ catalogo, configuracao: { ...CONFIGURACAO_JSON, diasAFrente: 1 } });
+    const resultado = await vagasDoCesto(KIT, fonte, AGORA);
+    expect(resultado.ok && resultado.diasSemEncomenda).toEqual([]);
+    expect(resultado.ok && resultado.vagas.at(-1)?.data).toBe("2026-10-06");
+    expect(await confirmarLevantamento(KIT, new TZDate(2026, 9, 9, 15, 0, "Europe/Lisbon"), fonte, AGORA)).toEqual({ ok: false, motivo: "indisponivel" });
+  });
+});
+
+it("esgotado hoje sem tempos não esgota amanhã", async () => {
+  const fonte = criarFonteJson({ catalogo: CATALOGO_JSON.map(p => p.id === "festa-premium" ? { ...p, esgotadoNoDia: "2026-10-05" } : p) });
+  const resultado = await vagasDoCesto(KIT, fonte, AGORA);
+  expect(resultado.ok && resultado.vagas[0].data).toBe("2026-10-06");
+});
+
+it("o aviso da gerente inclui produtos entretanto arquivados", async () => {
+  const fonte = fonteDeExemplo({ catalogo: CATALOGO_JSON.map(p => p.id === "festa-premium" ? { ...p, arquivado: true, diasSemEncomenda: [{ de: "2026-10-07", ate: "2026-10-07" }] } : p) });
+  expect((await horasParaPedido("2026-10-07", ["festa-premium"], fonte, AGORA)).produtosBloqueados).toEqual(["Kit Premium"]);
 });

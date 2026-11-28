@@ -111,7 +111,10 @@ export function escreverEmail(
     pretendida: dados.estado === "por-confirmar" ? TEXTOS_LOJA.pretendida : "",
     fimLoja: dados.soPorEmail ? TEXTOS_LOJA.fimSoPorEmail
       : dados.estado === "confirmado" ? TEXTOS_LOJA.fimConfirmado : TEXTOS_LOJA.fimPorConfirmar,
-    pagamentoLoja: () => preencher(dados.faltamPrecos ? TEXTOS_LOJA.pagamentoIncompleto : TEXTOS_LOJA.pagamento),
+    pagamentoLoja: () => [
+      ...linhasDoDesconto(),
+      preencher(dados.faltamPrecos ? TEXTOS_LOJA.pagamentoIncompleto : TEXTOS_LOJA.pagamento),
+    ].join("\n"),
     saudacao: () => preencher(blocos.saudacao),
     pagar: blocos.pagar,
     fila: blocos.fila,
@@ -120,7 +123,10 @@ export function escreverEmail(
     assinatura: () => preencher(blocos.assinatura),
     nomeRemetente: NOME_REMETENTE,
     blocoIndicativo: temAoQuilo ? `\n\n${blocos.indicativo}` : "",
-    total: () => preencher(dados.faltamPrecos ? blocos.totalConhecido : blocos.total),
+    total: () => [...linhasDoDesconto(), preencher(dados.faltamPrecos ? blocos.totalConhecido : blocos.total)].join("\n"),
+    subtotal: () => dinheiro(dados.totalCent + (dados.descontoCent ?? 0)),
+    desconto: () => dinheiro(dados.descontoCent ?? 0),
+    percentagem: String(dados.descontoPercentagem ?? 0),
     mudancas: () => {
       const precos = dados.linhas.filter((linha) => linha.fixadoAgora).map((linha) =>
         `${nomeLinha(linha)}: ${linha.totalCent === null ? blocos.semPreco : dinheiro(linha.totalCent)}`);
@@ -132,6 +138,16 @@ export function escreverEmail(
       return precos.join("\n");
     },
   };
+  /**
+   * O desconto da loja, por cima do total: «Subtotal» e «Desconto (10%): −…», só num pedido que
+   * o teve. Com preços por fixar não há subtotal que valha: diz-se só que se aplica ao total final.
+   */
+  function linhasDoDesconto(): string[] {
+    if (!(dados.descontoPercentagem ?? 0)) return [];
+    if (dados.faltamPrecos) return [preencher(blocos.descontoAConfirmar)];
+    if (!(dados.descontoCent ?? 0)) return [];
+    return [preencher(blocos.subtotal), preencher(blocos.desconto)];
+  }
   function preencher(texto: string, adicionais: Partial<Record<string, string>> = {}): string {
     // Uma só passagem: um nome ou uma observação com chavetas nunca vira um marcador.
     return texto.replace(/\{(\w+)\}/g, (_, chave: string) => {
@@ -147,6 +163,6 @@ export function escreverEmail(
     // Num pedido só por email (o site em modo de teste) o assunto fica sem «[TESTE]»: pode ser verdadeiro.
     assunto: `${dados.modoDeTeste && !dados.soPorEmail ? "[TESTE] " : ""}${preencher(textos.assunto)}`,
     texto: `${dados.modoDeTeste ? `${avisoDeTeste(dados, blocos)}\n\n` : ""}${texto}`,
-    html: escreverHtmlEmail({ corpo, campos, partesLinhas, blocos, dados, casa, lingua }),
+    html: escreverHtmlEmail({ corpo, campos, partesLinhas, linhasDoDesconto, blocos, dados, casa, lingua }),
   };
 }

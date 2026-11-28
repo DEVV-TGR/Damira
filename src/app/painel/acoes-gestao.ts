@@ -24,7 +24,7 @@ import { apagarFotos, fotosQueSairam } from "@/lib/fotos";
 import { intervaloDeDias } from "@/lib/painel";
 import { comSessao, contextoDoPainel } from "@/lib/painel-servidor";
 import { sessao } from "@/lib/sessao-painel";
-import { horasDaLoja } from "@/lib/vagas-servidor";
+import { horasParaPedido } from "@/lib/vagas-servidor";
 import { caminhoDaProposta } from "@/lib/proposta";
 import { enviarDepois } from "@/lib/emails/depois";
 import { URL_SITE } from "@/lib/site";
@@ -74,7 +74,9 @@ export async function detalheDoPedido(id: string) {
 }
 
 export async function gravarHorarios(entrada: unknown) {
-  return comSessao((ctx) => guardarHorarios(entrada, ctx));
+  const resultado = await comSessao((ctx) => guardarHorarios(entrada, ctx));
+  if (resultado.ok) revalidatePath("/", "layout");
+  return resultado;
 }
 
 export async function gravarDefinicoes(entrada: unknown) {
@@ -147,10 +149,12 @@ export async function linkDaProposta(id: string) {
 }
 
 /** As horas da loja num dia, para mudar o levantamento. Só para a gerente. */
-export async function horasParaMudar(data: string) {
+export async function horasParaMudar(data: string, pedidoId: string) {
   const ctx = await contextoDoPainel();
-  if (ctx?.papel !== "gerente") return [];
-  return horasDaLoja(data, dados, ctx.agora);
+  if (ctx?.papel !== "gerente") return { horas: [], produtosBloqueados: [] };
+  const pedido = await pedidoDoPainel(pedidoId, ctx);
+  if (!pedido.ok) return { horas: [], produtosBloqueados: [] };
+  return horasParaPedido(data, pedido.valor.linhas.map(l => l.produtoId), dados, ctx.agora);
 }
 
 // ——— Produtos (#40) ———

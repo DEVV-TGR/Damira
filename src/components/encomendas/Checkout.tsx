@@ -64,6 +64,7 @@ function useDoServidor<T>(chave: string, ativo: boolean, pedir: (linhas: unknown
 export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale: Locale; telefone: string | null; comBaseDeDados?: boolean }) {
   const t = useTranslations("encomendas.compra");
   const tf = useTranslations("encomendas.formulario");
+  const td = useTranslations("desconto");
   const tc = useTranslations("encomendas.cesto");
   const tcal = useTranslations("encomendas.calendario");
   const id = useId();
@@ -226,7 +227,10 @@ export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale:
   }
 
   const cotadas = cotacao?.ok ? cotacao.cotacao.linhas : null;
+  /* Os três números são os do servidor (`cotarPedido`): o subtotal, o desconto da loja e o total a
+     pagar, que é o que o pedido grava. O browser não faz conta nenhuma ao dinheiro. */
   const totalCent = cotacao?.ok ? cotacao.cotacao.totalCent : null;
+  const desconto = cotacao?.ok && cotacao.cotacao.descontoCent > 0 ? cotacao.cotacao : null;
   const semPreco = cotacao?.ok ? cotacao.cotacao.semPreco : cesto.filter((i) => i.precoCent === null).length;
 
   return (
@@ -295,6 +299,26 @@ export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale:
             );
           })}
         </ul>
+        {/* O desconto da loja, com os valores do servidor. Com artigos sob orçamento, o que se sabe já
+            vem descontado, e o resto leva o mesmo desconto quando a casa fixar o preço: diz-se isso,
+            para um bolo personalizado não parecer sem desconto. */}
+        {desconto && (
+          <div className="mt-2 grid gap-1 border-t border-tinta/15 pt-4 text-sm">
+            <p className="flex items-baseline justify-between gap-4">
+              <span>{td("subtotal")}</span>
+              <span className="tabular-nums">{formatarCent(desconto.subtotalCent, locale)}</span>
+            </p>
+            <p className="flex items-baseline justify-between gap-4 font-semibold text-tijolo">
+              <span>{td("linha", { n: desconto.descontoPercentagem })}</span>
+              <span className="tabular-nums">−{formatarCent(desconto.descontoCent, locale)}</span>
+            </p>
+          </div>
+        )}
+        {cotacao?.ok && cotacao.cotacao.descontoPercentagem > 0 && semPreco > 0 && (
+          <p className={`mt-2 text-sm font-semibold text-tijolo${desconto ? "" : " border-t border-tinta/15 pt-4"}`}>
+            {td("aplicadoNoFim", { n: cotacao.cotacao.descontoPercentagem })}
+          </p>
+        )}
         <p className="mt-2 flex items-baseline justify-between gap-4 border-t border-tinta/15 pt-4 font-semibold">
           <span>{totalCent === 0 && semPreco > 0 ? tc("total") : semPreco > 0 ? tc("aPartirDe") : tc("estimativa")}</span>
           <span className="titulo-display text-2xl tabular-nums text-tijolo" aria-live="polite">
@@ -337,6 +361,7 @@ export function Checkout({ locale, telefone, comBaseDeDados = false }: { locale:
             <div className="rounded-2xl border border-tinta/15">
               <CalendarioLevantamento
                 vagas={vagas.vagas}
+                diasSemEncomenda={vagas.diasSemEncomenda}
                 aConfirmar={vagas.aConfirmar}
                 escolhida={escolhidaValida?.inicio ?? null}
                 aoEscolher={setEscolhida}

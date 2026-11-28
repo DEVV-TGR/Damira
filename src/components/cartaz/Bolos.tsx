@@ -18,7 +18,7 @@ export function Bolos() {
           </p>
         </div>
 
-        <div className="cap__estampa" data-sc-reveal="up" data-sc-reveal-at="0.05 0.5">
+        <div className="cap__estampa" data-sc-reveal="up" data-sc-reveal-at="0.15 0.55">
           <Image
             src="/vitrine/bolo-frutos-vermelhos.webp"
             alt={tVitrine("boloFrutosVermelhos")}

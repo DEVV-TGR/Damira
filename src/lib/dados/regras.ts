@@ -1,9 +1,10 @@
 import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
 import type { z } from "zod";
-import { FUSO, validarLevantamento, type ArtigoDoCesto, type VagaOcupada } from "@/lib/horarios";
-import { esgotadoHoje } from "@/lib/painel";
+import { FUSO, validarLevantamento, type VagaOcupada } from "@/lib/horarios";
+import { artigosParaHorarios } from "./artigos-horarios";
 import { linhasDoBolo, ROTULOS_PT, validarBolo } from "@/lib/bolo-personalizado";
+import { aplicarDesconto, DESCONTO_PERCENTAGEM } from "@/lib/desconto";
 import type {
   ConfiguracaoDaCasa,
   Cotacao,
@@ -164,12 +165,17 @@ export function cotarLinhas(
   produtoDe: (id: string) => Produto | undefined,
   /** As opções do bolo personalizado. Sem elas, um bolo personalizado é recusado. */
   opcoesBolo?: OpcoesBolo,
+  /** A percentagem do desconto da loja; por defeito a de agora (`src/lib/desconto.ts`). */
+  percentagem: number = DESCONTO_PERCENTAGEM,
 ): Cotacao {
   const cotadas = linhas.map((linha): LinhaCotada => cotarUma(linha, produtoDe, opcoesBolo).cotada);
   const validas = cotadas.filter((linha) => linha.erro === null);
+  /* O desconto aplica-se aqui, no servidor, sobre a parte com preço (regra 1): a
+     cotação que o checkout mostra e o pedido que se grava saem da mesma conta. */
+  const valores = aplicarDesconto(validas.reduce((soma, linha) => soma + (linha.totalCent ?? 0), 0), percentagem);
   return {
     linhas: cotadas,
-    totalCent: validas.reduce((soma, linha) => soma + (linha.totalCent ?? 0), 0),
+    ...valores,
     semPreco: validas.filter((linha) => linha.totalCent === null).length,
     valida: validas.length === cotadas.length,
   };
@@ -468,8 +474,10 @@ export type PedidoConferido = {
   ok: true;
   levantamentoEm: Date;
   linhas: Pedido["linhas"];
-  /** Só a parte conhecida: uma linha sem preço nunca se soma como zero. */
+  /** Só a parte conhecida, já com o desconto: uma linha sem preço nunca se soma como zero. */
   totalCent: number;
+  descontoPercentagem: number;
+  descontoCent: number;
   /**
    * Se o pedido espera pela casa: basta **um** produto que necessite de
    * confirmação, ou uma linha sem preço, para o pedido inteiro esperar
@@ -510,7 +518,8 @@ export async function conferirPedido(
      custar — o bolo por medida sozinho dava zero. O mínimo só se confere quando
      se sabem todos os preços; com uma linha por orçar, decide a gerente, ao
      responder. */
-  if (definicoes.valorMinimoCent !== null && cotacao.semPreco === 0 && cotacao.totalCent < definicoes.valorMinimoCent) {
+  /* Sobre o subtotal, antes do desconto: o desconto não põe ninguém abaixo do mínimo. */
+  if (definicoes.valorMinimoCent !== null && cotacao.semPreco === 0 && cotacao.subtotalCent < definicoes.valorMinimoCent) {
     return { ok: false, erro: "abaixo-do-minimo-da-loja" };
   }
 
@@ -520,10 +529,7 @@ export async function conferirPedido(
   if (configuracao.cozinha === null || produtos.some((p) => p.tempoProducao === null)) {
     return { ok: false, erro: "indisponivel" };
   }
-  const cesto: ArtigoDoCesto[] = produtos.map((p) => ({
-    tempo: p.tempoProducao!,
-    esgotadoHoje: esgotadoHoje(p, agora),
-  }));
+  const cesto = artigosParaHorarios(produtos, agora);
   const levantamentoEm = new Date(dados.levantamentoEm);
   const validacao = validarLevantamento(
     cesto,
@@ -538,6 +544,8 @@ export async function conferirPedido(
     ok: true,
     levantamentoEm,
     totalCent: cotacao.totalCent,
+    descontoPercentagem: cotacao.descontoPercentagem,
+    descontoCent: cotacao.descontoCent,
     /* O servidor trata uma linha sem preço como «necessita de confirmação»,
        diga a caixa o que disser (`pedidos.md` › Confirmar). */
     porConfirmar: cotacao.semPreco > 0 || produtos.some((p) => p.pedeConfirmacao),
@@ -592,6 +600,8 @@ export const pedidoNaLoja = (
   linhas: conferido.linhas,
   observacoes: dados.observacoes,
   totalCent: conferido.totalCent,
+  descontoPercentagem: conferido.descontoPercentagem,
+  descontoCent: conferido.descontoCent,
   modoPagamento: "na-loja",
   pagoOnlineCent: 0,
   reembolsadoCent: 0,
@@ -681,7 +691,9 @@ export const propostaEmAberto = (pedido: Pick<Pedido, "estado" | "propostaVersao
 export type PlanoResposta = {
   tipo: "confirmar" | "propor";
   linhas: Pedido["linhas"];
+  /** Já com o desconto, recalculado com a percentagem com que o pedido nasceu. */
   totalCent: number;
+  descontoCent: number;
   levantamentoEm: Date;
   levantamentoAnteriorEm: Date | null;
   /** As posições cujo preço a casa fixou agora. */
@@ -748,13 +760,23 @@ export function planearResposta(
     plano: {
       tipo: propoe ? "propor" : "confirmar",
       linhas,
-      totalCent: linhas.reduce((soma, linha) => soma + (linha.totalCent ?? 0), 0),
+      /* A percentagem é a do pedido, e não a de agora: fixar o preço de um bolo
+         depois de a loja desligar o desconto não o tira a quem encomendou com ele. */
+      ...descontoDoPlano(linhas, pedido.descontoPercentagem),
       levantamentoEm,
       levantamentoAnteriorEm: horaAnterior(pedido, novaHora ? entrada.levantamentoEm! : null),
       fixadas: entrada.precos.map((p) => p.posicao),
       expiraEm,
     },
   };
+}
+
+function descontoDoPlano(linhas: Pedido["linhas"], percentagem: number) {
+  const { totalCent, descontoCent } = aplicarDesconto(
+    linhas.reduce((soma, linha) => soma + (linha.totalCent ?? 0), 0),
+    percentagem,
+  );
+  return { totalCent, descontoCent };
 }
 
 /**
@@ -777,6 +799,7 @@ export const pedidoRespondido = (pedido: Pedido, plano: PlanoResposta, agora: Da
         estado: "a-aguardar-aceite",
         linhas: plano.linhas,
         totalCent: plano.totalCent,
+        descontoCent: plano.descontoCent,
         levantamentoEm: plano.levantamentoEm,
         levantamentoAnteriorEm: plano.levantamentoAnteriorEm,
         propostaVersao: pedido.propostaVersao + 1,

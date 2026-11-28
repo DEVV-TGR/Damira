@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { arquivar, gravarProduto } from "@/app/painel/acoes-gestao";
+import { DiasSemEncomenda } from "./DiasSemEncomenda";
 import type { EntradaProduto, Familia, OrdemEmenta, Produto } from "@/lib/dados/tipos";
 import { ALERGENIOS_UE, entradaDoProduto, paraCent } from "@/lib/painel";
 import { Ajuda, Rotulo } from "../Ajuda";
@@ -83,6 +84,7 @@ const separadoresDe = (
 
 /** O nome que cada campo recusado tem para a gerente, e o separador onde vive. */
 const CAMPOS: Record<string, { nome: string; em: Separador }> = {
+  diasSemEncomenda: { nome: "os dias em que não se encomenda", em: "geral" },
   nome: { nome: "o nome", em: "geral" },
   descricao: { nome: "a descrição", em: "geral" },
   carta: { nome: "a carta do impresso", em: "geral" },
@@ -720,6 +722,8 @@ export function EditorProduto({
                 ajuda="Desligado, o produto não se encomenda pelo site. Um galão, por exemplo, fica desligado."
               />
             </div>
+
+            <DiasSemEncomenda dias={e.diasSemEncomenda ?? []} aoMudar={diasSemEncomenda => mudar({ diasSemEncomenda })} />
 
             {produto && (
               <div className={`${bloco} flex flex-wrap items-center gap-3`}>

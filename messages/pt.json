@@ -423,7 +423,9 @@
         "cheia": "Cheio"
       },
       "escolhidoAConfirmar": "Hora pretendida: {quando}. Confirmamos consigo.",
-      "escolhaAConfirmar": "Escolha o dia e a hora em que gostaria de levantar — confirmamos consigo."
+      "escolhaAConfirmar": "Escolha o dia e a hora em que gostaria de levantar — confirmamos consigo.",
+      "produtoBloqueado": "{produtos} não se encomenda para este dia.",
+      "produtosBloqueados": "{produtos} não se encomendam para este dia."
     },
     "compra": {
       "titulo": "Finalizar o pedido",
@@ -619,7 +621,16 @@
       "toppingsExtraAjuda": "Pode juntar até {n, plural, one {# topping} other {# toppings}} a mais, além do topping.",
       "obrigatoria": "(obrigatória)",
       "opcional": "(opcional)"
-    }
+    },
+    "diasSemEncomendaIntervalo": "de {de} a {ate}",
+    "diasSemEncomenda": "Não se encomenda para levantar {dias}.",
+    "diasSemEncomendaDias": "a {dias}"
+  },
+  "desconto": {
+    "faixa": "Aproveita <destaque>{n}% de desconto</destaque> em todas as encomendas",
+    "subtotal": "Subtotal",
+    "linha": "Desconto ({n}%)",
+    "aplicadoNoFim": "Desconto de {n}% aplicado ao total final"
   },
   "modoTeste": {
     "etiqueta": "Modo de teste",

@@ -145,7 +145,10 @@ describe("criar o pedido", () => {
 
     expect(pedido).toMatchObject({
       estado: "confirmado",
-      totalCent: 33500,
+      // 335,00 € com os 10 % da loja; ler de volta o mesmo prova que passa o CHECK da 0013.
+      totalCent: 30150,
+      descontoPercentagem: 10,
+      descontoCent: 3350,
       modoPagamento: "na-loja",
       pagoOnlineCent: 0,
       confirmadoEm: AGORA,
@@ -229,7 +232,8 @@ describe("criar o pedido", () => {
     expect(pedido).toMatchObject({
       estado: "por-confirmar",
       modoPagamento: "na-loja",
-      totalCent: 33500,
+      totalCent: 30150,
+      descontoCent: 3350,
       confirmadoEm: null,
       expiraEm: new Date(AGORA.getTime() + 48 * 3_600_000),
     });
@@ -271,7 +275,8 @@ describe("criar o pedido", () => {
         CONTEXTO,
       ),
     );
-    expect(pedido).toMatchObject({ estado: "por-confirmar", totalCent: 3500 });
+    /* O desconto só sobre a parte conhecida; o bolo leva-o quando a gerente fixar o preço. */
+    expect(pedido).toMatchObject({ estado: "por-confirmar", totalCent: 3150, descontoPercentagem: 10, descontoCent: 350 });
     const linhas = await db.select().from(linhasPedido);
     expect(linhas.map((l) => [l.produtoId, l.precoUnitarioCent, l.totalCent])).toEqual([
       ["bolo-por-medida", null, null],
@@ -553,5 +558,15 @@ describe("a fonte que o site monta", () => {
       montarFonteBd(db, loteEmTransacao(db), opcoes),
     );
     expect(await fonte.criarPedido(entrada(), CONTEXTO)).toEqual({ ok: false, erro: "indisponivel" });
+  });
+});
+
+describe("criar pedido com dias sem encomenda na base", () => {
+  it("recusa o produto bloqueado e aceita o kit sem herdar o que leva", async () => {
+    const { fonte, db } = await montar();
+    await db.update(produtos).set({ diasSemEncomenda: [{ de: "2026-10-07", ate: "2026-10-07" }] }).where(eq(produtos.id, "bolo-de-cenoura"));
+    await db.execute(sql`insert into variantes_leva (produto_id, variante_id, posicao, simples_id, quantidade) values ('festa-premium', '20', 0, 'bolo-de-cenoura', 12)`);
+    expect(await fonte.criarPedido(entrada({ linhas: [{ produtoId: "bolo-de-cenoura", varianteId: "unica", quantidade: 12 }] }), CONTEXTO)).toMatchObject({ ok: false, erro: "indisponivel" });
+    expect((await fonte.criarPedido(entrada(), CONTEXTO)).ok).toBe(true);
   });
 });

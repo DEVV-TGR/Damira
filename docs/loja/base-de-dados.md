@@ -312,6 +312,7 @@ já não tem volta.
 | `sinal_percent` | `integer` nulo, `CHECK` 1–100 | `sinalPercent` |
 | `limite_quantidade`, `limite_modo` | `integer`, `text` (`porDia`, `total`), nulos | `limite` |
 | `arquivado`, `fora_de_venda` | `boolean` | iguais |
+| `dias_sem_encomenda` | `jsonb NOT NULL`, `[]` por defeito, `CHECK produtos_dias_sem_encomenda` (lista) | intervalos inclusivos `{de, ate}` de dias de Lisboa em que este produto não se encomenda (migração `0014`) |
 | `esgotado_no_dia` | `date` nulo | o dia de Lisboa; amanhã já não vale |
 
 **O `id` é o próprio código, e não um número.** O contrato diz que ele nunca
@@ -328,6 +329,15 @@ do `pedeConfirmacaoInicial` (`regras.ts`); é um `UPDATE` escrito à mão a segu
 à coluna que o `drizzle-kit` gera, e numa base vazia não muda nada. Daí para a
 frente é da gerente. A prova sobre uma base que já tem produtos está em
 `src/db/migracao-pede-confirmacao.test.ts`.
+
+A **0014 — dias sem encomenda** só acrescenta a coluna e o CHECK de lista.
+Nasce vazia: nenhuma data é deduzida nem altera o trabalho da gerente. O código
+anterior não a usa. Ordem: PR de esquema → ramo de segurança `antes-0014` na
+Neon → aplicar no `desenvolvimento`, depois no `production` → PR da função.
+Conferir as contagens antes e depois. **Aplicar antes de publicar o PR de esquema**:
+o ORM seleciona as colunas declaradas, e o build desse PR com base de dados já
+precisa da coluna. O código anterior em produção continua compatível. Não se
+aplicam migrações neste PR.
 
 ### `variantes`
 
@@ -453,7 +463,8 @@ ordem — ficava órfã, fora da «Da carta» (e, até 12/11, da `/ementa`).
 | `cliente_nome`, `cliente_email`, `cliente_telefone` | `text` | `cliente` — o telefone é obrigatório, em E.164 (`CHECK ^\+[1-9][0-9]{6,14}$`), como no `EsquemaCliente` |
 | `cliente_nif`, `conta_id` | `text` nulo | `cliente` |
 | `observacoes` | `text` nulo | `observacoes` |
-| `total_cent`, `pago_online_cent` | `integer` `>= 0` | iguais |
+| `total_cent`, `pago_online_cent` | `integer` `>= 0` | iguais — o `total_cent` é o que o cliente paga, **já com o desconto** |
+| `desconto_percentagem`, `desconto_cent` | `integer`, `0` por defeito, `CHECK pedidos_desconto` | o desconto da loja que o pedido teve (migração `0013`, 27/11) — ver abaixo |
 | `modo_pagamento` | `text` `CHECK` (`na-loja`, `total`, `sinal`) | `modoPagamento` — o `total` e o `sinal` são do Stripe, e dormem |
 | `chegou_tarde` | `boolean` | `chegouTarde` |
 | `cancelado_por` | `text` nulo `CHECK` (`cliente`, `gerente`) | `canceladoPor` |
@@ -470,6 +481,18 @@ ordem — ficava órfã, fora da «Da carta» (e, até 12/11, da `/ementa`).
 reembolsos `concluido`, e o `pedidos.md` avisa que um campo derivado guardado é um
 campo que um dia não bate certo. A fonte soma-o ao ler; o `Pedido` que o painel
 recebe traz-o na mesma.
+
+**O desconto fica no pedido, com a percentagem** (`0013`, decidido a 27/11: 10 %
+em toda a loja até a casa dizer que acabou). O `total_cent` é o que se paga, e o
+subtotal é `total_cent + desconto_cent`. Guarda-se a percentagem, e não só o valor,
+porque o preço de uma linha sob orçamento só se fixa na resposta da casa: a
+proposta reaplica a percentagem com que o pedido nasceu, mesmo que a loja já
+tenha desligado o desconto. O `pedidos_desconto` obriga o desconto a ser sempre a
+conta da percentagem sobre o subtotal, arredondada ao cêntimo com o meio cêntimo
+para cima — `(subtotal × percentagem + 50) / 100`, em inteiros e em `bigint`, a
+mesma conta de `src/lib/desconto.ts`. Quem muda o total sem refazer o desconto é
+recusado pela base, em vez de gravar um email e um talão com contas que não
+batem. Os pedidos de antes ficam com `0` e `0`.
 
 **O cliente vive no pedido** e não numa tabela `clientes`. É a fotografia do
 momento: quem muda de telefone não muda o pedido de ontem. E a conta de cliente

@@ -88,6 +88,9 @@ export function dadosDoEmail(
       ...(l.precoDaProposta ? { fixadoAgora: true } : {}),
     })),
     totalCent: pedido.totalCent,
+    /* Os valores gravados no pedido, nunca recalculados: um email que sai depois de a loja
+       desligar o desconto diz o desconto que o pedido teve. */
+    descontoPercentagem: pedido.descontoPercentagem, descontoCent: pedido.descontoCent,
     faltamPrecos: pedido.linhas.some(l => l.precoUnitarioCent === null || l.totalCent === null),
     criadoEm: pedido.criadoEm, levantamentoEm: pedido.levantamentoEm,
     expiraEm: pedido.expiraEm ?? undefined, aceiteEm: pedido.aceiteEm ?? undefined,

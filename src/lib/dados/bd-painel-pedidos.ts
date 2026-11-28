@@ -438,6 +438,7 @@ export function criarPedidosDoPainelBd(db: BaseDeDados, leituras: LeiturasDoPain
         const mudou = await mudar(
           sql`estado = 'a-aguardar-aceite',
               total_cent = ${plano.totalCent}::integer,
+              desconto_cent = ${plano.descontoCent}::integer,
               levantamento_em = ${instante(plano.levantamentoEm)},
               levantamento_anterior_em = ${plano.levantamentoAnteriorEm ? instante(plano.levantamentoAnteriorEm) : sql`null`},
               proposta_versao = proposta_versao + 1,

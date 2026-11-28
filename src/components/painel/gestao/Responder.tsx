@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { horasParaMudar, linkDaProposta, responder } from "@/app/painel/acoes-gestao";
 import type { Pedido } from "@/lib/dados/tipos";
+import { aplicarDesconto } from "@/lib/desconto";
 import { diaDeLisboa, diaPorExtenso, paraCent } from "@/lib/painel";
 import { horaDeLisboa } from "@/lib/painel-ligacao";
 import { formatarCent } from "@/lib/preco";
@@ -34,6 +35,7 @@ export function Responder({ pedido, onFeito }: { pedido: Pedido; onFeito?: (pedi
   );
   const [mudarHora, setMudarHora] = useState(false);
   const [dia, setDia] = useState(() => diaDeLisboa(pedido.levantamentoEm));
+  const [bloqueados, setBloqueados] = useState<string[]>([]);
   const [horas, setHoras] = useState<{ inicio: string; hora: string; livre: boolean }[] | null>(null);
   const [hora, setHora] = useState<string | null>(null);
   const [link, setLink] = useState<string | null>(null);
@@ -41,16 +43,17 @@ export function Responder({ pedido, onFeito }: { pedido: Pedido; onFeito?: (pedi
   useEffect(() => {
     if (!mudarHora) return;
     let vivo = true;
-    void horasParaMudar(dia).then((h) => {
+    void horasParaMudar(dia, pedido.id).then((h) => {
       if (vivo) {
-        setHoras(h);
+        setHoras(h.horas);
+        setBloqueados(h.produtosBloqueados);
         setHora(null);
       }
     });
     return () => {
       vivo = false;
     };
-  }, [dia, mudarHora]);
+  }, [dia, mudarHora, pedido.id]);
 
   const aguarda = pedido.estado === "a-aguardar-aceite";
   /* O prazo do cliente passou, mesmo que a limpeza ainda não o tenha gravado: o cliente já vê
@@ -75,10 +78,13 @@ export function Responder({ pedido, onFeito }: { pedido: Pedido; onFeito?: (pedi
   const mal = lidos.filter(({ posicao, cent }) => (precos[posicao] ?? "") !== "" && cent === null);
   const fixados = lidos.filter(({ linha, cent }) => cent !== null && cent !== linha.precoUnitarioCent);
   const faltam = lidos.filter(({ linha, cent }) => cent === null && linha.precoUnitarioCent === null);
-  const totalNovo = pedido.linhas.reduce((soma, linha, i) => {
+  const subtotalNovo = pedido.linhas.reduce((soma, linha, i) => {
     const novo = fixados.find((f) => f.posicao === i);
     return soma + (novo ? Math.round(novo.cent! * linha.quantidade) : (linha.totalCent ?? 0));
   }, 0);
+  /* Com o desconto com que o pedido nasceu, como o servidor o vai gravar (`planearResposta`): o
+     valor do botão é o que o cliente paga. */
+  const totalNovo = aplicarDesconto(subtotalNovo, pedido.descontoPercentagem).totalCent;
   const novaHora = mudarHora && hora !== null ? hora : null;
   const propoe = fixados.length > 0 || novaHora !== null;
 
@@ -105,7 +111,7 @@ export function Responder({ pedido, onFeito }: { pedido: Pedido; onFeito?: (pedi
   const rotulo = aEnviar
     ? "A enviar…"
     : propoe
-      ? `${aguarda ? "Rever a proposta" : "Enviar a proposta"} · ${formatarCent(totalNovo, "pt")}`
+      ? `${aguarda ? "Rever a proposta" : "Enviar a proposta"} · ${formatarCent(totalNovo, "pt")}${pedido.descontoPercentagem > 0 ? ` (com ${pedido.descontoPercentagem}% de desconto)` : ""}`
       : aguarda
         ? "Mude o preço ou a hora para rever"
         : "Confirmar o pedido";
@@ -172,10 +178,11 @@ export function Responder({ pedido, onFeito }: { pedido: Pedido; onFeito?: (pedi
               <input
                 type="date"
                 value={dia}
-                onChange={(e) => setDia(e.target.value)}
+                onChange={(e) => { setDia(e.target.value); setHoras(null); setBloqueados([]); setHora(null); }}
                 className="mt-1 block rounded-xl border border-tinta/20 bg-papel px-3 py-3"
               />
             </label>
+            {horas !== null && bloqueados.length > 0 && <p role="status" className="mt-3 text-sm font-semibold text-tijolo">Este dia está bloqueado para: {bloqueados.join(", ")}. Pode marcar na mesma.</p>}
             {horas === null ? (
               <p className="mt-3 text-tinta-suave">A ver as horas…</p>
             ) : horas.length === 0 ? (

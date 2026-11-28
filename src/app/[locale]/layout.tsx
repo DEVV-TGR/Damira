@@ -9,6 +9,7 @@ import { familiasDaLoja } from "@/lib/dados";
 import { emLingua } from "@/lib/vista";
 import { Rodape } from "@/components/Rodape";
 import { BotaoEncomendar } from "@/components/BotaoEncomendar";
+import { FaixaDesconto } from "@/components/FaixaDesconto";
 import { FaixaModoTeste } from "@/components/FaixaModoTeste";
 import { DadosEstruturados } from "@/components/DadosEstruturados";
 import { ProvedorConta } from "@/components/conta/ProvedorConta";
@@ -139,6 +140,9 @@ export default async function LayoutIdioma({
               Ver `src/lib/modo-teste.ts`. */}
           <FaixaModoTeste />
           <Cabecalho locale={locale as Locale} seccoes={seccoesDoMenu} />
+          {/* O desconto da loja, logo por baixo do cabeçalho: o aviso do modo de
+              teste fica no topo, sem lhe tirar o lugar. Sem desconto, não aparece. */}
+          <FaixaDesconto />
           <main id="conteudo">{children}</main>
           <Rodape />
           {/* Fica fora do `<main>`: é navegação persistente, não conteúdo da

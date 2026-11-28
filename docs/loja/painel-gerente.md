@@ -82,6 +82,7 @@ qualquer pedido, com «reembolsar parte» para os que seguem.
 | Quantidade mínima e múltiplo | ex.: mínimo 6, de 6 em 6 |
 | Tempo de produção | em `horas` ou `dias` (ver `horarios.md`) |
 | À venda online | sim / não |
+| Dias em que não se encomenda | intervalos de levantamento por produto; pedidos existentes não mudam |
 | Limitar quantidade | interruptor; ligado pede **quantos** e **por dia / no total** |
 | Pede sinal | interruptor; ligado pede a percentagem (ver `pagamentos.md`) |
 | Necessita de confirmação da loja | sim / não — ver abaixo |
@@ -310,6 +311,23 @@ lançamento, e é o que nos diz quando podemos fazer os testes reais.
 3. **O cesto de quem já lá tinha o artigo.** O cesto guarda o preço que viu. No
    checkout, se o preço mudou, o cliente vê «o preço deste artigo mudou» antes
    de pagar — nunca descobre no extrato.
+
+### Dias em que não se encomenda
+
+No editor, junto de «À venda online»: intervalos «De» e «Até» (vazio = o mesmo
+dia), «Juntar» e «Tirar». Os passados dizem «já passou». Só mudam ao gravar;
+o servidor valida até 50 intervalos, datas reais e ordenadas, sem repetidos.
+O campo continua nos produtos arquivados ou fora de venda. É **do produto**:
+um kit não herda os dias dos simples que leva, como nos tempos e esgotados.
+
+O produto continua no site com uma nota; os dias bloqueados ficam indisponíveis
+no calendário da compra, com os nomes. Os pedidos já existentes **não mudam**,
+e este campo **não cria avisos em «Precisa de atenção»**.
+
+Ao mudar o levantamento ou responder com outra hora, a gerente vê «Este dia está
+bloqueado para: … Pode marcar na mesma.». A leitura é do servidor, pelos produtos
+do pedido, e **não impede gravar**: a gerente conhece a cozinha. Mantêm-se as
+horas da loja, sem tempos de produção, e a verificação do papel no servidor.
 
 ### ⚠️ Apagar é arquivar
 

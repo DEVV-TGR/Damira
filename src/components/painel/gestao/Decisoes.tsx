@@ -45,22 +45,24 @@ function useAcao(onFeito?: Feito) {
 
 export function MudarData({ pedido, onFeito, onFechar }: { pedido: Pedido; onFeito?: Feito; onFechar: () => void }) {
   const [data, setData] = useState(() => diaDeLisboa(pedido.levantamentoEm));
+  const [bloqueados, setBloqueados] = useState<string[]>([]);
   const [horas, setHoras] = useState<{ inicio: string; hora: string; livre: boolean }[] | null>(null);
   const [escolhida, setEscolhida] = useState<string | null>(null);
   const { erro, aEnviar, correr } = useAcao(onFeito);
 
   useEffect(() => {
     let vivo = true;
-    void horasParaMudar(data).then((h) => {
+    void horasParaMudar(data, pedido.id).then((h) => {
       if (vivo) {
-        setHoras(h);
+        setHoras(h.horas);
+        setBloqueados(h.produtosBloqueados);
         setEscolhida(null);
       }
     });
     return () => {
       vivo = false;
     };
-  }, [data]);
+  }, [data, pedido.id]);
 
   return (
     <div className="mt-3 rounded-2xl border border-tinta/15 bg-papel-fundo p-4">
@@ -73,10 +75,11 @@ export function MudarData({ pedido, onFeito, onFechar }: { pedido: Pedido; onFei
         <input
           type="date"
           value={data}
-          onChange={(e) => setData(e.target.value)}
+          onChange={(e) => { setData(e.target.value); setHoras(null); setBloqueados([]); setEscolhida(null); }}
           className="mt-1 block rounded-xl border border-tinta/20 bg-papel px-3 py-3"
         />
       </label>
+      {horas !== null && bloqueados.length > 0 && <p role="status" className="mt-3 text-sm font-semibold text-tijolo">Este dia está bloqueado para: {bloqueados.join(", ")}. Pode marcar na mesma.</p>}
       {horas === null ? (
         <p className="mt-3 text-tinta-suave">A ver as horas…</p>
       ) : horas.length === 0 ? (

@@ -1,8 +1,10 @@
-import { tz } from "@date-fns/tz";
+import { TZDate, tz } from "@date-fns/tz";
 import { addDays, startOfDay } from "date-fns";
-import { EsquemaLinhaCesto, type ConfiguracaoDaCasa, type FonteDeDados } from "@/lib/dados/tipos";
-import { vagas, validarLevantamento, type ArtigoDoCesto, type ConfiguracaoHorarios } from "@/lib/horarios";
-import { esgotadoHoje } from "@/lib/painel";
+import { EsquemaLinhaCesto, type ConfiguracaoDaCasa, type FonteDeDados, type Produto } from "@/lib/dados/tipos";
+import { diasSemEncomendaNoCalendario, vagas, validarLevantamento, type ArtigoDoCesto, type ConfiguracaoHorarios } from "@/lib/horarios";
+import { artigosParaHorarios } from "@/lib/dados/artigos-horarios";
+import { nomeDe } from "@/lib/vista";
+import type { Locale } from "@/i18n/routing";
 
 /**
  * # As vagas de levantamento de um cesto, calculadas no servidor
@@ -56,6 +58,8 @@ export function afluenciaDe(
   return "muita";
 }
 
+export type DiaSemEncomendaDoCalendario = { data: string; produtos: string[] };
+
 export type ResultadoVagas =
   /**
    * `aConfirmar`: falta o horário da cozinha ou o tempo de um produto (a casa
@@ -65,41 +69,25 @@ export type ResultadoVagas =
    * sempre, mas a hora é **pretendida** e confirma-se com a pessoa. Não se
    * inventa um prazo: diz-se que é para confirmar.
    */
-  | { ok: true; vagas: VagaDoCalendario[]; aConfirmar: boolean }
+  | { ok: true; vagas: VagaDoCalendario[]; diasSemEncomenda: DiaSemEncomendaDoCalendario[]; aConfirmar: boolean }
   /* `cesto-invalido`: um artigo que não existe, abaixo do mínimo, fora de venda. */
   | { ok: false; motivo: "cesto-invalido" };
 
 const LISBOA = { in: tz("Europe/Lisbon") };
 
-type Preparado =
-  | { ok: true; cesto: ArtigoDoCesto[]; config: ConfiguracaoHorarios; casa: ConfiguracaoDaCasa }
-  | { ok: false; motivo: "indisponivel"; casa: ConfiguracaoDaCasa }
-  | { ok: false; motivo: "cesto-invalido" };
-
-/* O que é preciso para o motor fazer as contas: o cesto em tempos de produção,
-   e a configuração com a cozinha preenchida. */
-async function preparar(linhas: unknown, fonte: Fonte, agora: Date): Promise<Preparado> {
+/* A cotação valida as linhas antes de as transformar no cesto do motor. */
+async function preparar(linhas: unknown, fonte: Fonte) {
   const lidas = EsquemaLinhaCesto.array().min(1).max(50).safeParse(linhas);
-  if (!lidas.success) return { ok: false, motivo: "cesto-invalido" };
+  if (!lidas.success) return null;
   const cotado = await fonte.cotarCesto(lidas.data);
-  if (!cotado.ok || !cotado.cotacao.valida) return { ok: false, motivo: "cesto-invalido" };
-
-  const casa = await fonte.configuracaoDaCasa();
-  if (casa.cozinha === null) return { ok: false, motivo: "indisponivel", casa };
-
-  const cesto: ArtigoDoCesto[] = [];
-  for (const linha of lidas.data) {
-    const produto = await fonte.produtoPorId(linha.produtoId);
-    if (!produto?.tempoProducao) return { ok: false, motivo: "indisponivel", casa };
-    /* O «esgotado hoje» do balcão tira as vagas de hoje ao cesto inteiro — o
-       mesmo que o `criarPedido` faz, para o calendário não oferecer o que o
-       servidor vai recusar. */
-    cesto.push({ tempo: produto.tempoProducao, esgotadoHoje: esgotadoHoje(produto, agora) });
-  }
-  return { ok: true, cesto, config: { ...casa, cozinha: casa.cozinha }, casa };
+  if (!cotado.ok || !cotado.cotacao.valida) return null;
+  const produtos = await Promise.all(lidas.data.map(l => fonte.produtoPorId(l.produtoId)));
+  if (produtos.some(p => p === null)) return null;
+  return { produtos: produtos as Produto[], casa: await fonte.configuracaoDaCasa() };
 }
 
 type Contexto = {
+  produtos: Produto[];
   cesto: ArtigoDoCesto[];
   config: ConfiguracaoHorarios;
   casa: ConfiguracaoDaCasa;
@@ -107,30 +95,33 @@ type Contexto = {
      amanhã quando a hora é a confirmar. */
   desde: Date;
   aConfirmar: boolean;
+  semJanela: boolean;
 };
 
-/* Com os dados da cozinha, o cesto e a configuração tal como são. Sem eles, um
-   cesto vazio sobre o horário da **loja**, a contar de amanhã: o motor devolve as
-   horas em que a loja abre, e nenhuma promessa sobre quando o pedido fica pronto.
-   Começa amanhã e não hoje — sem saber quanto demora o que está no cesto,
-   oferecer o próprio dia era prometer o que a cozinha talvez não consiga. */
+/* Sem produção preenchida não se promete um prazo: só as horas da loja a
+   partir de amanhã. Os bloqueios dos produtos continuam a valer nesse caminho. */
 async function contexto(linhas: unknown, fonte: Fonte, agora: Date): Promise<Contexto | null> {
-  const preparado = await preparar(linhas, fonte, agora);
-  if (preparado.ok) return { ...preparado, desde: agora, aConfirmar: false };
-  if (preparado.motivo === "cesto-invalido") return null;
-  const casa = preparado.casa;
+  const preparado = await preparar(linhas, fonte);
+  if (!preparado) return null;
+  const { casa, produtos } = preparado;
+  const comTempos = casa.cozinha !== null && produtos.every(p => p.tempoProducao !== null);
+  // O motor conta a partir de amanhã no percurso a confirmar: «esgotado hoje» já acabou.
   return {
-    cesto: [],
-    config: { ...casa, cozinha: casa.loja },
+    produtos,
+    cesto: artigosParaHorarios(produtos, agora, comTempos).map(artigo => ({ ...artigo, esgotadoHoje: comTempos && artigo.esgotadoHoje })),
+    config: { ...casa, cozinha: comTempos ? casa.cozinha! : casa.loja, diasAFrente: comTempos ? casa.diasAFrente : Math.max(0, casa.diasAFrente - 1) },
     casa,
-    desde: startOfDay(addDays(agora, 1, LISBOA), LISBOA),
-    aConfirmar: true,
+    desde: comTempos ? agora : startOfDay(addDays(agora, 1, LISBOA), LISBOA),
+    aConfirmar: !comTempos,
+    semJanela: !comTempos && casa.diasAFrente === 0,
   };
 }
 
-export async function vagasDoCesto(linhas: unknown, fonte: Fonte, agora: Date): Promise<ResultadoVagas> {
+export async function vagasDoCesto(linhas: unknown, fonte: Fonte, agora: Date, locale: Locale = "pt"): Promise<ResultadoVagas> {
   const c = await contexto(linhas, fonte, agora);
   if (!c) return { ok: false, motivo: "cesto-invalido" };
+
+  if (c.semJanela) return { ok: true, aConfirmar: true, vagas: [], diasSemEncomenda: [] };
 
   /* Um dia a mais do que o calendário mostra: a ocupação conta instantes, e o
      último dia tem vagas até ao fecho. */
@@ -138,6 +129,9 @@ export async function vagasDoCesto(linhas: unknown, fonte: Fonte, agora: Date): 
   return {
     ok: true,
     aConfirmar: c.aConfirmar,
+    diasSemEncomenda: diasSemEncomendaNoCalendario(c.cesto, c.desde, c.config).map(d => ({
+      data: d.data, produtos: [...new Set(d.artigos.map(i => nomeDe(c.produtos[i], locale)))],
+    })),
     vagas: vagas(c.cesto, c.desde, c.config, ocupadas).map((vaga) => ({
       /* ⚠️ Em UTC, com `Z`. O `toISOString()` de um `TZDate` escreve `+01:00`
          — o mesmo instante, outro texto —, e este valor vai ao browser e volta
@@ -179,6 +173,28 @@ export async function horasDaLoja(
     .map((v) => ({ inicio: new Date(v.inicio.getTime()).toISOString(), hora: v.hora, livre: v.livre }));
 }
 
+export type HorasParaPedido = {
+  horas: Awaited<ReturnType<typeof horasDaLoja>>;
+  produtosBloqueados: string[];
+};
+
+/** Aviso, sem veto: a gerente conhece a cozinha e pode combinar este dia. */
+export async function horasParaPedido(
+  data: string,
+  produtosIds: readonly string[],
+  fonte: Pick<FonteDeDados, "configuracaoDaCasa" | "ocupacao" | "listarProdutos">,
+  agora: Date,
+): Promise<HorasParaPedido> {
+  const horas = await horasDaLoja(data, fonte, agora);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return { horas, produtosBloqueados: [] };
+  const ids = new Set(produtosIds);
+  const produtos = (await fonte.listarProdutos({ incluirArquivados: true })).filter(p => ids.has(p.id));
+  const [ano, mes, dia] = data.split("-").map(Number);
+  const nesseDia = new TZDate(ano, mes - 1, dia, "Europe/Lisbon");
+  const bloqueios = diasSemEncomendaNoCalendario(artigosParaHorarios(produtos, agora, false), nesseDia, { diasAFrente: 0 });
+  return { horas, produtosBloqueados: [...new Set((bloqueios[0]?.artigos ?? []).map(i => produtos[i].nome.pt))] };
+}
+
 /**
  * A hora escolhida, confirmada no servidor ao enviar. É o mesmo cálculo do
  * calendário (`validarLevantamento`), de propósito: o que o browser mostrou é o
@@ -193,6 +209,7 @@ export async function confirmarLevantamento(
 ): Promise<{ ok: true; aConfirmar: boolean } | { ok: false; motivo: "indisponivel" | "cesto-invalido" | "vaga-cheia" }> {
   const c = await contexto(linhas, fonte, agora);
   if (!c) return { ok: false, motivo: "cesto-invalido" };
+  if (c.semJanela) return { ok: false, motivo: "indisponivel" };
   const ocupadas = await fonte.ocupacao(levantamento, levantamento);
   const validado = validarLevantamento(c.cesto, levantamento, c.desde, c.config, ocupadas);
   return validado.ok ? { ok: true, aConfirmar: c.aConfirmar } : validado;

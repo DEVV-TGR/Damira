@@ -102,6 +102,8 @@ async function guardarPedido(db: BaseDeTeste, pedido: Pedido, limite: number | n
     contaId: cliente.contaId,
     observacoes: pedido.observacoes,
     totalCent: pedido.totalCent,
+    descontoPercentagem: pedido.descontoPercentagem,
+    descontoCent: pedido.descontoCent,
     modoPagamento: pedido.modoPagamento,
     pagoOnlineCent: pedido.pagoOnlineCent,
     chegouTarde: pedido.chegouTarde,

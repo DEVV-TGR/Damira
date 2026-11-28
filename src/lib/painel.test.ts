@@ -139,6 +139,7 @@ const pedido = (id: string, alteracoes: Partial<Pedido> = {}): Pedido => ({
   totalCent: 1000,
   modoPagamento: "total",
   pagoOnlineCent: 1000,
+  descontoPercentagem: 0, descontoCent: 0,
   reembolsadoCent: 0,
   chegouTarde: false,
   propostaVersao: 0, propostaEm: null, levantamentoAnteriorEm: null,
@@ -406,6 +407,11 @@ describe("o que o balcão mostra", () => {
     expect(
       rotuloPagamento({ totalCent: 8400, pagoOnlineCent: 0, modoPagamento: "na-loja", linhas: [semPreco] }).replace(/\s/g, " "),
     ).toBe("A PAGAR NA LOJA · 84,00 € · PREÇO POR FIXAR");
+    /* Com o desconto da loja, o total já o traz: diz-se, para o balcão não o descontar outra vez. */
+    expect(
+      rotuloPagamento({ totalCent: 11610, pagoOnlineCent: 0, modoPagamento: "na-loja", linhas: [], descontoPercentagem: 10 })
+        .replace(/\s/g, " "),
+    ).toBe("A PAGAR NA LOJA · 116,10 € · DESCONTO DE 10% INCLUÍDO");
   });
 
   it("o dia por extenso é o de Lisboa", () => {
