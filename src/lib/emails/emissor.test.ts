@@ -101,6 +101,40 @@ describe("a proposta (T04)", () => {
   });
 });
 
+/** Um confirmado que a gerente reagendou agora: a proposta tinha mudado a hora pedida, e o
+    reagendamento mudou-a outra vez. São duas horas «de antes» diferentes. */
+function pedidoReagendado() {
+  const pedido = pedidoComProposta();
+  return {
+    ...pedido, estado: "confirmado" as const, confirmadoEm: agora, aceiteEm: agora,
+    reagendadoEm: agora, reagendadoDe: pedido.levantamentoEm, levantamentoEm: new Date("2026-10-28T15:00:00Z"),
+  };
+}
+
+describe("o reagendamento (T09 e o aviso à loja)", () => {
+  it.each(["reagendado-cliente", "reagendado-loja"])("%s leva a hora de antes do reagendamento, e não a da proposta", modelo => {
+    const pedido = pedidoReagendado();
+    const dados = dadosDoEmail(pedido, { ...linhaDeEmail(), modelo }, opcoesProposta);
+    if ("saltar" in dados) throw new Error("não devia saltar");
+    expect(dados.levantamentoAnteriorEm).toEqual(pedido.reagendadoDe);
+    expect(dados.levantamentoAnteriorEm).not.toEqual(pedido.levantamentoAnteriorEm);
+    expect(dados).not.toHaveProperty("linkAceitar");
+    expect(escreverEmail(modelo as "reagendado-cliente", dados, CASA_EXEMPLO, "pt").html).toContain("cid:");
+  });
+  it("salta o de um reagendamento que outro mais novo ultrapassou", () => {
+    const pedido = { ...pedidoReagendado(), reagendadoEm: new Date(+agora + 60_000) };
+    expect(dadosDoEmail(pedido, { ...linhaDeEmail(), modelo: "reagendado-cliente" }, opcoesProposta))
+      .toEqual({ saltar: "reagendamento-substituido" });
+  });
+  it.each([
+    ["cancelado", { estado: "cancelado" as const, canceladoEm: agora, canceladoPor: "gerente" as const }],
+    ["entregue", { estado: "entregue" as const, entregueEm: agora }],
+  ])("salta o de um pedido que já não está por levantar: %s", (_, mudanca) => {
+    expect(dadosDoEmail({ ...pedidoReagendado(), ...mudanca }, { ...linhaDeEmail(), modelo: "reagendado-loja" }, opcoesProposta))
+      .toEqual({ saltar: "reagendamento-fechado" });
+  });
+});
+
 describe("novas tentativas", () => {
   it("espera crescente, no mínimo a reserva de dois minutos", () => {
     expect([1, 2, 3, 4].map(esperaDaTentativa)).toEqual([120000, 240000, 480000, 960000]);

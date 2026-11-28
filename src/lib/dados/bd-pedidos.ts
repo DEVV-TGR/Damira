@@ -260,6 +260,7 @@ export async function lerPedidos(
       propostaEm: p.propostaEm,
       levantamentoAnteriorEm: p.levantamentoAnteriorEm,
       reagendadoEm: p.reagendadoEm,
+      reagendadoDe: p.reagendadoDe,
       confirmadoEm: p.confirmadoEm,
       expiraEm: p.expiraEm,
       aceiteEm: p.aceiteEm,

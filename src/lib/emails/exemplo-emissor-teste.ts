@@ -12,7 +12,7 @@ export function pedidoDeEmail(): Pedido {
     descontoPercentagem: 0, descontoCent: 0,
     reembolsadoCent: 0, reembolsos: [], avisosTratados: [], chegouTarde: false,
     pagoEm: null, confirmadoEm: null, expiraEm: new Date("2026-10-26T09:00:00Z"), aceiteEm: null, causaExpiracao: null,
-    impressoEm: null, entregueEm: null, canceladoEm: null, canceladoPor: null, reagendadoEm: null,
+    impressoEm: null, entregueEm: null, canceladoEm: null, canceladoPor: null, reagendadoEm: null, reagendadoDe: null,
     propostaVersao: 0, propostaEm: null, levantamentoAnteriorEm: null,
   };
 }

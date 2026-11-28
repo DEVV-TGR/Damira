@@ -665,7 +665,10 @@ outra razão; o que ficar parado aparece no painel.
 
 **Não há chave única «natural»** (pedido, modelo, destinatário): o mesmo email
 pode ter de sair duas vezes — um pedido reagendado duas vezes. O que impede o
-duplicado é a transição só acontecer uma vez (`pedidos.md`).
+duplicado é a transição só acontecer uma vez (`pedidos.md`). E, como na proposta,
+o emissor escreve o email com o pedido como está agora: dos dois reagendamentos só
+saem os emails do último (o do primeiro é mais antigo do que o `reagendado_em`, e
+sai como `saltado: reagendamento-substituido`).
 
 O emissor (#119, etapa 1) usa as colunas existentes, **sem migração**. Lê
 pendentes por `criado_em, id`, exclui `resposta-cliente` enquanto não entrar o

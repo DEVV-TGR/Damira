@@ -151,6 +151,7 @@ const pedido = (id: string, alteracoes: Partial<Pedido> = {}): Pedido => ({
   reembolsos: [],
   avisosTratados: [],
   reagendadoEm: null,
+  reagendadoDe: null,
   confirmadoEm: null,
   expiraEm: null,
   aceiteEm: null,

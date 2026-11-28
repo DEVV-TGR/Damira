@@ -160,6 +160,7 @@ export function fonteDeExemplo(
       reembolsos: [],
       avisosTratados: [],
       reagendadoEm: null,
+      reagendadoDe: null,
       confirmadoEm: null,
       expiraEm: null,
       aceiteEm: null,
@@ -501,6 +502,7 @@ export function pedidosDoPainelDeExemplo(
       reembolsos: [],
       avisosTratados: [],
       reagendadoEm: null,
+      reagendadoDe: null,
       confirmadoEm: null,
       /* As 48 horas da casa, a contar de quando nasceu (`pedidos.md`). */
       expiraEm: p.porConfirmar ? new Date(criadoEm.getTime() + 48 * 3_600_000) : null,
@@ -581,6 +583,7 @@ export function pedidosDoPainelDeExemplo(
       reembolsos: [],
       avisosTratados: [],
       reagendadoEm: null,
+      reagendadoDe: null,
       confirmadoEm: null,
       expiraEm: new Date(criadoEm.getTime() + 48 * 60 * 60_000),
       aceiteEm: null,

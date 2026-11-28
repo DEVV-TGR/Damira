@@ -614,6 +614,7 @@ export const pedidoNaLoja = (
   reembolsos: [],
   avisosTratados: [],
   reagendadoEm: null,
+  reagendadoDe: null,
   confirmadoEm: conferido.porConfirmar ? null : agora,
   expiraEm: conferido.porConfirmar ? new Date(agora.getTime() + PRAZO_DA_RESPOSTA_MS) : null,
   aceiteEm: null,

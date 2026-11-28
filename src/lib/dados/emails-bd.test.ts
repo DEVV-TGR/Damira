@@ -217,7 +217,9 @@ describe("emissor com Postgres", () => {
     expect(await fonte.emailsFalhados(10)).toMatchObject([{ ultimoErro: "dados-do-modelo", saltado: false }]);
   });
   it("salta lembretes obsoletos e regista modelos sem dados", async () => {
-    await preparar({ modelo: "reagendado-cliente" }); const buscar = sucesso(); await executar(buscar);
+    /* Reagendado antes da 0015: sabe quando, mas não a hora de antes. Falha, em vez de a inventar. */
+    const semHoraDeAntes = { ...fonte, pedidoDoEmail: async () => ({ ...pedidoDeEmail(), estado: "confirmado" as const, confirmadoEm: agora, reagendadoEm: agora }) };
+    await preparar({ modelo: "reagendado-cliente" }); const buscar = sucesso(); await executar(buscar, agora, ambiente, semHoraDeAntes);
     expect(buscar).not.toHaveBeenCalled();
     expect(await fonte.emailsFalhados(10)).toMatchObject([{ ultimoErro: "dados-do-modelo", tentativas: 5 }]);
     await preparar({ modelo: "lembrete-loja" });

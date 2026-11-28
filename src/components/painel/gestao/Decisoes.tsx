@@ -136,7 +136,9 @@ export function Cancelar({ pedido, onFeito, onFechar }: { pedido: Pedido; onFeit
     if (valor === null || valor > maximo) {
       return setErro(`O reembolso vai de 0 a ${formatarCent(maximo, "pt")}.`);
     }
-    correr(() => cancelar(pedido.id, valor));
+    /* Até a interface perguntar de quem foi a iniciativa (ponto 5, Gonçalo): a da casa, que é o
+       que o cancelar gravava sempre. Hoje este botão só aparece num `pago` do Stripe, sem emails. */
+    correr(() => cancelar(pedido.id, valor, "gerente"));
   };
 
   return (

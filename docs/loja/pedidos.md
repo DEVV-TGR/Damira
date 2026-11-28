@@ -17,16 +17,17 @@ um estado que os pagamentos não sabem que existe.
 > **Com `DATABASE_URL`, a compra já chama essa fonte** e devolve a referência e
 > o total gravados. Sem base de dados, mantém o percurso provisório por email.
 > A fonte do painel já entrega, desfaz, cancela e muda a hora
-> dos confirmados, e mostra os avisos de dia fechado e possível duplicado. O
-> cancelamento ainda grava sempre iniciativa da gerente: falta o parâmetro do
-> contrato para distinguir a iniciativa do cliente. O reagendamento ainda só
-> grava a nova hora e `reagendadoEm`: faltam o registo do acordo, o aviso ao
-> cliente e o talão de alteração. Estas peças continuam necessárias antes do
-> uso real destes fluxos. O aceite da proposta por link existe desde o #139. O
+> dos confirmados, e mostra os avisos de dia fechado e possível duplicado. Desde
+> 28/11 (ponto 5) o cancelamento recebe a iniciativa (`cliente` ou `gerente`) e
+> grava na mesma instrução o email ao cliente — o T11, o T12, ou o T16 quando a
+> casa recusa um pedido que nunca confirmou —, e o reagendamento guarda a hora de
+> antes (`reagendadoDe`, migração `0015`) e grava o T09 e o aviso à loja. Falta a
+> interface perguntar a iniciativa e mostrar o «Recusar» (Gonçalo), e o talão de
+> alteração (#47). O aceite da proposta por link existe desde o #139. O
 > balcão já mostra os `confirmado` e confirma os `por-confirmar` tal como estão
 > (#125); faltam a transferência recebida e o cancelar por falta de pagamento das
-> entregas, e as próprias entregas. Dos emails faltam os avisos de cancelamento e
-> de reagendamento ao cliente, os lembretes e as tentativas sem visitas (#149); a
+> entregas, e as próprias entregas. Dos emails faltam os lembretes e as tentativas
+> sem visitas (#149); a
 > expiração sem visitas também precisa de implementação. Os pontos marcados «(em aberto:
 > ver n.º X)» continuam por decidir — estão no fim, com a proposta e quem decide.
 
@@ -651,11 +652,15 @@ gastar tentativas** e não ocupa o limite da volta. O #139 já grava as proposta
 ligá-las, juntar a credencial de proposta (`caminhoDaProposta` e `PROPOSTA_SEGREDO`),
 `precoDaProposta` e os critérios de saltar (estado, proposta mais recente, prazo).
 Os restantes modelos usam os dados disponíveis; se faltar um dado obrigatório,
-ficam falhados com `dados-do-modelo`, nunca saem incompletos. Por exemplo, o pedido
-já guarda `levantamentoAnteriorEm` (#139), mas o `dadosDoEmail` ainda não o passa: os
-emails de reagendamento falham até isso ser ligado. O texto de cancelamento depende de
-`canceladoPor`: a recusa pelo link grava `cliente` (#139), e a ação de cancelar do
-painel ainda grava sempre `gerente` (dívida do #133).
+ficam falhados com `dados-do-modelo`, nunca saem incompletos. Os de reagendamento
+levam a hora de antes do reagendamento (`reagendadoDe`, `0015`), e não a hora pedida
+antes de uma proposta (`levantamentoAnteriorEm`, que só vai no T04); um pedido
+reagendado antes da `0015` não a tem, e o email falha em vez de a inventar. Como a
+proposta, escrevem-se com o pedido como está agora: o de um reagendamento que outro
+mais novo ultrapassou sai como `saltado: reagendamento-substituido`, e o de um pedido
+que já não está por levantar como `saltado: reagendamento-fechado`. O texto de
+cancelamento depende de `canceladoPor`: a recusa pelo link grava `cliente` (#139), e
+o cancelar do painel grava a iniciativa que a gerente escolhe (ponto 5).
 
 A integração: o helper chama-se depois de criar com sucesso e depois de cada
 decisão que pode gravar emails. Uma repetição idempotente chama-o para escoar a
@@ -738,9 +743,18 @@ a permissão do balcão para confirmar não lhe dá permissão para cancelar. **
 qualquer pessoa da equipa, nas condições de «O orçamento e o aceite».
 O pedido guarda `canceladoPor` — de quem foi a iniciativa,
 `cliente` ou `gerente` (a casa) — e `canceladoEm`. A gerente cancela e recusa
-com a mesma ação (`cancelarPedido`): o estado muda e a vaga e as quantidades
-libertam-se, juntos. O papel verifica-se no servidor — e, para o balcão, também
-que o pedido é uma entrega `confirmado` sem a transferência marcada.
+com a mesma ação (`cancelarPedido`), que recebe a iniciativa: o estado muda, a
+vaga e as quantidades libertam-se e o email ao cliente fica na fila, juntos.
+**Recusar é a casa cancelar um pedido que nunca confirmou** (`por-confirmar`, ou
+`a-aguardar-aceite` sem aceite): sai o T16, e não o T12, que fala de uma encomenda
+já combinada. Não tem estado nem coluna próprios — é o `cancelado` com
+`canceladoPor = gerente` e sem `confirmadoEm` (`eRecusa` e `foiRecusado`, em
+`src/lib/painel.ts`) —, e quem decide entre os dois é a instrução, com o pedido
+como o encontra: se o balcão o confirmou entretanto, já é o T12. Com a iniciativa
+do cliente, sai o T11 («conforme solicitado»), confirmado ou não. Com o Stripe,
+que dorme, nenhum email: os textos são os do pagamento na loja. O papel
+verifica-se no servidor — e, para o balcão, também que o pedido é uma entrega
+`confirmado` sem a transferência marcada.
 
 ⚠️ **Cancelar não é só mudar um estado.** Se o pedido já estava `confirmado`, o
 talão já está na cozinha. Seja quem for a pedir, o balcão é avisado como num
@@ -767,7 +781,9 @@ alternativa que o cliente já aceitou (§6). O fecho do dia não autoriza mudar
 para uma hora que o cliente ainda não aceitou. **Só para uma hora em
 que a loja esteja aberta e com vaga**, validada com o mesmo motor do calendário
 (`horarios.md`); a vaga antiga liberta-se e a nova ocupa-se na mesma transação
-(`robustez.md`). O pedido guarda `reagendadoEm`, e o histórico mostra-o.
+(`robustez.md`). O pedido guarda `reagendadoEm` e a hora de antes
+(`reagendadoDe`, migração `0015`), e o histórico mostra-o. **A mesma hora não é um
+reagendamento**: a ação devolve o pedido como está, sem gravar nem avisar ninguém.
 O prazo original pode ficar guardado para histórico, mas só se aplica enquanto
 o estado for `por-confirmar`. Ao passar a `a-aguardar-aceite`, o prazo da
 resposta da casa termina; não se inicia automaticamente outro.
@@ -785,7 +801,8 @@ aceitou a nova hora. Sem esse acordo, não se reagenda: o fluxo para propor uma
 alteração a um pedido já confirmado está em aberto (n.º 9).
 
 Um reagendamento acordado num pedido confirmado avisa o balcão e o cliente
-com a nova hora e gera um talão de alteração, para a cozinha não continuar com
+com a nova hora (o `reagendado-loja` e o T09, na mesma instrução, desde 28/11) e
+gera um talão de alteração (por fazer, #47), para a cozinha não continuar com
 a hora antiga. A operação não se confunde com uma nova confirmação nem duplica
 o pedido. O formato do talão é definido em `impressao.md` na implementação.
 

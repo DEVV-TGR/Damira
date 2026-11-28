@@ -227,7 +227,15 @@ Três coisas que se desfazem sem querer:
   como `saltado: proposta-fechada`. Sem `PROPOSTA_SEGREDO` falha
   (`dados-do-modelo`) em vez de sair sem botão. A hora pedida
   (`levantamentoAnteriorEm`) **só vai na proposta**: não é a hora de antes de
-  um reagendamento.
+  um reagendamento, que é o `reagendadoDe` (migração `0015`). Os dois emails
+  do reagendamento seguem a mesma regra: `saltado: reagendamento-substituido`
+  quando outro mais novo o ultrapassou, `saltado: reagendamento-fechado` quando
+  o pedido já não está por levantar.
+- ⚠️ **Recusar não é uma operação à parte**: é o `cancelarPedido` com a
+  iniciativa `gerente` num pedido na loja que nunca confirmou (`eRecusa`, em
+  `src/lib/painel.ts`), e sai o `recusado-cliente` em vez do
+  `cancelado-cliente`. A escolha faz-se em SQL, com o pedido como a instrução o
+  encontra.
 
 ⚠️ **A recuperação horária (#149) existe e está desligada por defeito**, em
 `/api/tarefas/emails`: só corre em Production com `EMAILS_RECUPERACAO_ATIVA=1`,

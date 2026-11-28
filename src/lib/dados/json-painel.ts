@@ -10,8 +10,10 @@ import {
   EsquemaProduto,
   EsquemaResposta,
   AVISOS_TRATAVEIS,
+  INICIATIVAS_CANCELAMENTO,
   type AvisoTratavel,
   type ConfiguracaoDaCasa,
+  type IniciativaCancelamento,
   type DefinicoesLoja,
   type Familia,
   type FontePainel,
@@ -453,27 +455,35 @@ export function criarPainelJson(
       if (!REAGENDAVEIS.includes(pedido.estado)) return { ok: false, erro: "estado-mudou" };
       const novo = typeof entrada === "string" ? new Date(entrada) : null;
       if (!novo || Number.isNaN(novo.getTime())) return { ok: false, erro: "dados-invalidos", campos: ["levantamentoEm"] };
+      /* A mesma hora não é um reagendamento: nada a gravar (o mesmo que a base de dados). */
+      if (novo.getTime() === pedido.levantamentoEm.getTime()) return { ok: true, valor: pedido };
       /* Uma hora da loja, com vaga, no futuro: o motor do calendário, com o
          horário da loja no lugar do da cozinha — a gerente sabe se a cozinha
-         consegue; o que não pode é marcar para uma hora fechada ou cheia. O
-         próprio pedido não conta para a ocupação da hora nova. */
+         consegue; o que não pode é marcar para uma hora fechada ou cheia. */
       const casa = estado.configuracao;
-      const ocupadas = ocupacaoEntre(novo, novo).map((o) =>
-        o.inicio.getTime() === pedido.levantamentoEm.getTime() ? { ...o, pedidos: o.pedidos - 1 } : o,
-      );
+      const ocupadas = ocupacaoEntre(novo, novo);
       const validacao = validarLevantamento([], novo, agora, { ...casa, cozinha: casa.loja }, ocupadas);
       if (!validacao.ok) return { ok: false, erro: "dados-invalidos", campos: ["levantamentoEm"] };
-      return gravarPedido({ ...pedido, levantamentoEm: novo, reagendadoEm: agora });
+      return gravarPedido({ ...pedido, levantamentoEm: novo, reagendadoDe: pedido.levantamentoEm, reagendadoEm: agora });
     },
 
-    async cancelarPedido(id, reembolsoCent, { agora }) {
+    /* Sem fila de emails: na fonte provisória o pedido muda, e os avisos são da base de dados. */
+    async cancelarPedido(id, reembolsoCent, iniciativa, { agora }) {
+      if (!INICIATIVAS_CANCELAMENTO.includes(iniciativa as IniciativaCancelamento)) {
+        return { ok: false, erro: "dados-invalidos", campos: ["iniciativa"] };
+      }
       const pedido = estado.pedidos.get(id);
       if (!pedido) return naoExiste;
       if (!podeCancelar(pedido, agora)) return { ok: false, erro: "estado-mudou" };
       if (!centValido(reembolsoCent, porDevolverCent(pedido), true)) {
         return { ok: false, erro: "dados-invalidos", campos: ["reembolsoCent"] };
       }
-      const cancelado: Pedido = { ...pedido, estado: "cancelado", canceladoEm: agora, canceladoPor: "gerente" };
+      const cancelado: Pedido = {
+        ...pedido,
+        estado: "cancelado",
+        canceladoEm: agora,
+        canceladoPor: iniciativa as IniciativaCancelamento,
+      };
       return gravarPedido(comReembolso(cancelado, reembolsoCent, agora));
     },
 
