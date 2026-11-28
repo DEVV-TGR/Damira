@@ -76,8 +76,17 @@ export function CartaoArtigo({
   const precoUnico = precoUnicoCent(artigo);
   const porUnidade = artigo.unidade === "kg" ? te("porQuilo") : ` ${t("cadaCurto")}`;
 
+  /* ⚠️ O contorno é a 25 % e não a 15 % (27/11), igual ao do `CartaoProduto`.
+     As secções alternam papel e papel-fundo: no cinzento o cartão branco
+     destacava-se, mas no papel tinha a cor do fundo e um contorno a 15 % não se
+     via — o Natal parecia sem cartões ao lado dos bolos.
+
+     E fica **tijolo ao passar o rato**, como o do `CartaoProduto` (pedido do
+     Gonçalo, 27/11). O cartão não é um link — tem o nome e os botões lá dentro
+     —, por isso o mesmo tijolo também acende com o foco num deles
+     (`focus-within`), para quem chega pelo teclado. */
   return (
-    <li className="flex flex-col rounded-xl border border-tinta/15 bg-papel p-2.5" data-procura={textoDeProcura(artigo)}>
+    <li className="flex flex-col rounded-xl border border-tinta/25 bg-papel p-2.5 transition-colors hover:border-tijolo focus-within:border-tijolo" data-procura={textoDeProcura(artigo)}>
       <FotoProduto foto={fotoDe(artigo)} alt="" proporcao="3 / 2" discreta />
       {/* O nome leva à página do artigo, que desde 26/11 todos os que se
           encomendam têm. */}

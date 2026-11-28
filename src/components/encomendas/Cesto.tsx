@@ -94,8 +94,12 @@ export function Cesto({ locale }: { locale: Locale }) {
               botão é `fixed`: no fim da página fica por cima do que lá estiver, e a
               barra chegou a tapar a caixa do consentimento, sem a qual o pedido não
               segue. Este `<div>` está no fluxo e devolve à página a altura que o
-              botão lhe tira. */}
-          <div aria-hidden className="h-20" />
+              botão lhe tira.
+
+              ⚠️ **Da cor do rodapé** (`bg-tinta`): o calço fica depois dele, e
+              com o fundo da página lia-se como uma faixa branca a sobrar por
+              baixo do rodapé (apontado a 27/11). */}
+          <div aria-hidden className="h-20 bg-tinta" />
 
           <button
             type="button"
