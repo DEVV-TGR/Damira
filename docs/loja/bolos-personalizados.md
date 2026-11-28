@@ -94,11 +94,20 @@ só se vê quando o cliente vem buscar o bolo.
 
 ## Como está feito (#51, 26/11)
 
-- **As combinações do PDF:** 21 massas com as coberturas que cada uma leva
-  (Outras, Pasta de Açúcar, Butter Cream), 42 recheios, 24 «à volta» e 32
-  toppings — estes três com todas as coberturas. **A cobertura é o eixo**: a
-  massa decide as coberturas possíveis, e a cobertura filtra o resto. Uma regra
-  só (`src/lib/bolo-personalizado.ts`), no configurador e no servidor.
+- **As combinações do PDF:** 21 massas com as coberturas que cada uma leva,
+  42 recheios, 24 «à volta» e 32 toppings. **As coberturas são as 48 do PDF
+  «Todas as Coberturas»** (28/11), com «Sem Cobertura» incluída. A «Outras» de
+  antes saiu como opção: quer dizer as restantes, e no JSON cada «outras» está
+  expandida nas 46 coberturas que não são a Butter Cream nem a Pasta de Açúcar.
+  Estas duas mantêm as combinações que a casa já tinha. **A cobertura é o
+  eixo**: a massa decide as coberturas possíveis, e a cobertura filtra o resto.
+  Uma regra só (`src/lib/bolo-personalizado.ts`), no configurador e no servidor.
+  ⚠️ **As combinações não vêm no PDF de 28/11**, que é só a lista de nomes: são
+  as do PDF de 26/11, com «Outras» lida como acima. Por isso as massas veganas
+  (Amêndoa, Cenoura, Chocolate, Folhada, Laranja, Noz e Pão-de-Ló - Vegan) levam
+  também coberturas não veganas (Creme d'Ovos, Natas, Nutella…), como já podiam
+  levar esses recheios. Decidido a 28/11 deixar assim; o site não restringe por
+  «vegan». O schema aceita no máximo 50 coberturas.
 - **A foto para imprimir está sempre à vista, e é opcional** (26/11): num campo
   à parte das de referência, com o seu nome. Com o topping «Foto em folha de
   hóstia» (no painel, Fotos › o topping que torna a foto obrigatória) passa a

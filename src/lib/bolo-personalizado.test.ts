@@ -14,7 +14,7 @@ import {
 const FOTO_A = "bolos/11111111-1111-4111-8111-111111111111.webp";
 const FOTO_B = "bolos/22222222-2222-4222-8222-222222222222.jpg";
 
-/** Um bolo válido com as opções do PDF: Red Velvet aceita as três coberturas. */
+/** Um bolo válido com as opções do PDF: Red Velvet aceita todas as coberturas. */
 const bolo = (mudar: Partial<EntradaBolo> = {}): EntradaBolo => ({
   tamanhoId: null,
   massaId: "red-velvet",
@@ -31,15 +31,21 @@ const bolo = (mudar: Partial<EntradaBolo> = {}): EntradaBolo => ({
 describe("as opções do PDF da casa", () => {
   it("têm as listas que o PDF tem", () => {
     expect(OPCOES_BOLO.massas).toHaveLength(21);
-    expect(OPCOES_BOLO.coberturas.map((c) => c.id)).toEqual(["outras", "pasta-de-acucar", "butter-cream"]);
+    /* As 48 do PDF «Todas as Coberturas»: a «Outras» deu lugar às restantes. */
+    expect(OPCOES_BOLO.coberturas).toHaveLength(48);
+    expect(OPCOES_BOLO.coberturas.map((c) => c.id)).not.toContain("outras");
+    expect(OPCOES_BOLO.coberturas.map((c) => c.id)).toEqual(expect.arrayContaining(["butter-cream", "pasta-de-acucar", "sem-cobertura"]));
     expect(OPCOES_BOLO.recheios).toHaveLength(42);
     expect(OPCOES_BOLO.aVolta).toHaveLength(24);
     expect(OPCOES_BOLO.toppings).toHaveLength(32);
   });
 
-  it("a massa decide as coberturas: o Pão-de-Ló só leva «Outras»", () => {
-    expect(coberturasDaMassa(OPCOES_BOLO, "pao-de-lo").map((c) => c.id)).toEqual(["outras"]);
-    expect(coberturasDaMassa(OPCOES_BOLO, "red-velvet")).toHaveLength(3);
+  it("a massa decide as coberturas: o Pão-de-Ló leva as «outras» (todas menos a Butter Cream e a Pasta de Açúcar)", () => {
+    const pao = coberturasDaMassa(OPCOES_BOLO, "pao-de-lo").map((c) => c.id);
+    expect(pao).toHaveLength(46);
+    expect(pao).not.toContain("butter-cream");
+    expect(pao).not.toContain("pasta-de-acucar");
+    expect(coberturasDaMassa(OPCOES_BOLO, "red-velvet")).toHaveLength(48);
     expect(coberturasDaMassa(OPCOES_BOLO, "nao-existe")).toEqual([]);
   });
 });
@@ -200,11 +206,11 @@ describe("os toppings extra (26/11)", () => {
 
   it("não aceitam o topping que imprime a foto, nem um que não vai com a cobertura", () => {
     expect(validarBolo(comExtras, comTamanho({ toppingsExtra: ["foto-em-folha-de-hostia"] }))).toBe("toppings-extra");
-    const soOutras: OpcoesBolo = {
+    const soSemCobertura: OpcoesBolo = {
       ...comExtras,
-      toppings: comExtras.toppings.map((t) => (t.id === "pintarolas" ? { ...t, coberturas: ["outras"] } : t)),
+      toppings: comExtras.toppings.map((t) => (t.id === "pintarolas" ? { ...t, coberturas: ["sem-cobertura"] } : t)),
     };
-    expect(validarBolo(soOutras, comTamanho({ toppingsExtra: ["pintarolas"] }))).toBe("toppings-extra");
+    expect(validarBolo(soSemCobertura, comTamanho({ toppingsExtra: ["pintarolas"] }))).toBe("toppings-extra");
   });
 
   it("vão escritos numa linha, e somam ao «a partir de» só com um tamanho com preço", () => {
