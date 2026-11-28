@@ -31,10 +31,41 @@ export async function catalogoDeTeste() {
   return {
     async copia() {
       const cliente = (await modelo.clone()) as PGlite;
+      await fecharNoFimDoTeste(cliente);
       return { db: drizzle(cliente), cliente };
     },
     fechar: () => modelo.close(),
   };
+}
+
+/**
+ * Fecha a cópia quando o teste que a abriu acabar.
+ *
+ * Cada cópia é um Postgres inteiro em memória, e a maior parte dos testes não a
+ * fechava: ficavam todas abertas até ao fim do ficheiro. Um ficheiro sozinho
+ * chegava a 5,7 GB (`pedidos-bd.test.ts`; com isto, 1,7 GB), e três destes em
+ * paralelo enchiam os 16 GB do runner do CI: ou o sistema matava um worker, ou
+ * ficava a trocar memória com o disco até o `timeout` o matar — sem um teste
+ * falhado nem uma linha a dizer qual.
+ * O `fontes-de-teste.ts` já o fazia desde o #139; agora é para todas.
+ *
+ * Quem fecha à mão (num `finally`, num `afterEach`) continua a poder: o PGlite
+ * recusa um segundo `close()`, por isso aqui só se fecha o que ainda está
+ * aberto. Uma cópia aberta fora de um teste (num `beforeAll`, partilhada por
+ * vários) fica até ao fim do ficheiro, como antes.
+ *
+ * O `vitest` importa-se aqui dentro, e não no topo, porque o `scripts/bd.ts`
+ * carrega este ficheiro fora dos testes (só usa o `baseDeTeste`).
+ */
+async function fecharNoFimDoTeste(cliente: PGlite) {
+  const { onTestFinished } = await import("vitest");
+  try {
+    onTestFinished(async () => {
+      if (!cliente.closed) await cliente.close();
+    });
+  } catch {
+    // Fora de um teste: quem a abriu partilha-a, e não é aqui que se fecha.
+  }
 }
 
 /**

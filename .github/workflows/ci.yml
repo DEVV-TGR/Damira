@@ -28,7 +28,9 @@ jobs:
   verificar:
     name: lint, build e test
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Uma volta normal leva 4 min; 15 já é encravamento. O limite curto a sério
+    # está no passo dos testes, que é onde encravava.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -42,4 +44,10 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+      # Os testes levam 3 min. Encravavam, e o job só morria aos 20, sem dizer
+      # porquê: os PGlite (um Postgres por cópia) ficavam abertos até ao fim de
+      # cada ficheiro e enchiam a memória do runner. Hoje fecham-se no fim de
+      # cada teste (`src/db/teste.ts`), e se voltar a encravar o passo morre aos
+      # 8 min com o ficheiro preso escrito no registo (`vitest.presos.ts`).
       - run: npm test
+        timeout-minutes: 8
