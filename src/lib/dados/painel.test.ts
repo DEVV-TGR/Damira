@@ -414,3 +414,30 @@ describe("horários, definições e pausa", () => {
     });
   });
 });
+
+describe("dias sem encomenda no editor", () => {
+  it("só a gerente grava, e a leitura conserva o campo nas duas fontes", async () => {
+    const f = await fonte();
+    const diasSemEncomenda = [{ de: "2026-12-23", ate: "2026-12-24" }];
+    expect(await f.criarProduto(novoBolo({ diasSemEncomenda }), BALCAO)).toEqual({ ok: false, erro: "sem-permissao" });
+    const criado = await f.criarProduto(novoBolo({ diasSemEncomenda }), GERENTE);
+    if (!criado.ok) throw new Error("devia gravar");
+    expect((await f.produtoPorId(criado.valor.id))?.diasSemEncomenda).toEqual(diasSemEncomenda);
+    const entrada = { ...paraEntrada(criado.valor), diasSemEncomenda: [] };
+    expect(await f.editarProduto(criado.valor.id, entrada, BALCAO)).toEqual({ ok: false, erro: "sem-permissao" });
+    expect((await f.editarProduto(criado.valor.id, entrada, GERENTE)).ok).toBe(true);
+    expect((await f.produtoPorId(criado.valor.id))?.diasSemEncomenda).toEqual([]);
+  });
+
+  it.each([
+    [{ de: "2026-12-24", ate: "2026-12-23" }],
+    [{ de: "2026-02-30", ate: "2026-03-01" }],
+    [{ de: "2026-2-01", ate: "2026-03-01" }],
+    [{ de: "2026-12-23", ate: "2026-12-23" }, { de: "2026-12-23", ate: "2026-12-23" }],
+    Array.from({ length: 51 }, () => ({ de: "2026-12-23", ate: "2026-12-23" })),
+  ])("recusa intervalos inválidos: %j", async (...diasSemEncomenda) => {
+    const f = await fonte();
+    const resultado = await f.criarProduto(novoBolo({ diasSemEncomenda }), GERENTE);
+    expect(resultado).toMatchObject({ ok: false, erro: "dados-invalidos", campos: ["diasSemEncomenda"] });
+  });
+});

@@ -423,7 +423,9 @@
         "cheia": "Full"
       },
       "escolhidoAConfirmar": "Preferred time: {quando}. We'll confirm it with you.",
-      "escolhaAConfirmar": "Choose the day and time you'd like to collect — we'll confirm it with you."
+      "escolhaAConfirmar": "Choose the day and time you'd like to collect — we'll confirm it with you.",
+      "produtoBloqueado": "{produtos} is not available for collection on this day.",
+      "produtosBloqueados": "{produtos} are not available for collection on this day."
     },
     "compra": {
       "titulo": "Complete your order",
@@ -619,7 +621,10 @@
       "toppingsExtraAjuda": "You can add up to {n, plural, one {# more topping} other {# more toppings}}.",
       "obrigatoria": "(required)",
       "opcional": "(optional)"
-    }
+    },
+    "diasSemEncomendaIntervalo": "from {de} to {ate}",
+    "diasSemEncomenda": "Not available for collection {dias}.",
+    "diasSemEncomendaDias": "on {dias}"
   },
   "desconto": {
     "faixa": "Enjoy <destaque>{n}% off</destaque> every order",

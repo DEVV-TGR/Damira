@@ -80,6 +80,7 @@ export function colunasEditaveis(produto: Produto) {
        para o código de antes, e já ninguém a escreve. */
     escolhas: [],
     opcoes: produto.opcoes,
+    diasSemEncomenda: produto.diasSemEncomenda,
     tempoProducaoUnidade: produto.tempoProducao?.unidade ?? null,
     tempoProducaoValor: produto.tempoProducao?.valor ?? null,
     quantidadeMinima: produto.quantidadeMinima,
@@ -260,6 +261,7 @@ export function linhasParaProduto(
     tipo: linha.tipo,
     variancias: pecas.variancias.map((v) => ({ id: v.id, nome: { pt: v.nomePt, en: v.nomeEn }, escolhas: v.escolhas })),
     opcoes: linha.opcoes,
+    diasSemEncomenda: linha.diasSemEncomenda,
     extras: pecas.extras.map((e) => ({
       id: e.id,
       nome: { pt: e.nomePt, en: e.nomeEn },

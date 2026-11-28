@@ -147,6 +147,7 @@ const daEmenta = (artigo: Artigo): SemConfirmacao => {
     arquivado: false,
     foraDeVenda: false,
     esgotadoNoDia: null,
+    diasSemEncomenda: [],
   };
 };
 
@@ -238,6 +239,7 @@ const daEncomenda = (produto: ProdutoDasEncomendas): SemConfirmacao => {
     arquivado: false,
     foraDeVenda: false,
     esgotadoNoDia: null,
+    diasSemEncomenda: [],
   };
 };
 

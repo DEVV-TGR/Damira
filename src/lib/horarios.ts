@@ -7,6 +7,10 @@ import { addDays, format, getDay } from "date-fns";
  * As regras estão em `docs/loja/horarios.md`; isto é a tradução delas. Quando
  * uma muda, mudam as duas no mesmo PR.
  *
+ * Tal como «esgotado hoje», os dias sem encomenda de qualquer artigo tiram
+ * esses dias ao cesto inteiro. Não mudam os tempos de produção nem os pedidos
+ * existentes, e um kit só leva os seus próprios bloqueios.
+ *
  * ## ⚠️ Funções puras, e é isso que as torna úteis
  *
  * Tudo entra por argumento — a configuração, as vagas ocupadas e o instante
@@ -108,6 +112,7 @@ export type ArtigoDoCesto = {
   tempo: TempoProducao;
   /** «Esgotado hoje», do balcão: tira as vagas de hoje ao cesto inteiro. */
   esgotadoHoje?: boolean;
+  diasSemEncomenda?: readonly DiasSemEncomenda[];
 };
 
 /**
@@ -325,6 +330,24 @@ const vagasDoDia = (config: ConfiguracaoHorarios, data: Data) => {
   return lista;
 };
 
+/** Os índices preservam a ligação aos produtos, sem pôr nomes no motor. */
+export function diasSemEncomendaNoCalendario(
+  cesto: readonly ArtigoDoCesto[],
+  agora: Date,
+  config: Pick<ConfiguracaoHorarios, "diasAFrente">,
+): { data: string; artigos: number[] }[] {
+  validarInteiro("Dias à frente", config.diasAFrente, 0);
+  const ultimo = somarDias(dataDe(agora), config.diasAFrente);
+  const dias: { data: string; artigos: number[] }[] = [];
+  for (let data = dataDe(agora); data <= ultimo; data = somarDias(data, 1)) {
+    const artigos = cesto.flatMap((artigo, i) =>
+      artigo.diasSemEncomenda?.some(({ de, ate }) => de <= data && data <= ate) ? [i] : [],
+    );
+    if (artigos.length > 0) dias.push({ data, artigos });
+  }
+  return dias;
+}
+
 /**
  * As vagas do calendário, de hoje até `diasAFrente`, a partir do momento em que
  * o cesto está pronto. As cheias **continuam na lista** com `livre: false`: o
@@ -353,11 +376,12 @@ export function vagas(
   const hoje = dataDe(agora);
   const ultimo = somarDias(hoje, config.diasAFrente);
   const esgotadoHoje = cesto.some((artigo) => artigo.esgotadoHoje);
+  const bloqueados = new Set(diasSemEncomendaNoCalendario(cesto, agora, config).map(d => d.data));
 
   const lista: Vaga[] = [];
   for (let data = hoje; data <= ultimo; data = somarDias(data, 1)) {
     // «Esgotado hoje» volta sozinho amanhã — por isso é o dia, não o artigo.
-    if (esgotadoHoje && data === hoje) continue;
+    if ((esgotadoHoje && data === hoje) || bloqueados.has(data)) continue;
     for (const { inicio, fim } of vagasDoDia(config, data)) {
       if (inicio.getTime() < pronto) continue;
       const contadas = porInicio.get(inicio.getTime()) ?? 0;

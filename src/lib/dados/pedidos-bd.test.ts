@@ -560,3 +560,13 @@ describe("a fonte que o site monta", () => {
     expect(await fonte.criarPedido(entrada(), CONTEXTO)).toEqual({ ok: false, erro: "indisponivel" });
   });
 });
+
+describe("criar pedido com dias sem encomenda na base", () => {
+  it("recusa o produto bloqueado e aceita o kit sem herdar o que leva", async () => {
+    const { fonte, db } = await montar();
+    await db.update(produtos).set({ diasSemEncomenda: [{ de: "2026-10-07", ate: "2026-10-07" }] }).where(eq(produtos.id, "bolo-de-cenoura"));
+    await db.execute(sql`insert into variantes_leva (produto_id, variante_id, posicao, simples_id, quantidade) values ('festa-premium', '20', 0, 'bolo-de-cenoura', 12)`);
+    expect(await fonte.criarPedido(entrada({ linhas: [{ produtoId: "bolo-de-cenoura", varianteId: "unica", quantidade: 12 }] }), CONTEXTO)).toMatchObject({ ok: false, erro: "indisponivel" });
+    expect((await fonte.criarPedido(entrada(), CONTEXTO)).ok).toBe(true);
+  });
+});

@@ -1,8 +1,8 @@
 import { tz } from "@date-fns/tz";
 import { format } from "date-fns";
 import type { z } from "zod";
-import { FUSO, validarLevantamento, type ArtigoDoCesto, type VagaOcupada } from "@/lib/horarios";
-import { esgotadoHoje } from "@/lib/painel";
+import { FUSO, validarLevantamento, type VagaOcupada } from "@/lib/horarios";
+import { artigosParaHorarios } from "./artigos-horarios";
 import { linhasDoBolo, ROTULOS_PT, validarBolo } from "@/lib/bolo-personalizado";
 import { aplicarDesconto, DESCONTO_PERCENTAGEM } from "@/lib/desconto";
 import type {
@@ -529,10 +529,7 @@ export async function conferirPedido(
   if (configuracao.cozinha === null || produtos.some((p) => p.tempoProducao === null)) {
     return { ok: false, erro: "indisponivel" };
   }
-  const cesto: ArtigoDoCesto[] = produtos.map((p) => ({
-    tempo: p.tempoProducao!,
-    esgotadoHoje: esgotadoHoje(p, agora),
-  }));
+  const cesto = artigosParaHorarios(produtos, agora);
   const levantamentoEm = new Date(dados.levantamentoEm);
   const validacao = validarLevantamento(
     cesto,

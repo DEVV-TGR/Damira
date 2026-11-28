@@ -37,6 +37,16 @@ const Texto = z.object({ pt: z.string().min(1), en: z.string().min(1).nullable()
 
 // ——— Produto ———
 
+/** `iso.date` recusa também dias impossíveis, como 30 de fevereiro. */
+export const EsquemaDiasSemEncomenda = z.array(
+  z.object({ de: z.iso.date(), ate: z.iso.date() }).strict().refine(
+    ({ de, ate }) => de <= ate, { message: "O fim tem de ser igual ou posterior ao início.", path: ["ate"] },
+  ),
+).max(50).refine(
+  dias => new Set(dias.map(({ de, ate }) => `${de}/${ate}`)).size === dias.length,
+  { message: "Há intervalos repetidos." },
+);
+
 const EsquemaTempoProducao = z.object({
   unidade: z.enum(["horas", "dias"]),
   valor: z.number().nonnegative(),
@@ -188,6 +198,7 @@ export const EsquemaProduto = z.object({
   extras: z.array(EsquemaExtra).default([]),
   /** `null` é **por preencher** — a casa ainda não o deu. Não se inventa. */
   tempoProducao: EsquemaTempoProducao.nullable(),
+  diasSemEncomenda: EsquemaDiasSemEncomenda.default([]),
   quantidadeMinima: z.number().positive(),
   /** De quanto em quanto sobe, a partir do mínimo. À dúzia, de 6 em 6. */
   multiplo: z.number().positive(),
