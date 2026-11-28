@@ -108,10 +108,10 @@ export function ConfiguradorBolo({
     setErro(null);
   };
 
-  /* Trocar a massa pode tirar a cobertura escolhida (o Pão-de-Ló só leva
-     «Outras»); trocar a cobertura pode tirar o resto. O que deixa de ser
-     possível limpa-se, em vez de ficar escolhido e escondido. Com uma cobertura
-     só, escolhe-se sozinha. */
+  /* Trocar a massa pode tirar a cobertura escolhida (o Pão-de-Ló não leva
+     Butter Cream nem Pasta de Açúcar); trocar a cobertura pode tirar o resto.
+     O que deixa de ser possível limpa-se, em vez de ficar escolhido e
+     escondido. Com uma cobertura só, escolhe-se sozinha. */
   const escolherMassa = (id: string | null) => {
     setMassaId(id);
     const possiveis = coberturasDaMassa(opcoes, id);
@@ -268,32 +268,17 @@ export function ConfiguradorBolo({
           ajuda={massaId ? tb("quantasCoberturas", { n: coberturas.length }) : null}
         />
 
-        <fieldset>
-          <legend className={rotuloCampo}>{tb("passos.cobertura")}</legend>
-          {coberturas.length === 0 ? (
-            <p className="mt-2 text-sm text-tinta-suave">{tb("primeiroMassa")}</p>
-          ) : (
-            <div className={`mt-3 flex flex-wrap gap-2 rounded-2xl ${marcado("cobertura")}`}>
-              {coberturas.map((cobertura) => (
-                <label
-                  key={cobertura.id}
-                  className={`premivel alvo-toque flex min-h-11 cursor-pointer items-center rounded-full border px-5 text-sm ${
-                    cobertura.id === coberturaId ? "border-tijolo bg-tijolo text-papel" : "border-tinta/25 hover:bg-tinta hover:text-papel"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name={`${campo}-cobertura`}
-                    checked={cobertura.id === coberturaId}
-                    onChange={() => escolherCobertura(cobertura.id)}
-                    className="sr-only"
-                  />
-                  {cobertura.nome}
-                </label>
-              ))}
-            </div>
-          )}
-        </fieldset>
+        <Lista
+          htmlId={`${campo}-cobertura`}
+          escolher={tb("escolher")}
+          classe={`${caixa} ${marcado("cobertura")}`}
+          rotulo={tb("passos.cobertura")}
+          lista={coberturas}
+          valor={coberturaId}
+          aoMudar={escolherCobertura}
+          desligada={coberturas.length === 0}
+          ajuda={coberturas.length === 0 ? tb("primeiroMassa") : null}
+        />
 
         {(
           [
@@ -540,8 +525,8 @@ export function ConfiguradorBolo({
 
 /**
  * Uma lista de opções. ⚠️ **Uma lista nativa, e não quarenta botões.** São 21
- * massas e 42 recheios: no telemóvel o seletor do sistema é o que se percorre
- * com o polegar, e uma grelha de pastilhas eram três ecrãs por campo.
+ * massas, 48 coberturas e 42 recheios: no telemóvel o seletor do sistema é o que
+ * se percorre com o polegar, e uma grelha de pastilhas eram três ecrãs por campo.
  */
 function Lista({
   htmlId,

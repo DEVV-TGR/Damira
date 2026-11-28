@@ -10,9 +10,10 @@ import { URL_SITE } from "@/lib/site";
  * importa dados nenhuns — recebe as opções por argumento.
  *
  * A regra da casa, tal como veio no PDF: **a massa decide as coberturas**, e o
- * recheio, o «à volta» e o topping têm cada um a sua lista de coberturas (hoje,
- * todas). A cobertura é o eixo: escolhida a massa, escolhe-se a cobertura, e é
- * ela que filtra o resto.
+ * recheio, o «à volta» e o topping têm cada um a sua lista de coberturas. A
+ * cobertura é o eixo: escolhida a massa, escolhe-se a cobertura, e é ela que
+ * filtra o resto. A «Outras» do PDF antigo está expandida no JSON nas
+ * coberturas que ela quer dizer (as 46 restantes do PDF «Todas as Coberturas»).
  */
 
 /** As listas que dependem da cobertura, pela ordem do configurador. */
