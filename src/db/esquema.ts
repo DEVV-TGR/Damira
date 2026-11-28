@@ -709,6 +709,16 @@ export const pedidos = pgTable(
     entregueEm: instante("entregue_em"),
     canceladoEm: instante("cancelado_em"),
     reagendadoEm: instante("reagendado_em"),
+    /**
+     * A hora de levantamento **antes do último reagendamento** (migração `0015`): é o «inicialmente
+     * previsto» do `reagendado-cliente` e o «Antes» do `reagendado-loja`. Grava-se na mesma instrução
+     * que muda o `levantamento_em` e o `reagendado_em`, e a linha da fila entra com elas: um email de
+     * reagendamento mais antigo do que o `reagendado_em` é de um reagendamento já ultrapassado.
+     *
+     * ⚠️ Não é o `levantamento_anterior_em`: esse é a hora que o cliente pediu antes de uma
+     * **proposta**, e só vai no email da proposta. Os dois podem existir no mesmo pedido.
+     */
+    reagendadoDe: instante("reagendado_de"),
     /** O cliente vive no pedido: é a fotografia do momento, não uma conta. */
     clienteNome: text("cliente_nome").notNull(),
     clienteEmail: text("cliente_email").notNull(),
@@ -856,6 +866,9 @@ export const pedidos = pgTable(
           and (${t.causaExpiracao} <> 'sem-aceite-do-cliente' or ${t.propostaVersao} > 0)))`,
     ),
     check("pedidos_entregue_em", sql`${t.estado} <> 'entregue' or ${t.entregueEm} is not null`),
+    /* Só um reagendamento guarda a hora de antes. Num sentido só, de propósito: os pedidos
+       reagendados antes da `0015` têm `reagendado_em` sem a hora de antes, e ficam válidos. */
+    check("pedidos_reagendado_de", sql`${t.reagendadoDe} is null or ${t.reagendadoEm} is not null`),
     /* Cancelado é final: quando, por quem, e o estado, os três ou nenhum. */
     check(
       "pedidos_cancelado",
